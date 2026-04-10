@@ -788,7 +788,29 @@ footer {
 .emoji-btn:hover { background: rgba(255,255,255,0.1); }
 .emoji-btn.selected { background: rgba(132,94,194,0.3); }
 
-/* ANIMATIONS */
+/* IMAGE UPLOAD ZONE */
+.img-upload-zone {
+  width: 100%;
+  height: 140px;
+  border: 2px dashed rgba(255,255,255,0.15);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  overflow: hidden;
+  position: relative;
+}
+.img-upload-zone:hover {
+  border-color: var(--accent);
+  background: rgba(132,94,194,0.06);
+}
+.img-upload-zone.has-image {
+  border-style: solid;
+  border-color: rgba(0,201,167,0.4);
+}
+
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
@@ -950,7 +972,7 @@ footer {
       <ul>
         <li><a href="https://wa.me/22899812072" target="_blank">+228 99 81 20 72</a></li>
         <li><a href="https://wa.me/22893003941" target="_blank">+228 93 00 39 41</a></li>
-        <li><a href="mailto:albaneloh686@gmail.com">albaneloh686@gmail.com</a></li>
+        <li><a href="/cdn-cgi/l/email-protection#0f6e636d6e616a6360673937394f68626e6663216c6062"><span class="__cf_email__" data-cfemail="cfaea3adaea1aaa3a0a7f9f7f98fa8a2aea6a3e1aca0a2">[email&#160;protected]</span></a></li>
       </ul>
     </div>
   </div>
@@ -1086,8 +1108,23 @@ footer {
         <textarea id="pDesc" rows="3" placeholder="Décrivez votre produit..."></textarea>
       </div>
       <div class="form-group">
-        <label>URL Image (optionnel)</label>
-        <input type="text" id="pImg" placeholder="https://... ou laisser vide pour utiliser l'emoji">
+        <label>Photo du produit (optionnel)</label>
+        <div class="img-upload-zone" id="imgUploadZone" onclick="document.getElementById('pImgFile').click()">
+          <div id="imgUploadPlaceholder">
+            <div style="font-size:2rem;margin-bottom:0.4rem">📷</div>
+            <div style="font-size:0.85rem;color:var(--muted)">Cliquer pour choisir une photo</div>
+            <div style="font-size:0.75rem;color:var(--muted);margin-top:0.2rem">JPG, PNG, WEBP — max 2 Mo</div>
+          </div>
+          <img id="imgPreview" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:10px;" alt="Aperçu">
+        </div>
+        <input type="file" id="pImgFile" accept="image/*" style="display:none" onchange="handleImgFile(this)">
+        <div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.5rem">
+          <div style="flex:1;height:1px;background:rgba(255,255,255,0.1)"></div>
+          <span style="font-size:0.75rem;color:var(--muted)">ou URL</span>
+          <div style="flex:1;height:1px;background:rgba(255,255,255,0.1)"></div>
+        </div>
+        <input type="text" id="pImg" placeholder="https://exemple.com/image.jpg" style="margin-top:0.5rem" oninput="handleImgUrl(this.value)">
+        <button type="button" onclick="clearImg()" id="clearImgBtn" style="display:none;margin-top:0.5rem;background:rgba(255,107,107,0.15);border:1px solid rgba(255,107,107,0.3);color:var(--danger);padding:0.3rem 0.8rem;border-radius:50px;font-family:'Nunito',sans-serif;font-size:0.8rem;cursor:pointer;font-weight:700;">✕ Supprimer la photo</button>
       </div>
       <div class="form-group">
         <label>Badge (optionnel)</label>
@@ -1123,7 +1160,7 @@ footer {
   </div>
 </div>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // ══════════════════════════════════
 // DONNÉES & ÉTAT
 // ══════════════════════════════════
@@ -1366,13 +1403,77 @@ function selectEmoji(e) {
   event.target.classList.add('selected');
 }
 
-function addProduct() {
+// ══════════════════════════════════
+// IMAGE UPLOAD
+// ══════════════════════════════════
+let currentImgData = ''; // base64 or URL
+
+function handleImgFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) {
+    showToast('Image trop lourde (max 2 Mo).', true);
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    currentImgData = e.target.result;
+    document.getElementById('pImg').value = '';
+    setImgPreview(currentImgData);
+  };
+  reader.readAsDataURL(file);
+}
+
+function handleImgUrl(url) {
+  if (url) {
+    currentImgData = url;
+    setImgPreview(url);
+  } else {
+    currentImgData = '';
+    clearImgPreview();
+  }
+}
+
+function setImgPreview(src) {
+  const preview = document.getElementById('imgPreview');
+  const placeholder = document.getElementById('imgUploadPlaceholder');
+  const zone = document.getElementById('imgUploadZone');
+  const clearBtn = document.getElementById('clearImgBtn');
+  preview.src = src;
+  preview.style.display = 'block';
+  placeholder.style.display = 'none';
+  zone.classList.add('has-image');
+  clearBtn.style.display = 'inline-block';
+}
+
+function clearImgPreview() {
+  const preview = document.getElementById('imgPreview');
+  const placeholder = document.getElementById('imgUploadPlaceholder');
+  const zone = document.getElementById('imgUploadZone');
+  const clearBtn = document.getElementById('clearImgBtn');
+  preview.src = '';
+  preview.style.display = 'none';
+  placeholder.style.display = 'flex';
+  placeholder.style.flexDirection = 'column';
+  placeholder.style.alignItems = 'center';
+  zone.classList.remove('has-image');
+  clearBtn.style.display = 'none';
+}
+
+function clearImg() {
+  currentImgData = '';
+  document.getElementById('pImg').value = '';
+  document.getElementById('pImgFile').value = '';
+  clearImgPreview();
+}
+
+
   const name  = document.getElementById('pName').value.trim();
   const price = document.getElementById('pPrice').value.trim();
   const cat   = document.getElementById('pCat').value;
   const emoji = document.getElementById('pEmoji').value.trim() || '📦';
   const desc  = document.getElementById('pDesc').value.trim();
-  const img   = document.getElementById('pImg').value.trim();
+  const img   = currentImgData || document.getElementById('pImg').value.trim();
   const badge = document.getElementById('pBadge').value.trim();
 
   if (!name || !price || !cat) {
@@ -1399,8 +1500,11 @@ function addProduct() {
   renderFilters();
 
   // Reset form
-  ['pName','pPrice','pEmoji','pDesc','pImg','pBadge'].forEach(id => document.getElementById(id).value = '');
+  ['pName','pPrice','pEmoji','pDesc','pBadge'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('pCat').value = '';
+  document.getElementById('pImg').value = '';
+  currentImgData = '';
+  clearImgPreview();
 }
 
 function renderAdminList() {
@@ -1432,8 +1536,15 @@ function editProduct(id) {
   document.getElementById('pCat').value   = p.cat;
   document.getElementById('pEmoji').value = p.emoji || '';
   document.getElementById('pDesc').value  = p.desc || '';
-  document.getElementById('pImg').value   = p.img  || '';
+  document.getElementById('pImg').value   = (p.img && !p.img.startsWith('data:')) ? p.img : '';
   document.getElementById('pBadge').value = p.badge || '';
+  // Restore image preview
+  currentImgData = p.img || '';
+  if (p.img) {
+    setImgPreview(p.img);
+  } else {
+    clearImgPreview();
+  }
   document.getElementById('addProductBtn').textContent = '💾 Sauvegarder les modifications';
   switchAdminTab('add', document.querySelectorAll('.admin-tab')[0]);
   showToast('Produit chargé. Modifiez et sauvegardez.');
@@ -1491,13 +1602,4 @@ function showToast(msg, error = false) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// ══════════════════════════════════
-// INIT
-// ══════════════════════════════════
-loadProducts();
-renderProducts();
-renderFilters();
-initEmojiGrid();
-</script>
-</body>
-</html>
+// ════════════════════�

@@ -811,6 +811,7 @@ footer {
   border-color: rgba(0,201,167,0.4);
 }
 
+/* ANIMATIONS */
 @keyframes fadeUp {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
@@ -1110,9 +1111,9 @@ footer {
       <div class="form-group">
         <label>Photo du produit (optionnel)</label>
         <div class="img-upload-zone" id="imgUploadZone" onclick="document.getElementById('pImgFile').click()">
-          <div id="imgUploadPlaceholder">
+          <div id="imgUploadPlaceholder" style="display:flex;flex-direction:column;align-items:center">
             <div style="font-size:2rem;margin-bottom:0.4rem">📷</div>
-            <div style="font-size:0.85rem;color:var(--muted)">Cliquer pour choisir une photo</div>
+            <div style="font-size:0.85rem;color:var(--muted)">Appuyer pour choisir une photo</div>
             <div style="font-size:0.75rem;color:var(--muted);margin-top:0.2rem">JPG, PNG, WEBP — max 2 Mo</div>
           </div>
           <img id="imgPreview" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:10px;" alt="Aperçu">
@@ -1406,15 +1407,12 @@ function selectEmoji(e) {
 // ══════════════════════════════════
 // IMAGE UPLOAD
 // ══════════════════════════════════
-let currentImgData = ''; // base64 or URL
+let currentImgData = '';
 
 function handleImgFile(input) {
   const file = input.files[0];
   if (!file) return;
-  if (file.size > 2 * 1024 * 1024) {
-    showToast('Image trop lourde (max 2 Mo).', true);
-    return;
-  }
+  if (file.size > 2 * 1024 * 1024) { showToast('Image trop lourde (max 2 Mo).', true); return; }
   const reader = new FileReader();
   reader.onload = function(e) {
     currentImgData = e.target.result;
@@ -1425,39 +1423,24 @@ function handleImgFile(input) {
 }
 
 function handleImgUrl(url) {
-  if (url) {
-    currentImgData = url;
-    setImgPreview(url);
-  } else {
-    currentImgData = '';
-    clearImgPreview();
-  }
+  currentImgData = url;
+  if (url) setImgPreview(url); else clearImgPreview();
 }
 
 function setImgPreview(src) {
-  const preview = document.getElementById('imgPreview');
-  const placeholder = document.getElementById('imgUploadPlaceholder');
-  const zone = document.getElementById('imgUploadZone');
-  const clearBtn = document.getElementById('clearImgBtn');
-  preview.src = src;
-  preview.style.display = 'block';
-  placeholder.style.display = 'none';
-  zone.classList.add('has-image');
-  clearBtn.style.display = 'inline-block';
+  document.getElementById('imgPreview').src = src;
+  document.getElementById('imgPreview').style.display = 'block';
+  document.getElementById('imgUploadPlaceholder').style.display = 'none';
+  document.getElementById('imgUploadZone').classList.add('has-image');
+  document.getElementById('clearImgBtn').style.display = 'inline-block';
 }
 
 function clearImgPreview() {
-  const preview = document.getElementById('imgPreview');
-  const placeholder = document.getElementById('imgUploadPlaceholder');
-  const zone = document.getElementById('imgUploadZone');
-  const clearBtn = document.getElementById('clearImgBtn');
-  preview.src = '';
-  preview.style.display = 'none';
-  placeholder.style.display = 'flex';
-  placeholder.style.flexDirection = 'column';
-  placeholder.style.alignItems = 'center';
-  zone.classList.remove('has-image');
-  clearBtn.style.display = 'none';
+  document.getElementById('imgPreview').src = '';
+  document.getElementById('imgPreview').style.display = 'none';
+  document.getElementById('imgUploadPlaceholder').style.display = 'flex';
+  document.getElementById('imgUploadZone').classList.remove('has-image');
+  document.getElementById('clearImgBtn').style.display = 'none';
 }
 
 function clearImg() {
@@ -1467,7 +1450,7 @@ function clearImg() {
   clearImgPreview();
 }
 
-
+function addProduct() {
   const name  = document.getElementById('pName').value.trim();
   const price = document.getElementById('pPrice').value.trim();
   const cat   = document.getElementById('pCat').value;
@@ -1538,13 +1521,8 @@ function editProduct(id) {
   document.getElementById('pDesc').value  = p.desc || '';
   document.getElementById('pImg').value   = (p.img && !p.img.startsWith('data:')) ? p.img : '';
   document.getElementById('pBadge').value = p.badge || '';
-  // Restore image preview
   currentImgData = p.img || '';
-  if (p.img) {
-    setImgPreview(p.img);
-  } else {
-    clearImgPreview();
-  }
+  if (p.img) setImgPreview(p.img); else clearImgPreview();
   document.getElementById('addProductBtn').textContent = '💾 Sauvegarder les modifications';
   switchAdminTab('add', document.querySelectorAll('.admin-tab')[0]);
   showToast('Produit chargé. Modifiez et sauvegardez.');
@@ -1602,4 +1580,14 @@ function showToast(msg, error = false) {
   setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// ════════════════════�
+// ══════════════════════════════════
+// INIT
+// ══════════════════════════════════
+loadProducts();
+renderProducts();
+renderFilters();
+initEmojiGrid();
+
+</script>
+</body>
+</html>

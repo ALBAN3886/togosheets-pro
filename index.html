@@ -1625,6 +1625,379 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:4rem 1.5r
 <!-- Bouton scroll top -->
 <button id="scrollTop" onclick="scrollToTop()" aria-label="Retour en haut">↑</button>
 
+<!-- ═══════════════════════════════════════════════════════════
+     PANNEAU ADMIN — Gestion des modules, paramètres et contacts
+═══════════════════════════════════════════════════════════ -->
+<style>
+/* Bouton d'accès admin (discret, en bas à gauche) */
+#adminTrigger{
+  position:fixed;bottom:20px;left:20px;width:38px;height:38px;
+  background:rgba(20,20,31,.7);border:1px solid var(--border);
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+  cursor:pointer;z-index:9998;opacity:.25;transition:opacity .3s,transform .2s;
+  backdrop-filter:blur(8px);color:var(--muted);font-size:1rem;
+}
+#adminTrigger:hover{opacity:1;transform:scale(1.1);border-color:var(--orange);color:var(--orange);}
+
+/* Overlay admin */
+#adminOverlay{
+  position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(12px);
+  z-index:100000;display:none;align-items:center;justify-content:center;
+  padding:1rem;overflow-y:auto;
+}
+#adminOverlay.show{display:flex;}
+
+/* Panneau admin */
+.admin-panel{
+  background:linear-gradient(180deg,#0f0f1a 0%,#0a0a14 100%);
+  border:1px solid var(--border-light);border-radius:18px;
+  width:100%;max-width:1100px;max-height:92vh;display:flex;flex-direction:column;
+  box-shadow:0 25px 60px rgba(0,0,0,.6),0 0 0 1px rgba(249,115,22,.1);
+  overflow:hidden;
+}
+.admin-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:1.2rem 1.8rem;border-bottom:1px solid var(--border);
+  background:linear-gradient(135deg,rgba(249,115,22,.08),rgba(59,130,246,.04));
+}
+.admin-header h2{
+  font-family:'Bebas Neue',sans-serif;color:#fff;font-size:1.7rem;
+  letter-spacing:2px;display:flex;align-items:center;gap:.6rem;
+}
+.admin-header .badge{
+  background:var(--gradient-1);color:#fff;padding:.2rem .6rem;
+  border-radius:6px;font-size:.65rem;font-family:'Barlow',sans-serif;
+  letter-spacing:1px;font-weight:700;
+}
+.admin-close{
+  background:transparent;border:1px solid var(--border-light);color:var(--text);
+  width:38px;height:38px;border-radius:10px;cursor:pointer;font-size:1.2rem;
+  display:flex;align-items:center;justify-content:center;transition:all .2s;
+}
+.admin-close:hover{background:#ef4444;border-color:#ef4444;color:#fff;}
+
+/* Onglets */
+.admin-tabs{
+  display:flex;gap:.3rem;padding:0 1.8rem;border-bottom:1px solid var(--border);
+  overflow-x:auto;background:rgba(0,0,0,.2);
+}
+.admin-tab{
+  background:transparent;border:none;color:var(--muted);padding:1rem 1.2rem;
+  cursor:pointer;font-family:'Barlow',sans-serif;font-weight:600;font-size:.85rem;
+  border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;
+  letter-spacing:.5px;text-transform:uppercase;
+}
+.admin-tab:hover{color:var(--text);}
+.admin-tab.active{color:var(--orange);border-bottom-color:var(--orange);}
+
+/* Contenu */
+.admin-content{
+  padding:1.8rem;overflow-y:auto;flex:1;
+}
+.admin-tab-content{display:none;}
+.admin-tab-content.active{display:block;animation:fadeIn .25s;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* Formulaires admin */
+.adm-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
+.adm-row.full{grid-template-columns:1fr;}
+.adm-row.triple{grid-template-columns:1fr 1fr 1fr;}
+.adm-field{display:flex;flex-direction:column;gap:.4rem;}
+.adm-field label{
+  color:var(--muted);font-size:.78rem;font-weight:600;
+  text-transform:uppercase;letter-spacing:.5px;
+}
+.adm-field input,.adm-field textarea,.adm-field select{
+  background:#0a0a14;border:1px solid var(--border-light);color:var(--text);
+  padding:.7rem .9rem;border-radius:8px;font-family:'Barlow',sans-serif;font-size:.92rem;
+  transition:border-color .2s,box-shadow .2s;
+}
+.adm-field input:focus,.adm-field textarea:focus,.adm-field select:focus{
+  outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba(249,115,22,.15);
+}
+.adm-field textarea{resize:vertical;min-height:80px;font-family:'Barlow',sans-serif;}
+.adm-field small{color:var(--muted);font-size:.75rem;font-style:italic;}
+
+/* Boutons admin */
+.adm-btn{
+  background:var(--gradient-1);color:#fff;border:none;padding:.75rem 1.4rem;
+  border-radius:10px;cursor:pointer;font-weight:700;font-family:'Barlow',sans-serif;
+  font-size:.88rem;letter-spacing:.5px;text-transform:uppercase;
+  transition:transform .15s,box-shadow .2s;display:inline-flex;align-items:center;gap:.5rem;
+}
+.adm-btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(249,115,22,.4);}
+.adm-btn.blue{background:var(--gradient-2);}
+.adm-btn.blue:hover{box-shadow:0 8px 20px rgba(59,130,246,.4);}
+.adm-btn.ghost{background:transparent;border:1px solid var(--border-light);color:var(--text);}
+.adm-btn.ghost:hover{border-color:var(--orange);color:var(--orange);box-shadow:none;}
+.adm-btn.danger{background:linear-gradient(135deg,#ef4444,#dc2626);}
+.adm-btn.danger:hover{box-shadow:0 8px 20px rgba(239,68,68,.4);}
+.adm-btn.sm{padding:.45rem .85rem;font-size:.75rem;}
+
+.adm-actions{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1.2rem;
+  padding-top:1.2rem;border-top:1px solid var(--border);}
+
+/* Carte module éditable */
+.adm-module{
+  background:#0a0a14;border:1px solid var(--border);border-radius:12px;
+  padding:1.2rem;margin-bottom:1rem;position:relative;
+}
+.adm-module-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:1rem;padding-bottom:.8rem;border-bottom:1px solid var(--border);
+}
+.adm-module-title{
+  color:#fff;font-weight:700;font-size:.95rem;display:flex;align-items:center;gap:.6rem;
+}
+.adm-module-title .num{
+  background:var(--gradient-1);color:#fff;width:28px;height:28px;
+  border-radius:8px;display:flex;align-items:center;justify-content:center;
+  font-size:.8rem;font-weight:700;
+}
+.adm-topics-list{display:flex;flex-direction:column;gap:.4rem;margin-top:.4rem;}
+.adm-topic-row{display:flex;gap:.5rem;align-items:center;}
+.adm-topic-row input{flex:1;}
+.adm-topic-remove{
+  background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);
+  color:#ef4444;width:32px;height:32px;border-radius:8px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+}
+.adm-topic-remove:hover{background:#ef4444;color:#fff;}
+
+/* Login */
+.admin-login{padding:2.5rem;text-align:center;max-width:420px;margin:0 auto;}
+.admin-login .icon-lock{
+  width:70px;height:70px;margin:0 auto 1.2rem;
+  background:var(--gradient-1);border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:1.8rem;
+  box-shadow:0 0 30px rgba(249,115,22,.3);
+}
+.admin-login h3{
+  font-family:'Bebas Neue',sans-serif;color:#fff;font-size:1.8rem;
+  letter-spacing:2px;margin-bottom:.4rem;
+}
+.admin-login p{color:var(--muted);font-size:.9rem;margin-bottom:1.8rem;}
+.adm-error{
+  background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);
+  color:#fca5a5;padding:.7rem 1rem;border-radius:8px;font-size:.85rem;
+  margin-bottom:1rem;display:none;
+}
+.adm-error.show{display:block;}
+.adm-success{
+  background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);
+  color:#86efac;padding:.7rem 1rem;border-radius:8px;font-size:.85rem;
+  margin-bottom:1rem;
+}
+
+.adm-section-title{
+  color:#fff;font-family:'Bebas Neue',sans-serif;font-size:1.3rem;
+  letter-spacing:1.5px;margin-bottom:1rem;padding-bottom:.6rem;
+  border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.6rem;
+}
+.adm-info{
+  background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);
+  border-radius:10px;padding:.9rem 1.1rem;color:#93c5fd;font-size:.85rem;
+  margin-bottom:1.2rem;line-height:1.5;
+}
+
+@media(max-width:720px){
+  .adm-row,.adm-row.triple{grid-template-columns:1fr;}
+  .admin-header h2{font-size:1.3rem;}
+  .admin-content{padding:1.2rem;}
+  .admin-tabs{padding:0 1rem;}
+  .admin-tab{padding:.8rem .7rem;font-size:.75rem;}
+}
+</style>
+
+<!-- Bouton trigger admin (discret) -->
+<button id="adminTrigger" onclick="openAdmin()" title="Administration (Ctrl+Shift+A)" aria-label="Administration">⚙️</button>
+
+<!-- Overlay panneau admin -->
+<div id="adminOverlay" onclick="if(event.target===this)closeAdmin()">
+  <div class="admin-panel">
+    <div class="admin-header">
+      <h2>⚡ ADMIN A.E.T <span class="badge">PRIVÉ</span></h2>
+      <button class="admin-close" onclick="closeAdmin()" aria-label="Fermer">✕</button>
+    </div>
+
+    <!-- Écran de connexion -->
+    <div id="admLogin" class="admin-login">
+      <div class="icon-lock">🔐</div>
+      <h3>ACCÈS ADMINISTRATEUR</h3>
+      <p>Entrez le mot de passe pour gérer le site</p>
+      <div id="admLoginError" class="adm-error"></div>
+      <div class="adm-field" style="text-align:left;">
+        <input type="password" id="admPass" placeholder="Mot de passe administrateur" onkeydown="if(event.key==='Enter')admLogin()" autocomplete="current-password"/>
+      </div>
+      <div style="margin-top:1.2rem;">
+        <button class="adm-btn" onclick="admLogin()" style="width:100%;justify-content:center;">🔓 Se connecter</button>
+      </div>
+      <p style="margin-top:1.5rem;font-size:.75rem;">💡 Mot de passe par défaut : <code style="background:#1a1a28;padding:.15rem .4rem;border-radius:4px;color:var(--orange);">aet2025</code></p>
+    </div>
+
+    <!-- Interface admin (cachée jusqu'à connexion) -->
+    <div id="admMain" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+      <div class="admin-tabs">
+        <button class="admin-tab active" data-tab="modules" onclick="showAdmTab('modules')">📚 Modules</button>
+        <button class="admin-tab" data-tab="contacts" onclick="showAdmTab('contacts')">📞 Contacts &amp; N°</button>
+        <button class="admin-tab" data-tab="tarifs" onclick="showAdmTab('tarifs')">💰 Tarifs</button>
+        <button class="admin-tab" data-tab="site" onclick="showAdmTab('site')">⚙️ Paramètres site</button>
+        <button class="admin-tab" data-tab="data" onclick="showAdmTab('data')">💾 Données</button>
+      </div>
+
+      <div class="admin-content">
+        <!-- ONGLET MODULES -->
+        <div class="admin-tab-content active" id="admTab-modules">
+          <div class="adm-info">💡 Modifiez le titre, la description, les sujets et la durée de chaque module. Cliquez sur <strong>« + Ajouter un module »</strong> pour en créer de nouveaux.</div>
+          <h3 class="adm-section-title">📚 Modules de formation</h3>
+          <div id="admModulesList"></div>
+          <button class="adm-btn blue" onclick="admAddModule()">+ Ajouter un module</button>
+          <div class="adm-actions">
+            <button class="adm-btn" onclick="admSaveAll()">💾 Enregistrer tout</button>
+            <button class="adm-btn ghost" onclick="admReset('modules')">↻ Réinitialiser modules</button>
+          </div>
+        </div>
+
+        <!-- ONGLET CONTACTS -->
+        <div class="admin-tab-content" id="admTab-contacts">
+          <div class="adm-info">📞 Ces numéros seront utilisés partout sur le site : header, footer, boutons WhatsApp, formulaires d'inscription, etc.</div>
+          <h3 class="adm-section-title">📞 Numéros &amp; Contact</h3>
+          <div class="adm-row">
+            <div class="adm-field">
+              <label>Téléphone principal (WhatsApp)</label>
+              <input type="tel" id="admPhone1" placeholder="99 81 20 72"/>
+              <small>Format affiché. Sans indicatif.</small>
+            </div>
+            <div class="adm-field">
+              <label>WhatsApp (avec indicatif, sans +)</label>
+              <input type="text" id="admWhatsapp" placeholder="22899812072"/>
+              <small>Ex: 22899812072 (228 = Togo)</small>
+            </div>
+          </div>
+          <div class="adm-row">
+            <div class="adm-field">
+              <label>Téléphone secondaire</label>
+              <input type="tel" id="admPhone2" placeholder="93 00 39 41"/>
+            </div>
+            <div class="adm-field">
+              <label>Téléphone secondaire (international)</label>
+              <input type="text" id="admPhone2Intl" placeholder="22893003941"/>
+            </div>
+          </div>
+          <div class="adm-row">
+            <div class="adm-field">
+              <label>Email</label>
+              <input type="email" id="admEmail" placeholder="contact@aet.tg"/>
+            </div>
+            <div class="adm-field">
+              <label>Localisation</label>
+              <input type="text" id="admLocation" placeholder="Lomé, Togo"/>
+            </div>
+          </div>
+          <div class="adm-row full">
+            <div class="adm-field">
+              <label>Horaires de disponibilité</label>
+              <input type="text" id="admHours" placeholder="Lundi – Samedi · 08h00 – 19h00"/>
+            </div>
+          </div>
+          <div class="adm-actions">
+            <button class="adm-btn" onclick="admSaveAll()">💾 Enregistrer</button>
+            <button class="adm-btn ghost" onclick="admReset('contacts')">↻ Réinitialiser</button>
+          </div>
+        </div>
+
+        <!-- ONGLET TARIFS -->
+        <div class="admin-tab-content" id="admTab-tarifs">
+          <div class="adm-info">💰 Modifiez le nom, le prix et la description des 3 formules de tarification.</div>
+          <h3 class="adm-section-title">💰 Formules &amp; prix</h3>
+          <div id="admPricesList"></div>
+          <div class="adm-actions">
+            <button class="adm-btn" onclick="admSaveAll()">💾 Enregistrer</button>
+            <button class="adm-btn ghost" onclick="admReset('tarifs')">↻ Réinitialiser</button>
+          </div>
+        </div>
+
+        <!-- ONGLET PARAMÈTRES SITE -->
+        <div class="admin-tab-content" id="admTab-site">
+          <div class="adm-info">⚙️ Personnalisez le titre, la description et les textes principaux du site.</div>
+          <h3 class="adm-section-title">⚙️ Paramètres généraux</h3>
+          <div class="adm-row full">
+            <div class="adm-field">
+              <label>Titre du site (onglet navigateur)</label>
+              <input type="text" id="admSiteTitle" placeholder="A.E.T — Alban Eloh Technology"/>
+            </div>
+          </div>
+          <div class="adm-row">
+            <div class="adm-field">
+              <label>Nom court (logo)</label>
+              <input type="text" id="admBrandShort" placeholder="A.E.T"/>
+            </div>
+            <div class="adm-field">
+              <label>Nom complet (footer)</label>
+              <input type="text" id="admBrandFull" placeholder="Alban Eloh Technology"/>
+            </div>
+          </div>
+          <div class="adm-row full">
+            <div class="adm-field">
+              <label>Description meta (SEO)</label>
+              <textarea id="admMetaDesc" rows="2"></textarea>
+            </div>
+          </div>
+          <h3 class="adm-section-title" style="margin-top:1.5rem;">🎯 Section Hero (accueil)</h3>
+          <div class="adm-row full">
+            <div class="adm-field">
+              <label>Titre principal (hero)</label>
+              <input type="text" id="admHeroTitle" placeholder="FORMATION WEB &amp; APPS"/>
+            </div>
+          </div>
+          <div class="adm-row full">
+            <div class="adm-field">
+              <label>Sous-titre hero</label>
+              <textarea id="admHeroSub" rows="2"></textarea>
+            </div>
+          </div>
+          <h3 class="adm-section-title" style="margin-top:1.5rem;">🔐 Sécurité</h3>
+          <div class="adm-row">
+            <div class="adm-field">
+              <label>Nouveau mot de passe admin</label>
+              <input type="password" id="admNewPass" placeholder="Laisser vide pour ne pas changer"/>
+              <small>Min. 4 caractères</small>
+            </div>
+            <div class="adm-field">
+              <label>Confirmer le mot de passe</label>
+              <input type="password" id="admNewPass2" placeholder="Répéter le nouveau mot de passe"/>
+            </div>
+          </div>
+          <div class="adm-actions">
+            <button class="adm-btn" onclick="admSaveAll()">💾 Enregistrer tout</button>
+            <button class="adm-btn ghost" onclick="admReset('site')">↻ Réinitialiser</button>
+          </div>
+        </div>
+
+        <!-- ONGLET DONNÉES -->
+        <div class="admin-tab-content" id="admTab-data">
+          <div class="adm-info">💾 Exportez vos données en JSON pour les sauvegarder, ou importez un fichier de sauvegarde. <strong>Les données sont stockées localement</strong> dans votre navigateur.</div>
+          <h3 class="adm-section-title">📤 Exporter les données</h3>
+          <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">Téléchargez une sauvegarde complète au format JSON.</p>
+          <button class="adm-btn" onclick="admExport()">📥 Télécharger sauvegarde JSON</button>
+          
+          <h3 class="adm-section-title" style="margin-top:2rem;">📤 Importer une sauvegarde</h3>
+          <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">Sélectionnez un fichier JSON précédemment exporté.</p>
+          <input type="file" id="admImportFile" accept=".json" style="display:none" onchange="admImport(event)"/>
+          <button class="adm-btn blue" onclick="document.getElementById('admImportFile').click()">📂 Choisir un fichier JSON</button>
+
+          <h3 class="adm-section-title" style="margin-top:2rem;color:#fca5a5;">⚠️ Zone dangereuse</h3>
+          <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">Réinitialiser efface <strong>toutes</strong> les modifications et restaure le contenu original.</p>
+          <button class="adm-btn danger" onclick="admResetAll()">🗑️ Tout réinitialiser</button>
+
+          <h3 class="adm-section-title" style="margin-top:2rem;">🚪 Déconnexion</h3>
+          <button class="adm-btn ghost" onclick="admLogout()">🔒 Se déconnecter</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div class="toast" id="toast">
   <strong id="toastTitle">✅ Message envoyé !</strong>
@@ -1842,6 +2215,7 @@ function submitContact(){
     return;
   }
 
+  const waNum = (window.AET_DATA && AET_DATA.contacts && AET_DATA.contacts.whatsapp) || '22899812072';
   const waText = encodeURIComponent(
     `*Message AET*\n\n` +
     `👤 Nom : ${nom}\n` +
@@ -1850,7 +2224,7 @@ function submitContact(){
     `💬 Message : ${msg}`
   );
 
-  window.open(`https://wa.me/22899812072?text=${waText}`, '_blank');
+  window.open(`https://wa.me/${waNum}?text=${waText}`, '_blank');
   showToast('✅ Redirection WhatsApp', 'Votre message a été préparé sur WhatsApp.');
 
   document.getElementById('cNom').value = '';
@@ -1858,7 +2232,543 @@ function submitContact(){
   document.getElementById('cSujet').value = '';
   document.getElementById('cMessage').value = '';
 }
+
+/* ═══════════════════════════════════════════════════════════
+   ╔══════════════════════════════════════════════════════╗
+   ║   PANNEAU ADMIN — Logique complète                  ║
+   ╚══════════════════════════════════════════════════════╝
+═══════════════════════════════════════════════════════════ */
+
+/* Données par défaut (capturées depuis le HTML d'origine) */
+const AET_DEFAULTS = {
+  password: 'aet2025',
+  site: {
+    title: 'A.E.T — Alban Eloh Technology | Formation Web & Apps',
+    brandShort: 'A.E.T',
+    brandFull: 'Alban Eloh Technology',
+    metaDesc: 'A.E.T - Alban Eloh Technology - Formation professionnelle en création de sites web et applications à Lomé, Togo.',
+    heroTitle: 'FORMATION WEB & APPS',
+    heroSub: 'Maîtrisez le développement web moderne — <strong>de zéro à la mise en ligne.</strong> Formation complète, étape par étape, accessible aux débutants.'
+  },
+  contacts: {
+    phone1: '99 81 20 72',
+    phone1Intl: '22899812072',
+    phone2: '93 00 39 41',
+    phone2Intl: '22893003941',
+    whatsapp: '22899812072',
+    email: 'contact@aet.tg',
+    location: 'Lomé, Togo — adresse exacte sur RDV',
+    hours: 'Lundi – Samedi · 08h00 – 19h00'
+  },
+  modules: [
+    {num:'01', icon:'🌐', title:'HTML5 — Structure Web', desc:"Apprenez à structurer le contenu de vos pages web avec les bonnes balises sémantiques.", topics:["Structure d'une page HTML (head, body, sections)","Balises sémantiques : header, nav, main, footer","Formulaires HTML complets","Tableaux, listes, médias (images, vidéos)","Liens et ancres de navigation","Bonnes pratiques SEO de base"], duration:"⏱ Durée : 1 semaine — Niveau : Débutant", color:''},
+    {num:'02', icon:'🎨', title:'CSS3 & Design', desc:"Stylisez, animez et rendez votre site responsive pour tous les écrans.", topics:["Sélecteurs, propriétés, box model","Flexbox & CSS Grid (mises en page modernes)","Design responsive (mobile-first)","Animations et transitions CSS","Variables CSS (custom properties)","Typographie, couleurs, dégradés"], duration:"⏱ Durée : 1 semaine — Niveau : Débutant", color:'blue'},
+    {num:'03', icon:'⚡', title:'JavaScript', desc:"Ajoutez l'interactivité, la logique et les appels API à vos pages web.", topics:["Variables, fonctions, conditions, boucles","Manipulation du DOM (document HTML)","Événements utilisateur (clic, saisie...)","Fetch API & appels serveur","JSON et traitement de données","Stockage local (localStorage)"], duration:"⏱ Durée : 2 semaines — Niveau : Intermédiaire", color:''},
+    {num:'04', icon:'🔥', title:'Firebase / Base de données', desc:"Lisez, écrivez et synchronisez vos données en temps réel avec Firebase.", topics:["Introduction à Firebase & Firestore","Authentification utilisateurs (email/mdp)","Lecture et écriture de données en temps réel","Règles de sécurité Firebase","Firebase Storage (images, fichiers)","Projet pratique : app connectée complète"], duration:"⏱ Durée : 2 semaines — Niveau : Intermédiaire", color:'blue'},
+    {num:'05', icon:'🐙', title:'GitHub', desc:"Versionnez votre code, collaborez sur vos projets et ne perdez plus jamais votre travail.", topics:["Git : init, add, commit, push, pull","Création et gestion de dépôts GitHub","Branches et pull requests","Collaboration en équipe","Gestion des conflits de code","README professionnel"], duration:"⏱ Durée : 3 jours — Niveau : Débutant", color:''},
+    {num:'06', icon:'🚀', title:'Déploiement en ligne', desc:"Publiez votre site sur GitHub Pages ou Firebase Hosting gratuitement.", topics:["Déploiement sur GitHub Pages","Firebase Hosting (domaine personnalisé)","Nom de domaine personnalisé","Certificat SSL (HTTPS)","Optimisation des performances","Projet final : site en ligne complet"], duration:"⏱ Durée : 3 jours — Niveau : Tous niveaux", color:'blue'}
+  ],
+  prices: [
+    {name:'Essentiel', currency:'FCFA', amount:'25 000', period:'/ 3 modules (HTML + CSS + JS)', featured:false},
+    {name:'Formation Complète', currency:'FCFA', amount:'50 000', period:'/ 6 modules complets', featured:true},
+    {name:'Accompagnement Pro', currency:'FCFA', amount:'80 000', period:'/ Formation + Projet client', featured:false}
+  ]
+};
+
+/* État global */
+window.AET_DATA = null;
+let admUnlocked = false;
+
+/* Chargement / sauvegarde */
+function admLoadData(){
+  try {
+    const saved = localStorage.getItem('aet_admin_data');
+    if(saved){
+      const parsed = JSON.parse(saved);
+      // Fusion avec valeurs par défaut (pour ajouts futurs)
+      window.AET_DATA = {
+        password: parsed.password || AET_DEFAULTS.password,
+        site: {...AET_DEFAULTS.site, ...(parsed.site||{})},
+        contacts: {...AET_DEFAULTS.contacts, ...(parsed.contacts||{})},
+        modules: parsed.modules || AET_DEFAULTS.modules,
+        prices: parsed.prices || AET_DEFAULTS.prices
+      };
+    } else {
+      window.AET_DATA = JSON.parse(JSON.stringify(AET_DEFAULTS));
+    }
+  } catch(e){
+    console.warn('Admin data load failed, using defaults', e);
+    window.AET_DATA = JSON.parse(JSON.stringify(AET_DEFAULTS));
+  }
+}
+
+function admPersist(){
+  localStorage.setItem('aet_admin_data', JSON.stringify(window.AET_DATA));
+}
+
+/* Hydratation du DOM : applique AET_DATA au site visible */
+function admHydrate(){
+  if(!window.AET_DATA) return;
+  const d = window.AET_DATA;
+
+  // Titre & meta
+  document.title = d.site.title;
+  const metaDesc = document.querySelector('meta[name="description"]');
+  if(metaDesc) metaDesc.setAttribute('content', d.site.metaDesc);
+
+  // Hero
+  const heroTitle = document.querySelector('.hero-title');
+  if(heroTitle) heroTitle.textContent = d.site.heroTitle;
+  const heroSub = document.querySelector('.hero-sub');
+  if(heroSub) heroSub.innerHTML = d.site.heroSub;
+
+  // Modules : reconstruire la grille
+  const modulesGrid = document.querySelector('.modules-grid');
+  if(modulesGrid){
+    modulesGrid.innerHTML = d.modules.map(m => `
+      <div class="module-card ${m.color||''} reveal visible">
+        <div class="module-num">${escapeHtml(m.num)}</div>
+        <div class="module-icon">${escapeHtml(m.icon)}</div>
+        <div class="module-title">${escapeHtml(m.title)}</div>
+        <p class="module-desc">${escapeHtml(m.desc)}</p>
+        <ul class="module-topics">
+          ${m.topics.map(t => `<li>${escapeHtml(t)}</li>`).join('')}
+        </ul>
+        <div class="module-duration">${escapeHtml(m.duration)}</div>
+      </div>
+    `).join('');
+  }
+
+  // Compteur de modules dans le hero
+  const statNum = document.querySelector('.stat-num');
+  if(statNum && d.modules.length) statNum.textContent = d.modules.length;
+  // Titre de section
+  const formationsTitle = document.querySelector('#formations .section-title');
+  if(formationsTitle) formationsTitle.textContent = `${d.modules.length} MODULES COMPLETS`;
+
+  // Prix
+  const priceCards = document.querySelectorAll('.price-card');
+  priceCards.forEach((card, idx) => {
+    if(!d.prices[idx]) return;
+    const p = d.prices[idx];
+    const nameEl = card.querySelector('.price-name');
+    const curEl = card.querySelector('.price-currency');
+    const amtEl = card.querySelector('.price-amount');
+    const perEl = card.querySelector('.price-period');
+    if(nameEl) nameEl.textContent = p.name;
+    if(curEl) curEl.textContent = p.currency;
+    if(amtEl) amtEl.textContent = p.amount;
+    if(perEl) perEl.textContent = p.period;
+  });
+
+  // Numéros de téléphone — mettre à jour tous les liens tel: et wa.me
+  const c = d.contacts;
+  document.querySelectorAll('a[href^="tel:"]').forEach(a => {
+    const intlA = '+' + c.phone1Intl;
+    const intlB = '+' + c.phone2Intl;
+    // Déterminer s'il s'agit du 1er ou 2e numéro selon l'ancien numéro
+    const oldHref = a.getAttribute('href');
+    if(oldHref.includes('99812072') || oldHref.includes(c.phone1Intl) || a.dataset.aetPhone==='1'){
+      a.href = 'tel:' + intlA;
+      a.dataset.aetPhone = '1';
+      // Mettre à jour le texte si c'est uniquement un numéro
+      updatePhoneText(a, c.phone1);
+    } else if(oldHref.includes('93003941') || oldHref.includes(c.phone2Intl) || a.dataset.aetPhone==='2'){
+      a.href = 'tel:' + intlB;
+      a.dataset.aetPhone = '2';
+      updatePhoneText(a, c.phone2);
+    }
+  });
+
+  // WhatsApp
+  document.querySelectorAll('a[href*="wa.me"]').forEach(a => {
+    const url = new URL(a.href);
+    const text = url.searchParams.get('text');
+    let newUrl = `https://wa.me/${c.whatsapp}`;
+    if(text) newUrl += `?text=${encodeURIComponent(text)}`;
+    a.href = newUrl;
+  });
+
+  // Localisation, horaires & email dans la section contact
+  const contactItems = document.querySelectorAll('#contact .contact-item');
+  contactItems.forEach(item => {
+    const strong = item.querySelector('strong');
+    if(!strong) return;
+    const label = strong.textContent.toLowerCase();
+    const span = item.querySelector('span');
+    if(!span) return;
+    if(label.includes('localisation')){
+      span.textContent = c.location;
+    } else if(label.includes('disponibilité') || label.includes('disponibilite')){
+      span.textContent = c.hours;
+    } else if(label.includes('email')){
+      span.innerHTML = `<a href="mailto:${escapeHtml(c.email)}">${escapeHtml(c.email)}</a>`;
+    }
+  });
+
+  // Email dans le footer (remplacer le lien protégé Cloudflare si présent)
+  const footerEmails = document.querySelectorAll('footer a[href*="email-protection"], footer a[href^="mailto:"]');
+  footerEmails.forEach(a => {
+    a.href = 'mailto:' + c.email;
+    a.innerHTML = `✉️ ${escapeHtml(c.email)}`;
+  });
+
+  // Logo / brand short
+  document.querySelectorAll('.logo-text').forEach(el => { el.textContent = d.site.brandShort; });
+  document.querySelectorAll('.logo-icon').forEach(el => { el.textContent = d.site.brandShort.replace(/\./g,''); });
+
+  // Splash brand
+  const splashBrand = document.querySelector('.splash-logo');
+  if(splashBrand && d.site.brandShort) splashBrand.textContent = d.site.brandShort;
+
+  // Footer brand description
+  const footerBrandP = document.querySelector('.footer-brand p');
+  if(footerBrandP) footerBrandP.textContent = `${d.site.brandFull} — Formation web professionnelle à ${c.location.split(' — ')[0]}. De zéro à la mise en ligne.`;
+}
+
+function updatePhoneText(a, newDisplay){
+  // Si le texte interne est juste un numéro (pas d'enfants HTML complexes), on le met à jour
+  if(a.children.length === 0){
+    // texte simple
+    const txt = a.textContent.trim();
+    if(/^[\d\s+().-]+$/.test(txt)){
+      a.textContent = newDisplay;
+    } else if(txt.startsWith('📞')){
+      a.textContent = '📞 ' + newDisplay;
+    }
+  }
+}
+
+function escapeHtml(s){
+  if(s == null) return '';
+  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+/* Ouverture / fermeture du panneau */
+function openAdmin(){
+  document.getElementById('adminOverlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  if(admUnlocked){ admShowMain(); }
+  else { document.getElementById('admLogin').style.display='block'; document.getElementById('admMain').style.display='none'; setTimeout(()=>document.getElementById('admPass').focus(),100); }
+}
+function closeAdmin(){
+  document.getElementById('adminOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+/* Connexion */
+function admLogin(){
+  const pass = document.getElementById('admPass').value;
+  const err = document.getElementById('admLoginError');
+  if(pass === window.AET_DATA.password){
+    admUnlocked = true;
+    err.classList.remove('show');
+    document.getElementById('admPass').value = '';
+    admShowMain();
+  } else {
+    err.textContent = '❌ Mot de passe incorrect.';
+    err.classList.add('show');
+  }
+}
+function admLogout(){
+  admUnlocked = false;
+  closeAdmin();
+  showToast('🔒 Déconnecté', 'Session admin terminée.');
+}
+function admShowMain(){
+  document.getElementById('admLogin').style.display='none';
+  document.getElementById('admMain').style.display='flex';
+  admFillForms();
+  admRenderModules();
+  admRenderPrices();
+}
+
+/* Navigation entre onglets */
+function showAdmTab(tab){
+  document.querySelectorAll('.admin-tab').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.toggle('active', c.id==='admTab-'+tab));
+}
+
+/* Remplissage des champs depuis AET_DATA */
+function admFillForms(){
+  const d = window.AET_DATA;
+  // Contacts
+  document.getElementById('admPhone1').value = d.contacts.phone1;
+  document.getElementById('admWhatsapp').value = d.contacts.whatsapp;
+  document.getElementById('admPhone2').value = d.contacts.phone2;
+  document.getElementById('admPhone2Intl').value = d.contacts.phone2Intl;
+  document.getElementById('admEmail').value = d.contacts.email;
+  document.getElementById('admLocation').value = d.contacts.location;
+  document.getElementById('admHours').value = d.contacts.hours;
+  // Site
+  document.getElementById('admSiteTitle').value = d.site.title;
+  document.getElementById('admBrandShort').value = d.site.brandShort;
+  document.getElementById('admBrandFull').value = d.site.brandFull;
+  document.getElementById('admMetaDesc').value = d.site.metaDesc;
+  document.getElementById('admHeroTitle').value = d.site.heroTitle;
+  document.getElementById('admHeroSub').value = d.site.heroSub;
+  document.getElementById('admNewPass').value = '';
+  document.getElementById('admNewPass2').value = '';
+}
+
+/* Rendu de la liste des modules */
+function admRenderModules(){
+  const list = document.getElementById('admModulesList');
+  const d = window.AET_DATA;
+  list.innerHTML = d.modules.map((m, idx) => `
+    <div class="adm-module" data-idx="${idx}">
+      <div class="adm-module-header">
+        <div class="adm-module-title"><span class="num">${escapeHtml(m.num)}</span> ${escapeHtml(m.title || 'Module sans titre')}</div>
+        <div style="display:flex;gap:.4rem;">
+          ${idx>0 ? `<button class="adm-btn ghost sm" onclick="admMoveModule(${idx},-1)" title="Monter">↑</button>`:''}
+          ${idx<d.modules.length-1 ? `<button class="adm-btn ghost sm" onclick="admMoveModule(${idx},1)" title="Descendre">↓</button>`:''}
+          <button class="adm-btn danger sm" onclick="admRemoveModule(${idx})">🗑️ Supprimer</button>
+        </div>
+      </div>
+      <div class="adm-row triple">
+        <div class="adm-field">
+          <label>N° (ex: 01)</label>
+          <input type="text" data-m="num" value="${escapeHtml(m.num)}" onchange="admUpdateModule(${idx},'num',this.value)"/>
+        </div>
+        <div class="adm-field">
+          <label>Icône (emoji)</label>
+          <input type="text" data-m="icon" value="${escapeHtml(m.icon)}" onchange="admUpdateModule(${idx},'icon',this.value)"/>
+        </div>
+        <div class="adm-field">
+          <label>Couleur</label>
+          <select onchange="admUpdateModule(${idx},'color',this.value)">
+            <option value="" ${m.color===''?'selected':''}>🟠 Orange</option>
+            <option value="blue" ${m.color==='blue'?'selected':''}>🔵 Bleu</option>
+          </select>
+        </div>
+      </div>
+      <div class="adm-row full">
+        <div class="adm-field">
+          <label>Titre du module</label>
+          <input type="text" value="${escapeHtml(m.title)}" onchange="admUpdateModule(${idx},'title',this.value)"/>
+        </div>
+      </div>
+      <div class="adm-row full">
+        <div class="adm-field">
+          <label>Description</label>
+          <textarea rows="2" onchange="admUpdateModule(${idx},'desc',this.value)">${escapeHtml(m.desc)}</textarea>
+        </div>
+      </div>
+      <div class="adm-field">
+        <label>Sujets abordés (un par ligne)</label>
+        <div class="adm-topics-list" id="topics-${idx}">
+          ${m.topics.map((t, ti) => `
+            <div class="adm-topic-row">
+              <input type="text" value="${escapeHtml(t)}" onchange="admUpdateTopic(${idx},${ti},this.value)"/>
+              <button class="adm-topic-remove" onclick="admRemoveTopic(${idx},${ti})" title="Supprimer">✕</button>
+            </div>
+          `).join('')}
+        </div>
+        <button class="adm-btn ghost sm" style="margin-top:.5rem;align-self:flex-start;" onclick="admAddTopic(${idx})">+ Ajouter un sujet</button>
+      </div>
+      <div class="adm-row full" style="margin-top:1rem;">
+        <div class="adm-field">
+          <label>Durée &amp; niveau</label>
+          <input type="text" value="${escapeHtml(m.duration)}" onchange="admUpdateModule(${idx},'duration',this.value)"/>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function admUpdateModule(idx, field, value){
+  window.AET_DATA.modules[idx][field] = value;
+}
+function admUpdateTopic(idx, ti, value){
+  window.AET_DATA.modules[idx].topics[ti] = value;
+}
+function admAddTopic(idx){
+  window.AET_DATA.modules[idx].topics.push('Nouveau sujet');
+  admRenderModules();
+}
+function admRemoveTopic(idx, ti){
+  window.AET_DATA.modules[idx].topics.splice(ti, 1);
+  admRenderModules();
+}
+function admAddModule(){
+  const nextNum = String(window.AET_DATA.modules.length + 1).padStart(2, '0');
+  window.AET_DATA.modules.push({
+    num: nextNum,
+    icon: '✨',
+    title: 'Nouveau module',
+    desc: 'Description du nouveau module.',
+    topics: ['Sujet 1', 'Sujet 2', 'Sujet 3'],
+    duration: '⏱ Durée : à définir — Niveau : Débutant',
+    color: window.AET_DATA.modules.length % 2 === 0 ? '' : 'blue'
+  });
+  admRenderModules();
+  showToast('✨ Module ajouté', 'N\'oubliez pas d\'enregistrer.');
+}
+function admRemoveModule(idx){
+  if(!confirm('Supprimer ce module ?')) return;
+  window.AET_DATA.modules.splice(idx, 1);
+  admRenderModules();
+}
+function admMoveModule(idx, dir){
+  const arr = window.AET_DATA.modules;
+  const ni = idx + dir;
+  if(ni<0 || ni>=arr.length) return;
+  [arr[idx], arr[ni]] = [arr[ni], arr[idx]];
+  admRenderModules();
+}
+
+/* Rendu des prix */
+function admRenderPrices(){
+  const list = document.getElementById('admPricesList');
+  const d = window.AET_DATA;
+  list.innerHTML = d.prices.map((p, idx) => `
+    <div class="adm-module">
+      <div class="adm-module-header">
+        <div class="adm-module-title"><span class="num">${idx+1}</span> ${escapeHtml(p.name)} ${p.featured?'<span style="font-size:.7rem;background:var(--orange);color:#fff;padding:.15rem .5rem;border-radius:6px;margin-left:.5rem;">★ MISE EN AVANT</span>':''}</div>
+      </div>
+      <div class="adm-row">
+        <div class="adm-field">
+          <label>Nom de la formule</label>
+          <input type="text" value="${escapeHtml(p.name)}" onchange="window.AET_DATA.prices[${idx}].name=this.value"/>
+        </div>
+        <div class="adm-field">
+          <label>Devise</label>
+          <input type="text" value="${escapeHtml(p.currency)}" onchange="window.AET_DATA.prices[${idx}].currency=this.value"/>
+        </div>
+      </div>
+      <div class="adm-row">
+        <div class="adm-field">
+          <label>Montant</label>
+          <input type="text" value="${escapeHtml(p.amount)}" onchange="window.AET_DATA.prices[${idx}].amount=this.value"/>
+        </div>
+        <div class="adm-field">
+          <label>Période / sous-titre</label>
+          <input type="text" value="${escapeHtml(p.period)}" onchange="window.AET_DATA.prices[${idx}].period=this.value"/>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+/* Sauvegarde générale */
+function admSaveAll(){
+  const d = window.AET_DATA;
+  // Contacts
+  d.contacts.phone1 = document.getElementById('admPhone1').value.trim() || d.contacts.phone1;
+  d.contacts.whatsapp = document.getElementById('admWhatsapp').value.trim().replace(/\D/g,'') || d.contacts.whatsapp;
+  d.contacts.phone1Intl = d.contacts.whatsapp; // synchroniser
+  d.contacts.phone2 = document.getElementById('admPhone2').value.trim() || d.contacts.phone2;
+  d.contacts.phone2Intl = document.getElementById('admPhone2Intl').value.trim().replace(/\D/g,'') || d.contacts.phone2Intl;
+  d.contacts.email = document.getElementById('admEmail').value.trim() || d.contacts.email;
+  d.contacts.location = document.getElementById('admLocation').value.trim() || d.contacts.location;
+  d.contacts.hours = document.getElementById('admHours').value.trim() || d.contacts.hours;
+  // Site
+  d.site.title = document.getElementById('admSiteTitle').value.trim() || d.site.title;
+  d.site.brandShort = document.getElementById('admBrandShort').value.trim() || d.site.brandShort;
+  d.site.brandFull = document.getElementById('admBrandFull').value.trim() || d.site.brandFull;
+  d.site.metaDesc = document.getElementById('admMetaDesc').value.trim() || d.site.metaDesc;
+  d.site.heroTitle = document.getElementById('admHeroTitle').value.trim() || d.site.heroTitle;
+  d.site.heroSub = document.getElementById('admHeroSub').value.trim() || d.site.heroSub;
+  // Mot de passe
+  const np1 = document.getElementById('admNewPass').value;
+  const np2 = document.getElementById('admNewPass2').value;
+  if(np1 || np2){
+    if(np1 !== np2){ showToast('⚠️ Mots de passe différents','Veuillez vérifier la confirmation.','error'); return; }
+    if(np1.length < 4){ showToast('⚠️ Mot de passe trop court','Minimum 4 caractères.','error'); return; }
+    d.password = np1;
+    document.getElementById('admNewPass').value=''; document.getElementById('admNewPass2').value='';
+    showToast('🔐 Mot de passe modifié','Le nouveau mot de passe est actif.');
+  }
+  admPersist();
+  admHydrate();
+  showToast('✅ Enregistré !', 'Les modifications sont visibles sur le site.');
+}
+
+/* Réinitialisations */
+function admReset(section){
+  if(!confirm(`Réinitialiser ${section==='modules'?'les modules':section==='contacts'?'les contacts':section==='tarifs'?'les tarifs':'les paramètres'} ?`)) return;
+  if(section==='modules') window.AET_DATA.modules = JSON.parse(JSON.stringify(AET_DEFAULTS.modules));
+  else if(section==='contacts') window.AET_DATA.contacts = JSON.parse(JSON.stringify(AET_DEFAULTS.contacts));
+  else if(section==='tarifs') window.AET_DATA.prices = JSON.parse(JSON.stringify(AET_DEFAULTS.prices));
+  else if(section==='site') window.AET_DATA.site = JSON.parse(JSON.stringify(AET_DEFAULTS.site));
+  admPersist();
+  admHydrate();
+  admFillForms();
+  admRenderModules();
+  admRenderPrices();
+  showToast('↻ Réinitialisé', 'Section restaurée aux valeurs par défaut.');
+}
+function admResetAll(){
+  if(!confirm('⚠️ ATTENTION : Cela effacera TOUTES vos modifications. Continuer ?')) return;
+  localStorage.removeItem('aet_admin_data');
+  admLoadData();
+  admHydrate();
+  admFillForms();
+  admRenderModules();
+  admRenderPrices();
+  showToast('🗑️ Tout réinitialisé', 'Le contenu original a été restauré.');
+}
+
+/* Export / Import JSON */
+function admExport(){
+  const blob = new Blob([JSON.stringify(window.AET_DATA, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const date = new Date().toISOString().slice(0,10);
+  a.href = url;
+  a.download = `aet-backup-${date}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('📥 Sauvegarde téléchargée', `Fichier : aet-backup-${date}.json`);
+}
+function admImport(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if(!data.modules || !data.contacts){ throw new Error('Format invalide'); }
+      if(!confirm('Remplacer toutes les données actuelles par celles du fichier ?')) return;
+      window.AET_DATA = {
+        password: data.password || AET_DEFAULTS.password,
+        site: {...AET_DEFAULTS.site, ...(data.site||{})},
+        contacts: {...AET_DEFAULTS.contacts, ...(data.contacts||{})},
+        modules: data.modules || AET_DEFAULTS.modules,
+        prices: data.prices || AET_DEFAULTS.prices
+      };
+      admPersist();
+      admHydrate();
+      admFillForms();
+      admRenderModules();
+      admRenderPrices();
+      showToast('✅ Importé !', 'Données restaurées depuis le fichier.');
+    } catch(err){
+      showToast('❌ Erreur', 'Fichier JSON invalide.','error');
+    }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+/* Raccourci clavier Ctrl+Shift+A */
+document.addEventListener('keydown', e => {
+  if(e.ctrlKey && e.shiftKey && (e.key==='A' || e.key==='a')){
+    e.preventDefault();
+    openAdmin();
+  }
+  if(e.key==='Escape' && document.getElementById('adminOverlay').classList.contains('show')){
+    closeAdmin();
+  }
+});
+
+/* Initialisation au chargement */
+admLoadData();
+admHydrate();
 </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>

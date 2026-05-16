@@ -1,665 +1,915 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Affiche Formation AET</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;600;700;900&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>A.E.T – Formation Création de Sites Web & Applications</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet"/>
 <style>
-  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+:root{
+  --bg:#0a0a0f;
+  --bg2:#10101a;
+  --orange:#f97316;
+  --orange2:#fb923c;
+  --blue:#3b82f6;
+  --text:#e5e7eb;
+  --muted:#9ca3af;
+  --card:#14141f;
+  --border:#1e1e30;
+  --success:#22c55e;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;font-size:16px;line-height:1.6;overflow-x:hidden;}
 
-  :root {
-    --dark:    #080E1A;
-    --navy:    #0D1B2E;
-    --blue:    #0D6EFD;
-    --lblue:   #1E90FF;
-    --orange:  #FF7A00;
-    --gold:    #FFB020;
-    --white:   #FFFFFF;
-    --lgray:   #A8B8CC;
-    --code-bg: #050C18;
-  }
+/* ── NAV ── */
+nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(10,10,15,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 1.5rem;}
+.nav-inner{max-width:1100px;margin:auto;display:flex;align-items:center;justify-content:space-between;height:64px;}
+.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--orange);letter-spacing:2px;text-decoration:none;}
+.nav-logo span{color:var(--text);font-size:.7rem;display:block;letter-spacing:4px;font-family:'Barlow',sans-serif;font-weight:300;margin-top:-6px;}
+.nav-links{display:flex;gap:.2rem;list-style:none;}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:.82rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:.5rem .75rem;border-radius:6px;transition:all .2s;}
+.nav-links a:hover,.nav-links a.active{color:var(--orange);background:rgba(249,115,22,.08);}
+.nav-cta{background:var(--orange);color:#000;font-weight:700;font-size:.8rem;letter-spacing:1px;text-transform:uppercase;padding:.5rem 1.2rem;border-radius:6px;text-decoration:none;transition:background .2s;}
+.nav-cta:hover{background:var(--orange2);}
+.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:.5rem;}
+.hamburger span{display:block;width:24px;height:2px;background:var(--text);transition:all .3s;}
+.mobile-menu{display:none;position:fixed;top:64px;left:0;right:0;background:var(--bg2);border-bottom:1px solid var(--border);z-index:999;padding:1rem 1.5rem 1.5rem;}
+.mobile-menu.open{display:block;}
+.mobile-menu a{display:block;color:var(--text);text-decoration:none;font-weight:600;font-size:1rem;padding:.75rem 0;border-bottom:1px solid var(--border);letter-spacing:1px;}
+.mobile-menu a:last-child{border:none;color:var(--orange);}
 
-  body {
-    background: #040810;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    font-family: 'Montserrat', sans-serif;
-    padding: 20px;
-  }
+/* ── HERO ── */
+#accueil{min-height:100vh;padding:80px 1.5rem 4rem;display:flex;align-items:center;background:radial-gradient(ellipse at 60% 40%,rgba(59,130,246,.07) 0%,transparent 60%),radial-gradient(ellipse at 10% 80%,rgba(249,115,22,.06) 0%,transparent 50%);}
+.hero-inner{max-width:1100px;margin:auto;width:100%;}
+.hero-badge{display:inline-flex;gap:.5rem;align-items:center;background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.3);border-radius:4px;padding:.3rem .9rem;font-size:.72rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--orange);margin-bottom:1.5rem;}
+.hero-badge span{background:var(--orange);color:#000;padding:.1rem .5rem;border-radius:3px;}
+.hero-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(3.5rem,10vw,7rem);line-height:.95;color:#fff;margin-bottom:1rem;}
+.hero-title em{color:var(--orange);font-style:normal;}
+.hero-title .blue{color:var(--blue);}
+.hero-sub{font-size:1.15rem;color:var(--muted);max-width:560px;margin-bottom:2rem;font-weight:300;}
+.hero-sub strong{color:var(--text);font-weight:600;}
+.hero-box{background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.25);border-left:3px solid var(--blue);border-radius:8px;padding:1.2rem 1.5rem;max-width:580px;margin-bottom:2.5rem;}
+.hero-box p{color:var(--text);font-size:.95rem;}
+.hero-box p span{color:var(--orange);font-weight:700;}
+.hero-btns{display:flex;gap:1rem;flex-wrap:wrap;}
+.btn-primary{background:var(--orange);color:#000;font-weight:700;font-size:.9rem;letter-spacing:1px;padding:.85rem 2rem;border-radius:7px;text-decoration:none;transition:all .2s;}
+.btn-primary:hover{background:var(--orange2);transform:translateY(-2px);}
+.btn-secondary{border:1px solid var(--border);color:var(--text);font-weight:600;font-size:.9rem;padding:.85rem 2rem;border-radius:7px;text-decoration:none;transition:all .2s;}
+.btn-secondary:hover{border-color:var(--orange);color:var(--orange);}
+.hero-phones{margin-top:3rem;display:flex;gap:1.5rem;flex-wrap:wrap;}
+.phone-chip{display:flex;align-items:center;gap:.6rem;color:var(--muted);font-size:.9rem;}
+.phone-chip svg{color:var(--success);}
 
-  /* ── AFFICHE ─────────────────────────────────── */
-  .poster {
-    width: 800px;
-    min-height: 1100px;
-    background: var(--dark);
-    position: relative;
-    overflow: hidden;
-    border: 1px solid #1A2E48;
-    box-shadow: 0 0 80px rgba(13,110,253,0.25), 0 0 200px rgba(255,122,0,0.08);
-  }
+/* ── SECTION BASE ── */
+section{padding:5rem 1.5rem;}
+.section-inner{max-width:1100px;margin:auto;}
+.section-label{font-size:.72rem;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--orange);margin-bottom:.75rem;}
+.section-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.2rem,5vw,3.5rem);color:#fff;line-height:1;margin-bottom:1rem;}
+.section-desc{color:var(--muted);max-width:600px;font-size:1rem;margin-bottom:3rem;}
 
-  /* ── GRILLE DÉCO ─────────────────────────────── */
-  .grid-bg {
-    position: absolute;
-    inset: 0;
-    background-image:
-      linear-gradient(rgba(13,110,253,0.04) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(13,110,253,0.04) 1px, transparent 1px);
-    background-size: 40px 40px;
-    pointer-events: none;
-  }
+/* ── MODULES ── */
+#formations{background:var(--bg2);}
+.modules-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.5rem;}
+.module-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.75rem;transition:all .25s;position:relative;overflow:hidden;}
+.module-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--orange);}
+.module-card.blue::before{background:var(--blue);}
+.module-card:hover{border-color:var(--orange);transform:translateY(-4px);}
+.module-card.blue:hover{border-color:var(--blue);}
+.module-num{font-family:'Bebas Neue',sans-serif;font-size:3rem;color:rgba(249,115,22,.15);line-height:1;margin-bottom:.5rem;}
+.module-card.blue .module-num{color:rgba(59,130,246,.15);}
+.module-icon{font-size:1.8rem;margin-bottom:.75rem;}
+.module-title{font-family:'Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:700;color:#fff;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:1px;}
+.module-desc{color:var(--muted);font-size:.9rem;margin-bottom:1.25rem;}
+.module-topics{list-style:none;display:flex;flex-direction:column;gap:.4rem;}
+.module-topics li{font-size:.83rem;color:var(--text);display:flex;align-items:flex-start;gap:.5rem;}
+.module-topics li::before{content:'▸';color:var(--orange);flex-shrink:0;margin-top:1px;}
+.module-card.blue .module-topics li::before{color:var(--blue);}
+.module-duration{margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border);font-size:.78rem;color:var(--muted);display:flex;align-items:center;gap:.4rem;}
 
-  /* ── CERCLES DÉCO ────────────────────────────── */
-  .deco-circle {
-    position: absolute;
-    border-radius: 50%;
-    pointer-events: none;
-  }
-  .dc1 {
-    width: 500px; height: 500px;
-    top: -150px; right: -150px;
-    background: radial-gradient(circle, rgba(13,110,253,0.12) 0%, transparent 70%);
-  }
-  .dc2 {
-    width: 400px; height: 400px;
-    bottom: 50px; left: -100px;
-    background: radial-gradient(circle, rgba(255,122,0,0.1) 0%, transparent 70%);
-  }
-  .dc3 {
-    width: 200px; height: 200px;
-    bottom: 300px; right: 30px;
-    background: radial-gradient(circle, rgba(255,176,32,0.08) 0%, transparent 70%);
-  }
+/* ── TARIFS ── */
+#tarifs{background:var(--bg);}
+.pricing-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem;max-width:900px;}
+.price-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:2rem;transition:all .25s;position:relative;}
+.price-card.featured{border-color:var(--orange);background:rgba(249,115,22,.05);}
+.price-card.featured::after{content:'⭐ POPULAIRE';position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--orange);color:#000;font-size:.65rem;font-weight:800;letter-spacing:2px;padding:.25rem .8rem;border-radius:20px;}
+.price-name{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:.5rem;}
+.price-amount{font-family:'Bebas Neue',sans-serif;font-size:3.5rem;color:#fff;line-height:1;}
+.price-currency{font-size:1.2rem;color:var(--orange);vertical-align:top;margin-top:.5rem;display:inline-block;}
+.price-period{font-size:.8rem;color:var(--muted);margin-bottom:1.5rem;}
+.price-features{list-style:none;display:flex;flex-direction:column;gap:.6rem;margin-bottom:2rem;}
+.price-features li{font-size:.88rem;color:var(--text);display:flex;gap:.6rem;align-items:flex-start;}
+.price-features li .chk{color:var(--success);flex-shrink:0;}
+.price-features li .x{color:#ef4444;flex-shrink:0;}
+.btn-price{display:block;text-align:center;padding:.85rem;border-radius:8px;font-weight:700;font-size:.9rem;letter-spacing:1px;text-decoration:none;transition:all .2s;border:1px solid var(--orange);color:var(--orange);}
+.btn-price:hover,.price-card.featured .btn-price{background:var(--orange);color:#000;}
+.price-note{margin-top:2.5rem;background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:10px;padding:1.25rem 1.5rem;font-size:.88rem;color:var(--muted);}
+.price-note strong{color:var(--blue);}
 
-  /* ── BANDE ORANGE GAUCHE ─────────────────────── */
-  .left-bar {
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 6px;
-    background: linear-gradient(to bottom, var(--orange), var(--gold), var(--orange));
-  }
+/* ── PLANNING ── */
+#planning{background:var(--bg2);}
+.planning-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.25rem;margin-bottom:2.5rem;}
+.session-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.5rem;transition:border-color .2s;}
+.session-card:hover{border-color:var(--orange);}
+.session-day{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--orange);letter-spacing:1px;margin-bottom:.25rem;}
+.session-time{font-size:.88rem;color:var(--blue);font-weight:600;margin-bottom:.75rem;}
+.session-title{font-weight:700;color:#fff;font-size:.95rem;margin-bottom:.4rem;}
+.session-info{font-size:.82rem;color:var(--muted);}
+.session-badge{display:inline-block;margin-top:.75rem;font-size:.68rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:.2rem .7rem;border-radius:4px;}
+.badge-open{background:rgba(34,197,94,.1);color:var(--success);border:1px solid rgba(34,197,94,.2);}
+.badge-full{background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2);}
+.badge-soon{background:rgba(249,115,22,.1);color:var(--orange);border:1px solid rgba(249,115,22,.2);}
+.planning-note{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--orange);border-radius:8px;padding:1.25rem 1.5rem;font-size:.9rem;color:var(--muted);}
+.planning-note strong{color:var(--text);}
 
-  /* ── CONTENU ─────────────────────────────────── */
-  .content {
-    position: relative;
-    z-index: 2;
-    padding: 40px 48px 40px 54px;
-  }
+/* ── INSCRIPTION ── */
+#inscription{background:var(--bg);}
+.form-wrap{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start;}
+.form-info h3{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#fff;margin-bottom:1rem;}
+.form-info p{color:var(--muted);font-size:.92rem;margin-bottom:1.5rem;}
+.steps{display:flex;flex-direction:column;gap:1rem;}
+.step{display:flex;gap:1rem;align-items:flex-start;}
+.step-num{width:32px;height:32px;border-radius:50%;background:var(--orange);color:#000;font-weight:800;font-size:.9rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.step-text strong{display:block;color:#fff;font-weight:700;font-size:.9rem;}
+.step-text span{color:var(--muted);font-size:.83rem;}
+.payment-methods{margin-top:2rem;display:flex;flex-direction:column;gap:.75rem;}
+.pay-method{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1rem 1.25rem;display:flex;align-items:center;gap:.75rem;}
+.pay-icon{font-size:1.5rem;}
+.pay-info strong{display:block;color:#fff;font-size:.9rem;}
+.pay-info span{color:var(--muted);font-size:.78rem;}
+/* form */
+.reg-form{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:2rem;}
+.reg-form h3{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:#fff;margin-bottom:1.5rem;letter-spacing:1px;}
+.form-group{margin-bottom:1.25rem;}
+.form-group label{display:block;font-size:.78rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem;}
+.form-group input,.form-group select,.form-group textarea{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;color:var(--text);font-family:'Barlow',sans-serif;font-size:.9rem;outline:none;transition:border-color .2s;}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--orange);}
+.form-group select option{background:var(--bg2);}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
+.form-submit{width:100%;background:var(--orange);color:#000;font-weight:800;font-size:1rem;letter-spacing:2px;text-transform:uppercase;padding:1rem;border:none;border-radius:8px;cursor:pointer;transition:all .2s;margin-top:.5rem;}
+.form-submit:hover{background:var(--orange2);transform:translateY(-2px);}
+.form-success{display:none;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:1.5rem;text-align:center;margin-top:1rem;}
+.form-success h4{color:var(--success);font-size:1.1rem;margin-bottom:.5rem;}
+.form-success p{color:var(--muted);font-size:.88rem;}
 
-  /* ── HEADER AET ──────────────────────────────── */
-  .header-aet {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 36px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-  }
-  .aet-logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .aet-letters {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 36px;
-    letter-spacing: 4px;
-    line-height: 1;
-  }
-  .aet-letters .a { color: var(--orange); }
-  .aet-letters .dot { color: var(--gold); }
-  .aet-letters .e { color: var(--orange); }
-  .aet-letters .t { color: var(--gold); }
-  .aet-fullname {
-    font-size: 10px;
-    color: var(--lgray);
-    font-weight: 600;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    line-height: 1.4;
-  }
-  .aet-fullname span { display: block; }
-  .phone-badge {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 4px;
-  }
-  .phone-badge a {
-    font-family: 'Fira Code', monospace;
-    font-size: 13px;
-    color: var(--gold);
-    text-decoration: none;
-    font-weight: 600;
-    letter-spacing: 1px;
-  }
-  .phone-badge a:hover { color: var(--orange); }
+/* ── CONTACT ── */
+#contact{background:var(--bg2);}
+.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;}
+.contact-info h3{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#fff;margin-bottom:.75rem;}
+.contact-info p{color:var(--muted);font-size:.92rem;margin-bottom:2rem;}
+.contact-items{display:flex;flex-direction:column;gap:1rem;}
+.contact-item{display:flex;gap:1rem;align-items:flex-start;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.2rem 1.5rem;}
+.contact-item .icon{font-size:1.4rem;flex-shrink:0;}
+.contact-item strong{display:block;color:#fff;font-size:.9rem;margin-bottom:.2rem;}
+.contact-item span{color:var(--muted);font-size:.83rem;}
+.contact-item a{color:var(--orange);text-decoration:none;}
+.wa-btn{display:inline-flex;align-items:center;gap:.75rem;background:#25d366;color:#fff;font-weight:800;font-size:1rem;padding:1rem 2rem;border-radius:8px;text-decoration:none;margin-top:1.5rem;transition:all .2s;}
+.wa-btn:hover{background:#1ebe5d;transform:translateY(-2px);}
+.contact-form{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:2rem;}
+.contact-form h3{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:#fff;margin-bottom:1.5rem;}
 
-  /* ── BADGE FORMATION ─────────────────────────── */
-  .badge-row {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 18px;
-  }
-  .badge-formation {
-    background: var(--orange);
-    color: var(--white);
-    font-size: 10px;
-    font-weight: 900;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    padding: 6px 16px;
-    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 0 100%);
-  }
-  .badge-pro {
-    background: transparent;
-    border: 1px solid var(--gold);
-    color: var(--gold);
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 2px;
-    text-transform: uppercase;
-    padding: 5px 14px;
-  }
+/* ── FOOTER ── */
+footer{background:var(--bg);border-top:1px solid var(--border);padding:3rem 1.5rem 2rem;}
+.footer-inner{max-width:1100px;margin:auto;display:grid;grid-template-columns:2fr 1fr 1fr;gap:3rem;}
+.footer-brand .logo{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--orange);letter-spacing:2px;}
+.footer-brand p{color:var(--muted);font-size:.85rem;margin-top:.5rem;max-width:280px;}
+.footer-col h4{font-family:'Barlow Condensed',sans-serif;font-size:.9rem;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text);margin-bottom:1rem;}
+.footer-col ul{list-style:none;display:flex;flex-direction:column;gap:.5rem;}
+.footer-col ul a{color:var(--muted);text-decoration:none;font-size:.85rem;transition:color .2s;}
+.footer-col ul a:hover{color:var(--orange);}
+.footer-bottom{max-width:1100px;margin:2rem auto 0;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:gap;font-size:.8rem;color:var(--muted);}
+.footer-bottom span em{color:var(--orange);font-style:normal;}
 
-  /* ── TITRE PRINCIPAL ─────────────────────────── */
-  .main-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 74px;
-    line-height: 0.95;
-    letter-spacing: 2px;
-    margin-bottom: 6px;
-    color: var(--white);
-  }
-  .main-title .highlight {
-    color: transparent;
-    -webkit-text-stroke: 2px var(--orange);
-  }
-  .main-title .accent { color: var(--gold); }
+/* ── TOAST ── */
+.toast{position:fixed;bottom:2rem;right:2rem;background:#1a1a2e;border:1px solid var(--success);border-radius:10px;padding:1rem 1.5rem;z-index:9999;transform:translateY(100px);opacity:0;transition:all .4s;max-width:320px;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast strong{color:var(--success);display:block;margin-bottom:.25rem;}
+.toast span{color:var(--muted);font-size:.85rem;}
 
-  .subtitle {
-    font-size: 16px;
-    color: var(--lgray);
-    font-weight: 500;
-    margin-bottom: 30px;
-    letter-spacing: 0.5px;
-  }
-  .subtitle strong { color: var(--white); }
-
-  /* ── OFFRE PRINCIPALE ────────────────────────── */
-  .offer-box {
-    background: linear-gradient(135deg, rgba(13,110,253,0.15) 0%, rgba(255,122,0,0.08) 100%);
-    border: 1px solid rgba(13,110,253,0.3);
-    border-left: 3px solid var(--blue);
-    padding: 20px 24px;
-    margin-bottom: 28px;
-    position: relative;
-  }
-  .offer-box::before {
-    content: '';
-    position: absolute;
-    top: 0; right: 0;
-    width: 80px; height: 3px;
-    background: var(--orange);
-  }
-  .offer-title {
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--lblue);
-    margin-bottom: 10px;
-  }
-  .offer-text {
-    font-size: 15px;
-    color: var(--white);
-    line-height: 1.6;
-    font-weight: 500;
-  }
-  .offer-text em {
-    font-style: normal;
-    color: var(--gold);
-    font-weight: 700;
-  }
-
-  /* ── MODULES ─────────────────────────────────── */
-  .section-label {
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: var(--orange);
-    margin-bottom: 14px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .section-label::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: linear-gradient(to right, rgba(255,122,0,0.4), transparent);
-  }
-
-  .modules-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 28px;
-  }
-  .module-card {
-    background: rgba(13,27,46,0.8);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-top: 2px solid;
-    padding: 16px 18px;
-    position: relative;
-    transition: all 0.3s ease;
-  }
-  .module-card:hover {
-    transform: translateY(-2px);
-    border-color: rgba(255,255,255,0.12);
-    background: rgba(13,27,46,0.95);
-  }
-  .module-card.html  { border-top-color: #E53935; }
-  .module-card.css   { border-top-color: #1565C0; }
-  .module-card.js    { border-top-color: #F9A825; }
-  .module-card.github { border-top-color: #9E9E9E; }
-  .module-card.firebase { border-top-color: #FF6D00; }
-  .module-card.deploy { border-top-color: #00897B; }
-
-  .module-icon {
-    font-size: 22px;
-    margin-bottom: 8px;
-    display: block;
-  }
-  .module-name {
-    font-family: 'Fira Code', monospace;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--white);
-    margin-bottom: 4px;
-  }
-  .module-desc {
-    font-size: 11px;
-    color: var(--lgray);
-    line-height: 1.5;
-  }
-  .module-num {
-    position: absolute;
-    top: 12px; right: 14px;
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 28px;
-    color: rgba(255,255,255,0.04);
-    line-height: 1;
-  }
-
-  /* ── STACK TECH ──────────────────────────────── */
-  .tech-stack {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 28px;
-  }
-  .tech-tag {
-    font-family: 'Fira Code', monospace;
-    font-size: 11px;
-    font-weight: 600;
-    padding: 6px 14px;
-    border: 1px solid;
-    letter-spacing: 1px;
-  }
-  .tech-tag.t1 { color: #FF7043; border-color: rgba(255,112,67,0.4); background: rgba(255,112,67,0.06); }
-  .tech-tag.t2 { color: #42A5F5; border-color: rgba(66,165,245,0.4); background: rgba(66,165,245,0.06); }
-  .tech-tag.t3 { color: #FFCA28; border-color: rgba(255,202,40,0.4); background: rgba(255,202,40,0.06); }
-  .tech-tag.t4 { color: #BDBDBD; border-color: rgba(189,189,189,0.4); background: rgba(189,189,189,0.06); }
-  .tech-tag.t5 { color: #FF8F00; border-color: rgba(255,143,0,0.4); background: rgba(255,143,0,0.06); }
-  .tech-tag.t6 { color: #26C6DA; border-color: rgba(38,198,218,0.4); background: rgba(38,198,218,0.06); }
-  .tech-tag.t7 { color: #66BB6A; border-color: rgba(102,187,106,0.4); background: rgba(102,187,106,0.06); }
-
-  /* ── PUBLIC CIBLE ────────────────────────────── */
-  .audience-row {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 28px;
-  }
-  .audience-item {
-    flex: 1;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid rgba(255,255,255,0.07);
-    padding: 12px 14px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .audience-icon { font-size: 20px; flex-shrink: 0; }
-  .audience-text {
-    font-size: 11px;
-    color: var(--lgray);
-    line-height: 1.4;
-    font-weight: 500;
-  }
-  .audience-text strong { color: var(--white); display: block; font-size: 12px; }
-
-  /* ── CODE SNIPPET DÉCO ───────────────────────── */
-  .code-strip {
-    background: var(--code-bg);
-    border: 1px solid rgba(13,110,253,0.2);
-    border-left: 3px solid var(--blue);
-    padding: 14px 18px;
-    margin-bottom: 28px;
-    font-family: 'Fira Code', monospace;
-    font-size: 11px;
-    color: rgba(255,255,255,0.3);
-    letter-spacing: 0.5px;
-    overflow: hidden;
-    position: relative;
-  }
-  .code-strip::after {
-    content: '';
-    position: absolute;
-    top: 0; right: 0;
-    width: 60px; height: 100%;
-    background: linear-gradient(to right, transparent, var(--code-bg));
-  }
-  .code-strip .kw { color: #7C9FFF; }
-  .code-strip .fn { color: #FFD700; }
-  .code-strip .str { color: #98C379; }
-  .code-strip .cm { color: rgba(255,255,255,0.2); }
-
-  /* ── CTA ─────────────────────────────────────── */
-  .cta-block {
-    background: linear-gradient(135deg, var(--orange) 0%, #FF9A00 100%);
-    padding: 22px 28px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 24px;
-    position: relative;
-    overflow: hidden;
-  }
-  .cta-block::before {
-    content: '';
-    position: absolute;
-    top: -30px; right: -30px;
-    width: 120px; height: 120px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.1);
-  }
-  .cta-block::after {
-    content: '';
-    position: absolute;
-    bottom: -20px; right: 60px;
-    width: 80px; height: 80px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.07);
-  }
-  .cta-left { position: relative; z-index: 1; }
-  .cta-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 26px;
-    letter-spacing: 2px;
-    color: var(--dark);
-    line-height: 1;
-    margin-bottom: 4px;
-  }
-  .cta-sub {
-    font-size: 12px;
-    color: rgba(8,14,26,0.7);
-    font-weight: 600;
-  }
-  .cta-right {
-    position: relative; z-index: 1;
-    text-align: right;
-  }
-  .cta-phone {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 28px;
-    letter-spacing: 3px;
-    color: var(--dark);
-    display: block;
-    line-height: 1.1;
-  }
-  .cta-phone-label {
-    font-size: 10px;
-    font-weight: 700;
-    color: rgba(8,14,26,0.6);
-    letter-spacing: 2px;
-    text-transform: uppercase;
-  }
-
-  /* ── FOOTER ──────────────────────────────────── */
-  .footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-top: 18px;
-    border-top: 1px solid rgba(255,255,255,0.05);
-  }
-  .footer-aet {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .footer-logo {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 22px;
-    letter-spacing: 3px;
-  }
-  .footer-logo .a { color: var(--orange); }
-  .footer-logo .dot { color: var(--gold); }
-  .footer-logo .e { color: var(--orange); }
-  .footer-logo .t { color: var(--gold); }
-  .footer-fullname {
-    font-size: 9px;
-    color: rgba(168,184,204,0.6);
-    font-weight: 600;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-  }
-  .footer-location {
-    font-size: 10px;
-    color: rgba(168,184,204,0.5);
-    font-weight: 500;
-    text-align: right;
-  }
-  .footer-location strong { color: var(--lgray); }
-
-  /* ── ANIMATIONS ──────────────────────────────── */
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes glow {
-    0%, 100% { box-shadow: 0 0 80px rgba(13,110,253,0.25), 0 0 200px rgba(255,122,0,0.08); }
-    50%       { box-shadow: 0 0 120px rgba(13,110,253,0.35), 0 0 250px rgba(255,122,0,0.12); }
-  }
-  .poster { animation: glow 4s ease-in-out infinite; }
-  .content > * { animation: fadeUp 0.6s ease both; }
-  .header-aet         { animation-delay: 0.05s; }
-  .badge-row          { animation-delay: 0.10s; }
-  .main-title         { animation-delay: 0.15s; }
-  .subtitle           { animation-delay: 0.20s; }
-  .offer-box          { animation-delay: 0.25s; }
-  .section-label      { animation-delay: 0.30s; }
-  .modules-grid       { animation-delay: 0.35s; }
-  .tech-stack         { animation-delay: 0.40s; }
-  .audience-row       { animation-delay: 0.45s; }
-  .code-strip         { animation-delay: 0.50s; }
-  .cta-block          { animation-delay: 0.55s; }
-  .footer             { animation-delay: 0.60s; }
+/* ── RESPONSIVE ── */
+@media(max-width:768px){
+  .nav-links,.nav-cta{display:none;}
+  .hamburger{display:flex;}
+  .form-wrap,.contact-grid,.footer-inner{grid-template-columns:1fr;}
+  .form-row{grid-template-columns:1fr;}
+  .footer-inner{gap:2rem;}
+  .footer-bottom{flex-direction:column;gap:.5rem;text-align:center;}
+}
 </style>
 </head>
 <body>
 
-<div class="poster">
-  <div class="grid-bg"></div>
-  <div class="deco-circle dc1"></div>
-  <div class="deco-circle dc2"></div>
-  <div class="deco-circle dc3"></div>
-  <div class="left-bar"></div>
-
-  <div class="content">
-
-    <!-- HEADER AET -->
-    <div class="header-aet">
-      <div class="aet-logo">
-        <div class="aet-letters">
-          <span class="a">A</span><span class="dot">.</span><span class="e">E</span><span class="dot">.</span><span class="t">T</span>
-        </div>
-        <div class="aet-fullname">
-          <span>ALBAN ELOH</span>
-          <span>TECHNOLOGY</span>
-        </div>
-      </div>
-      <div class="phone-badge">
-        <a href="tel:+22899812072">📞 99 81 20 72</a>
-        <a href="tel:+22893003941">📞 93 00 39 41</a>
-      </div>
+<!-- ══════════ NAV ══════════ -->
+<nav>
+  <div class="nav-inner">
+    <a href="#accueil" class="nav-logo">A.E.T<span>Alban Eloh Technology</span></a>
+    <ul class="nav-links">
+      <li><a href="#accueil" class="active">Accueil</a></li>
+      <li><a href="#formations">Formations</a></li>
+      <li><a href="#tarifs">Tarifs</a></li>
+      <li><a href="#planning">Planning</a></li>
+      <li><a href="#contact">Contact</a></li>
+    </ul>
+    <a href="#inscription" class="nav-cta">S'inscrire</a>
+    <div class="hamburger" onclick="toggleMenu()">
+      <span></span><span></span><span></span>
     </div>
+  </div>
+</nav>
+<div class="mobile-menu" id="mobileMenu">
+  <a href="#accueil" onclick="closeMenu()">🏠 Accueil</a>
+  <a href="#formations" onclick="closeMenu()">📚 Formations</a>
+  <a href="#tarifs" onclick="closeMenu()">💰 Tarifs</a>
+  <a href="#planning" onclick="closeMenu()">📅 Planning</a>
+  <a href="#contact" onclick="closeMenu()">📞 Contact</a>
+  <a href="#inscription" onclick="closeMenu()">✍️ S'inscrire maintenant</a>
+</div>
 
-    <!-- BADGE -->
-    <div class="badge-row">
-      <div class="badge-formation">Formation</div>
-      <div class="badge-pro">Pratique & Professionnelle</div>
-    </div>
-
-    <!-- TITRE -->
-    <div class="main-title">
+<!-- ══════════ HERO ══════════ -->
+<section id="accueil">
+  <div class="hero-inner">
+    <div class="hero-badge"><span>FORMATION</span> Pratique &amp; Professionnelle</div>
+    <h1 class="hero-title">
       CRÉATION<br>
-      DE <span class="highlight">SITES WEB</span><br>
-      <span class="accent">&amp; APPLICATIONS</span>
+      DE <em>SITES WEB</em><br>
+      <span class="blue">&amp; APPLICATIONS</span>
+    </h1>
+    <p class="hero-sub">Maîtrisez le développement web moderne — <strong>de zéro à la mise en ligne.</strong> Formation complète, étape par étape, accessible aux débutants.</p>
+    <div class="hero-box">
+      <p>Créez des <span>sites web professionnels</span> et des <span>applications connectées</span> avec une base de données en temps réel. Formation complète, étape par étape, accessible aux <strong>débutants.</strong></p>
     </div>
-    <div class="subtitle">
-      <strong>Maîtrisez le développement web moderne</strong> — de zéro à la mise en ligne
+    <div class="hero-btns">
+      <a href="#inscription" class="btn-primary">S'inscrire maintenant</a>
+      <a href="#formations" class="btn-secondary">Voir les modules</a>
     </div>
-
-    <!-- OFFRE -->
-    <div class="offer-box">
-      <div class="offer-title">Ce que vous allez apprendre</div>
-      <div class="offer-text">
-        Créez des <em>sites web professionnels</em> et des <em>applications connectées</em> avec une base de données en temps réel. Formation complète, étape par étape, accessible aux <em>débutants</em>.
+    <div class="hero-phones">
+      <div class="phone-chip">
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+        99 81 20 72
+      </div>
+      <div class="phone-chip">
+        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
+        93 00 39 41
       </div>
     </div>
+  </div>
+</section>
 
-    <!-- MODULES -->
-    <div class="section-label">Modules de formation</div>
+<!-- ══════════ FORMATIONS ══════════ -->
+<section id="formations">
+  <div class="section-inner">
+    <p class="section-label">Modules de formation</p>
+    <h2 class="section-title">6 MODULES COMPLETS</h2>
+    <p class="section-desc">Du HTML de base jusqu'au déploiement en ligne, chaque module construit sur le précédent pour une progression naturelle.</p>
+
     <div class="modules-grid">
-      <div class="module-card html">
-        <span class="module-icon">🌐</span>
-        <div class="module-name">HTML5</div>
-        <div class="module-desc">Structurer le contenu de vos pages web avec les bonnes balises</div>
+
+      <!-- M1 -->
+      <div class="module-card">
         <div class="module-num">01</div>
+        <div class="module-icon">🌐</div>
+        <div class="module-title">HTML5 — Structure Web</div>
+        <p class="module-desc">Apprenez à structurer le contenu de vos pages web avec les bonnes balises sémantiques.</p>
+        <ul class="module-topics">
+          <li>Structure d'une page HTML (head, body, sections)</li>
+          <li>Balises sémantiques : header, nav, main, footer</li>
+          <li>Formulaires HTML complets</li>
+          <li>Tableaux, listes, médias (images, vidéos)</li>
+          <li>Liens et ancres de navigation</li>
+          <li>Bonnes pratiques SEO de base</li>
+        </ul>
+        <div class="module-duration">⏱ Durée : 1 semaine — Niveau : Débutant</div>
       </div>
-      <div class="module-card css">
-        <span class="module-icon">🎨</span>
-        <div class="module-name">CSS3 & Design</div>
-        <div class="module-desc">Styliser, animer et rendre votre site responsive (mobile)</div>
+
+      <!-- M2 -->
+      <div class="module-card blue">
         <div class="module-num">02</div>
+        <div class="module-icon">🎨</div>
+        <div class="module-title">CSS3 &amp; Design</div>
+        <p class="module-desc">Stylisez, animez et rendez votre site responsive pour tous les écrans.</p>
+        <ul class="module-topics">
+          <li>Sélecteurs, propriétés, box model</li>
+          <li>Flexbox &amp; CSS Grid (mises en page modernes)</li>
+          <li>Design responsive (mobile-first)</li>
+          <li>Animations et transitions CSS</li>
+          <li>Variables CSS (custom properties)</li>
+          <li>Typographie, couleurs, dégradés</li>
+        </ul>
+        <div class="module-duration">⏱ Durée : 1 semaine — Niveau : Débutant</div>
       </div>
-      <div class="module-card js">
-        <span class="module-icon">⚡</span>
-        <div class="module-name">JavaScript</div>
-        <div class="module-desc">Ajouter l'interactivité, la logique et les appels API</div>
+
+      <!-- M3 -->
+      <div class="module-card">
         <div class="module-num">03</div>
+        <div class="module-icon">⚡</div>
+        <div class="module-title">JavaScript</div>
+        <p class="module-desc">Ajoutez l'interactivité, la logique et les appels API à vos pages web.</p>
+        <ul class="module-topics">
+          <li>Variables, fonctions, conditions, boucles</li>
+          <li>Manipulation du DOM (document HTML)</li>
+          <li>Événements utilisateur (clic, saisie...)</li>
+          <li>Fetch API &amp; appels serveur</li>
+          <li>JSON et traitement de données</li>
+          <li>Stockage local (localStorage)</li>
+        </ul>
+        <div class="module-duration">⏱ Durée : 2 semaines — Niveau : Intermédiaire</div>
       </div>
-      <div class="module-card firebase">
-        <span class="module-icon">🔥</span>
-        <div class="module-name">Firebase / Base de données</div>
-        <div class="module-desc">Lire, écrire et synchroniser vos données en temps réel</div>
+
+      <!-- M4 -->
+      <div class="module-card blue">
         <div class="module-num">04</div>
+        <div class="module-icon">🔥</div>
+        <div class="module-title">Firebase / Base de données</div>
+        <p class="module-desc">Lisez, écrivez et synchronisez vos données en temps réel avec Firebase.</p>
+        <ul class="module-topics">
+          <li>Introduction à Firebase &amp; Firestore</li>
+          <li>Authentification utilisateurs (email/mdp)</li>
+          <li>Lecture et écriture de données en temps réel</li>
+          <li>Règles de sécurité Firebase</li>
+          <li>Firebase Storage (images, fichiers)</li>
+          <li>Projet pratique : app connectée complète</li>
+        </ul>
+        <div class="module-duration">⏱ Durée : 2 semaines — Niveau : Intermédiaire</div>
       </div>
-      <div class="module-card github">
-        <span class="module-icon">⬡</span>
-        <div class="module-name">GitHub</div>
-        <div class="module-desc">Versionner votre code et collaborer sur vos projets</div>
+
+      <!-- M5 -->
+      <div class="module-card">
         <div class="module-num">05</div>
+        <div class="module-icon">🐙</div>
+        <div class="module-title">GitHub</div>
+        <p class="module-desc">Versionnez votre code, collaborez sur vos projets et ne perdez plus jamais votre travail.</p>
+        <ul class="module-topics">
+          <li>Git : init, add, commit, push, pull</li>
+          <li>Création et gestion de dépôts GitHub</li>
+          <li>Branches et pull requests</li>
+          <li>Collaboration en équipe</li>
+          <li>Gestion des conflits de code</li>
+          <li>README professionnel</li>
+        </ul>
+        <div class="module-duration">⏱ Durée : 3 jours — Niveau : Débutant</div>
       </div>
-      <div class="module-card deploy">
-        <span class="module-icon">🚀</span>
-        <div class="module-name">Déploiement en ligne</div>
-        <div class="module-desc">Publier votre site sur GitHub Pages ou Firebase Hosting</div>
+
+      <!-- M6 -->
+      <div class="module-card blue">
         <div class="module-num">06</div>
+        <div class="module-icon">🚀</div>
+        <div class="module-title">Déploiement en ligne</div>
+        <p class="module-desc">Publiez votre site sur GitHub Pages ou Firebase Hosting gratuitement.</p>
+        <ul class="module-topics">
+          <li>Déploiement sur GitHub Pages</li>
+          <li>Firebase Hosting (domaine personnalisé)</li>
+          <li>Nom de domaine personnalisé</li>
+          <li>Certificat SSL (HTTPS)</li>
+          <li>Optimisation des performances</li>
+          <li>Projet final : site en ligne complet</li>
+        </ul>
+        <div class="module-duration">⏱ Durée : 3 jours — Niveau : Tous niveaux</div>
+      </div>
+
+    </div><!-- /modules-grid -->
+
+    <!-- Technologies -->
+    <div style="margin-top:3rem;">
+      <p class="section-label">Technologies couvertes</p>
+      <div style="display:flex;flex-wrap:wrap;gap:.75rem;margin-top:.75rem;">
+        <span style="background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.3);color:var(--orange);padding:.35rem .9rem;border-radius:6px;font-size:.8rem;font-weight:700;">HTML5</span>
+        <span style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:var(--blue);padding:.35rem .9rem;border-radius:6px;font-size:.8rem;font-weight:700;">CSS3</span>
+        <span style="background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.3);color:var(--orange);padding:.35rem .9rem;border-radius:6px;font-size:.8rem;font-weight:700;">JavaScript</span>
+        <span style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:var(--blue);padding:.35rem .9rem;border-radius:6px;font-size:.8rem;font-weight:700;">GitHub</span>
+        <span style="background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.3);color:var(--orange);padding:.35rem .9rem;border-radius:6px;font-size:.8rem;font-weight:700;">Firebase</span>
+        <span style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:var(--blue);padding:.35rem .9rem;border-radius:6px;font-size:.8rem;font-weight:700;">Firestore</span>
+        <span style="background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.3);color:var(--orange);padding:.35rem .9rem;border-radius:6px;font-size:.8rem;font-weight:700;">GitHub Pages</span>
       </div>
     </div>
 
-    <!-- TECH STACK -->
-    <div class="section-label">Technologies couvertes</div>
-    <div class="tech-stack">
-      <span class="tech-tag t1">HTML5</span>
-      <span class="tech-tag t2">CSS3</span>
-      <span class="tech-tag t3">JavaScript</span>
-      <span class="tech-tag t4">GitHub</span>
-      <span class="tech-tag t5">Firebase</span>
-      <span class="tech-tag t6">Firestore</span>
-      <span class="tech-tag t7">GitHub Pages</span>
+    <!-- Public cible -->
+    <div style="margin-top:3rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.25rem;text-align:center;">
+        <div style="font-size:2rem;margin-bottom:.5rem;">🎓</div>
+        <strong style="color:#fff;display:block;margin-bottom:.25rem;">Débutants</strong>
+        <span style="color:var(--muted);font-size:.82rem;">Aucune connaissance préalable requise</span>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.25rem;text-align:center;">
+        <div style="font-size:2rem;margin-bottom:.5rem;">💼</div>
+        <strong style="color:#fff;display:block;margin-bottom:.25rem;">Entrepreneurs</strong>
+        <span style="color:var(--muted);font-size:.82rem;">Créez votre propre site ou app métier</span>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.25rem;text-align:center;">
+        <div style="font-size:2rem;margin-bottom:.5rem;">🔧</div>
+        <strong style="color:#fff;display:block;margin-bottom:.25rem;">Professionnels</strong>
+        <span style="color:var(--muted);font-size:.82rem;">Digitalisez vos outils et services</span>
+      </div>
     </div>
 
-    <!-- PUBLIC CIBLE -->
-    <div class="section-label">À qui s'adresse cette formation</div>
-    <div class="audience-row">
-      <div class="audience-item">
-        <div class="audience-icon">🎓</div>
-        <div class="audience-text">
-          <strong>Débutants</strong>
-          Aucune connaissance préalable requise
+  </div>
+</section>
+
+<!-- ══════════ TARIFS ══════════ -->
+<section id="tarifs">
+  <div class="section-inner">
+    <p class="section-label">Nos tarifs</p>
+    <h2 class="section-title">FORMULES &amp; PRIX</h2>
+    <p class="section-desc">Choisissez la formule qui correspond à vos objectifs. Paiement par Mobile Money ou virement bancaire.</p>
+
+    <div class="pricing-grid">
+
+      <!-- Basique -->
+      <div class="price-card">
+        <div class="price-name">Essentiel</div>
+        <div><span class="price-currency">FCFA</span><span class="price-amount">25 000</span></div>
+        <div class="price-period">/ 3 modules (HTML + CSS + JS)</div>
+        <ul class="price-features">
+          <li><span class="chk">✓</span> Module HTML5 complet</li>
+          <li><span class="chk">✓</span> Module CSS3 &amp; Design</li>
+          <li><span class="chk">✓</span> Module JavaScript</li>
+          <li><span class="chk">✓</span> Support WhatsApp</li>
+          <li><span class="chk">✓</span> Ressources téléchargeables</li>
+          <li><span class="x">✗</span> Firebase / Base de données</li>
+          <li><span class="x">✗</span> GitHub &amp; Déploiement</li>
+          <li><span class="x">✗</span> Projet final certifié</li>
+        </ul>
+        <a href="#inscription" class="btn-price">Choisir Essentiel</a>
+      </div>
+
+      <!-- Complet (featured) -->
+      <div class="price-card featured">
+        <div class="price-name">Formation Complète</div>
+        <div><span class="price-currency">FCFA</span><span class="price-amount">50 000</span></div>
+        <div class="price-period">/ 6 modules complets</div>
+        <ul class="price-features">
+          <li><span class="chk">✓</span> Tous les 6 modules</li>
+          <li><span class="chk">✓</span> HTML5, CSS3, JavaScript</li>
+          <li><span class="chk">✓</span> Firebase &amp; Firestore</li>
+          <li><span class="chk">✓</span> GitHub &amp; Déploiement</li>
+          <li><span class="chk">✓</span> Projet final en ligne</li>
+          <li><span class="chk">✓</span> Attestation de formation</li>
+          <li><span class="chk">✓</span> Suivi personnalisé</li>
+          <li><span class="chk">✓</span> Support prioritaire</li>
+        </ul>
+        <a href="#inscription" class="btn-price">Choisir Formation Complète</a>
+      </div>
+
+      <!-- Pro -->
+      <div class="price-card">
+        <div class="price-name">Accompagnement Pro</div>
+        <div><span class="price-currency">FCFA</span><span class="price-amount">80 000</span></div>
+        <div class="price-period">/ Formation + Projet client</div>
+        <ul class="price-features">
+          <li><span class="chk">✓</span> Formation complète (6 modules)</li>
+          <li><span class="chk">✓</span> Développement d'un vrai projet</li>
+          <li><span class="chk">✓</span> Coaching individuel</li>
+          <li><span class="chk">✓</span> Portfolio professionnel</li>
+          <li><span class="chk">✓</span> Site mis en ligne pour vous</li>
+          <li><span class="chk">✓</span> Attestation officielle</li>
+          <li><span class="chk">✓</span> 3 mois de support après formation</li>
+          <li><span class="chk">✓</span> Recommandation professionnelle</li>
+        </ul>
+        <a href="#inscription" class="btn-price">Choisir Pro</a>
+      </div>
+
+    </div>
+
+    <div class="price-note">
+      <strong>💳 Modes de paiement acceptés :</strong> Flooz (Moov), T-Money (Togocom), virement bancaire. Paiement en 2 fois possible pour la formule complète et Pro. Contactez-nous au <strong style="color:var(--orange);">99 81 20 72</strong> pour tout arrangement.
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════ PLANNING ══════════ -->
+<section id="planning">
+  <div class="section-inner">
+    <p class="section-label">Disponibilité des cours</p>
+    <h2 class="section-title">PLANNING DES SESSIONS</h2>
+    <p class="section-desc">Sessions disponibles à Lomé, Togo. Présentiel et accompagnement à distance disponibles.</p>
+
+    <div class="planning-grid">
+
+      <div class="session-card">
+        <div class="session-day">LUNDI – MERCREDI</div>
+        <div class="session-time">🕗 08h00 – 10h00</div>
+        <div class="session-title">Session Matin — Débutants</div>
+        <div class="session-info">HTML5 + CSS3 · Groupe de 5 max</div>
+        <span class="session-badge badge-open">Places disponibles</span>
+      </div>
+
+      <div class="session-card">
+        <div class="session-day">LUNDI – MERCREDI</div>
+        <div class="session-time">🕓 16h00 – 18h00</div>
+        <div class="session-title">Session Soir — Travailleurs</div>
+        <div class="session-info">Tous modules · Idéal après le travail</div>
+        <span class="session-badge badge-open">Places disponibles</span>
+      </div>
+
+      <div class="session-card">
+        <div class="session-day">MARDI – JEUDI</div>
+        <div class="session-time">🕙 10h00 – 12h00</div>
+        <div class="session-title">Session JavaScript Avancé</div>
+        <div class="session-info">Firebase + API · Niveau intermédiaire</div>
+        <span class="session-badge badge-full">Complet</span>
+      </div>
+
+      <div class="session-card">
+        <div class="session-day">SAMEDI</div>
+        <div class="session-time">🕗 09h00 – 13h00</div>
+        <div class="session-title">Session Weekend Intensive</div>
+        <div class="session-info">Formation accélérée · Tous niveaux</div>
+        <span class="session-badge badge-open">Places disponibles</span>
+      </div>
+
+      <div class="session-card">
+        <div class="session-day">VENDREDI</div>
+        <div class="session-time">🕓 15h00 – 17h00</div>
+        <div class="session-title">Atelier Projet Personnel</div>
+        <div class="session-info">Travaillez sur votre propre projet</div>
+        <span class="session-badge badge-soon">Bientôt</span>
+      </div>
+
+      <div class="session-card">
+        <div class="session-day">SUR DEMANDE</div>
+        <div class="session-time">📱 À distance / WhatsApp</div>
+        <div class="session-title">Cours Particuliers</div>
+        <div class="session-info">Horaire flexible · 1-à-1 personnalisé</div>
+        <span class="session-badge badge-open">Disponible</span>
+      </div>
+
+    </div>
+
+    <div class="planning-note">
+      <strong>📍 Lieu :</strong> Lomé, Togo — adresse exacte communiquée après inscription.<br>
+      <strong>📱 Distance :</strong> Suivi possible via WhatsApp, partage d'écran et vidéo.<br>
+      <strong>⚠️ Note :</strong> Les horaires peuvent être ajustés selon les disponibilités. Contactez-nous pour organiser un créneau personnalisé.
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════ INSCRIPTION ══════════ -->
+<section id="inscription">
+  <div class="section-inner">
+    <p class="section-label">Rejoignez-nous</p>
+    <h2 class="section-title">S'INSCRIRE À LA FORMATION</h2>
+
+    <div class="form-wrap">
+
+      <!-- Info inscription -->
+      <div class="form-info">
+        <h3>Comment ça fonctionne ?</h3>
+        <p>L'inscription se fait en 3 étapes simples. Pas besoin de carte bancaire en ligne — nous acceptons Mobile Money et virement.</p>
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-text">
+              <strong>Remplissez le formulaire</strong>
+              <span>Vos informations et la formule choisie</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-text">
+              <strong>Effectuez le paiement</strong>
+              <span>Via Flooz, T-Money ou virement bancaire</span>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-text">
+              <strong>Confirmation WhatsApp</strong>
+              <span>Nous vous confirmons votre place et l'horaire</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="payment-methods" style="margin-top:2rem;">
+          <p class="section-label" style="margin-bottom:.75rem;">Modes de paiement</p>
+
+          <div class="pay-method">
+            <div class="pay-icon">📱</div>
+            <div class="pay-info">
+              <strong>Flooz (Moov Money)</strong>
+              <span>Envoyez au : 93 00 39 41 — Nom : ELOH Alban</span>
+            </div>
+          </div>
+          <div class="pay-method">
+            <div class="pay-icon">📱</div>
+            <div class="pay-info">
+              <strong>T-Money (Togocom)</strong>
+              <span>Envoyez au : 99 81 20 72 — Nom : ELOH Alban</span>
+            </div>
+          </div>
+          <div class="pay-method">
+            <div class="pay-icon">🏦</div>
+            <div class="pay-info">
+              <strong>Virement bancaire</strong>
+              <span>Contactez-nous pour les coordonnées bancaires</span>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="audience-item">
-        <div class="audience-icon">💼</div>
-        <div class="audience-text">
-          <strong>Entrepreneurs</strong>
-          Créez votre propre site ou app métier
+
+      <!-- Formulaire -->
+      <div class="reg-form">
+        <h3>FORMULAIRE D'INSCRIPTION</h3>
+        <div id="regFormContainer">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Prénom</label>
+              <input type="text" id="prenom" placeholder="Votre prénom"/>
+            </div>
+            <div class="form-group">
+              <label>Nom</label>
+              <input type="text" id="nom" placeholder="Votre nom"/>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Téléphone / WhatsApp</label>
+            <input type="tel" id="tel" placeholder="Ex : 99 00 00 00"/>
+          </div>
+          <div class="form-group">
+            <label>Email (optionnel)</label>
+            <input type="email" id="email" placeholder="votreemail@exemple.com"/>
+          </div>
+          <div class="form-group">
+            <label>Formule choisie</label>
+            <select id="formule">
+              <option value="">-- Sélectionnez une formule --</option>
+              <option value="Essentiel — 25 000 FCFA">Essentiel — 25 000 FCFA (3 modules)</option>
+              <option value="Formation Complète — 50 000 FCFA">Formation Complète — 50 000 FCFA (6 modules)</option>
+              <option value="Accompagnement Pro — 80 000 FCFA">Accompagnement Pro — 80 000 FCFA</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Session préférée</label>
+            <select id="session">
+              <option value="">-- Sélectionnez une session --</option>
+              <option>Session Matin (Lun-Mer 08h–10h)</option>
+              <option>Session Soir (Lun-Mer 16h–18h)</option>
+              <option>Session Weekend (Sam 09h–13h)</option>
+              <option>Cours particuliers (horaire à définir)</option>
+              <option>À distance via WhatsApp</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Mode de paiement</label>
+            <select id="paiement">
+              <option value="">-- Sélectionnez --</option>
+              <option>Flooz (Moov Money)</option>
+              <option>T-Money (Togocom)</option>
+              <option>Virement bancaire</option>
+              <option>En 2 fois</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Message / Questions (optionnel)</label>
+            <textarea id="message" rows="3" placeholder="Parlez-nous de vous, de vos objectifs..."></textarea>
+          </div>
+          <button class="form-submit" onclick="submitInscription()">ENVOYER MON INSCRIPTION →</button>
+        </div>
+        <div class="form-success" id="formSuccess">
+          <h4>✅ Inscription reçue !</h4>
+          <p>Merci <span id="successName"></span>. Nous vous contacterons sur WhatsApp dans les 24h pour confirmer votre place et les détails du paiement.</p>
         </div>
       </div>
-      <div class="audience-item">
-        <div class="audience-icon">🛠️</div>
-        <div class="audience-text">
-          <strong>Professionnels</strong>
-          Digitalisez vos outils et services
+
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ CONTACT ══════════ -->
+<section id="contact">
+  <div class="section-inner">
+    <p class="section-label">Nous joindre</p>
+    <h2 class="section-title">CONTACT</h2>
+
+    <div class="contact-grid">
+
+      <div>
+        <div class="contact-info">
+          <h3>Parlons de votre projet</h3>
+          <p>Une question sur la formation ? Besoin d'un devis pour un site web ? Contactez-nous directement sur WhatsApp pour une réponse rapide.</p>
         </div>
-      </div>
-    </div>
 
-    <!-- CODE DÉCO -->
-    <div class="code-strip">
-      <span class="cm">// Votre premier projet live</span> &nbsp;
-      <span class="kw">const</span> monSite = <span class="fn">createWebApp</span>({ html: <span class="str">"✅"</span>, css: <span class="str">"✅"</span>, js: <span class="str">"✅"</span>, firebase: <span class="str">"✅"</span> });
-      &nbsp;&nbsp;<span class="fn">deploy</span>(monSite, <span class="str">"github-pages"</span>); <span class="cm">// → En ligne !</span>
-    </div>
-
-    <!-- CTA -->
-    <div class="cta-block">
-      <div class="cta-left">
-        <div class="cta-title">Inscrivez-vous maintenant</div>
-        <div class="cta-sub">Formation disponible à Lomé, Togo — Contactez-nous dès aujourd'hui</div>
-      </div>
-      <div class="cta-right">
-        <span class="cta-phone">99 81 20 72</span>
-        <span class="cta-phone">93 00 39 41</span>
-        <span class="cta-phone-label">Appelez ou WhatsApp</span>
-      </div>
-    </div>
-
-    <!-- FOOTER -->
-    <div class="footer">
-      <div class="footer-aet">
-        <div class="footer-logo">
-          <span class="a">A</span><span class="dot">.</span><span class="e">E</span><span class="dot">.</span><span class="t">T</span>
+        <div class="contact-items">
+          <div class="contact-item">
+            <div class="icon">📞</div>
+            <div>
+              <strong>Téléphone / WhatsApp</strong>
+              <span><a href="tel:+22899812072">99 81 20 72</a> &nbsp;|&nbsp; <a href="tel:+22893003941">93 00 39 41</a></span>
+            </div>
+          </div>
+          <div class="contact-item">
+            <div class="icon">📍</div>
+            <div>
+              <strong>Localisation</strong>
+              <span>Lomé, Togo — adresse exacte sur RDV</span>
+            </div>
+          </div>
+          <div class="contact-item">
+            <div class="icon">🕐</div>
+            <div>
+              <strong>Disponibilité</strong>
+              <span>Lundi – Samedi · 08h00 – 19h00</span>
+            </div>
+          </div>
+          <div class="contact-item">
+            <div class="icon">✉️</div>
+            <div>
+              <strong>Email</strong>
+              <span><a href="mailto:aettechnology5@gmail.com">aettechnology5@gmail.com</a></span>
+            </div>
+          </div>
         </div>
-        <div class="footer-fullname">Alban Eloh Technology</div>
+
+        <a href="https://wa.me/22899812072?text=Bonjour%2C%20je%20suis%20int%C3%A9ress%C3%A9(e)%20par%20la%20formation%20AET" class="wa-btn" target="_blank">
+          <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          Écrire sur WhatsApp
+        </a>
       </div>
-      <div class="footer-location">
-        <strong>Lomé, Togo</strong><br>
-        Formation Web Moderne
+
+      <!-- Formulaire contact -->
+      <div class="contact-form">
+        <h3>ENVOYEZ UN MESSAGE</h3>
+        <div class="form-group">
+          <label>Votre nom</label>
+          <input type="text" id="cNom" placeholder="Votre nom complet"/>
+        </div>
+        <div class="form-group">
+          <label>Téléphone</label>
+          <input type="tel" id="cTel" placeholder="99 00 00 00"/>
+        </div>
+        <div class="form-group">
+          <label>Sujet</label>
+          <select id="cSujet">
+            <option value="">-- Sélectionnez --</option>
+            <option>Renseignement formation</option>
+            <option>Inscription</option>
+            <option>Création de site web</option>
+            <option>Partenariat</option>
+            <option>Autre</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Message</label>
+          <textarea id="cMessage" rows="4" placeholder="Votre message..."></textarea>
+        </div>
+        <button class="form-submit" onclick="submitContact()" style="margin-top:0;">ENVOYER →</button>
       </div>
+
     </div>
+  </div>
+</section>
 
-  </div><!-- /content -->
-</div><!-- /poster -->
+<!-- ══════════ CTA FINAL ══════════ -->
+<div style="background:var(--orange);padding:3rem 1.5rem;text-align:center;">
+  <div style="max-width:700px;margin:auto;">
+    <h2 style="font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,3.5rem);color:#000;letter-spacing:1px;margin-bottom:.5rem;">INSCRIVEZ-VOUS MAINTENANT</h2>
+    <p style="color:rgba(0,0,0,.7);font-size:1rem;margin-bottom:1.5rem;">Formation disponible à Lomé, Togo — Contactez-nous dès aujourd'hui</p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.5rem;">
+      <a href="tel:+22899812072" style="background:#000;color:#fff;font-weight:800;padding:.85rem 2rem;border-radius:8px;text-decoration:none;font-size:1.05rem;">📞 99 81 20 72</a>
+      <a href="tel:+22893003941" style="background:#000;color:#fff;font-weight:800;padding:.85rem 2rem;border-radius:8px;text-decoration:none;font-size:1.05rem;">📞 93 00 39 41</a>
+    </div>
+    <p style="color:rgba(0,0,0,.6);font-size:.85rem;">Appelez ou envoyez un WhatsApp · Réponse rapide garantie</p>
+  </div>
+</div>
 
+<!-- ══════════ FOOTER ══════════ -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="logo">A.E.T</div>
+      <p>Alban Eloh Technology — Formation web professionnelle à Lomé, Togo. De zéro à la mise en ligne.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Navigation</h4>
+      <ul>
+        <li><a href="#accueil">Accueil</a></li>
+        <li><a href="#formations">Formations</a></li>
+        <li><a href="#tarifs">Tarifs</a></li>
+        <li><a href="#planning">Planning</a></li>
+        <li><a href="#inscription">Inscription</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Contact</h4>
+      <ul>
+        <li><a href="tel:+22899812072">📞 99 81 20 72</a></li>
+        <li><a href="tel:+22893003941">📞 93 00 39 41</a></li>
+        <li><a href="mailto:aettechnology5@gmail.com">✉️ aettechnology5@gmail.com</a></li>
+        <li><a href="https://wa.me/22899812072" target="_blank">💬 WhatsApp</a></li>
+        <li><span style="color:var(--muted)">📍 Lomé, Togo</span></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2025 <em>A.E.T – Alban Eloh Technology</em>. Tous droits réservés.</span>
+    <span>Fait au Togo 🇹🇬, pour le Togo.</span>
+  </div>
+</footer>
+
+<!-- ══════════ TOAST ══════════ -->
+<div class="toast" id="toast">
+  <strong id="toastTitle">✅ Message envoyé !</strong>
+  <span id="toastMsg">Nous vous répondrons dans les plus brefs délais.</span>
+</div>
+
+<script>
+// Nav active on scroll
+const sections = document.querySelectorAll('section[id], div[id]');
+const navLinks = document.querySelectorAll('.nav-links a');
+window.addEventListener('scroll', () => {
+  let current = '';
+  sections.forEach(s => {
+    if (window.scrollY >= s.offsetTop - 80) current = s.id;
+  });
+  navLinks.forEach(a => {
+    a.classList.remove('active');
+    if (a.getAttribute('href') === '#' + current) a.classList.add('active');
+  });
+});
+
+// Mobile menu
+function toggleMenu() {
+  document.getElementById('mobileMenu').classList.toggle('open');
+}
+function closeMenu() {
+  document.getElementById('mobileMenu').classList.remove('open');
+}
+
+// Toast
+function showToast(title, msg) {
+  const t = document.getElementById('toast');
+  document.getElementById('toastTitle').textContent = title;
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 4000);
+}
+
+// Inscription form
+function submitInscription() {
+  const prenom = document.getElementById('prenom').value.trim();
+  const nom = document.getElementById('nom').value.trim();
+  const tel = document.getElementById('tel').value.trim();
+  const formule = document.getElementById('formule').value;
+  const session = document.getElementById('session').value;
+  const paiement = document.getElementById('paiement').value;
+  const message = document.getElementById('message').value.trim();
+
+  if (!prenom || !nom || !tel || !formule || !session || !paiement) {
+    showToast('⚠️ Champs manquants', 'Veuillez remplir tous les champs obligatoires.');
+    return;
+  }
+
+  // Build WhatsApp message
+  const waText = encodeURIComponent(
+    `*Nouvelle inscription AET*\n\n` +
+    `👤 Nom : ${prenom} ${nom}\n` +
+    `📞 Tél : ${tel}\n` +
+    `📚 Formule : ${formule}\n` +
+    `🕐 Session : ${session}\n` +
+    `💳 Paiement : ${paiement}\n` +
+    (message ? `💬 Message : ${message}` : '')
+  );
+
+  // Show success
+  document.getElementById('successName').textContent = prenom;
+  document.getElementById('regFormContainer').style.display = 'none';
+  document.getElementById('formSuccess').style.display = 'block';
+
+  // Open WhatsApp
+  setTimeout(() => {
+    window.open(`https://wa.me/22899812072?text=${waText}`, '_blank');
+  }, 800);
+}
+
+// Contact form
+function submitContact() {
+  const nom = document.getElementById('cNom').value.trim();
+  const tel = document.getElementById('cTel').value.trim();
+  const sujet = document.getElementById('cSujet').value;
+  const msg = document.getElementById('cMessage').value.trim();
+
+  if (!nom || !tel || !sujet || !msg) {
+    showToast('⚠️ Champs manquants', 'Veuillez remplir tous les champs.');
+    return;
+  }
+
+  const waText = encodeURIComponent(
+    `*Message AET*\n\n` +
+    `👤 Nom : ${nom}\n` +
+    `📞 Tél : ${tel}\n` +
+    `📋 Sujet : ${sujet}\n` +
+    `💬 Message : ${msg}`
+  );
+
+  window.open(`https://wa.me/22899812072?text=${waText}`, '_blank');
+  showToast('✅ Redirection WhatsApp', 'Votre message a été préparé sur WhatsApp.');
+
+  document.getElementById('cNom').value = '';
+  document.getElementById('cTel').value = '';
+  document.getElementById('cSujet').value = '';
+  document.getElementById('cMessage').value = '';
+}
+</script>
 </body>
 </html>

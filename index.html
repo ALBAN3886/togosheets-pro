@@ -3,206 +3,1012 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>A.E.T – Formation Création de Sites Web & Applications</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700&family=Barlow+Condensed:wght@400;600;700&display=swap" rel="stylesheet"/>
+<meta name="description" content="A.E.T - Alban Eloh Technology - Formation professionnelle en création de sites web et applications à Lomé, Togo."/>
+<meta name="theme-color" content="#0a0a0f"/>
+<title>A.E.T — Alban Eloh Technology | Formation Web & Apps</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700;800&family=Barlow+Condensed:wght@400;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet"/>
 <style>
 :root{
-  --bg:#0a0a0f;
-  --bg2:#10101a;
+  --bg:#07070c;
+  --bg2:#0f0f1a;
+  --bg3:#14141f;
   --orange:#f97316;
   --orange2:#fb923c;
+  --orange-glow:rgba(249,115,22,.4);
   --blue:#3b82f6;
+  --blue2:#60a5fa;
   --text:#e5e7eb;
   --muted:#9ca3af;
   --card:#14141f;
+  --card-hover:#1a1a28;
   --border:#1e1e30;
+  --border-light:#2a2a40;
   --success:#22c55e;
+  --gradient-1:linear-gradient(135deg,#f97316 0%,#fb923c 100%);
+  --gradient-2:linear-gradient(135deg,#3b82f6 0%,#60a5fa 100%);
+  --gradient-dark:linear-gradient(180deg,#0a0a14 0%,#07070c 100%);
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 html{scroll-behavior:smooth;}
 body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;font-size:16px;line-height:1.6;overflow-x:hidden;}
+body.no-scroll{overflow:hidden;height:100vh;}
 
-/* ── NAV ── */
-nav{position:fixed;top:0;left:0;right:0;z-index:1000;background:rgba(10,10,15,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 1.5rem;}
-.nav-inner{max-width:1100px;margin:auto;display:flex;align-items:center;justify-content:space-between;height:64px;}
-.nav-logo{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:var(--orange);letter-spacing:2px;text-decoration:none;}
-.nav-logo span{color:var(--text);font-size:.7rem;display:block;letter-spacing:4px;font-family:'Barlow',sans-serif;font-weight:300;margin-top:-6px;}
-.nav-links{display:flex;gap:.2rem;list-style:none;}
-.nav-links a{color:var(--muted);text-decoration:none;font-size:.82rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:.5rem .75rem;border-radius:6px;transition:all .2s;}
-.nav-links a:hover,.nav-links a.active{color:var(--orange);background:rgba(249,115,22,.08);}
-.nav-cta{background:var(--orange);color:#000;font-weight:700;font-size:.8rem;letter-spacing:1px;text-transform:uppercase;padding:.5rem 1.2rem;border-radius:6px;text-decoration:none;transition:background .2s;}
-.nav-cta:hover{background:var(--orange2);}
-.hamburger{display:none;flex-direction:column;gap:5px;cursor:pointer;padding:.5rem;}
-.hamburger span{display:block;width:24px;height:2px;background:var(--text);transition:all .3s;}
-.mobile-menu{display:none;position:fixed;top:64px;left:0;right:0;background:var(--bg2);border-bottom:1px solid var(--border);z-index:999;padding:1rem 1.5rem 1.5rem;}
-.mobile-menu.open{display:block;}
-.mobile-menu a{display:block;color:var(--text);text-decoration:none;font-weight:600;font-size:1rem;padding:.75rem 0;border-bottom:1px solid var(--border);letter-spacing:1px;}
-.mobile-menu a:last-child{border:none;color:var(--orange);}
+/* ═══════════════════════════════════════════════════════════
+   SPLASH SCREEN — Animation d'ouverture
+═══════════════════════════════════════════════════════════ */
+#splash{
+  position:fixed;inset:0;z-index:99999;
+  background:radial-gradient(ellipse at center,#15151f 0%,#07070c 70%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transition:opacity .8s ease,visibility .8s ease;
+}
+#splash.hidden{opacity:0;visibility:hidden;pointer-events:none;}
 
-/* ── HERO ── */
-#accueil{min-height:100vh;padding:80px 1.5rem 4rem;display:flex;align-items:center;background:radial-gradient(ellipse at 60% 40%,rgba(59,130,246,.07) 0%,transparent 60%),radial-gradient(ellipse at 10% 80%,rgba(249,115,22,.06) 0%,transparent 50%);}
-.hero-inner{max-width:1100px;margin:auto;width:100%;}
-.hero-badge{display:inline-flex;gap:.5rem;align-items:center;background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.3);border-radius:4px;padding:.3rem .9rem;font-size:.72rem;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--orange);margin-bottom:1.5rem;}
-.hero-badge span{background:var(--orange);color:#000;padding:.1rem .5rem;border-radius:3px;}
-.hero-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(3.5rem,10vw,7rem);line-height:.95;color:#fff;margin-bottom:1rem;}
-.hero-title em{color:var(--orange);font-style:normal;}
-.hero-title .blue{color:var(--blue);}
-.hero-sub{font-size:1.15rem;color:var(--muted);max-width:560px;margin-bottom:2rem;font-weight:300;}
+/* Particules d'arrière-plan */
+.splash-particles{position:absolute;inset:0;overflow:hidden;}
+.particle{
+  position:absolute;width:4px;height:4px;border-radius:50%;
+  background:var(--orange);opacity:0;
+  animation:floatUp 3s ease-in infinite;
+}
+.particle.blue{background:var(--blue);}
+@keyframes floatUp{
+  0%{transform:translateY(0) scale(0);opacity:0;}
+  20%{opacity:1;}
+  100%{transform:translateY(-100vh) scale(1);opacity:0;}
+}
+
+/* Logo central */
+.splash-logo-wrap{
+  position:relative;z-index:2;text-align:center;
+  animation:logoIn 1.2s cubic-bezier(.22,1,.36,1);
+}
+@keyframes logoIn{
+  0%{opacity:0;transform:scale(.7);}
+  100%{opacity:1;transform:scale(1);}
+}
+
+.splash-logo-circle{
+  width:140px;height:140px;margin:0 auto 2rem;border-radius:50%;
+  background:var(--gradient-1);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+  box-shadow:0 0 60px rgba(249,115,22,.5),0 0 120px rgba(249,115,22,.2);
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{
+  0%,100%{box-shadow:0 0 60px rgba(249,115,22,.5),0 0 120px rgba(249,115,22,.2);}
+  50%{box-shadow:0 0 80px rgba(249,115,22,.7),0 0 160px rgba(249,115,22,.4);}
+}
+.splash-logo-circle::before{
+  content:'';position:absolute;inset:-6px;border-radius:50%;
+  border:2px solid var(--orange);opacity:.4;
+  animation:ring 2s linear infinite;
+}
+.splash-logo-circle::after{
+  content:'';position:absolute;inset:-14px;border-radius:50%;
+  border:1px solid var(--blue);opacity:.3;
+  animation:ring 3s linear infinite reverse;
+}
+@keyframes ring{
+  0%{transform:rotate(0deg) scale(1);opacity:.4;}
+  50%{opacity:.7;}
+  100%{transform:rotate(360deg) scale(1.1);opacity:.4;}
+}
+.splash-logo-text{
+  font-family:'Bebas Neue',sans-serif;font-size:3rem;
+  color:#000;letter-spacing:3px;font-weight:700;
+}
+
+.splash-brand{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(2.2rem,6vw,4rem);
+  color:#fff;letter-spacing:4px;line-height:1;
+  margin-bottom:.5rem;
+  background:linear-gradient(180deg,#fff 0%,#999 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.splash-brand em{color:var(--orange);font-style:normal;-webkit-text-fill-color:var(--orange);}
+.splash-tagline{
+  font-size:.85rem;letter-spacing:6px;text-transform:uppercase;
+  color:var(--muted);font-weight:500;margin-bottom:.5rem;
+  opacity:0;animation:fadeIn .8s .8s forwards;
+}
+.splash-subtitle{
+  font-size:.75rem;letter-spacing:3px;text-transform:uppercase;
+  color:var(--orange);font-weight:700;
+  opacity:0;animation:fadeIn .8s 1.1s forwards;
+}
+@keyframes fadeIn{to{opacity:1;}}
+
+/* Barre de progression */
+.splash-progress{
+  width:280px;max-width:80vw;height:3px;
+  background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;
+  margin-top:3rem;
+  opacity:0;animation:fadeIn .5s 1.4s forwards;
+}
+.splash-progress-bar{
+  height:100%;width:0;
+  background:var(--gradient-1);
+  border-radius:3px;
+  animation:loadBar 2.2s 1.4s ease-out forwards;
+}
+@keyframes loadBar{to{width:100%;}}
+
+.splash-status{
+  font-size:.7rem;letter-spacing:3px;text-transform:uppercase;
+  color:var(--muted);margin-top:1rem;
+  opacity:0;animation:fadeIn .5s 1.5s forwards;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MODAL D'INSCRIPTION — Avant accès au site
+═══════════════════════════════════════════════════════════ */
+#welcomeModal{
+  position:fixed;inset:0;z-index:9998;
+  background:rgba(7,7,12,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  display:flex;align-items:center;justify-content:center;
+  padding:1.5rem;opacity:0;visibility:hidden;
+  transition:opacity .4s ease,visibility .4s ease;
+}
+#welcomeModal.show{opacity:1;visibility:visible;}
+.modal-card{
+  background:linear-gradient(180deg,#16162a 0%,#0f0f1a 100%);
+  border:1px solid var(--border-light);
+  border-radius:20px;
+  max-width:480px;width:100%;
+  padding:2.5rem 2rem;
+  position:relative;overflow:hidden;
+  transform:translateY(30px) scale(.95);
+  transition:transform .4s cubic-bezier(.22,1,.36,1);
+  box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 1px rgba(249,115,22,.05);
+}
+#welcomeModal.show .modal-card{transform:translateY(0) scale(1);}
+.modal-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:var(--gradient-1);
+}
+.modal-card::after{
+  content:'';position:absolute;top:-50%;right:-30%;width:300px;height:300px;
+  background:radial-gradient(circle,rgba(249,115,22,.15) 0%,transparent 70%);
+  pointer-events:none;
+}
+.modal-header{text-align:center;margin-bottom:1.75rem;position:relative;}
+.modal-logo{
+  width:64px;height:64px;margin:0 auto 1rem;border-radius:50%;
+  background:var(--gradient-1);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:#000;letter-spacing:2px;
+  box-shadow:0 8px 24px rgba(249,115,22,.4);
+}
+.modal-title{
+  font-family:'Bebas Neue',sans-serif;font-size:2rem;
+  color:#fff;letter-spacing:2px;margin-bottom:.3rem;line-height:1;
+}
+.modal-subtitle{font-size:.92rem;color:var(--muted);}
+.modal-subtitle strong{color:var(--orange);}
+
+.modal-form .form-group{margin-bottom:1rem;}
+.modal-form label{
+  display:block;font-size:.7rem;font-weight:700;letter-spacing:2px;
+  text-transform:uppercase;color:var(--muted);margin-bottom:.4rem;
+}
+.modal-form input,.modal-form select{
+  width:100%;background:#0a0a14;border:1px solid var(--border);
+  border-radius:10px;padding:.85rem 1rem;color:var(--text);
+  font-family:'Barlow',sans-serif;font-size:.95rem;outline:none;
+  transition:all .2s;
+}
+.modal-form input:focus,.modal-form select:focus{
+  border-color:var(--orange);
+  box-shadow:0 0 0 3px rgba(249,115,22,.15);
+}
+.modal-form select option{background:#0a0a14;}
+.modal-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
+.modal-submit{
+  width:100%;background:var(--gradient-1);color:#000;
+  font-weight:800;font-size:.95rem;letter-spacing:2px;text-transform:uppercase;
+  padding:1rem;border:none;border-radius:10px;cursor:pointer;
+  transition:all .2s;margin-top:.5rem;
+  box-shadow:0 8px 20px rgba(249,115,22,.3);
+}
+.modal-submit:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(249,115,22,.4);}
+.modal-submit:active{transform:translateY(0);}
+.modal-footer{
+  margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border);
+  font-size:.78rem;color:var(--muted);text-align:center;
+}
+.modal-footer a{color:var(--orange);text-decoration:none;font-weight:600;}
+.modal-skip{
+  display:block;margin-top:.75rem;background:none;border:none;
+  color:var(--muted);font-size:.8rem;cursor:pointer;
+  text-decoration:underline;font-family:inherit;
+}
+.modal-skip:hover{color:var(--text);}
+
+.modal-error{
+  background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);
+  color:#ef4444;padding:.7rem 1rem;border-radius:8px;
+  font-size:.85rem;margin-bottom:1rem;display:none;
+}
+.modal-error.show{display:block;animation:shake .4s;}
+@keyframes shake{
+  0%,100%{transform:translateX(0);}
+  25%{transform:translateX(-6px);}
+  75%{transform:translateX(6px);}
+}
+
+/* ═══════════════════════════════════════════════════════════
+   MENU NAVIGATION — Fixe et professionnel
+═══════════════════════════════════════════════════════════ */
+nav{
+  position:fixed;top:0;left:0;right:0;z-index:1000;
+  background:rgba(7,7,12,.75);
+  backdrop-filter:blur(20px) saturate(180%);
+  -webkit-backdrop-filter:blur(20px) saturate(180%);
+  border-bottom:1px solid transparent;
+  padding:0 1.5rem;
+  transition:all .3s ease;
+}
+nav.scrolled{
+  background:rgba(7,7,12,.92);
+  border-bottom-color:var(--border);
+  box-shadow:0 4px 30px rgba(0,0,0,.3);
+}
+.nav-inner{
+  max-width:1200px;margin:auto;
+  display:flex;align-items:center;justify-content:space-between;
+  height:72px;
+}
+.nav-logo{
+  display:flex;align-items:center;gap:.7rem;
+  text-decoration:none;
+}
+.nav-logo-icon{
+  width:42px;height:42px;border-radius:10px;
+  background:var(--gradient-1);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:#000;
+  letter-spacing:1px;font-weight:700;
+  box-shadow:0 4px 14px rgba(249,115,22,.3);
+  transition:transform .25s;
+}
+.nav-logo:hover .nav-logo-icon{transform:rotate(-5deg) scale(1.05);}
+.nav-logo-text{display:flex;flex-direction:column;line-height:1;}
+.nav-logo-text .brand{
+  font-family:'Bebas Neue',sans-serif;font-size:1.4rem;
+  color:#fff;letter-spacing:2px;
+}
+.nav-logo-text .sub{
+  font-size:.6rem;color:var(--muted);letter-spacing:2px;
+  text-transform:uppercase;margin-top:2px;
+}
+
+.nav-links{display:flex;gap:.2rem;list-style:none;align-items:center;}
+.nav-links a{
+  color:var(--muted);text-decoration:none;
+  font-size:.82rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;
+  padding:.6rem 1rem;border-radius:8px;
+  transition:all .25s;position:relative;
+}
+.nav-links a::before{
+  content:'';position:absolute;bottom:0;left:50%;width:0;height:2px;
+  background:var(--orange);transition:all .25s;transform:translateX(-50%);
+}
+.nav-links a:hover,.nav-links a.active{color:#fff;}
+.nav-links a.active::before{width:60%;}
+
+.nav-cta{
+  background:var(--gradient-1);color:#000;
+  font-weight:800;font-size:.78rem;letter-spacing:1.5px;text-transform:uppercase;
+  padding:.7rem 1.4rem;border-radius:8px;text-decoration:none;
+  transition:all .25s;
+  box-shadow:0 4px 14px rgba(249,115,22,.3);
+}
+.nav-cta:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(249,115,22,.45);}
+
+.hamburger{
+  display:none;flex-direction:column;gap:5px;cursor:pointer;padding:.5rem;
+  background:none;border:none;
+}
+.hamburger span{display:block;width:24px;height:2px;background:#fff;transition:all .3s;border-radius:2px;}
+.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
+.hamburger.open span:nth-child(2){opacity:0;}
+.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
+
+.mobile-menu{
+  position:fixed;top:72px;left:0;right:0;
+  background:rgba(7,7,12,.98);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  z-index:999;padding:1.5rem;
+  transform:translateY(-110%);transition:transform .35s cubic-bezier(.22,1,.36,1);
+}
+.mobile-menu.open{transform:translateY(0);}
+.mobile-menu a{
+  display:flex;align-items:center;gap:.75rem;
+  color:var(--text);text-decoration:none;
+  font-weight:600;font-size:1rem;padding:1rem .75rem;
+  border-radius:10px;letter-spacing:1px;
+  transition:all .2s;
+}
+.mobile-menu a:hover{background:rgba(249,115,22,.08);color:var(--orange);padding-left:1.25rem;}
+.mobile-menu a.cta{
+  background:var(--gradient-1);color:#000;
+  justify-content:center;font-weight:800;text-transform:uppercase;
+  margin-top:.75rem;
+}
+.mobile-menu a.cta:hover{padding-left:.75rem;}
+
+/* ═══════════════════════════════════════════════════════════
+   HERO
+═══════════════════════════════════════════════════════════ */
+#accueil{
+  min-height:100vh;padding:120px 1.5rem 4rem;
+  display:flex;align-items:center;position:relative;overflow:hidden;
+  background:
+    radial-gradient(ellipse at 70% 30%,rgba(59,130,246,.10) 0%,transparent 50%),
+    radial-gradient(ellipse at 20% 80%,rgba(249,115,22,.08) 0%,transparent 50%);
+}
+.hero-grid-bg{
+  position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+  background-size:50px 50px;
+  mask-image:radial-gradient(ellipse at center,#000 30%,transparent 80%);
+  -webkit-mask-image:radial-gradient(ellipse at center,#000 30%,transparent 80%);
+  pointer-events:none;
+}
+.hero-inner{max-width:1200px;margin:auto;width:100%;position:relative;z-index:1;}
+
+.hero-badge{
+  display:inline-flex;gap:.6rem;align-items:center;
+  background:rgba(249,115,22,.1);
+  border:1px solid rgba(249,115,22,.3);
+  border-radius:50px;padding:.45rem 1rem;
+  font-size:.72rem;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;
+  color:var(--orange);margin-bottom:1.75rem;
+  animation:slideInLeft .8s ease;
+}
+.hero-badge span{
+  background:var(--orange);color:#000;
+  padding:.15rem .55rem;border-radius:50px;font-weight:800;
+}
+.hero-badge::before{
+  content:'';width:6px;height:6px;border-radius:50%;
+  background:var(--orange);box-shadow:0 0 12px var(--orange);
+  animation:blink 1.5s infinite;
+}
+@keyframes blink{
+  0%,100%{opacity:1;}
+  50%{opacity:.3;}
+}
+@keyframes slideInLeft{
+  from{opacity:0;transform:translateX(-30px);}
+  to{opacity:1;transform:translateX(0);}
+}
+@keyframes slideInUp{
+  from{opacity:0;transform:translateY(30px);}
+  to{opacity:1;transform:translateY(0);}
+}
+
+.hero-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(3.5rem,10vw,7.5rem);
+  line-height:.92;color:#fff;margin-bottom:1.25rem;
+  animation:slideInUp 1s ease .1s both;
+}
+.hero-title em{
+  background:var(--gradient-1);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  font-style:normal;
+}
+.hero-title .blue{
+  background:var(--gradient-2);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero-sub{
+  font-size:1.15rem;color:var(--muted);max-width:580px;
+  margin-bottom:2rem;font-weight:300;
+  animation:slideInUp 1s ease .3s both;
+}
 .hero-sub strong{color:var(--text);font-weight:600;}
-.hero-box{background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.25);border-left:3px solid var(--blue);border-radius:8px;padding:1.2rem 1.5rem;max-width:580px;margin-bottom:2.5rem;}
+.hero-box{
+  background:rgba(59,130,246,.06);
+  border:1px solid rgba(59,130,246,.2);
+  border-left:3px solid var(--blue);
+  border-radius:12px;
+  padding:1.25rem 1.5rem;max-width:600px;margin-bottom:2.5rem;
+  animation:slideInUp 1s ease .5s both;
+  backdrop-filter:blur(10px);
+}
 .hero-box p{color:var(--text);font-size:.95rem;}
 .hero-box p span{color:var(--orange);font-weight:700;}
-.hero-btns{display:flex;gap:1rem;flex-wrap:wrap;}
-.btn-primary{background:var(--orange);color:#000;font-weight:700;font-size:.9rem;letter-spacing:1px;padding:.85rem 2rem;border-radius:7px;text-decoration:none;transition:all .2s;}
-.btn-primary:hover{background:var(--orange2);transform:translateY(-2px);}
-.btn-secondary{border:1px solid var(--border);color:var(--text);font-weight:600;font-size:.9rem;padding:.85rem 2rem;border-radius:7px;text-decoration:none;transition:all .2s;}
-.btn-secondary:hover{border-color:var(--orange);color:var(--orange);}
-.hero-phones{margin-top:3rem;display:flex;gap:1.5rem;flex-wrap:wrap;}
-.phone-chip{display:flex;align-items:center;gap:.6rem;color:var(--muted);font-size:.9rem;}
-.phone-chip svg{color:var(--success);}
+.hero-btns{display:flex;gap:1rem;flex-wrap:wrap;animation:slideInUp 1s ease .7s both;}
+.btn-primary{
+  background:var(--gradient-1);color:#000;
+  font-weight:800;font-size:.9rem;letter-spacing:1.5px;text-transform:uppercase;
+  padding:1rem 2rem;border-radius:10px;text-decoration:none;
+  transition:all .25s;display:inline-flex;align-items:center;gap:.5rem;
+  box-shadow:0 8px 24px rgba(249,115,22,.3);
+}
+.btn-primary:hover{transform:translateY(-3px);box-shadow:0 14px 32px rgba(249,115,22,.45);}
+.btn-secondary{
+  border:1px solid var(--border-light);color:var(--text);
+  font-weight:700;font-size:.9rem;letter-spacing:1px;text-transform:uppercase;
+  padding:1rem 2rem;border-radius:10px;text-decoration:none;
+  transition:all .25s;display:inline-flex;align-items:center;gap:.5rem;
+  background:rgba(255,255,255,.02);
+}
+.btn-secondary:hover{border-color:var(--orange);color:var(--orange);background:rgba(249,115,22,.05);}
 
-/* ── SECTION BASE ── */
-section{padding:5rem 1.5rem;}
-.section-inner{max-width:1100px;margin:auto;}
-.section-label{font-size:.72rem;font-weight:700;letter-spacing:4px;text-transform:uppercase;color:var(--orange);margin-bottom:.75rem;}
-.section-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.2rem,5vw,3.5rem);color:#fff;line-height:1;margin-bottom:1rem;}
-.section-desc{color:var(--muted);max-width:600px;font-size:1rem;margin-bottom:3rem;}
+.hero-stats{
+  margin-top:3.5rem;display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:1.5rem;max-width:600px;
+  animation:slideInUp 1s ease .9s both;
+}
+.stat-item{
+  border-left:2px solid var(--orange);padding-left:1rem;
+}
+.stat-num{
+  font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#fff;
+  line-height:1;display:block;
+}
+.stat-lbl{font-size:.75rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
 
-/* ── MODULES ── */
-#formations{background:var(--bg2);}
-.modules-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.5rem;}
-.module-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:1.75rem;transition:all .25s;position:relative;overflow:hidden;}
-.module-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--orange);}
-.module-card.blue::before{background:var(--blue);}
-.module-card:hover{border-color:var(--orange);transform:translateY(-4px);}
-.module-card.blue:hover{border-color:var(--blue);}
-.module-num{font-family:'Bebas Neue',sans-serif;font-size:3rem;color:rgba(249,115,22,.15);line-height:1;margin-bottom:.5rem;}
+/* ═══════════════════════════════════════════════════════════
+   SECTIONS GÉNÉRIQUES
+═══════════════════════════════════════════════════════════ */
+section{padding:6rem 1.5rem;position:relative;}
+.section-inner{max-width:1200px;margin:auto;}
+.section-label{
+  font-size:.72rem;font-weight:700;letter-spacing:4px;text-transform:uppercase;
+  color:var(--orange);margin-bottom:.75rem;
+  display:inline-flex;align-items:center;gap:.5rem;
+}
+.section-label::before{content:'';width:30px;height:1px;background:var(--orange);}
+.section-title{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(2.2rem,5vw,3.8rem);
+  color:#fff;line-height:1;margin-bottom:1rem;
+}
+.section-desc{color:var(--muted);max-width:650px;font-size:1.02rem;margin-bottom:3.5rem;}
+
+/* ═══════════════════════════════════════════════════════════
+   MODULES
+═══════════════════════════════════════════════════════════ */
+#formations{background:var(--bg2);position:relative;}
+#formations::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,var(--border-light),transparent);
+}
+.modules-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));
+  gap:1.5rem;
+}
+.module-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;padding:1.75rem;
+  transition:all .3s cubic-bezier(.22,1,.36,1);
+  position:relative;overflow:hidden;
+}
+.module-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:var(--gradient-1);
+  transform:scaleX(.3);transform-origin:left;transition:transform .4s;
+}
+.module-card.blue::before{background:var(--gradient-2);}
+.module-card:hover{
+  border-color:var(--orange);transform:translateY(-6px);
+  background:var(--card-hover);
+  box-shadow:0 20px 40px rgba(0,0,0,.4),0 0 0 1px rgba(249,115,22,.1);
+}
+.module-card.blue:hover{
+  border-color:var(--blue);
+  box-shadow:0 20px 40px rgba(0,0,0,.4),0 0 0 1px rgba(59,130,246,.1);
+}
+.module-card:hover::before{transform:scaleX(1);}
+.module-num{
+  font-family:'Bebas Neue',sans-serif;font-size:3.2rem;
+  color:rgba(249,115,22,.15);line-height:1;margin-bottom:.5rem;
+}
 .module-card.blue .module-num{color:rgba(59,130,246,.15);}
-.module-icon{font-size:1.8rem;margin-bottom:.75rem;}
-.module-title{font-family:'Barlow Condensed',sans-serif;font-size:1.25rem;font-weight:700;color:#fff;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:1px;}
+.module-icon{font-size:1.9rem;margin-bottom:.75rem;}
+.module-title{
+  font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:700;
+  color:#fff;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:1px;
+}
 .module-desc{color:var(--muted);font-size:.9rem;margin-bottom:1.25rem;}
-.module-topics{list-style:none;display:flex;flex-direction:column;gap:.4rem;}
-.module-topics li{font-size:.83rem;color:var(--text);display:flex;align-items:flex-start;gap:.5rem;}
+.module-topics{list-style:none;display:flex;flex-direction:column;gap:.45rem;}
+.module-topics li{
+  font-size:.83rem;color:var(--text);
+  display:flex;align-items:flex-start;gap:.5rem;
+}
 .module-topics li::before{content:'▸';color:var(--orange);flex-shrink:0;margin-top:1px;}
 .module-card.blue .module-topics li::before{color:var(--blue);}
-.module-duration{margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border);font-size:.78rem;color:var(--muted);display:flex;align-items:center;gap:.4rem;}
+.module-duration{
+  margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border);
+  font-size:.78rem;color:var(--muted);display:flex;align-items:center;gap:.4rem;
+}
 
-/* ── TARIFS ── */
+.tech-tags{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1rem;}
+.tech-tag{
+  background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.25);
+  color:var(--orange);padding:.4rem 1rem;border-radius:50px;
+  font-size:.78rem;font-weight:700;letter-spacing:.5px;
+  transition:all .2s;
+}
+.tech-tag:hover{background:rgba(249,115,22,.15);transform:translateY(-2px);}
+.tech-tag.blue{
+  background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.25);
+  color:var(--blue);
+}
+.tech-tag.blue:hover{background:rgba(59,130,246,.15);}
+
+.audience-grid{
+  margin-top:3rem;display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem;
+}
+.audience-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:1.5rem;text-align:center;
+  transition:all .25s;
+}
+.audience-card:hover{border-color:var(--orange);transform:translateY(-3px);}
+.audience-card .ico{font-size:2.2rem;margin-bottom:.6rem;}
+.audience-card strong{color:#fff;display:block;margin-bottom:.3rem;font-size:.95rem;}
+.audience-card span{color:var(--muted);font-size:.82rem;}
+
+/* ═══════════════════════════════════════════════════════════
+   TARIFS
+═══════════════════════════════════════════════════════════ */
 #tarifs{background:var(--bg);}
-.pricing-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem;max-width:900px;}
-.price-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:2rem;transition:all .25s;position:relative;}
-.price-card.featured{border-color:var(--orange);background:rgba(249,115,22,.05);}
-.price-card.featured::after{content:'⭐ POPULAIRE';position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--orange);color:#000;font-size:.65rem;font-weight:800;letter-spacing:2px;padding:.25rem .8rem;border-radius:20px;}
-.price-name{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:.5rem;}
+.pricing-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));
+  gap:1.75rem;max-width:1000px;
+}
+.price-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;padding:2rem;transition:all .3s;
+  position:relative;
+}
+.price-card:hover{transform:translateY(-4px);border-color:var(--border-light);}
+.price-card.featured{
+  border-color:var(--orange);
+  background:linear-gradient(180deg,rgba(249,115,22,.06) 0%,rgba(249,115,22,.02) 100%);
+  box-shadow:0 20px 40px rgba(0,0,0,.3),0 0 0 1px rgba(249,115,22,.2);
+  transform:scale(1.02);
+}
+.price-card.featured:hover{transform:scale(1.02) translateY(-4px);}
+.price-card.featured::after{
+  content:'⭐ POPULAIRE';position:absolute;top:-12px;left:50%;
+  transform:translateX(-50%);background:var(--gradient-1);color:#000;
+  font-size:.68rem;font-weight:800;letter-spacing:2px;
+  padding:.3rem 1rem;border-radius:50px;
+  box-shadow:0 4px 12px rgba(249,115,22,.4);
+}
+.price-name{
+  font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:.5rem;
+}
 .price-amount{font-family:'Bebas Neue',sans-serif;font-size:3.5rem;color:#fff;line-height:1;}
 .price-currency{font-size:1.2rem;color:var(--orange);vertical-align:top;margin-top:.5rem;display:inline-block;}
-.price-period{font-size:.8rem;color:var(--muted);margin-bottom:1.5rem;}
-.price-features{list-style:none;display:flex;flex-direction:column;gap:.6rem;margin-bottom:2rem;}
+.price-period{font-size:.82rem;color:var(--muted);margin-bottom:1.75rem;margin-top:.3rem;}
+.price-features{list-style:none;display:flex;flex-direction:column;gap:.65rem;margin-bottom:2rem;}
 .price-features li{font-size:.88rem;color:var(--text);display:flex;gap:.6rem;align-items:flex-start;}
-.price-features li .chk{color:var(--success);flex-shrink:0;}
-.price-features li .x{color:#ef4444;flex-shrink:0;}
-.btn-price{display:block;text-align:center;padding:.85rem;border-radius:8px;font-weight:700;font-size:.9rem;letter-spacing:1px;text-decoration:none;transition:all .2s;border:1px solid var(--orange);color:var(--orange);}
-.btn-price:hover,.price-card.featured .btn-price{background:var(--orange);color:#000;}
-.price-note{margin-top:2.5rem;background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:10px;padding:1.25rem 1.5rem;font-size:.88rem;color:var(--muted);}
+.price-features li .chk{color:var(--success);flex-shrink:0;font-weight:bold;}
+.price-features li .x{color:#ef4444;flex-shrink:0;opacity:.5;}
+.price-features li.disabled{color:var(--muted);text-decoration:line-through;text-decoration-color:rgba(156,163,175,.3);}
+.btn-price{
+  display:block;text-align:center;padding:.95rem;border-radius:10px;
+  font-weight:800;font-size:.88rem;letter-spacing:1.5px;text-transform:uppercase;
+  text-decoration:none;transition:all .25s;
+  border:1px solid var(--orange);color:var(--orange);
+}
+.btn-price:hover{background:var(--orange);color:#000;transform:translateY(-2px);}
+.price-card.featured .btn-price{background:var(--gradient-1);color:#000;border-color:transparent;box-shadow:0 6px 20px rgba(249,115,22,.3);}
+.price-card.featured .btn-price:hover{box-shadow:0 10px 28px rgba(249,115,22,.45);}
+.price-note{
+  margin-top:2.5rem;
+  background:rgba(59,130,246,.06);
+  border:1px solid rgba(59,130,246,.2);
+  border-radius:12px;padding:1.4rem 1.75rem;font-size:.88rem;color:var(--muted);
+}
 .price-note strong{color:var(--blue);}
 
-/* ── PLANNING ── */
+/* ═══════════════════════════════════════════════════════════
+   PLANNING
+═══════════════════════════════════════════════════════════ */
 #planning{background:var(--bg2);}
-.planning-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.25rem;margin-bottom:2.5rem;}
-.session-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.5rem;transition:border-color .2s;}
-.session-card:hover{border-color:var(--orange);}
-.session-day{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:var(--orange);letter-spacing:1px;margin-bottom:.25rem;}
+.planning-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));
+  gap:1.25rem;margin-bottom:2.5rem;
+}
+.session-card{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:1.5rem;transition:all .25s;
+  position:relative;overflow:hidden;
+}
+.session-card::after{
+  content:'';position:absolute;top:0;right:0;width:60px;height:60px;
+  background:radial-gradient(circle at top right,rgba(249,115,22,.08) 0%,transparent 70%);
+}
+.session-card:hover{border-color:var(--orange);transform:translateY(-3px);}
+.session-day{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--orange);letter-spacing:1px;margin-bottom:.25rem;}
 .session-time{font-size:.88rem;color:var(--blue);font-weight:600;margin-bottom:.75rem;}
 .session-title{font-weight:700;color:#fff;font-size:.95rem;margin-bottom:.4rem;}
 .session-info{font-size:.82rem;color:var(--muted);}
-.session-badge{display:inline-block;margin-top:.75rem;font-size:.68rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:.2rem .7rem;border-radius:4px;}
-.badge-open{background:rgba(34,197,94,.1);color:var(--success);border:1px solid rgba(34,197,94,.2);}
-.badge-full{background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.2);}
-.badge-soon{background:rgba(249,115,22,.1);color:var(--orange);border:1px solid rgba(249,115,22,.2);}
-.planning-note{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--orange);border-radius:8px;padding:1.25rem 1.5rem;font-size:.9rem;color:var(--muted);}
+.session-badge{
+  display:inline-block;margin-top:.85rem;font-size:.68rem;font-weight:700;
+  letter-spacing:2px;text-transform:uppercase;padding:.25rem .8rem;border-radius:50px;
+}
+.badge-open{background:rgba(34,197,94,.1);color:var(--success);border:1px solid rgba(34,197,94,.25);}
+.badge-full{background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.25);}
+.badge-soon{background:rgba(249,115,22,.1);color:var(--orange);border:1px solid rgba(249,115,22,.25);}
+.planning-note{
+  background:var(--card);border:1px solid var(--border);
+  border-left:3px solid var(--orange);border-radius:10px;
+  padding:1.4rem 1.75rem;font-size:.92rem;color:var(--muted);line-height:1.9;
+}
 .planning-note strong{color:var(--text);}
 
-/* ── INSCRIPTION ── */
+/* ═══════════════════════════════════════════════════════════
+   INSCRIPTION
+═══════════════════════════════════════════════════════════ */
 #inscription{background:var(--bg);}
 .form-wrap{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start;}
-.form-info h3{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#fff;margin-bottom:1rem;}
-.form-info p{color:var(--muted);font-size:.92rem;margin-bottom:1.5rem;}
-.steps{display:flex;flex-direction:column;gap:1rem;}
+.form-info h3{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#fff;margin-bottom:1rem;letter-spacing:1px;}
+.form-info > p{color:var(--muted);font-size:.95rem;margin-bottom:1.75rem;}
+.steps{display:flex;flex-direction:column;gap:1.25rem;}
 .step{display:flex;gap:1rem;align-items:flex-start;}
-.step-num{width:32px;height:32px;border-radius:50%;background:var(--orange);color:#000;font-weight:800;font-size:.9rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.step-text strong{display:block;color:#fff;font-weight:700;font-size:.9rem;}
-.step-text span{color:var(--muted);font-size:.83rem;}
-.payment-methods{margin-top:2rem;display:flex;flex-direction:column;gap:.75rem;}
-.pay-method{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1rem 1.25rem;display:flex;align-items:center;gap:.75rem;}
-.pay-icon{font-size:1.5rem;}
-.pay-info strong{display:block;color:#fff;font-size:.9rem;}
+.step-num{
+  width:36px;height:36px;border-radius:50%;
+  background:var(--gradient-1);color:#000;font-weight:800;font-size:1rem;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  box-shadow:0 4px 12px rgba(249,115,22,.3);
+}
+.step-text strong{display:block;color:#fff;font-weight:700;font-size:.95rem;margin-bottom:.2rem;}
+.step-text span{color:var(--muted);font-size:.85rem;}
+.payment-methods{margin-top:2.25rem;display:flex;flex-direction:column;gap:.75rem;}
+.pay-method{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:10px;padding:1rem 1.25rem;
+  display:flex;align-items:center;gap:.85rem;transition:all .25s;
+}
+.pay-method:hover{border-color:var(--orange);transform:translateX(4px);}
+.pay-icon{font-size:1.6rem;}
+.pay-info strong{display:block;color:#fff;font-size:.92rem;}
 .pay-info span{color:var(--muted);font-size:.78rem;}
-/* form */
-.reg-form{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:2rem;}
-.reg-form h3{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:#fff;margin-bottom:1.5rem;letter-spacing:1px;}
+
+.reg-form{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;padding:2.25rem;
+  position:relative;overflow:hidden;
+}
+.reg-form::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:var(--gradient-1);
+}
+.reg-form h3{
+  font-family:'Bebas Neue',sans-serif;font-size:1.9rem;color:#fff;
+  margin-bottom:1.5rem;letter-spacing:1.5px;
+}
 .form-group{margin-bottom:1.25rem;}
-.form-group label{display:block;font-size:.78rem;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:.5rem;}
-.form-group input,.form-group select,.form-group textarea{width:100%;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;color:var(--text);font-family:'Barlow',sans-serif;font-size:.9rem;outline:none;transition:border-color .2s;}
-.form-group input:focus,.form-group select:focus,.form-group textarea:focus{border-color:var(--orange);}
+.form-group label{
+  display:block;font-size:.72rem;font-weight:700;letter-spacing:2px;
+  text-transform:uppercase;color:var(--muted);margin-bottom:.5rem;
+}
+.form-group input,.form-group select,.form-group textarea{
+  width:100%;background:var(--bg2);border:1px solid var(--border);
+  border-radius:10px;padding:.85rem 1rem;color:var(--text);
+  font-family:'Barlow',sans-serif;font-size:.92rem;outline:none;
+  transition:all .2s;
+}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{
+  border-color:var(--orange);
+  box-shadow:0 0 0 3px rgba(249,115,22,.15);
+}
 .form-group select option{background:var(--bg2);}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
-.form-submit{width:100%;background:var(--orange);color:#000;font-weight:800;font-size:1rem;letter-spacing:2px;text-transform:uppercase;padding:1rem;border:none;border-radius:8px;cursor:pointer;transition:all .2s;margin-top:.5rem;}
-.form-submit:hover{background:var(--orange2);transform:translateY(-2px);}
-.form-success{display:none;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:10px;padding:1.5rem;text-align:center;margin-top:1rem;}
-.form-success h4{color:var(--success);font-size:1.1rem;margin-bottom:.5rem;}
+.form-submit{
+  width:100%;background:var(--gradient-1);color:#000;
+  font-weight:800;font-size:1rem;letter-spacing:2px;text-transform:uppercase;
+  padding:1rem;border:none;border-radius:10px;cursor:pointer;
+  transition:all .25s;margin-top:.5rem;
+  box-shadow:0 8px 24px rgba(249,115,22,.3);
+}
+.form-submit:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(249,115,22,.45);}
+.form-success{
+  display:none;background:rgba(34,197,94,.08);
+  border:1px solid rgba(34,197,94,.3);
+  border-radius:12px;padding:1.75rem;text-align:center;margin-top:1rem;
+}
+.form-success h4{color:var(--success);font-size:1.2rem;margin-bottom:.5rem;}
 .form-success p{color:var(--muted);font-size:.88rem;}
 
-/* ── CONTACT ── */
+/* ═══════════════════════════════════════════════════════════
+   CONTACT
+═══════════════════════════════════════════════════════════ */
 #contact{background:var(--bg2);}
 .contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;}
-.contact-info h3{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:#fff;margin-bottom:.75rem;}
-.contact-info p{color:var(--muted);font-size:.92rem;margin-bottom:2rem;}
+.contact-info h3{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#fff;margin-bottom:.75rem;letter-spacing:1px;}
+.contact-info > p{color:var(--muted);font-size:.95rem;margin-bottom:2rem;}
 .contact-items{display:flex;flex-direction:column;gap:1rem;}
-.contact-item{display:flex;gap:1rem;align-items:flex-start;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.2rem 1.5rem;}
-.contact-item .icon{font-size:1.4rem;flex-shrink:0;}
-.contact-item strong{display:block;color:#fff;font-size:.9rem;margin-bottom:.2rem;}
-.contact-item span{color:var(--muted);font-size:.83rem;}
-.contact-item a{color:var(--orange);text-decoration:none;}
-.wa-btn{display:inline-flex;align-items:center;gap:.75rem;background:#25d366;color:#fff;font-weight:800;font-size:1rem;padding:1rem 2rem;border-radius:8px;text-decoration:none;margin-top:1.5rem;transition:all .2s;}
-.wa-btn:hover{background:#1ebe5d;transform:translateY(-2px);}
-.contact-form{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:2rem;}
-.contact-form h3{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:#fff;margin-bottom:1.5rem;}
+.contact-item{
+  display:flex;gap:1rem;align-items:flex-start;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:1.25rem 1.5rem;transition:all .25s;
+}
+.contact-item:hover{border-color:var(--orange);transform:translateX(4px);}
+.contact-item .icon{font-size:1.5rem;flex-shrink:0;}
+.contact-item strong{display:block;color:#fff;font-size:.92rem;margin-bottom:.25rem;}
+.contact-item span{color:var(--muted);font-size:.85rem;}
+.contact-item a{color:var(--orange);text-decoration:none;transition:color .2s;}
+.contact-item a:hover{color:var(--orange2);}
+.wa-btn{
+  display:inline-flex;align-items:center;gap:.85rem;
+  background:#25d366;color:#fff;font-weight:800;font-size:1rem;
+  padding:1.1rem 2.25rem;border-radius:10px;text-decoration:none;
+  margin-top:1.75rem;transition:all .25s;
+  box-shadow:0 8px 24px rgba(37,211,102,.3);
+}
+.wa-btn:hover{background:#1ebe5d;transform:translateY(-3px);box-shadow:0 12px 32px rgba(37,211,102,.45);}
+.contact-form{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:16px;padding:2.25rem;
+  position:relative;overflow:hidden;
+}
+.contact-form::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:var(--gradient-2);
+}
+.contact-form h3{font-family:'Bebas Neue',sans-serif;font-size:1.75rem;color:#fff;margin-bottom:1.5rem;letter-spacing:1.5px;}
 
-/* ── FOOTER ── */
-footer{background:var(--bg);border-top:1px solid var(--border);padding:3rem 1.5rem 2rem;}
-.footer-inner{max-width:1100px;margin:auto;display:grid;grid-template-columns:2fr 1fr 1fr;gap:3rem;}
-.footer-brand .logo{font-family:'Bebas Neue',sans-serif;font-size:2rem;color:var(--orange);letter-spacing:2px;}
-.footer-brand p{color:var(--muted);font-size:.85rem;margin-top:.5rem;max-width:280px;}
-.footer-col h4{font-family:'Barlow Condensed',sans-serif;font-size:.9rem;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text);margin-bottom:1rem;}
-.footer-col ul{list-style:none;display:flex;flex-direction:column;gap:.5rem;}
-.footer-col ul a{color:var(--muted);text-decoration:none;font-size:.85rem;transition:color .2s;}
-.footer-col ul a:hover{color:var(--orange);}
-.footer-bottom{max-width:1100px;margin:2rem auto 0;padding-top:1.5rem;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:gap;font-size:.8rem;color:var(--muted);}
-.footer-bottom span em{color:var(--orange);font-style:normal;}
+/* ═══════════════════════════════════════════════════════════
+   CTA FINAL
+═══════════════════════════════════════════════════════════ */
+.cta-final{
+  background:var(--gradient-1);padding:4rem 1.5rem;text-align:center;
+  position:relative;overflow:hidden;
+}
+.cta-final::before{
+  content:'';position:absolute;inset:0;
+  background-image:
+    linear-gradient(rgba(0,0,0,.08) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,0,0,.08) 1px,transparent 1px);
+  background-size:40px 40px;
+  opacity:.3;
+}
+.cta-final-inner{max-width:800px;margin:auto;position:relative;z-index:1;}
+.cta-final h2{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(2.2rem,5vw,3.8rem);
+  color:#000;letter-spacing:2px;margin-bottom:.75rem;line-height:1;
+}
+.cta-final p{color:rgba(0,0,0,.75);font-size:1.05rem;margin-bottom:1.75rem;}
+.cta-phones{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.5rem;}
+.cta-phone{
+  background:#000;color:#fff;font-weight:800;
+  padding:1rem 2rem;border-radius:10px;text-decoration:none;font-size:1.05rem;
+  transition:all .25s;display:inline-flex;align-items:center;gap:.5rem;
+}
+.cta-phone:hover{background:#222;transform:translateY(-3px);box-shadow:0 12px 28px rgba(0,0,0,.3);}
+.cta-final small{color:rgba(0,0,0,.65);font-size:.85rem;}
 
-/* ── TOAST ── */
-.toast{position:fixed;bottom:2rem;right:2rem;background:#1a1a2e;border:1px solid var(--success);border-radius:10px;padding:1rem 1.5rem;z-index:9999;transform:translateY(100px);opacity:0;transition:all .4s;max-width:320px;}
+/* ═══════════════════════════════════════════════════════════
+   FOOTER
+═══════════════════════════════════════════════════════════ */
+footer{background:var(--bg);border-top:1px solid var(--border);padding:4rem 1.5rem 2rem;}
+.footer-inner{max-width:1200px;margin:auto;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:3rem;}
+.footer-brand .logo{
+  display:flex;align-items:center;gap:.7rem;margin-bottom:1rem;
+}
+.footer-brand .logo-icon{
+  width:42px;height:42px;border-radius:10px;
+  background:var(--gradient-1);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:#000;letter-spacing:1px;
+}
+.footer-brand .logo-text{
+  font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:#fff;letter-spacing:2px;
+}
+.footer-brand p{color:var(--muted);font-size:.88rem;max-width:300px;line-height:1.7;}
+.footer-socials{margin-top:1.25rem;display:flex;gap:.75rem;}
+.footer-socials a{
+  width:38px;height:38px;border-radius:10px;
+  background:var(--card);border:1px solid var(--border);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--muted);text-decoration:none;transition:all .2s;
+}
+.footer-socials a:hover{background:var(--orange);color:#000;border-color:var(--orange);transform:translateY(-2px);}
+.footer-col h4{
+  font-family:'Barlow Condensed',sans-serif;font-size:.9rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:2.5px;color:#fff;margin-bottom:1.25rem;
+}
+.footer-col ul{list-style:none;display:flex;flex-direction:column;gap:.6rem;}
+.footer-col ul a{color:var(--muted);text-decoration:none;font-size:.88rem;transition:all .2s;}
+.footer-col ul a:hover{color:var(--orange);padding-left:4px;}
+.footer-bottom{
+  max-width:1200px;margin:3rem auto 0;padding-top:1.75rem;
+  border-top:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;
+  font-size:.82rem;color:var(--muted);
+}
+.footer-bottom span em{color:var(--orange);font-style:normal;font-weight:600;}
+
+/* ═══════════════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════════════ */
+.toast{
+  position:fixed;bottom:2rem;right:2rem;
+  background:#1a1a2e;border:1px solid var(--success);
+  border-radius:12px;padding:1rem 1.5rem;z-index:9999;
+  transform:translateY(100px);opacity:0;transition:all .4s;max-width:340px;
+  box-shadow:0 12px 32px rgba(0,0,0,.5);
+}
 .toast.show{transform:translateY(0);opacity:1;}
-.toast strong{color:var(--success);display:block;margin-bottom:.25rem;}
+.toast.error{border-color:#ef4444;}
+.toast strong{color:var(--success);display:block;margin-bottom:.25rem;font-size:.95rem;}
+.toast.error strong{color:#ef4444;}
 .toast span{color:var(--muted);font-size:.85rem;}
 
-/* ── RESPONSIVE ── */
+/* ═══════════════════════════════════════════════════════════
+   SCROLL TO TOP
+═══════════════════════════════════════════════════════════ */
+#scrollTop{
+  position:fixed;bottom:2rem;left:2rem;z-index:998;
+  width:48px;height:48px;border-radius:50%;
+  background:var(--gradient-1);color:#000;
+  border:none;cursor:pointer;font-size:1.2rem;
+  box-shadow:0 8px 24px rgba(249,115,22,.4);
+  opacity:0;visibility:hidden;transform:translateY(20px);
+  transition:all .3s;
+}
+#scrollTop.show{opacity:1;visibility:visible;transform:translateY(0);}
+#scrollTop:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(249,115,22,.55);}
+
+/* WhatsApp floating */
+.wa-float{
+  position:fixed;bottom:2rem;right:2rem;z-index:998;
+  width:56px;height:56px;border-radius:50%;
+  background:#25d366;color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  text-decoration:none;font-size:1.5rem;
+  box-shadow:0 8px 24px rgba(37,211,102,.4);
+  transition:all .25s;
+  animation:waPulse 2.5s infinite;
+}
+.wa-float:hover{transform:scale(1.1) rotate(8deg);}
+@keyframes waPulse{
+  0%,100%{box-shadow:0 8px 24px rgba(37,211,102,.4),0 0 0 0 rgba(37,211,102,.4);}
+  50%{box-shadow:0 8px 24px rgba(37,211,102,.4),0 0 0 16px rgba(37,211,102,0);}
+}
+
+/* ═══════════════════════════════════════════════════════════
+   REVEAL ANIMATIONS (Intersection Observer)
+═══════════════════════════════════════════════════════════ */
+.reveal{opacity:0;transform:translateY(30px);transition:opacity .8s ease,transform .8s ease;}
+.reveal.visible{opacity:1;transform:translateY(0);}
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE
+═══════════════════════════════════════════════════════════ */
+@media(max-width:900px){
+  .footer-inner{grid-template-columns:1fr 1fr;}
+  .footer-brand{grid-column:1/-1;}
+}
 @media(max-width:768px){
   .nav-links,.nav-cta{display:none;}
   .hamburger{display:flex;}
-  .form-wrap,.contact-grid,.footer-inner{grid-template-columns:1fr;}
-  .form-row{grid-template-columns:1fr;}
-  .footer-inner{gap:2rem;}
-  .footer-bottom{flex-direction:column;gap:.5rem;text-align:center;}
+  .form-wrap,.contact-grid{grid-template-columns:1fr;}
+  .form-row,.modal-row{grid-template-columns:1fr;}
+  .footer-inner{grid-template-columns:1fr;gap:2rem;}
+  .footer-bottom{flex-direction:column;text-align:center;}
+  section{padding:4.5rem 1.25rem;}
+  .nav-logo-text .sub{display:none;}
+  #accueil{padding:100px 1.25rem 3rem;}
+  .hero-stats{grid-template-columns:1fr 1fr;gap:1rem;}
+  .wa-float{bottom:1.25rem;right:1.25rem;}
+  #scrollTop{bottom:1.25rem;left:1.25rem;}
+  .modal-card{padding:2rem 1.5rem;}
+}
+@media(max-width:480px){
+  .splash-logo-circle{width:110px;height:110px;}
+  .splash-logo-text{font-size:2.3rem;}
+  .hero-btns{flex-direction:column;width:100%;}
+  .hero-btns a{justify-content:center;width:100%;}
 }
 </style>
 </head>
-<body>
+<body class="no-scroll">
 
-<!-- ══════════ NAV ══════════ -->
-<nav>
+<!-- ═══════════════════════════════════════════════════════════
+     SPLASH SCREEN
+═══════════════════════════════════════════════════════════ -->
+<div id="splash">
+  <div class="splash-particles" id="splashParticles"></div>
+  <div class="splash-logo-wrap">
+    <div class="splash-logo-circle">
+      <div class="splash-logo-text">AET</div>
+    </div>
+    <h1 class="splash-brand"><em>A</em>LBAN <em>E</em>LOH <em>T</em>ECHNOLOGY</h1>
+    <p class="splash-tagline">Formation Web &amp; Applications</p>
+    <p class="splash-subtitle">★ Lomé · Togo ★</p>
+  </div>
+  <div class="splash-progress">
+    <div class="splash-progress-bar"></div>
+  </div>
+  <p class="splash-status">Chargement en cours...</p>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MODAL D'INSCRIPTION (avant accès au site)
+═══════════════════════════════════════════════════════════ -->
+<div id="welcomeModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-logo">AET</div>
+      <h2 class="modal-title">BIENVENUE !</h2>
+      <p class="modal-subtitle">Inscrivez-vous pour découvrir nos <strong>formations</strong></p>
+    </div>
+
+    <div class="modal-error" id="modalError"></div>
+
+    <form class="modal-form" id="welcomeForm" onsubmit="handleWelcomeSubmit(event)">
+      <div class="modal-row">
+        <div class="form-group">
+          <label>Prénom *</label>
+          <input type="text" id="wPrenom" placeholder="Votre prénom" required>
+        </div>
+        <div class="form-group">
+          <label>Nom *</label>
+          <input type="text" id="wNom" placeholder="Votre nom" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Téléphone / WhatsApp *</label>
+        <input type="tel" id="wTel" placeholder="Ex : 99 00 00 00" required>
+      </div>
+      <div class="form-group">
+        <label>Email (optionnel)</label>
+        <input type="email" id="wEmail" placeholder="votreemail@exemple.com">
+      </div>
+      <div class="form-group">
+        <label>Vous êtes... *</label>
+        <select id="wProfil" required>
+          <option value="">-- Sélectionnez --</option>
+          <option>Étudiant(e)</option>
+          <option>Professionnel(le)</option>
+          <option>Entrepreneur(e)</option>
+          <option>Débutant(e) curieux(se)</option>
+          <option>Autre</option>
+        </select>
+      </div>
+      <button type="submit" class="modal-submit">Accéder au site →</button>
+      <p class="modal-footer">
+        Vos infos sont protégées · Aucun spam ·<br>
+        <a href="javascript:void(0)" onclick="skipWelcome()">Voir le site sans inscription</a>
+      </p>
+    </form>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     NAVIGATION
+═══════════════════════════════════════════════════════════ -->
+<nav id="mainNav">
   <div class="nav-inner">
-    <a href="#accueil" class="nav-logo">A.E.T<span>Alban Eloh Technology</span></a>
+    <a href="#accueil" class="nav-logo">
+      <div class="nav-logo-icon">AET</div>
+      <div class="nav-logo-text">
+        <span class="brand">A.E.T</span>
+        <span class="sub">Alban Eloh Technology</span>
+      </div>
+    </a>
     <ul class="nav-links">
       <li><a href="#accueil" class="active">Accueil</a></li>
       <li><a href="#formations">Formations</a></li>
@@ -211,22 +1017,25 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:3rem 1.5r
       <li><a href="#contact">Contact</a></li>
     </ul>
     <a href="#inscription" class="nav-cta">S'inscrire</a>
-    <div class="hamburger" onclick="toggleMenu()">
+    <button class="hamburger" id="hamburger" onclick="toggleMenu()" aria-label="Menu">
       <span></span><span></span><span></span>
-    </div>
+    </button>
   </div>
 </nav>
 <div class="mobile-menu" id="mobileMenu">
-  <a href="#accueil" onclick="closeMenu()">🏠 Accueil</a>
-  <a href="#formations" onclick="closeMenu()">📚 Formations</a>
-  <a href="#tarifs" onclick="closeMenu()">💰 Tarifs</a>
-  <a href="#planning" onclick="closeMenu()">📅 Planning</a>
-  <a href="#contact" onclick="closeMenu()">📞 Contact</a>
-  <a href="#inscription" onclick="closeMenu()">✍️ S'inscrire maintenant</a>
+  <a href="#accueil" onclick="closeMenu()">🏠 <span>Accueil</span></a>
+  <a href="#formations" onclick="closeMenu()">📚 <span>Formations</span></a>
+  <a href="#tarifs" onclick="closeMenu()">💰 <span>Tarifs</span></a>
+  <a href="#planning" onclick="closeMenu()">📅 <span>Planning</span></a>
+  <a href="#contact" onclick="closeMenu()">📞 <span>Contact</span></a>
+  <a href="#inscription" class="cta" onclick="closeMenu()">✍️ S'inscrire maintenant</a>
 </div>
 
-<!-- ══════════ HERO ══════════ -->
+<!-- ═══════════════════════════════════════════════════════════
+     HERO
+═══════════════════════════════════════════════════════════ -->
 <section id="accueil">
+  <div class="hero-grid-bg"></div>
   <div class="hero-inner">
     <div class="hero-badge"><span>FORMATION</span> Pratique &amp; Professionnelle</div>
     <h1 class="hero-title">
@@ -239,33 +1048,29 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:3rem 1.5r
       <p>Créez des <span>sites web professionnels</span> et des <span>applications connectées</span> avec une base de données en temps réel. Formation complète, étape par étape, accessible aux <strong>débutants.</strong></p>
     </div>
     <div class="hero-btns">
-      <a href="#inscription" class="btn-primary">S'inscrire maintenant</a>
+      <a href="#inscription" class="btn-primary">S'inscrire maintenant →</a>
       <a href="#formations" class="btn-secondary">Voir les modules</a>
     </div>
-    <div class="hero-phones">
-      <div class="phone-chip">
-        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
-        99 81 20 72
-      </div>
-      <div class="phone-chip">
-        <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>
-        93 00 39 41
-      </div>
+    <div class="hero-stats">
+      <div class="stat-item"><span class="stat-num">6</span><span class="stat-lbl">Modules</span></div>
+      <div class="stat-item"><span class="stat-num">7+</span><span class="stat-lbl">Semaines</span></div>
+      <div class="stat-item"><span class="stat-num">100%</span><span class="stat-lbl">Pratique</span></div>
+      <div class="stat-item"><span class="stat-num">5</span><span class="stat-lbl">Max / groupe</span></div>
     </div>
   </div>
 </section>
 
-<!-- ══════════ FORMATIONS ══════════ -->
+<!-- ═══════════════════════════════════════════════════════════
+     FORMATIONS
+═══════════════════════════════════════════════════════════ -->
 <section id="formations">
   <div class="section-inner">
-    <p class="section-label">Modules de formation</p>
-    <h2 class="section-title">6 MODULES COMPLETS</h2>
-    <p class="section-desc">Du HTML de base jusqu'au déploiement en ligne, chaque module construit sur le précédent pour une progression naturelle.</p>
+    <p class="section-label reveal">Modules de formation</p>
+    <h2 class="section-title reveal">6 MODULES COMPLETS</h2>
+    <p class="section-desc reveal">Du HTML de base jusqu'au déploiement en ligne, chaque module construit sur le précédent pour une progression naturelle.</p>
 
     <div class="modules-grid">
-
-      <!-- M1 -->
-      <div class="module-card">
+      <div class="module-card reveal">
         <div class="module-num">01</div>
         <div class="module-icon">🌐</div>
         <div class="module-title">HTML5 — Structure Web</div>
@@ -281,8 +1086,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:3rem 1.5r
         <div class="module-duration">⏱ Durée : 1 semaine — Niveau : Débutant</div>
       </div>
 
-      <!-- M2 -->
-      <div class="module-card blue">
+      <div class="module-card blue reveal">
         <div class="module-num">02</div>
         <div class="module-icon">🎨</div>
         <div class="module-title">CSS3 &amp; Design</div>
@@ -298,8 +1102,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:3rem 1.5r
         <div class="module-duration">⏱ Durée : 1 semaine — Niveau : Débutant</div>
       </div>
 
-      <!-- M3 -->
-      <div class="module-card">
+      <div class="module-card reveal">
         <div class="module-num">03</div>
         <div class="module-icon">⚡</div>
         <div class="module-title">JavaScript</div>
@@ -315,8 +1118,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:3rem 1.5r
         <div class="module-duration">⏱ Durée : 2 semaines — Niveau : Intermédiaire</div>
       </div>
 
-      <!-- M4 -->
-      <div class="module-card blue">
+      <div class="module-card blue reveal">
         <div class="module-num">04</div>
         <div class="module-icon">🔥</div>
         <div class="module-title">Firebase / Base de données</div>
@@ -332,8 +1134,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:3rem 1.5r
         <div class="module-duration">⏱ Durée : 2 semaines — Niveau : Intermédiaire</div>
       </div>
 
-      <!-- M5 -->
-      <div class="module-card">
+      <div class="module-card reveal">
         <div class="module-num">05</div>
         <div class="module-icon">🐙</div>
         <div class="module-title">GitHub</div>
@@ -349,8 +1150,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:3rem 1.5r
         <div class="module-duration">⏱ Durée : 3 jours — Niveau : Débutant</div>
       </div>
 
-      <!-- M6 -->
-      <div class="module-card blue">
+      <div class="module-card blue reveal">
         <div class="module-num">06</div>
         <div class="module-icon">🚀</div>
         <div class="module-title">Déploiement en ligne</div>
@@ -365,56 +1165,57 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:3rem 1.5r
         </ul>
         <div class="module-duration">⏱ Durée : 3 jours — Niveau : Tous niveaux</div>
       </div>
+    </div>
 
-    </div><!-- /modules-grid -->
-
-    <!-- Technologies -->
-    <div style="margin-top:3rem;">
+    <div style="margin-top:3.5rem;" class="reveal">
       <p class="section-label">Technologies couvertes</p>
-      <div style="display:flex;flex-wrap:wrap;gap:.75rem;margin-top:.75rem;">
-        <span style="background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.3);color:var(--orange);padding:.35rem .9rem;border-radius:6px;font-size:.8rem;font-weight:700;">HTML5</span>
-        <span style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:var(--blue);padding:.35rem .9rem;border-radius:6px;font-size:.8rem;font-weight:700;">CSS3</span>
-        <span style="background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.3);color:var(--orange);padding:.35rem .9rem;border-radius:6px;font-size:.8rem;font-weight:700;">JavaScript</span>
-        <span style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:var(--blue);padding:.35rem .9rem;border-radius:6px;font-size:.8rem;font-weight:700;">GitHub</span>
-        <span style="background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.3);color:var(--orange);padding:.35rem .9rem;border-radius:6px;font-size:.8rem;font-weight:700;">Firebase</span>
-        <span style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:var(--blue);padding:.35rem .9rem;border-radius:6px;font-size:.8rem;font-weight:700;">Firestore</span>
-        <span style="background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.3);color:var(--orange);padding:.35rem .9rem;border-radius:6px;font-size:.8rem;font-weight:700;">GitHub Pages</span>
+      <div class="tech-tags">
+        <span class="tech-tag">HTML5</span>
+        <span class="tech-tag blue">CSS3</span>
+        <span class="tech-tag">JavaScript</span>
+        <span class="tech-tag blue">GitHub</span>
+        <span class="tech-tag">Firebase</span>
+        <span class="tech-tag blue">Firestore</span>
+        <span class="tech-tag">GitHub Pages</span>
       </div>
     </div>
 
-    <!-- Public cible -->
-    <div style="margin-top:3rem;display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;">
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.25rem;text-align:center;">
-        <div style="font-size:2rem;margin-bottom:.5rem;">🎓</div>
-        <strong style="color:#fff;display:block;margin-bottom:.25rem;">Débutants</strong>
-        <span style="color:var(--muted);font-size:.82rem;">Aucune connaissance préalable requise</span>
+    <div class="audience-grid reveal">
+      <div class="audience-card">
+        <div class="ico">🎓</div>
+        <strong>Débutants</strong>
+        <span>Aucune connaissance préalable requise</span>
       </div>
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.25rem;text-align:center;">
-        <div style="font-size:2rem;margin-bottom:.5rem;">💼</div>
-        <strong style="color:#fff;display:block;margin-bottom:.25rem;">Entrepreneurs</strong>
-        <span style="color:var(--muted);font-size:.82rem;">Créez votre propre site ou app métier</span>
+      <div class="audience-card">
+        <div class="ico">💼</div>
+        <strong>Entrepreneurs</strong>
+        <span>Créez votre propre site ou app métier</span>
       </div>
-      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.25rem;text-align:center;">
-        <div style="font-size:2rem;margin-bottom:.5rem;">🔧</div>
-        <strong style="color:#fff;display:block;margin-bottom:.25rem;">Professionnels</strong>
-        <span style="color:var(--muted);font-size:.82rem;">Digitalisez vos outils et services</span>
+      <div class="audience-card">
+        <div class="ico">🔧</div>
+        <strong>Professionnels</strong>
+        <span>Digitalisez vos outils et services</span>
+      </div>
+      <div class="audience-card">
+        <div class="ico">🚀</div>
+        <strong>Étudiants</strong>
+        <span>Acquérez des compétences pratiques</span>
       </div>
     </div>
-
   </div>
 </section>
 
-<!-- ══════════ TARIFS ══════════ -->
+<!-- ═══════════════════════════════════════════════════════════
+     TARIFS
+═══════════════════════════════════════════════════════════ -->
 <section id="tarifs">
   <div class="section-inner">
-    <p class="section-label">Nos tarifs</p>
-    <h2 class="section-title">FORMULES &amp; PRIX</h2>
-    <p class="section-desc">Choisissez la formule qui correspond à vos objectifs. Paiement par Mobile Money ou virement bancaire.</p>
+    <p class="section-label reveal">Nos tarifs</p>
+    <h2 class="section-title reveal">FORMULES &amp; PRIX</h2>
+    <p class="section-desc reveal">Choisissez la formule qui correspond à vos objectifs. Paiement par Mobile Money ou virement bancaire.</p>
 
     <div class="pricing-grid">
-
-      <!-- Basique -->
-      <div class="price-card">
+      <div class="price-card reveal">
         <div class="price-name">Essentiel</div>
         <div><span class="price-currency">FCFA</span><span class="price-amount">25 000</span></div>
         <div class="price-period">/ 3 modules (HTML + CSS + JS)</div>
@@ -424,15 +1225,14 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:3rem 1.5r
           <li><span class="chk">✓</span> Module JavaScript</li>
           <li><span class="chk">✓</span> Support WhatsApp</li>
           <li><span class="chk">✓</span> Ressources téléchargeables</li>
-          <li><span class="x">✗</span> Firebase / Base de données</li>
-          <li><span class="x">✗</span> GitHub &amp; Déploiement</li>
-          <li><span class="x">✗</span> Projet final certifié</li>
+          <li class="disabled"><span class="x">✗</span> Firebase / Base de données</li>
+          <li class="disabled"><span class="x">✗</span> GitHub &amp; Déploiement</li>
+          <li class="disabled"><span class="x">✗</span> Projet final certifié</li>
         </ul>
-        <a href="#inscription" class="btn-price">Choisir Essentiel</a>
+        <a href="#inscription" class="btn-price" onclick="selectFormule('Essentiel — 25 000 FCFA')">Choisir Essentiel</a>
       </div>
 
-      <!-- Complet (featured) -->
-      <div class="price-card featured">
+      <div class="price-card featured reveal">
         <div class="price-name">Formation Complète</div>
         <div><span class="price-currency">FCFA</span><span class="price-amount">50 000</span></div>
         <div class="price-period">/ 6 modules complets</div>
@@ -446,11 +1246,10 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:3rem 1.5r
           <li><span class="chk">✓</span> Suivi personnalisé</li>
           <li><span class="chk">✓</span> Support prioritaire</li>
         </ul>
-        <a href="#inscription" class="btn-price">Choisir Formation Complète</a>
+        <a href="#inscription" class="btn-price" onclick="selectFormule('Formation Complète — 50 000 FCFA')">Choisir Formation Complète</a>
       </div>
 
-      <!-- Pro -->
-      <div class="price-card">
+      <div class="price-card reveal">
         <div class="price-name">Accompagnement Pro</div>
         <div><span class="price-currency">FCFA</span><span class="price-amount">80 000</span></div>
         <div class="price-period">/ Formation + Projet client</div>
@@ -464,96 +1263,88 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:3rem 1.5r
           <li><span class="chk">✓</span> 3 mois de support après formation</li>
           <li><span class="chk">✓</span> Recommandation professionnelle</li>
         </ul>
-        <a href="#inscription" class="btn-price">Choisir Pro</a>
+        <a href="#inscription" class="btn-price" onclick="selectFormule('Accompagnement Pro — 80 000 FCFA')">Choisir Pro</a>
       </div>
-
     </div>
 
-    <div class="price-note">
+    <div class="price-note reveal">
       <strong>💳 Modes de paiement acceptés :</strong> Flooz (Moov), T-Money (Togocom), virement bancaire. Paiement en 2 fois possible pour la formule complète et Pro. Contactez-nous au <strong style="color:var(--orange);">99 81 20 72</strong> pour tout arrangement.
     </div>
-
   </div>
 </section>
 
-<!-- ══════════ PLANNING ══════════ -->
+<!-- ═══════════════════════════════════════════════════════════
+     PLANNING
+═══════════════════════════════════════════════════════════ -->
 <section id="planning">
   <div class="section-inner">
-    <p class="section-label">Disponibilité des cours</p>
-    <h2 class="section-title">PLANNING DES SESSIONS</h2>
-    <p class="section-desc">Sessions disponibles à Lomé, Togo. Présentiel et accompagnement à distance disponibles.</p>
+    <p class="section-label reveal">Disponibilité des cours</p>
+    <h2 class="section-title reveal">PLANNING DES SESSIONS</h2>
+    <p class="section-desc reveal">Sessions disponibles à Lomé, Togo. Présentiel et accompagnement à distance disponibles.</p>
 
     <div class="planning-grid">
-
-      <div class="session-card">
-        <div class="session-day">LUNDI – MERCREDI</div>
+      <div class="session-card reveal">
+        <div class="session-day">LUN – MER</div>
         <div class="session-time">🕗 08h00 – 10h00</div>
         <div class="session-title">Session Matin — Débutants</div>
         <div class="session-info">HTML5 + CSS3 · Groupe de 5 max</div>
         <span class="session-badge badge-open">Places disponibles</span>
       </div>
-
-      <div class="session-card">
-        <div class="session-day">LUNDI – MERCREDI</div>
+      <div class="session-card reveal">
+        <div class="session-day">LUN – MER</div>
         <div class="session-time">🕓 16h00 – 18h00</div>
         <div class="session-title">Session Soir — Travailleurs</div>
         <div class="session-info">Tous modules · Idéal après le travail</div>
         <span class="session-badge badge-open">Places disponibles</span>
       </div>
-
-      <div class="session-card">
-        <div class="session-day">MARDI – JEUDI</div>
+      <div class="session-card reveal">
+        <div class="session-day">MAR – JEU</div>
         <div class="session-time">🕙 10h00 – 12h00</div>
         <div class="session-title">Session JavaScript Avancé</div>
         <div class="session-info">Firebase + API · Niveau intermédiaire</div>
         <span class="session-badge badge-full">Complet</span>
       </div>
-
-      <div class="session-card">
+      <div class="session-card reveal">
         <div class="session-day">SAMEDI</div>
         <div class="session-time">🕗 09h00 – 13h00</div>
         <div class="session-title">Session Weekend Intensive</div>
         <div class="session-info">Formation accélérée · Tous niveaux</div>
         <span class="session-badge badge-open">Places disponibles</span>
       </div>
-
-      <div class="session-card">
+      <div class="session-card reveal">
         <div class="session-day">VENDREDI</div>
         <div class="session-time">🕓 15h00 – 17h00</div>
         <div class="session-title">Atelier Projet Personnel</div>
         <div class="session-info">Travaillez sur votre propre projet</div>
         <span class="session-badge badge-soon">Bientôt</span>
       </div>
-
-      <div class="session-card">
+      <div class="session-card reveal">
         <div class="session-day">SUR DEMANDE</div>
         <div class="session-time">📱 À distance / WhatsApp</div>
         <div class="session-title">Cours Particuliers</div>
         <div class="session-info">Horaire flexible · 1-à-1 personnalisé</div>
         <span class="session-badge badge-open">Disponible</span>
       </div>
-
     </div>
 
-    <div class="planning-note">
+    <div class="planning-note reveal">
       <strong>📍 Lieu :</strong> Lomé, Togo — adresse exacte communiquée après inscription.<br>
       <strong>📱 Distance :</strong> Suivi possible via WhatsApp, partage d'écran et vidéo.<br>
       <strong>⚠️ Note :</strong> Les horaires peuvent être ajustés selon les disponibilités. Contactez-nous pour organiser un créneau personnalisé.
     </div>
-
   </div>
 </section>
 
-<!-- ══════════ INSCRIPTION ══════════ -->
+<!-- ═══════════════════════════════════════════════════════════
+     INSCRIPTION
+═══════════════════════════════════════════════════════════ -->
 <section id="inscription">
   <div class="section-inner">
-    <p class="section-label">Rejoignez-nous</p>
-    <h2 class="section-title">S'INSCRIRE À LA FORMATION</h2>
+    <p class="section-label reveal">Rejoignez-nous</p>
+    <h2 class="section-title reveal">S'INSCRIRE À LA FORMATION</h2>
 
     <div class="form-wrap">
-
-      <!-- Info inscription -->
-      <div class="form-info">
+      <div class="form-info reveal">
         <h3>Comment ça fonctionne ?</h3>
         <p>L'inscription se fait en 3 étapes simples. Pas besoin de carte bancaire en ligne — nous acceptons Mobile Money et virement.</p>
         <div class="steps">
@@ -580,9 +1371,8 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:3rem 1.5r
           </div>
         </div>
 
-        <div class="payment-methods" style="margin-top:2rem;">
+        <div class="payment-methods">
           <p class="section-label" style="margin-bottom:.75rem;">Modes de paiement</p>
-
           <div class="pay-method">
             <div class="pay-icon">📱</div>
             <div class="pay-info">
@@ -607,22 +1397,21 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:3rem 1.5r
         </div>
       </div>
 
-      <!-- Formulaire -->
-      <div class="reg-form">
+      <div class="reg-form reveal">
         <h3>FORMULAIRE D'INSCRIPTION</h3>
         <div id="regFormContainer">
           <div class="form-row">
             <div class="form-group">
-              <label>Prénom</label>
+              <label>Prénom *</label>
               <input type="text" id="prenom" placeholder="Votre prénom"/>
             </div>
             <div class="form-group">
-              <label>Nom</label>
+              <label>Nom *</label>
               <input type="text" id="nom" placeholder="Votre nom"/>
             </div>
           </div>
           <div class="form-group">
-            <label>Téléphone / WhatsApp</label>
+            <label>Téléphone / WhatsApp *</label>
             <input type="tel" id="tel" placeholder="Ex : 99 00 00 00"/>
           </div>
           <div class="form-group">
@@ -630,7 +1419,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:3rem 1.5r
             <input type="email" id="email" placeholder="votreemail@exemple.com"/>
           </div>
           <div class="form-group">
-            <label>Formule choisie</label>
+            <label>Formule choisie *</label>
             <select id="formule">
               <option value="">-- Sélectionnez une formule --</option>
               <option value="Essentiel — 25 000 FCFA">Essentiel — 25 000 FCFA (3 modules)</option>
@@ -639,7 +1428,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:3rem 1.5r
             </select>
           </div>
           <div class="form-group">
-            <label>Session préférée</label>
+            <label>Session préférée *</label>
             <select id="session">
               <option value="">-- Sélectionnez une session --</option>
               <option>Session Matin (Lun-Mer 08h–10h)</option>
@@ -650,7 +1439,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:3rem 1.5r
             </select>
           </div>
           <div class="form-group">
-            <label>Mode de paiement</label>
+            <label>Mode de paiement *</label>
             <select id="paiement">
               <option value="">-- Sélectionnez --</option>
               <option>Flooz (Moov Money)</option>
@@ -670,20 +1459,20 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:3rem 1.5r
           <p>Merci <span id="successName"></span>. Nous vous contacterons sur WhatsApp dans les 24h pour confirmer votre place et les détails du paiement.</p>
         </div>
       </div>
-
     </div>
   </div>
 </section>
 
-<!-- ══════════ CONTACT ══════════ -->
+<!-- ═══════════════════════════════════════════════════════════
+     CONTACT
+═══════════════════════════════════════════════════════════ -->
 <section id="contact">
   <div class="section-inner">
-    <p class="section-label">Nous joindre</p>
-    <h2 class="section-title">CONTACT</h2>
+    <p class="section-label reveal">Nous joindre</p>
+    <h2 class="section-title reveal">CONTACT</h2>
 
     <div class="contact-grid">
-
-      <div>
+      <div class="reveal">
         <div class="contact-info">
           <h3>Parlons de votre projet</h3>
           <p>Une question sur la formation ? Besoin d'un devis pour un site web ? Contactez-nous directement sur WhatsApp pour une réponse rapide.</p>
@@ -715,7 +1504,7 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:3rem 1.5r
             <div class="icon">✉️</div>
             <div>
               <strong>Email</strong>
-              <span><a href="mailto:aettechnology5@gmail.com">aettechnology5@gmail.com</a></span>
+              <span><a href="/cdn-cgi/l/email-protection#ef8e8a9b9b8a8c87818083808896daaf88828e8683c18c8082"><span class="__cf_email__" data-cfemail="bfdedacbcbdadcd7d1d0d3d0d8c68affd8d2ded6d391dcd0d2">[email&#160;protected]</span></a></span>
             </div>
           </div>
         </div>
@@ -726,19 +1515,18 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:3rem 1.5r
         </a>
       </div>
 
-      <!-- Formulaire contact -->
-      <div class="contact-form">
+      <div class="contact-form reveal">
         <h3>ENVOYEZ UN MESSAGE</h3>
         <div class="form-group">
-          <label>Votre nom</label>
+          <label>Votre nom *</label>
           <input type="text" id="cNom" placeholder="Votre nom complet"/>
         </div>
         <div class="form-group">
-          <label>Téléphone</label>
+          <label>Téléphone *</label>
           <input type="tel" id="cTel" placeholder="99 00 00 00"/>
         </div>
         <div class="form-group">
-          <label>Sujet</label>
+          <label>Sujet *</label>
           <select id="cSujet">
             <option value="">-- Sélectionnez --</option>
             <option>Renseignement formation</option>
@@ -749,35 +1537,46 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:3rem 1.5r
           </select>
         </div>
         <div class="form-group">
-          <label>Message</label>
+          <label>Message *</label>
           <textarea id="cMessage" rows="4" placeholder="Votre message..."></textarea>
         </div>
         <button class="form-submit" onclick="submitContact()" style="margin-top:0;">ENVOYER →</button>
       </div>
-
     </div>
   </div>
 </section>
 
-<!-- ══════════ CTA FINAL ══════════ -->
-<div style="background:var(--orange);padding:3rem 1.5rem;text-align:center;">
-  <div style="max-width:700px;margin:auto;">
-    <h2 style="font-family:'Bebas Neue',sans-serif;font-size:clamp(2rem,5vw,3.5rem);color:#000;letter-spacing:1px;margin-bottom:.5rem;">INSCRIVEZ-VOUS MAINTENANT</h2>
-    <p style="color:rgba(0,0,0,.7);font-size:1rem;margin-bottom:1.5rem;">Formation disponible à Lomé, Togo — Contactez-nous dès aujourd'hui</p>
-    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.5rem;">
-      <a href="tel:+22899812072" style="background:#000;color:#fff;font-weight:800;padding:.85rem 2rem;border-radius:8px;text-decoration:none;font-size:1.05rem;">📞 99 81 20 72</a>
-      <a href="tel:+22893003941" style="background:#000;color:#fff;font-weight:800;padding:.85rem 2rem;border-radius:8px;text-decoration:none;font-size:1.05rem;">📞 93 00 39 41</a>
+<!-- ═══════════════════════════════════════════════════════════
+     CTA FINAL
+═══════════════════════════════════════════════════════════ -->
+<div class="cta-final">
+  <div class="cta-final-inner">
+    <h2>INSCRIVEZ-VOUS MAINTENANT</h2>
+    <p>Formation disponible à Lomé, Togo — Contactez-nous dès aujourd'hui</p>
+    <div class="cta-phones">
+      <a href="tel:+22899812072" class="cta-phone">📞 99 81 20 72</a>
+      <a href="tel:+22893003941" class="cta-phone">📞 93 00 39 41</a>
     </div>
-    <p style="color:rgba(0,0,0,.6);font-size:.85rem;">Appelez ou envoyez un WhatsApp · Réponse rapide garantie</p>
+    <small>Appelez ou envoyez un WhatsApp · Réponse rapide garantie</small>
   </div>
 </div>
 
-<!-- ══════════ FOOTER ══════════ -->
+<!-- ═══════════════════════════════════════════════════════════
+     FOOTER
+═══════════════════════════════════════════════════════════ -->
 <footer>
   <div class="footer-inner">
     <div class="footer-brand">
-      <div class="logo">A.E.T</div>
+      <div class="logo">
+        <div class="logo-icon">AET</div>
+        <div class="logo-text">A.E.T</div>
+      </div>
       <p>Alban Eloh Technology — Formation web professionnelle à Lomé, Togo. De zéro à la mise en ligne.</p>
+      <div class="footer-socials">
+        <a href="https://wa.me/22899812072" target="_blank" aria-label="WhatsApp">💬</a>
+        <a href="tel:+22899812072" aria-label="Téléphone">📞</a>
+        <a href="/cdn-cgi/l/email-protection#99f8fcededfcfaf1f7f6f5f6fee0acd9fef4f8f0f5b7faf6f4" aria-label="Email">✉️</a>
+      </div>
     </div>
     <div class="footer-col">
       <h4>Navigation</h4>
@@ -791,11 +1590,22 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:3rem 1.5r
       </ul>
     </div>
     <div class="footer-col">
+      <h4>Formations</h4>
+      <ul>
+        <li><a href="#formations">HTML5</a></li>
+        <li><a href="#formations">CSS3 &amp; Design</a></li>
+        <li><a href="#formations">JavaScript</a></li>
+        <li><a href="#formations">Firebase</a></li>
+        <li><a href="#formations">GitHub</a></li>
+        <li><a href="#formations">Déploiement</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
       <h4>Contact</h4>
       <ul>
         <li><a href="tel:+22899812072">📞 99 81 20 72</a></li>
         <li><a href="tel:+22893003941">📞 93 00 39 41</a></li>
-        <li><a href="mailto:aettechnology5@gmail.com">✉️ aettechnology5@gmail.com</a></li>
+        <li><a href="/cdn-cgi/l/email-protection#10717564647573787e7f7c7f77692550777d71797c3e737f7d">✉️ <span class="__cf_email__" data-cfemail="741511000011171c1a1b181b130d41341319151d185a171b19">[email&#160;protected]</span></a></li>
         <li><a href="https://wa.me/22899812072" target="_blank">💬 WhatsApp</a></li>
         <li><span style="color:var(--muted)">📍 Lomé, Togo</span></li>
       </ul>
@@ -807,90 +1617,228 @@ footer{background:var(--bg);border-top:1px solid var(--border);padding:3rem 1.5r
   </div>
 </footer>
 
-<!-- ══════════ TOAST ══════════ -->
+<!-- WhatsApp flottant -->
+<a href="https://wa.me/22899812072?text=Bonjour%2C%20je%20souhaite%20des%20informations" class="wa-float" target="_blank" aria-label="WhatsApp">
+  <svg width="28" height="28" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+</a>
+
+<!-- Bouton scroll top -->
+<button id="scrollTop" onclick="scrollToTop()" aria-label="Retour en haut">↑</button>
+
+<!-- Toast -->
 <div class="toast" id="toast">
   <strong id="toastTitle">✅ Message envoyé !</strong>
   <span id="toastMsg">Nous vous répondrons dans les plus brefs délais.</span>
 </div>
 
-<script>
-// Nav active on scroll
-const sections = document.querySelectorAll('section[id], div[id]');
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+/* ═══════════════════════════════════════════════════════════
+   SPLASH SCREEN
+═══════════════════════════════════════════════════════════ */
+function createParticles(){
+  const container = document.getElementById('splashParticles');
+  for(let i=0;i<25;i++){
+    const p = document.createElement('div');
+    p.className = 'particle' + (Math.random()>.5 ? ' blue' : '');
+    p.style.left = Math.random()*100 + '%';
+    p.style.bottom = '-20px';
+    p.style.animationDelay = (Math.random()*3) + 's';
+    p.style.animationDuration = (2 + Math.random()*2) + 's';
+    container.appendChild(p);
+  }
+}
+createParticles();
+
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.getElementById('splash').classList.add('hidden');
+    // Afficher modal si l'utilisateur n'est pas déjà inscrit
+    setTimeout(() => {
+      const registered = localStorage.getItem('aet_user');
+      if(!registered){
+        document.getElementById('welcomeModal').classList.add('show');
+      } else {
+        document.body.classList.remove('no-scroll');
+      }
+    }, 400);
+  }, 3800);
+});
+
+/* ═══════════════════════════════════════════════════════════
+   MODAL D'INSCRIPTION
+═══════════════════════════════════════════════════════════ */
+function handleWelcomeSubmit(e){
+  e.preventDefault();
+  const prenom = document.getElementById('wPrenom').value.trim();
+  const nom = document.getElementById('wNom').value.trim();
+  const tel = document.getElementById('wTel').value.trim();
+  const email = document.getElementById('wEmail').value.trim();
+  const profil = document.getElementById('wProfil').value;
+  const errorBox = document.getElementById('modalError');
+
+  if(!prenom || !nom || !tel || !profil){
+    errorBox.textContent = '⚠️ Merci de remplir tous les champs obligatoires (*).';
+    errorBox.classList.add('show');
+    return;
+  }
+  if(tel.replace(/\D/g,'').length < 8){
+    errorBox.textContent = '⚠️ Le numéro de téléphone semble invalide.';
+    errorBox.classList.add('show');
+    return;
+  }
+
+  errorBox.classList.remove('show');
+
+  // Stocker dans localStorage
+  const userData = {prenom, nom, tel, email, profil, date: new Date().toISOString()};
+  localStorage.setItem('aet_user', JSON.stringify(userData));
+
+  // Pré-remplir le formulaire d'inscription principal
+  document.getElementById('prenom').value = prenom;
+  document.getElementById('nom').value = nom;
+  document.getElementById('tel').value = tel;
+  if(email) document.getElementById('email').value = email;
+
+  // Fermer modal
+  document.getElementById('welcomeModal').classList.remove('show');
+  document.body.classList.remove('no-scroll');
+
+  // Toast de bienvenue
+  setTimeout(() => {
+    showToast('🎉 Bienvenue ' + prenom + ' !', 'Découvrez nos formations ci-dessous.');
+  }, 500);
+}
+
+function skipWelcome(){
+  document.getElementById('welcomeModal').classList.remove('show');
+  document.body.classList.remove('no-scroll');
+}
+
+/* ═══════════════════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════════════════ */
+const nav = document.getElementById('mainNav');
+const sections = document.querySelectorAll('section[id]');
 const navLinks = document.querySelectorAll('.nav-links a');
+
 window.addEventListener('scroll', () => {
+  // Nav scrolled style
+  if(window.scrollY > 30) nav.classList.add('scrolled');
+  else nav.classList.remove('scrolled');
+
+  // Active link
   let current = '';
   sections.forEach(s => {
-    if (window.scrollY >= s.offsetTop - 80) current = s.id;
+    if(window.scrollY >= s.offsetTop - 120) current = s.id;
   });
   navLinks.forEach(a => {
     a.classList.remove('active');
-    if (a.getAttribute('href') === '#' + current) a.classList.add('active');
+    if(a.getAttribute('href') === '#' + current) a.classList.add('active');
   });
+
+  // Scroll top button
+  if(window.scrollY > 600) document.getElementById('scrollTop').classList.add('show');
+  else document.getElementById('scrollTop').classList.remove('show');
 });
 
-// Mobile menu
-function toggleMenu() {
+function toggleMenu(){
   document.getElementById('mobileMenu').classList.toggle('open');
+  document.getElementById('hamburger').classList.toggle('open');
 }
-function closeMenu() {
+function closeMenu(){
   document.getElementById('mobileMenu').classList.remove('open');
+  document.getElementById('hamburger').classList.remove('open');
 }
+function scrollToTop(){window.scrollTo({top:0,behavior:'smooth'});}
 
-// Toast
-function showToast(title, msg) {
+/* ═══════════════════════════════════════════════════════════
+   REVEAL ON SCROLL
+═══════════════════════════════════════════════════════════ */
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if(entry.isIntersecting){
+      entry.target.classList.add('visible');
+      observer.unobserve(entry.target);
+    }
+  });
+},{threshold:.12, rootMargin:'0px 0px -50px 0px'});
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+/* ═══════════════════════════════════════════════════════════
+   TOAST
+═══════════════════════════════════════════════════════════ */
+function showToast(title, msg, type='success'){
   const t = document.getElementById('toast');
   document.getElementById('toastTitle').textContent = title;
   document.getElementById('toastMsg').textContent = msg;
+  t.classList.toggle('error', type==='error');
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 4000);
 }
 
-// Inscription form
-function submitInscription() {
+/* ═══════════════════════════════════════════════════════════
+   SÉLECTION DE FORMULE (depuis cartes tarifs)
+═══════════════════════════════════════════════════════════ */
+function selectFormule(value){
+  setTimeout(() => {
+    const sel = document.getElementById('formule');
+    if(sel){
+      sel.value = value;
+      sel.style.borderColor = 'var(--orange)';
+      setTimeout(() => sel.style.borderColor = '', 1500);
+    }
+  }, 600);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   FORMULAIRE INSCRIPTION
+═══════════════════════════════════════════════════════════ */
+function submitInscription(){
   const prenom = document.getElementById('prenom').value.trim();
   const nom = document.getElementById('nom').value.trim();
   const tel = document.getElementById('tel').value.trim();
+  const email = document.getElementById('email').value.trim();
   const formule = document.getElementById('formule').value;
   const session = document.getElementById('session').value;
   const paiement = document.getElementById('paiement').value;
   const message = document.getElementById('message').value.trim();
 
-  if (!prenom || !nom || !tel || !formule || !session || !paiement) {
-    showToast('⚠️ Champs manquants', 'Veuillez remplir tous les champs obligatoires.');
+  if(!prenom || !nom || !tel || !formule || !session || !paiement){
+    showToast('⚠️ Champs manquants', 'Veuillez remplir tous les champs obligatoires.', 'error');
     return;
   }
 
-  // Build WhatsApp message
   const waText = encodeURIComponent(
     `*Nouvelle inscription AET*\n\n` +
     `👤 Nom : ${prenom} ${nom}\n` +
     `📞 Tél : ${tel}\n` +
+    (email ? `✉️ Email : ${email}\n` : '') +
     `📚 Formule : ${formule}\n` +
     `🕐 Session : ${session}\n` +
     `💳 Paiement : ${paiement}\n` +
     (message ? `💬 Message : ${message}` : '')
   );
 
-  // Show success
   document.getElementById('successName').textContent = prenom;
   document.getElementById('regFormContainer').style.display = 'none';
   document.getElementById('formSuccess').style.display = 'block';
 
-  // Open WhatsApp
   setTimeout(() => {
     window.open(`https://wa.me/22899812072?text=${waText}`, '_blank');
   }, 800);
 }
 
-// Contact form
-function submitContact() {
+/* ═══════════════════════════════════════════════════════════
+   FORMULAIRE CONTACT
+═══════════════════════════════════════════════════════════ */
+function submitContact(){
   const nom = document.getElementById('cNom').value.trim();
   const tel = document.getElementById('cTel').value.trim();
   const sujet = document.getElementById('cSujet').value;
   const msg = document.getElementById('cMessage').value.trim();
 
-  if (!nom || !tel || !sujet || !msg) {
-    showToast('⚠️ Champs manquants', 'Veuillez remplir tous les champs.');
+  if(!nom || !tel || !sujet || !msg){
+    showToast('⚠️ Champs manquants', 'Veuillez remplir tous les champs.', 'error');
     return;
   }
 
@@ -911,5 +1859,6 @@ function submitContact() {
   document.getElementById('cMessage').value = '';
 }
 </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>

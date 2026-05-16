@@ -3,1591 +3,663 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TogoSheets Pro – Boutique</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<title>Affiche Formation AET</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;600;700;900&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
 <style>
-:root {
-  --primary: #FF6B35;
-  --secondary: #00C9A7;
-  --accent: #845EC2;
-  --yellow: #FFD93D;
-  --blue: #0081CF;
-  --dark: #1A1A2E;
-  --dark2: #16213E;
-  --surface: #0F3460;
-  --card: rgba(255,255,255,0.05);
-  --text: #F0F0F0;
-  --muted: #A0A0B0;
-  --white: #FFFFFF;
-  --success: #00C9A7;
-  --danger: #FF6B6B;
-}
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-
-body {
-  background: var(--dark);
-  color: var(--text);
-  font-family: 'Nunito', sans-serif;
-  font-size: 16px;
-  line-height: 1.6;
-  overflow-x: hidden;
-}
-
-/* MESH BACKGROUND */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background:
-    radial-gradient(ellipse 60% 50% at 10% 20%, rgba(132,94,194,0.15) 0%, transparent 60%),
-    radial-gradient(ellipse 50% 40% at 90% 80%, rgba(0,201,167,0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 40% 40% at 50% 50%, rgba(255,107,53,0.08) 0%, transparent 60%);
-  pointer-events: none;
-  z-index: 0;
-}
-
-/* ── NAV ── */
-nav {
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem 5%;
-  background: rgba(26,26,46,0.9);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-}
-
-.logo {
-  font-family: 'Syne', sans-serif;
-  font-size: 1.4rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, var(--primary), var(--yellow));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.nav-links {
-  display: flex;
-  gap: 1.5rem;
-  align-items: center;
-  list-style: none;
-}
-
-.nav-links a {
-  color: var(--muted);
-  text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: 600;
-  transition: color 0.2s;
-}
-.nav-links a:hover { color: var(--white); }
-
-.nav-cart {
-  position: relative;
-  background: var(--primary);
-  border: none;
-  color: white;
-  padding: 0.5rem 1.2rem;
-  border-radius: 50px;
-  font-family: 'Nunito', sans-serif;
-  font-weight: 700;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-.nav-cart:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(255,107,53,0.4); }
-
-.cart-badge {
-  position: absolute;
-  top: -6px; right: -6px;
-  background: var(--yellow);
-  color: var(--dark);
-  border-radius: 50%;
-  width: 20px; height: 20px;
-  font-size: 0.7rem;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  display: none;
-}
-
-/* ── HERO ── */
-.hero {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 8rem 5% 4rem;
-  position: relative;
-  z-index: 1;
-}
-
-.hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: rgba(255,107,53,0.15);
-  border: 1px solid rgba(255,107,53,0.4);
-  color: var(--primary);
-  font-size: 0.8rem;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  padding: 0.4rem 1.2rem;
-  border-radius: 50px;
-  margin-bottom: 1.5rem;
-  animation: fadeUp 0.5s ease both;
-}
-
-.hero h1 {
-  font-family: 'Syne', sans-serif;
-  font-size: clamp(2.5rem, 7vw, 5rem);
-  font-weight: 800;
-  line-height: 1.1;
-  margin-bottom: 1.5rem;
-  animation: fadeUp 0.5s 0.1s ease both;
-}
-
-.hero h1 .grad {
-  background: linear-gradient(135deg, var(--primary) 0%, var(--yellow) 50%, var(--secondary) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.hero p {
-  font-size: 1.1rem;
-  color: var(--muted);
-  max-width: 520px;
-  margin: 0 auto 2.5rem;
-  animation: fadeUp 0.5s 0.2s ease both;
-}
-
-.hero-btns {
-  display: flex;
-  gap: 1rem;
-  justify-content: center;
-  flex-wrap: wrap;
-  animation: fadeUp 0.5s 0.3s ease both;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, var(--primary), #FF8C42);
-  color: white;
-  border: none;
-  padding: 0.9rem 2rem;
-  border-radius: 50px;
-  font-family: 'Nunito', sans-serif;
-  font-weight: 700;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  text-decoration: none;
-  display: inline-block;
-  box-shadow: 0 4px 20px rgba(255,107,53,0.35);
-}
-.btn-primary:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(255,107,53,0.5); }
-
-.btn-secondary {
-  background: transparent;
-  color: var(--text);
-  border: 1.5px solid rgba(255,255,255,0.2);
-  padding: 0.9rem 2rem;
-  border-radius: 50px;
-  font-family: 'Nunito', sans-serif;
-  font-weight: 600;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: border-color 0.2s, color 0.2s;
-  text-decoration: none;
-  display: inline-block;
-}
-.btn-secondary:hover { border-color: var(--secondary); color: var(--secondary); }
-
-/* ── STATS ── */
-.hero-stats {
-  display: flex;
-  gap: 3rem;
-  justify-content: center;
-  margin-top: 4rem;
-  flex-wrap: wrap;
-  animation: fadeUp 0.5s 0.4s ease both;
-}
-.stat { text-align: center; }
-.stat-num {
-  font-family: 'Syne', sans-serif;
-  font-size: 2rem;
-  font-weight: 800;
-  background: linear-gradient(135deg, var(--secondary), var(--blue));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.stat-label { font-size: 0.8rem; color: var(--muted); }
-
-/* ── SECTIONS ── */
-section { padding: 6rem 5%; position: relative; z-index: 1; }
-
-.section-header { text-align: center; margin-bottom: 3rem; }
-.section-label {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  color: var(--secondary);
-  margin-bottom: 0.8rem;
-}
-.section-title {
-  font-family: 'Syne', sans-serif;
-  font-size: clamp(1.8rem, 4vw, 2.8rem);
-  font-weight: 800;
-  color: var(--white);
-}
-
-/* ── FILTRES CATÉGORIES ── */
-.filters {
-  display: flex;
-  gap: 0.8rem;
-  justify-content: center;
-  flex-wrap: wrap;
-  margin-bottom: 3rem;
-}
-
-.filter-btn {
-  background: rgba(255,255,255,0.06);
-  border: 1.5px solid rgba(255,255,255,0.1);
-  color: var(--muted);
-  padding: 0.5rem 1.3rem;
-  border-radius: 50px;
-  font-family: 'Nunito', sans-serif;
-  font-weight: 600;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.filter-btn:hover, .filter-btn.active {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: white;
-  transform: translateY(-2px);
-}
-
-/* ── GRILLE PRODUITS ── */
-.products-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.5rem;
-}
-
-.product-card {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 20px;
-  overflow: hidden;
-  transition: transform 0.3s, box-shadow 0.3s, border-color 0.3s;
-  position: relative;
-}
-.product-card:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 20px 50px rgba(0,0,0,0.4);
-  border-color: rgba(255,107,53,0.3);
-}
-
-.product-img {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-  background: linear-gradient(135deg, var(--dark2), var(--surface));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 4rem;
-  position: relative;
-  overflow: hidden;
-}
-
-.product-img-placeholder {
-  width: 100%;
-  height: 200px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 4rem;
-  position: relative;
-}
-
-.product-badge {
-  position: absolute;
-  top: 12px; left: 12px;
-  background: var(--primary);
-  color: white;
-  font-size: 0.7rem;
-  font-weight: 700;
-  padding: 0.2rem 0.7rem;
-  border-radius: 50px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.product-body { padding: 1.2rem; }
-
-.product-cat {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--secondary);
-  margin-bottom: 0.4rem;
-}
-
-.product-name {
-  font-family: 'Syne', sans-serif;
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--white);
-  margin-bottom: 0.5rem;
-}
-
-.product-desc {
-  font-size: 0.85rem;
-  color: var(--muted);
-  margin-bottom: 1rem;
-  line-height: 1.5;
-}
-
-.product-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-
-.product-price {
-  font-family: 'Syne', sans-serif;
-  font-size: 1.3rem;
-  font-weight: 800;
-  color: var(--yellow);
-}
-.product-price span { font-size: 0.75rem; color: var(--muted); font-family: 'Nunito', sans-serif; font-weight: 600; }
-
-.btn-buy {
-  background: linear-gradient(135deg, var(--primary), #FF8C42);
-  border: none;
-  color: white;
-  padding: 0.55rem 1.1rem;
-  border-radius: 50px;
-  font-family: 'Nunito', sans-serif;
-  font-weight: 700;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  white-space: nowrap;
-}
-.btn-buy:hover { transform: scale(1.05); box-shadow: 0 4px 15px rgba(255,107,53,0.4); }
-
-.btn-wa {
-  background: #25D366;
-  border: none;
-  color: white;
-  padding: 0.55rem 1rem;
-  border-radius: 50px;
-  font-family: 'Nunito', sans-serif;
-  font-weight: 700;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: transform 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-}
-.btn-wa:hover { transform: scale(1.05); }
-
-/* ── EMPTY STATE ── */
-.empty-state {
-  text-align: center;
-  padding: 4rem 2rem;
-  color: var(--muted);
-  grid-column: 1/-1;
-}
-.empty-state .icon { font-size: 4rem; margin-bottom: 1rem; }
-.empty-state h3 { font-family: 'Syne', sans-serif; font-size: 1.3rem; color: var(--text); margin-bottom: 0.5rem; }
-
-/* ── WHATSAPP FLOAT ── */
-.wa-float {
-  position: fixed;
-  bottom: 2rem; right: 2rem;
-  background: #25D366;
-  width: 60px; height: 60px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 20px rgba(37,211,102,0.5);
-  z-index: 999;
-  transition: transform 0.3s;
-  text-decoration: none;
-}
-.wa-float:hover { transform: scale(1.1); }
-.wa-float svg { width: 30px; height: 30px; fill: white; }
-
-/* ── FOOTER ── */
-footer {
-  background: rgba(0,0,0,0.4);
-  border-top: 1px solid rgba(255,255,255,0.06);
-  padding: 3rem 5% 2rem;
-  position: relative;
-  z-index: 1;
-}
-
-.footer-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
-  gap: 2rem;
-  margin-bottom: 2rem;
-}
-
-.footer-brand p { color: var(--muted); font-size: 0.9rem; margin-top: 0.8rem; }
-.footer-col h5 { font-family: 'Syne', sans-serif; font-weight: 700; margin-bottom: 1rem; color: var(--white); font-size: 0.9rem; }
-.footer-col ul { list-style: none; }
-.footer-col ul li { margin-bottom: 0.5rem; }
-.footer-col ul a { color: var(--muted); text-decoration: none; font-size: 0.85rem; transition: color 0.2s; }
-.footer-col ul a:hover { color: var(--secondary); }
-
-.footer-bottom {
-  border-top: 1px solid rgba(255,255,255,0.06);
-  padding-top: 1.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-  color: var(--muted);
-  font-size: 0.8rem;
-}
-
-/* ── MODAL COMMANDE ── */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.8);
-  backdrop-filter: blur(8px);
-  z-index: 2000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s;
-}
-.modal-overlay.open { opacity: 1; pointer-events: all; }
-
-.modal {
-  background: var(--dark2);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 24px;
-  padding: 2rem;
-  max-width: 480px;
-  width: 100%;
-  position: relative;
-  transform: translateY(20px);
-  transition: transform 0.3s;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-.modal-overlay.open .modal { transform: translateY(0); }
-
-.modal-close {
-  position: absolute;
-  top: 1rem; right: 1rem;
-  background: rgba(255,255,255,0.08);
-  border: none;
-  color: var(--text);
-  width: 32px; height: 32px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s;
-}
-.modal-close:hover { background: rgba(255,255,255,0.15); }
-
-.modal h3 {
-  font-family: 'Syne', sans-serif;
-  font-size: 1.4rem;
-  font-weight: 800;
-  margin-bottom: 0.5rem;
-  color: var(--white);
-}
-.modal p { color: var(--muted); font-size: 0.9rem; margin-bottom: 1.5rem; }
-
-.modal-form { display: flex; flex-direction: column; gap: 0.8rem; }
-.modal-form input, .modal-form select, .modal-form textarea {
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 12px;
-  padding: 0.8rem 1rem;
-  color: var(--text);
-  font-family: 'Nunito', sans-serif;
-  font-size: 0.9rem;
-  outline: none;
-  transition: border-color 0.2s;
-  width: 100%;
-}
-.modal-form input:focus, .modal-form select:focus, .modal-form textarea:focus {
-  border-color: var(--primary);
-}
-.modal-form select option { background: var(--dark2); }
-
-.modal-product-info {
-  background: rgba(255,107,53,0.1);
-  border: 1px solid rgba(255,107,53,0.2);
-  border-radius: 12px;
-  padding: 0.8rem 1rem;
-  margin-bottom: 0.5rem;
-}
-.modal-product-info strong { color: var(--white); font-family: 'Syne', sans-serif; }
-.modal-product-info .price { color: var(--yellow); font-weight: 700; }
-
-.modal-actions { display: flex; gap: 0.8rem; margin-top: 0.5rem; }
-
-/* ── ADMIN PANEL ── */
-.admin-btn {
-  position: fixed;
-  bottom: 2rem; left: 2rem;
-  background: rgba(132,94,194,0.2);
-  border: 1px solid rgba(132,94,194,0.4);
-  color: var(--accent);
-  padding: 0.6rem 1.2rem;
-  border-radius: 50px;
-  font-family: 'Nunito', sans-serif;
-  font-weight: 700;
-  font-size: 0.8rem;
-  cursor: pointer;
-  z-index: 999;
-  transition: all 0.2s;
-}
-.admin-btn:hover { background: rgba(132,94,194,0.4); }
-
-/* ADMIN MODAL */
-.admin-modal {
-  background: var(--dark2);
-  border: 1px solid rgba(132,94,194,0.3);
-  border-radius: 24px;
-  padding: 2rem;
-  max-width: 600px;
-  width: 100%;
-  position: relative;
-  max-height: 90vh;
-  overflow-y: auto;
-  transform: translateY(20px);
-  transition: transform 0.3s;
-}
-.modal-overlay.open .admin-modal { transform: translateY(0); }
-
-.admin-modal h3 {
-  font-family: 'Syne', sans-serif;
-  font-size: 1.4rem;
-  font-weight: 800;
-  color: var(--accent);
-  margin-bottom: 1.5rem;
-}
-
-.admin-tabs {
-  display: flex;
-  gap: 0.5rem;
-  margin-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-  padding-bottom: 1rem;
-}
-
-.admin-tab {
-  background: transparent;
-  border: 1px solid rgba(255,255,255,0.1);
-  color: var(--muted);
-  padding: 0.4rem 1rem;
-  border-radius: 50px;
-  font-family: 'Nunito', sans-serif;
-  font-weight: 600;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.admin-tab.active {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: white;
-}
-
-.admin-section { display: none; }
-.admin-section.active { display: block; }
-
-.form-group { margin-bottom: 1rem; }
-.form-group label {
-  display: block;
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--muted);
-  margin-bottom: 0.4rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-.form-group input, .form-group select, .form-group textarea {
-  width: 100%;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 10px;
-  padding: 0.7rem 1rem;
-  color: var(--text);
-  font-family: 'Nunito', sans-serif;
-  font-size: 0.9rem;
-  outline: none;
-  transition: border-color 0.2s;
-}
-.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-  border-color: var(--accent);
-}
-.form-group select option { background: var(--dark2); }
-
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-
-.btn-admin {
-  background: linear-gradient(135deg, var(--accent), #9B72D0);
-  border: none;
-  color: white;
-  padding: 0.8rem 1.5rem;
-  border-radius: 50px;
-  font-family: 'Nunito', sans-serif;
-  font-weight: 700;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  width: 100%;
-  margin-top: 0.5rem;
-}
-.btn-admin:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(132,94,194,0.4); }
-
-/* LISTE PRODUITS ADMIN */
-.admin-product-list { display: flex; flex-direction: column; gap: 0.8rem; }
-
-.admin-product-item {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 12px;
-  padding: 0.8rem 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.admin-product-item-info { flex: 1; }
-.admin-product-item-name { font-weight: 700; font-size: 0.9rem; color: var(--white); }
-.admin-product-item-meta { font-size: 0.78rem; color: var(--muted); margin-top: 0.2rem; }
-
-.admin-product-actions { display: flex; gap: 0.5rem; }
-
-.btn-edit {
-  background: rgba(0,201,167,0.15);
-  border: 1px solid rgba(0,201,167,0.3);
-  color: var(--secondary);
-  padding: 0.3rem 0.8rem;
-  border-radius: 50px;
-  font-family: 'Nunito', sans-serif;
-  font-weight: 700;
-  font-size: 0.78rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.btn-edit:hover { background: rgba(0,201,167,0.3); }
-
-.btn-delete {
-  background: rgba(255,107,107,0.15);
-  border: 1px solid rgba(255,107,107,0.3);
-  color: var(--danger);
-  padding: 0.3rem 0.8rem;
-  border-radius: 50px;
-  font-family: 'Nunito', sans-serif;
-  font-weight: 700;
-  font-size: 0.78rem;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.btn-delete:hover { background: rgba(255,107,107,0.3); }
-
-/* LOGIN ADMIN */
-.admin-login { text-align: center; }
-.admin-login h3 { color: var(--accent); margin-bottom: 0.5rem; }
-.admin-login p { color: var(--muted); font-size: 0.85rem; margin-bottom: 1.5rem; }
-.admin-login input {
-  width: 100%;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(132,94,194,0.3);
-  border-radius: 12px;
-  padding: 0.8rem 1rem;
-  color: var(--text);
-  font-family: 'Nunito', sans-serif;
-  font-size: 1rem;
-  outline: none;
-  text-align: center;
-  letter-spacing: 4px;
-  margin-bottom: 1rem;
-}
-
-/* TOAST */
-.toast {
-  position: fixed;
-  top: 5rem; right: 1rem;
-  background: var(--success);
-  color: white;
-  padding: 0.8rem 1.5rem;
-  border-radius: 50px;
-  font-family: 'Nunito', sans-serif;
-  font-weight: 700;
-  font-size: 0.9rem;
-  z-index: 9999;
-  transform: translateX(200%);
-  transition: transform 0.3s;
-  box-shadow: 0 4px 20px rgba(0,201,167,0.4);
-}
-.toast.show { transform: translateX(0); }
-.toast.error { background: var(--danger); box-shadow: 0 4px 20px rgba(255,107,107,0.4); }
-
-/* EMOJI PICKER */
-.emoji-grid {
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  gap: 0.3rem;
-  max-height: 150px;
-  overflow-y: auto;
-  background: rgba(255,255,255,0.04);
-  border-radius: 10px;
-  padding: 0.5rem;
-  margin-top: 0.5rem;
-}
-.emoji-btn {
-  background: transparent;
-  border: none;
-  font-size: 1.3rem;
-  cursor: pointer;
-  padding: 0.3rem;
-  border-radius: 6px;
-  transition: background 0.15s;
-}
-.emoji-btn:hover { background: rgba(255,255,255,0.1); }
-.emoji-btn.selected { background: rgba(132,94,194,0.3); }
-
-/* IMAGE UPLOAD ZONE */
-.img-upload-zone {
-  width: 100%;
-  height: 140px;
-  border: 2px dashed rgba(255,255,255,0.15);
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: border-color 0.2s, background 0.2s;
-  overflow: hidden;
-  position: relative;
-}
-.img-upload-zone:hover {
-  border-color: var(--accent);
-  background: rgba(132,94,194,0.06);
-}
-.img-upload-zone.has-image {
-  border-style: solid;
-  border-color: rgba(0,201,167,0.4);
-}
-
-/* ANIMATIONS */
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* RESPONSIVE */
-@media (max-width: 768px) {
-  nav ul { display: none; }
-  .footer-grid { grid-template-columns: 1fr 1fr; }
-  .form-row { grid-template-columns: 1fr; }
-  .hero h1 { letter-spacing: -1px; }
-}
-
-@media (max-width: 480px) {
-  .footer-grid { grid-template-columns: 1fr; }
-  .hero-stats { gap: 1.5rem; }
-}
-
-/* GRADIENT CARDS */
-.gradient-1 { background: linear-gradient(135deg, #1a1a3e, #2d1b69); }
-.gradient-2 { background: linear-gradient(135deg, #1a2e1a, #0d4f3c); }
-.gradient-3 { background: linear-gradient(135deg, #3e1a1a, #6b2d2d); }
-.gradient-4 { background: linear-gradient(135deg, #1a2e3e, #0d3d5f); }
-.gradient-5 { background: linear-gradient(135deg, #2e2a1a, #5f4a0d); }
-.gradient-6 { background: linear-gradient(135deg, #2a1a3e, #4a2d6b); }
-
-.product-img img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* SECTION AVANTAGES */
-.features-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1.5rem;
-  margin-top: 1rem;
-}
-.feature-card {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 20px;
-  padding: 1.5rem;
-  text-align: center;
-  transition: transform 0.3s, border-color 0.3s;
-}
-.feature-card:hover { transform: translateY(-4px); border-color: rgba(0,201,167,0.3); }
-.feature-icon { font-size: 2.5rem; margin-bottom: 1rem; }
-.feature-title { font-family: 'Syne', sans-serif; font-weight: 700; color: var(--white); margin-bottom: 0.5rem; }
-.feature-desc { font-size: 0.85rem; color: var(--muted); }
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --dark:    #080E1A;
+    --navy:    #0D1B2E;
+    --blue:    #0D6EFD;
+    --lblue:   #1E90FF;
+    --orange:  #FF7A00;
+    --gold:    #FFB020;
+    --white:   #FFFFFF;
+    --lgray:   #A8B8CC;
+    --code-bg: #050C18;
+  }
+
+  body {
+    background: #040810;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: 'Montserrat', sans-serif;
+    padding: 20px;
+  }
+
+  /* ── AFFICHE ─────────────────────────────────── */
+  .poster {
+    width: 800px;
+    min-height: 1100px;
+    background: var(--dark);
+    position: relative;
+    overflow: hidden;
+    border: 1px solid #1A2E48;
+    box-shadow: 0 0 80px rgba(13,110,253,0.25), 0 0 200px rgba(255,122,0,0.08);
+  }
+
+  /* ── GRILLE DÉCO ─────────────────────────────── */
+  .grid-bg {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(13,110,253,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(13,110,253,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  /* ── CERCLES DÉCO ────────────────────────────── */
+  .deco-circle {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .dc1 {
+    width: 500px; height: 500px;
+    top: -150px; right: -150px;
+    background: radial-gradient(circle, rgba(13,110,253,0.12) 0%, transparent 70%);
+  }
+  .dc2 {
+    width: 400px; height: 400px;
+    bottom: 50px; left: -100px;
+    background: radial-gradient(circle, rgba(255,122,0,0.1) 0%, transparent 70%);
+  }
+  .dc3 {
+    width: 200px; height: 200px;
+    bottom: 300px; right: 30px;
+    background: radial-gradient(circle, rgba(255,176,32,0.08) 0%, transparent 70%);
+  }
+
+  /* ── BANDE ORANGE GAUCHE ─────────────────────── */
+  .left-bar {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 6px;
+    background: linear-gradient(to bottom, var(--orange), var(--gold), var(--orange));
+  }
+
+  /* ── CONTENU ─────────────────────────────────── */
+  .content {
+    position: relative;
+    z-index: 2;
+    padding: 40px 48px 40px 54px;
+  }
+
+  /* ── HEADER AET ──────────────────────────────── */
+  .header-aet {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 36px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .aet-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .aet-letters {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 4px;
+    line-height: 1;
+  }
+  .aet-letters .a { color: var(--orange); }
+  .aet-letters .dot { color: var(--gold); }
+  .aet-letters .e { color: var(--orange); }
+  .aet-letters .t { color: var(--gold); }
+  .aet-fullname {
+    font-size: 10px;
+    color: var(--lgray);
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    line-height: 1.4;
+  }
+  .aet-fullname span { display: block; }
+  .phone-badge {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+  }
+  .phone-badge a {
+    font-family: 'Fira Code', monospace;
+    font-size: 13px;
+    color: var(--gold);
+    text-decoration: none;
+    font-weight: 600;
+    letter-spacing: 1px;
+  }
+  .phone-badge a:hover { color: var(--orange); }
+
+  /* ── BADGE FORMATION ─────────────────────────── */
+  .badge-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .badge-formation {
+    background: var(--orange);
+    color: var(--white);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 0 100%);
+  }
+  .badge-pro {
+    background: transparent;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    padding: 5px 14px;
+  }
+
+  /* ── TITRE PRINCIPAL ─────────────────────────── */
+  .main-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 74px;
+    line-height: 0.95;
+    letter-spacing: 2px;
+    margin-bottom: 6px;
+    color: var(--white);
+  }
+  .main-title .highlight {
+    color: transparent;
+    -webkit-text-stroke: 2px var(--orange);
+  }
+  .main-title .accent { color: var(--gold); }
+
+  .subtitle {
+    font-size: 16px;
+    color: var(--lgray);
+    font-weight: 500;
+    margin-bottom: 30px;
+    letter-spacing: 0.5px;
+  }
+  .subtitle strong { color: var(--white); }
+
+  /* ── OFFRE PRINCIPALE ────────────────────────── */
+  .offer-box {
+    background: linear-gradient(135deg, rgba(13,110,253,0.15) 0%, rgba(255,122,0,0.08) 100%);
+    border: 1px solid rgba(13,110,253,0.3);
+    border-left: 3px solid var(--blue);
+    padding: 20px 24px;
+    margin-bottom: 28px;
+    position: relative;
+  }
+  .offer-box::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 80px; height: 3px;
+    background: var(--orange);
+  }
+  .offer-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--lblue);
+    margin-bottom: 10px;
+  }
+  .offer-text {
+    font-size: 15px;
+    color: var(--white);
+    line-height: 1.6;
+    font-weight: 500;
+  }
+  .offer-text em {
+    font-style: normal;
+    color: var(--gold);
+    font-weight: 700;
+  }
+
+  /* ── MODULES ─────────────────────────────────── */
+  .section-label {
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--orange);
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, rgba(255,122,0,0.4), transparent);
+  }
+
+  .modules-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 28px;
+  }
+  .module-card {
+    background: rgba(13,27,46,0.8);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-top: 2px solid;
+    padding: 16px 18px;
+    position: relative;
+    transition: all 0.3s ease;
+  }
+  .module-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255,255,255,0.12);
+    background: rgba(13,27,46,0.95);
+  }
+  .module-card.html  { border-top-color: #E53935; }
+  .module-card.css   { border-top-color: #1565C0; }
+  .module-card.js    { border-top-color: #F9A825; }
+  .module-card.github { border-top-color: #9E9E9E; }
+  .module-card.firebase { border-top-color: #FF6D00; }
+  .module-card.deploy { border-top-color: #00897B; }
+
+  .module-icon {
+    font-size: 22px;
+    margin-bottom: 8px;
+    display: block;
+  }
+  .module-name {
+    font-family: 'Fira Code', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--white);
+    margin-bottom: 4px;
+  }
+  .module-desc {
+    font-size: 11px;
+    color: var(--lgray);
+    line-height: 1.5;
+  }
+  .module-num {
+    position: absolute;
+    top: 12px; right: 14px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    color: rgba(255,255,255,0.04);
+    line-height: 1;
+  }
+
+  /* ── STACK TECH ──────────────────────────────── */
+  .tech-stack {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+  .tech-tag {
+    font-family: 'Fira Code', monospace;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 6px 14px;
+    border: 1px solid;
+    letter-spacing: 1px;
+  }
+  .tech-tag.t1 { color: #FF7043; border-color: rgba(255,112,67,0.4); background: rgba(255,112,67,0.06); }
+  .tech-tag.t2 { color: #42A5F5; border-color: rgba(66,165,245,0.4); background: rgba(66,165,245,0.06); }
+  .tech-tag.t3 { color: #FFCA28; border-color: rgba(255,202,40,0.4); background: rgba(255,202,40,0.06); }
+  .tech-tag.t4 { color: #BDBDBD; border-color: rgba(189,189,189,0.4); background: rgba(189,189,189,0.06); }
+  .tech-tag.t5 { color: #FF8F00; border-color: rgba(255,143,0,0.4); background: rgba(255,143,0,0.06); }
+  .tech-tag.t6 { color: #26C6DA; border-color: rgba(38,198,218,0.4); background: rgba(38,198,218,0.06); }
+  .tech-tag.t7 { color: #66BB6A; border-color: rgba(102,187,106,0.4); background: rgba(102,187,106,0.06); }
+
+  /* ── PUBLIC CIBLE ────────────────────────────── */
+  .audience-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+  .audience-item {
+    flex: 1;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .audience-icon { font-size: 20px; flex-shrink: 0; }
+  .audience-text {
+    font-size: 11px;
+    color: var(--lgray);
+    line-height: 1.4;
+    font-weight: 500;
+  }
+  .audience-text strong { color: var(--white); display: block; font-size: 12px; }
+
+  /* ── CODE SNIPPET DÉCO ───────────────────────── */
+  .code-strip {
+    background: var(--code-bg);
+    border: 1px solid rgba(13,110,253,0.2);
+    border-left: 3px solid var(--blue);
+    padding: 14px 18px;
+    margin-bottom: 28px;
+    font-family: 'Fira Code', monospace;
+    font-size: 11px;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 0.5px;
+    overflow: hidden;
+    position: relative;
+  }
+  .code-strip::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 60px; height: 100%;
+    background: linear-gradient(to right, transparent, var(--code-bg));
+  }
+  .code-strip .kw { color: #7C9FFF; }
+  .code-strip .fn { color: #FFD700; }
+  .code-strip .str { color: #98C379; }
+  .code-strip .cm { color: rgba(255,255,255,0.2); }
+
+  /* ── CTA ─────────────────────────────────────── */
+  .cta-block {
+    background: linear-gradient(135deg, var(--orange) 0%, #FF9A00 100%);
+    padding: 22px 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-block::before {
+    content: '';
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+  }
+  .cta-block::after {
+    content: '';
+    position: absolute;
+    bottom: -20px; right: 60px;
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+  }
+  .cta-left { position: relative; z-index: 1; }
+  .cta-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 2px;
+    color: var(--dark);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .cta-sub {
+    font-size: 12px;
+    color: rgba(8,14,26,0.7);
+    font-weight: 600;
+  }
+  .cta-right {
+    position: relative; z-index: 1;
+    text-align: right;
+  }
+  .cta-phone {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 3px;
+    color: var(--dark);
+    display: block;
+    line-height: 1.1;
+  }
+  .cta-phone-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(8,14,26,0.6);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* ── FOOTER ──────────────────────────────────── */
+  .footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 18px;
+    border-top: 1px solid rgba(255,255,255,0.05);
+  }
+  .footer-aet {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .footer-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 3px;
+  }
+  .footer-logo .a { color: var(--orange); }
+  .footer-logo .dot { color: var(--gold); }
+  .footer-logo .e { color: var(--orange); }
+  .footer-logo .t { color: var(--gold); }
+  .footer-fullname {
+    font-size: 9px;
+    color: rgba(168,184,204,0.6);
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+  .footer-location {
+    font-size: 10px;
+    color: rgba(168,184,204,0.5);
+    font-weight: 500;
+    text-align: right;
+  }
+  .footer-location strong { color: var(--lgray); }
+
+  /* ── ANIMATIONS ──────────────────────────────── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 80px rgba(13,110,253,0.25), 0 0 200px rgba(255,122,0,0.08); }
+    50%       { box-shadow: 0 0 120px rgba(13,110,253,0.35), 0 0 250px rgba(255,122,0,0.12); }
+  }
+  .poster { animation: glow 4s ease-in-out infinite; }
+  .content > * { animation: fadeUp 0.6s ease both; }
+  .header-aet         { animation-delay: 0.05s; }
+  .badge-row          { animation-delay: 0.10s; }
+  .main-title         { animation-delay: 0.15s; }
+  .subtitle           { animation-delay: 0.20s; }
+  .offer-box          { animation-delay: 0.25s; }
+  .section-label      { animation-delay: 0.30s; }
+  .modules-grid       { animation-delay: 0.35s; }
+  .tech-stack         { animation-delay: 0.40s; }
+  .audience-row       { animation-delay: 0.45s; }
+  .code-strip         { animation-delay: 0.50s; }
+  .cta-block          { animation-delay: 0.55s; }
+  .footer             { animation-delay: 0.60s; }
 </style>
 </head>
 <body>
 
-<!-- NAV -->
-<nav>
-  <div class="logo">TogoSheets Pro</div>
-  <ul class="nav-links">
-    <li><a href="#boutique">Boutique</a></li>
-    <li><a href="#avantages">Avantages</a></li>
-    <li><a href="https://wa.me/22899812072" target="_blank">Contact</a></li>
-  </ul>
-  <button class="nav-cart" onclick="openCartModal()">
-    🛒 Panier
-    <span class="cart-badge" id="cartBadge">0</span>
-  </button>
-</nav>
+<div class="poster">
+  <div class="grid-bg"></div>
+  <div class="deco-circle dc1"></div>
+  <div class="deco-circle dc2"></div>
+  <div class="deco-circle dc3"></div>
+  <div class="left-bar"></div>
 
-<!-- HERO -->
-<section class="hero">
-  <div class="hero-badge">🇹🇬 Fait au Togo, pour le Togo</div>
-  <h1>La boutique des<br><span class="grad">entrepreneurs togolais</span></h1>
-  <p>Fichiers Google Sheets professionnels, produits numériques et physiques pour booster votre business.</p>
-  <div class="hero-btns">
-    <a href="#boutique" class="btn-primary">Voir la boutique →</a>
-    <a href="https://wa.me/22899812072" target="_blank" class="btn-secondary">💬 WhatsApp</a>
-  </div>
-  <div class="hero-stats">
-    <div class="stat"><div class="stat-num" id="statProduits">0</div><div class="stat-label">Produits</div></div>
-    <div class="stat"><div class="stat-num">24h</div><div class="stat-label">Livraison max</div></div>
-    <div class="stat"><div class="stat-num">100%</div><div class="stat-label">Satisfait</div></div>
-    <div class="stat"><div class="stat-num">Togo</div><div class="stat-label">Couverture</div></div>
-  </div>
-</section>
+  <div class="content">
 
-<!-- BOUTIQUE -->
-<section id="boutique">
-  <div class="section-header">
-    <div class="section-label">Notre catalogue</div>
-    <h2 class="section-title">Tous nos produits</h2>
-  </div>
-
-  <div class="filters" id="filtersContainer">
-    <button class="filter-btn active" onclick="filterProducts('tous', this)">Tous</button>
-  </div>
-
-  <div class="products-grid" id="productsGrid">
-    <!-- Produits générés par JS -->
-  </div>
-</section>
-
-<!-- AVANTAGES -->
-<section id="avantages" style="background: rgba(0,0,0,0.2);">
-  <div class="section-header">
-    <div class="section-label">Pourquoi nous choisir</div>
-    <h2 class="section-title">Simple, rapide, fiable</h2>
-  </div>
-  <div class="features-grid">
-    <div class="feature-card">
-      <div class="feature-icon">⚡</div>
-      <div class="feature-title">Livraison immédiate</div>
-      <div class="feature-desc">Fichiers numériques envoyés instantanément sur WhatsApp après paiement.</div>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">📱</div>
-      <div class="feature-title">Commande WhatsApp</div>
-      <div class="feature-desc">Commandez facilement via WhatsApp. Pas besoin de carte bancaire.</div>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">💳</div>
-      <div class="feature-title">Paiement mobile</div>
-      <div class="feature-desc">Flooz, T-Money, Mobile Money ou espèces à Lomé.</div>
-    </div>
-    <div class="feature-card">
-      <div class="feature-icon">🛠️</div>
-      <div class="feature-title">Support inclus</div>
-      <div class="feature-desc">Aide à l'utilisation offerte avec chaque produit acheté.</div>
-    </div>
-  </div>
-</section>
-
-<!-- FOOTER -->
-<footer>
-  <div class="footer-grid">
-    <div class="footer-brand">
-      <div class="logo">TogoSheets Pro</div>
-      <p>Des outils et produits professionnels pour les entrepreneurs togolais. Faits au Togo, pour le Togo.</p>
-    </div>
-    <div class="footer-col">
-      <h5>Boutique</h5>
-      <ul>
-        <li><a href="#boutique">Tous les produits</a></li>
-        <li><a href="#boutique">Numérique</a></li>
-        <li><a href="#boutique">Physique</a></li>
-      </ul>
-    </div>
-    <div class="footer-col">
-      <h5>Villes</h5>
-      <ul>
-        <li><a href="#">Lomé</a></li>
-        <li><a href="#">Kara</a></li>
-        <li><a href="#">Sokodé</a></li>
-        <li><a href="#">Atakpamé</a></li>
-      </ul>
-    </div>
-    <div class="footer-col">
-      <h5>Contact</h5>
-      <ul>
-        <li><a href="https://wa.me/22899812072" target="_blank">+228 99 81 20 72</a></li>
-        <li><a href="https://wa.me/22893003941" target="_blank">+228 93 00 39 41</a></li>
-        <li><a href="mailto:contact@togosheetspro.com">contact@togosheetspro.com</a></li>
-      </ul>
-    </div>
-  </div>
-  <div class="footer-bottom">
-    <p>© 2025 TogoSheets Pro – Lomé, Togo</p>
-    <p>Flooz · T-Money · Mobile Money · Espèces</p>
-  </div>
-</footer>
-
-<!-- WA FLOAT -->
-<a href="https://wa.me/22899812072" class="wa-float" target="_blank">
-  <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-</a>
-
-<!-- BOUTON ADMIN -->
-<button class="admin-btn" onclick="openAdminLogin()">⚙️ Admin</button>
-
-<!-- TOAST -->
-<div class="toast" id="toast"></div>
-
-<!-- MODAL COMMANDE -->
-<div class="modal-overlay" id="orderModal">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('orderModal')">✕</button>
-    <h3>Commander</h3>
-    <p>Remplissez ce formulaire et nous vous contactons rapidement.</p>
-    <div class="modal-product-info" id="orderProductInfo"></div>
-    <div class="modal-form">
-      <input type="text" placeholder="Votre nom complet" id="orderNom">
-      <input type="tel" placeholder="WhatsApp (ex: +228 90 00 00 00)" id="orderTel">
-      <select id="orderVille">
-        <option value="">-- Votre ville / quartier --</option>
-        <option>Tokoin – Lomé</option>
-        <option>Bé – Lomé</option>
-        <option>Adidogomé – Lomé</option>
-        <option>Agoè – Lomé</option>
-        <option>Kodjoviakopé – Lomé</option>
-        <option>Baguida – Lomé</option>
-        <option>Kara</option>
-        <option>Sokodé</option>
-        <option>Atakpamé</option>
-        <option>Kpalimé</option>
-        <option>Tsévié</option>
-        <option>Aného</option>
-        <option>Dapaong</option>
-        <option>Autre ville</option>
-      </select>
-      <select id="orderPaiement">
-        <option value="">-- Mode de paiement --</option>
-        <option>Flooz (Moov Africa)</option>
-        <option>T-Money (Togocom)</option>
-        <option>Mobile Money</option>
-        <option>Espèces à Lomé</option>
-        <option>Wave</option>
-      </select>
-      <div class="modal-actions">
-        <button class="btn-primary" style="flex:1" onclick="envoyerCommande()">Confirmer ✓</button>
-        <button class="btn-secondary" onclick="closeModal('orderModal')">Annuler</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL PANIER -->
-<div class="modal-overlay" id="cartModal">
-  <div class="modal">
-    <button class="modal-close" onclick="closeModal('cartModal')">✕</button>
-    <h3>🛒 Mon panier</h3>
-    <div id="cartContent" style="margin: 1rem 0;"></div>
-    <div id="cartTotal" style="font-family:'Syne',sans-serif;font-size:1.2rem;font-weight:800;color:var(--yellow);margin-bottom:1rem;"></div>
-    <button class="btn-primary" style="width:100%" onclick="commanderPanier()">Commander le panier via WhatsApp</button>
-  </div>
-</div>
-
-<!-- MODAL LOGIN ADMIN -->
-<div class="modal-overlay" id="adminLoginModal">
-  <div class="modal" style="max-width:360px;">
-    <button class="modal-close" onclick="closeModal('adminLoginModal')">✕</button>
-    <div class="admin-login">
-      <h3>🔐 Espace Admin</h3>
-      <p>Entrez votre mot de passe pour accéder au panneau d'administration.</p>
-      <input type="password" id="adminPassword" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')checkAdminPassword()">
-      <button class="btn-admin" onclick="checkAdminPassword()">Entrer</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL ADMIN PANEL -->
-<div class="modal-overlay" id="adminModal">
-  <div class="modal admin-modal" style="max-width:640px;">
-    <button class="modal-close" onclick="closeModal('adminModal')">✕</button>
-    <h3>⚙️ Panneau Admin</h3>
-
-    <div class="admin-tabs">
-      <button class="admin-tab active" onclick="switchAdminTab('add', this)">➕ Ajouter</button>
-      <button class="admin-tab" onclick="switchAdminTab('list', this)">📋 Mes articles</button>
-      <button class="admin-tab" onclick="switchAdminTab('settings', this)">🔧 Réglages</button>
-    </div>
-
-    <!-- ADD PRODUCT -->
-    <div class="admin-section active" id="adminAdd">
-      <div class="form-row">
-        <div class="form-group">
-          <label>Nom du produit *</label>
-          <input type="text" id="pName" placeholder="Ex: Tableau comptable">
+    <!-- HEADER AET -->
+    <div class="header-aet">
+      <div class="aet-logo">
+        <div class="aet-letters">
+          <span class="a">A</span><span class="dot">.</span><span class="e">E</span><span class="dot">.</span><span class="t">T</span>
         </div>
-        <div class="form-group">
-          <label>Prix (FCFA) *</label>
-          <input type="number" id="pPrice" placeholder="Ex: 9900">
+        <div class="aet-fullname">
+          <span>ALBAN ELOH</span>
+          <span>TECHNOLOGY</span>
         </div>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Catégorie *</label>
-          <select id="pCat">
-            <option value="">-- Choisir --</option>
-            <option>Numérique</option>
-            <option>Physique</option>
-            <option>Google Sheets</option>
-            <option>Templates</option>
-            <option>Guides</option>
-            <option>Autre</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label>Icône / Emoji</label>
-          <input type="text" id="pEmoji" placeholder="Ex: 📊" maxlength="4">
-          <div class="emoji-grid" id="emojiGrid"></div>
-        </div>
-      </div>
-      <div class="form-group">
-        <label>Description</label>
-        <textarea id="pDesc" rows="3" placeholder="Décrivez votre produit..."></textarea>
-      </div>
-      <div class="form-group">
-        <label>Photo du produit (optionnel)</label>
-        <div class="img-upload-zone" id="imgUploadZone" onclick="document.getElementById('pImgFile').click()">
-          <div id="imgUploadPlaceholder" style="display:flex;flex-direction:column;align-items:center">
-            <div style="font-size:2rem;margin-bottom:0.4rem">📷</div>
-            <div style="font-size:0.85rem;color:var(--muted)">Appuyer pour choisir une photo</div>
-            <div style="font-size:0.75rem;color:var(--muted);margin-top:0.2rem">JPG, PNG, WEBP — max 2 Mo</div>
-          </div>
-          <img id="imgPreview" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:10px;" alt="Aperçu">
-        </div>
-        <input type="file" id="pImgFile" accept="image/*" style="display:none" onchange="handleImgFile(this)">
-        <div style="display:flex;align-items:center;gap:0.5rem;margin-top:0.5rem">
-          <div style="flex:1;height:1px;background:rgba(255,255,255,0.1)"></div>
-          <span style="font-size:0.75rem;color:var(--muted)">ou URL</span>
-          <div style="flex:1;height:1px;background:rgba(255,255,255,0.1)"></div>
-        </div>
-        <input type="text" id="pImg" placeholder="https://exemple.com/image.jpg" style="margin-top:0.5rem" oninput="handleImgUrl(this.value)">
-        <button type="button" onclick="clearImg()" id="clearImgBtn" style="display:none;margin-top:0.5rem;background:rgba(255,107,107,0.15);border:1px solid rgba(255,107,107,0.3);color:var(--danger);padding:0.3rem 0.8rem;border-radius:50px;font-family:'Nunito',sans-serif;font-size:0.8rem;cursor:pointer;font-weight:700;">✕ Supprimer la photo</button>
-      </div>
-      <div class="form-group">
-        <label>Badge (optionnel)</label>
-        <input type="text" id="pBadge" placeholder="Ex: Nouveau, Populaire, -20%">
-      </div>
-      <button class="btn-admin" onclick="addProduct()" id="addProductBtn">➕ Ajouter le produit</button>
-    </div>
-
-    <!-- LIST PRODUCTS -->
-    <div class="admin-section" id="adminList">
-      <div class="admin-product-list" id="adminProductList">
-        <!-- generé par JS -->
+      <div class="phone-badge">
+        <a href="tel:+22899812072">📞 99 81 20 72</a>
+        <a href="tel:+22893003941">📞 93 00 39 41</a>
       </div>
     </div>
 
-    <!-- SETTINGS -->
-    <div class="admin-section" id="adminSettings">
-      <div class="form-group">
-        <label>Numéro WhatsApp principal</label>
-        <input type="text" id="settingsWA1" value="22899812072">
-      </div>
-      <div class="form-group">
-        <label>Nom de la boutique</label>
-        <input type="text" id="settingsName" value="TogoSheets Pro">
-      </div>
-      <div class="form-group">
-        <label>Changer le mot de passe admin</label>
-        <input type="password" id="settingsPass" placeholder="Nouveau mot de passe">
-      </div>
-      <button class="btn-admin" onclick="saveSettings()">💾 Sauvegarder</button>
+    <!-- BADGE -->
+    <div class="badge-row">
+      <div class="badge-formation">Formation</div>
+      <div class="badge-pro">Pratique & Professionnelle</div>
     </div>
 
-  </div>
-</div>
+    <!-- TITRE -->
+    <div class="main-title">
+      CRÉATION<br>
+      DE <span class="highlight">SITES WEB</span><br>
+      <span class="accent">&amp; APPLICATIONS</span>
+    </div>
+    <div class="subtitle">
+      <strong>Maîtrisez le développement web moderne</strong> — de zéro à la mise en ligne
+    </div>
 
-<script>
-// ══════════════════════════════════
-// DONNÉES & ÉTAT
-// ══════════════════════════════════
-const ADMIN_PASS_KEY = 'tgspro_admin_pass';
-const PRODUCTS_KEY   = 'tgspro_products';
-const SETTINGS_KEY   = 'tgspro_settings';
-
-let products = [];
-let cart = [];
-let currentOrderProduct = null;
-let editingProductId = null;
-
-const defaultSettings = {
-  wa: '22899812072',
-  shopName: 'TogoSheets Pro',
-  pass: 'admin2025'
-};
-
-function getSettings() {
-  const s = localStorage.getItem(SETTINGS_KEY);
-  return s ? JSON.parse(s) : defaultSettings;
-}
-
-function loadProducts() {
-  const p = localStorage.getItem(PRODUCTS_KEY);
-  if (p) {
-    products = JSON.parse(p);
-  } else {
-    // Produits démo par défaut
-    products = [
-      { id: 1, name: 'Tableau de bord comptable', price: 9900, cat: 'Google Sheets', emoji: '📊', desc: 'Suivi complet de vos revenus et dépenses avec graphiques automatiques.', badge: 'Populaire', img: '' },
-      { id: 2, name: 'Suivi de facturation', price: 8500, cat: 'Google Sheets', emoji: '🧾', desc: 'Créez et suivez vos factures clients facilement.', badge: '', img: '' },
-      { id: 3, name: 'Business Plan', price: 12000, cat: 'Templates', emoji: '📋', desc: 'Template complet pour rédiger votre business plan professionnel.', badge: 'Nouveau', img: '' },
-      { id: 4, name: 'Base clients CRM', price: 7000, cat: 'Google Sheets', emoji: '👥', desc: 'Gérez tous vos clients et prospects dans un seul fichier.', badge: '', img: '' },
-    ];
-    saveProducts();
-  }
-}
-
-function saveProducts() {
-  localStorage.setItem(PRODUCTS_KEY, JSON.stringify(products));
-}
-
-// ══════════════════════════════════
-// RENDU PRODUITS
-// ══════════════════════════════════
-const gradients = ['gradient-1','gradient-2','gradient-3','gradient-4','gradient-5','gradient-6'];
-
-function renderProducts(filter = 'tous') {
-  const grid = document.getElementById('productsGrid');
-  const filtered = filter === 'tous' ? products : products.filter(p => p.cat === filter);
-
-  if (filtered.length === 0) {
-    grid.innerHTML = `<div class="empty-state"><div class="icon">📦</div><h3>Aucun produit</h3><p>${filter === 'tous' ? 'Aucun article pour le moment.' : 'Aucun article dans cette catégorie.'}</p></div>`;
-    return;
-  }
-
-  grid.innerHTML = filtered.map((p, i) => `
-    <div class="product-card" data-id="${p.id}">
-      <div class="product-img ${gradients[i % gradients.length]}">
-        ${p.img ? `<img src="${p.img}" alt="${p.name}" onerror="this.style.display='none'">` : `<span style="font-size:3.5rem">${p.emoji || '📦'}</span>`}
-        ${p.badge ? `<div class="product-badge">${p.badge}</div>` : ''}
+    <!-- OFFRE -->
+    <div class="offer-box">
+      <div class="offer-title">Ce que vous allez apprendre</div>
+      <div class="offer-text">
+        Créez des <em>sites web professionnels</em> et des <em>applications connectées</em> avec une base de données en temps réel. Formation complète, étape par étape, accessible aux <em>débutants</em>.
       </div>
-      <div class="product-body">
-        <div class="product-cat">${p.cat}</div>
-        <div class="product-name">${p.name}</div>
-        <div class="product-desc">${p.desc}</div>
-        <div class="product-footer">
-          <div class="product-price">${Number(p.price).toLocaleString('fr')} <span>FCFA</span></div>
-          <div style="display:flex;gap:0.4rem">
-            <button class="btn-buy" onclick="openOrder(${p.id})">Commander</button>
-            <button class="btn-wa" onclick="commanderWA(${p.id})" title="WhatsApp direct">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
-            </button>
-          </div>
+    </div>
+
+    <!-- MODULES -->
+    <div class="section-label">Modules de formation</div>
+    <div class="modules-grid">
+      <div class="module-card html">
+        <span class="module-icon">🌐</span>
+        <div class="module-name">HTML5</div>
+        <div class="module-desc">Structurer le contenu de vos pages web avec les bonnes balises</div>
+        <div class="module-num">01</div>
+      </div>
+      <div class="module-card css">
+        <span class="module-icon">🎨</span>
+        <div class="module-name">CSS3 & Design</div>
+        <div class="module-desc">Styliser, animer et rendre votre site responsive (mobile)</div>
+        <div class="module-num">02</div>
+      </div>
+      <div class="module-card js">
+        <span class="module-icon">⚡</span>
+        <div class="module-name">JavaScript</div>
+        <div class="module-desc">Ajouter l'interactivité, la logique et les appels API</div>
+        <div class="module-num">03</div>
+      </div>
+      <div class="module-card firebase">
+        <span class="module-icon">🔥</span>
+        <div class="module-name">Firebase / Base de données</div>
+        <div class="module-desc">Lire, écrire et synchroniser vos données en temps réel</div>
+        <div class="module-num">04</div>
+      </div>
+      <div class="module-card github">
+        <span class="module-icon">⬡</span>
+        <div class="module-name">GitHub</div>
+        <div class="module-desc">Versionner votre code et collaborer sur vos projets</div>
+        <div class="module-num">05</div>
+      </div>
+      <div class="module-card deploy">
+        <span class="module-icon">🚀</span>
+        <div class="module-name">Déploiement en ligne</div>
+        <div class="module-desc">Publier votre site sur GitHub Pages ou Firebase Hosting</div>
+        <div class="module-num">06</div>
+      </div>
+    </div>
+
+    <!-- TECH STACK -->
+    <div class="section-label">Technologies couvertes</div>
+    <div class="tech-stack">
+      <span class="tech-tag t1">HTML5</span>
+      <span class="tech-tag t2">CSS3</span>
+      <span class="tech-tag t3">JavaScript</span>
+      <span class="tech-tag t4">GitHub</span>
+      <span class="tech-tag t5">Firebase</span>
+      <span class="tech-tag t6">Firestore</span>
+      <span class="tech-tag t7">GitHub Pages</span>
+    </div>
+
+    <!-- PUBLIC CIBLE -->
+    <div class="section-label">À qui s'adresse cette formation</div>
+    <div class="audience-row">
+      <div class="audience-item">
+        <div class="audience-icon">🎓</div>
+        <div class="audience-text">
+          <strong>Débutants</strong>
+          Aucune connaissance préalable requise
+        </div>
+      </div>
+      <div class="audience-item">
+        <div class="audience-icon">💼</div>
+        <div class="audience-text">
+          <strong>Entrepreneurs</strong>
+          Créez votre propre site ou app métier
+        </div>
+      </div>
+      <div class="audience-item">
+        <div class="audience-icon">🛠️</div>
+        <div class="audience-text">
+          <strong>Professionnels</strong>
+          Digitalisez vos outils et services
         </div>
       </div>
     </div>
-  `).join('');
 
-  document.getElementById('statProduits').textContent = products.length;
-}
+    <!-- CODE DÉCO -->
+    <div class="code-strip">
+      <span class="cm">// Votre premier projet live</span> &nbsp;
+      <span class="kw">const</span> monSite = <span class="fn">createWebApp</span>({ html: <span class="str">"✅"</span>, css: <span class="str">"✅"</span>, js: <span class="str">"✅"</span>, firebase: <span class="str">"✅"</span> });
+      &nbsp;&nbsp;<span class="fn">deploy</span>(monSite, <span class="str">"github-pages"</span>); <span class="cm">// → En ligne !</span>
+    </div>
 
-function renderFilters() {
-  const cats = [...new Set(products.map(p => p.cat))];
-  const container = document.getElementById('filtersContainer');
-  container.innerHTML = `<button class="filter-btn active" onclick="filterProducts('tous', this)">Tous (${products.length})</button>`;
-  cats.forEach(cat => {
-    const count = products.filter(p => p.cat === cat).length;
-    container.innerHTML += `<button class="filter-btn" onclick="filterProducts('${cat}', this)">${cat} (${count})</button>`;
-  });
-}
-
-function filterProducts(cat, btn) {
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  renderProducts(cat);
-}
-
-// ══════════════════════════════════
-// COMMANDE
-// ══════════════════════════════════
-function openOrder(id) {
-  const p = products.find(x => x.id === id);
-  if (!p) return;
-  currentOrderProduct = p;
-  document.getElementById('orderProductInfo').innerHTML = `
-    <strong>${p.emoji || '📦'} ${p.name}</strong><br>
-    <span class="price">${Number(p.price).toLocaleString('fr')} FCFA</span>
-  `;
-  openModal('orderModal');
-}
-
-function commanderWA(id) {
-  const p = products.find(x => x.id === id);
-  if (!p) return;
-  const s = getSettings();
-  const msg = `Bonjour ! Je souhaite commander :\n\n📦 *${p.name}*\n💰 Prix : ${Number(p.price).toLocaleString('fr')} FCFA\n\nMerci !`;
-  window.open(`https://wa.me/${s.wa}?text=${encodeURIComponent(msg)}`, '_blank');
-}
-
-function envoyerCommande() {
-  const nom = document.getElementById('orderNom').value.trim();
-  const tel = document.getElementById('orderTel').value.trim();
-  const ville = document.getElementById('orderVille').value;
-  const paiement = document.getElementById('orderPaiement').value;
-
-  if (!nom || !tel || !ville || !paiement) {
-    showToast('Veuillez remplir tous les champs.', true);
-    return;
-  }
-
-  const p = currentOrderProduct;
-  const s = getSettings();
-  const msg = `Bonjour ! Je souhaite commander :\n\n📦 *${p.name}*\n💰 *${Number(p.price).toLocaleString('fr')} FCFA*\n\n👤 Nom : ${nom}\n📱 Tél : ${tel}\n📍 Ville : ${ville}\n💳 Paiement : ${paiement}\n\nMerci !`;
-  window.open(`https://wa.me/${s.wa}?text=${encodeURIComponent(msg)}`, '_blank');
-  closeModal('orderModal');
-  showToast('Commande envoyée sur WhatsApp ! ✓');
-}
-
-// ══════════════════════════════════
-// PANIER
-// ══════════════════════════════════
-function openCartModal() {
-  const content = document.getElementById('cartContent');
-  const total = document.getElementById('cartTotal');
-
-  if (cart.length === 0) {
-    content.innerHTML = '<p style="color:var(--muted);text-align:center;padding:1rem">Votre panier est vide.</p>';
-    total.textContent = '';
-  } else {
-    content.innerHTML = cart.map(item => `
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:0.7rem 0;border-bottom:1px solid rgba(255,255,255,0.06)">
-        <div>
-          <div style="font-weight:700;font-size:0.9rem">${item.emoji} ${item.name}</div>
-          <div style="font-size:0.8rem;color:var(--muted)">${Number(item.price).toLocaleString('fr')} FCFA</div>
-        </div>
-        <button onclick="removeFromCart(${item.id})" style="background:rgba(255,107,107,0.15);border:none;color:var(--danger);padding:0.3rem 0.7rem;border-radius:50px;cursor:pointer;font-size:0.8rem">✕</button>
+    <!-- CTA -->
+    <div class="cta-block">
+      <div class="cta-left">
+        <div class="cta-title">Inscrivez-vous maintenant</div>
+        <div class="cta-sub">Formation disponible à Lomé, Togo — Contactez-nous dès aujourd'hui</div>
       </div>
-    `).join('');
-    const totalVal = cart.reduce((s, i) => s + i.price, 0);
-    total.textContent = `Total : ${totalVal.toLocaleString('fr')} FCFA`;
-  }
-
-  openModal('cartModal');
-}
-
-function removeFromCart(id) {
-  cart = cart.filter(i => i.id !== id);
-  updateCartBadge();
-  openCartModal();
-}
-
-function updateCartBadge() {
-  const badge = document.getElementById('cartBadge');
-  if (cart.length > 0) {
-    badge.textContent = cart.length;
-    badge.style.display = 'flex';
-  } else {
-    badge.style.display = 'none';
-  }
-}
-
-function commanderPanier() {
-  if (cart.length === 0) return;
-  const s = getSettings();
-  const lines = cart.map(i => `• ${i.name} – ${Number(i.price).toLocaleString('fr')} FCFA`).join('\n');
-  const total = cart.reduce((s, i) => s + i.price, 0);
-  const msg = `Bonjour ! Je souhaite commander :\n\n${lines}\n\n💰 Total : *${total.toLocaleString('fr')} FCFA*\n\nMerci !`;
-  window.open(`https://wa.me/${s.wa}?text=${encodeURIComponent(msg)}`, '_blank');
-  closeModal('cartModal');
-}
-
-// ══════════════════════════════════
-// ADMIN
-// ══════════════════════════════════
-function openAdminLogin() {
-  document.getElementById('adminPassword').value = '';
-  openModal('adminLoginModal');
-}
-
-function checkAdminPassword() {
-  const val = document.getElementById('adminPassword').value;
-  const s = getSettings();
-  if (val === s.pass) {
-    closeModal('adminLoginModal');
-    openAdminPanel();
-  } else {
-    showToast('Mot de passe incorrect.', true);
-  }
-}
-
-function openAdminPanel() {
-  renderAdminList();
-  loadAdminSettings();
-  openModal('adminModal');
-  // Reset form
-  switchAdminTab('add', document.querySelector('.admin-tab'));
-}
-
-function switchAdminTab(tab, btn) {
-  document.querySelectorAll('.admin-tab').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
-  btn.classList.add('active');
-  document.getElementById('admin' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
-
-  if (tab === 'list') renderAdminList();
-}
-
-const EMOJIS = ['📊','🧾','📋','👥','💼','📦','🛍️','🏪','💰','📈','🗂️','✅','🎯','🔧','🖥️','📱','🧮','📝','🏷️','💡','🎁','🌍','🇹🇬','⚡','🔑','🏆','📌','🗓️','💳','🤝'];
-
-function initEmojiGrid() {
-  const grid = document.getElementById('emojiGrid');
-  grid.innerHTML = EMOJIS.map(e => `<button class="emoji-btn" onclick="selectEmoji('${e}')">${e}</button>`).join('');
-}
-
-function selectEmoji(e) {
-  document.getElementById('pEmoji').value = e;
-  document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
-  event.target.classList.add('selected');
-}
-
-// ══════════════════════════════════
-// IMAGE UPLOAD
-// ══════════════════════════════════
-let currentImgData = '';
-
-function handleImgFile(input) {
-  const file = input.files[0];
-  if (!file) return;
-  if (file.size > 2 * 1024 * 1024) { showToast('Image trop lourde (max 2 Mo).', true); return; }
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    currentImgData = e.target.result;
-    document.getElementById('pImg').value = '';
-    setImgPreview(currentImgData);
-  };
-  reader.readAsDataURL(file);
-}
-
-function handleImgUrl(url) {
-  currentImgData = url;
-  if (url) setImgPreview(url); else clearImgPreview();
-}
-
-function setImgPreview(src) {
-  document.getElementById('imgPreview').src = src;
-  document.getElementById('imgPreview').style.display = 'block';
-  document.getElementById('imgUploadPlaceholder').style.display = 'none';
-  document.getElementById('imgUploadZone').classList.add('has-image');
-  document.getElementById('clearImgBtn').style.display = 'inline-block';
-}
-
-function clearImgPreview() {
-  document.getElementById('imgPreview').src = '';
-  document.getElementById('imgPreview').style.display = 'none';
-  document.getElementById('imgUploadPlaceholder').style.display = 'flex';
-  document.getElementById('imgUploadZone').classList.remove('has-image');
-  document.getElementById('clearImgBtn').style.display = 'none';
-}
-
-function clearImg() {
-  currentImgData = '';
-  document.getElementById('pImg').value = '';
-  document.getElementById('pImgFile').value = '';
-  clearImgPreview();
-}
-
-function addProduct() {
-  const name  = document.getElementById('pName').value.trim();
-  const price = document.getElementById('pPrice').value.trim();
-  const cat   = document.getElementById('pCat').value;
-  const emoji = document.getElementById('pEmoji').value.trim() || '📦';
-  const desc  = document.getElementById('pDesc').value.trim();
-  const img   = currentImgData || document.getElementById('pImg').value.trim();
-  const badge = document.getElementById('pBadge').value.trim();
-
-  if (!name || !price || !cat) {
-    showToast('Nom, prix et catégorie sont obligatoires.', true);
-    return;
-  }
-
-  if (editingProductId !== null) {
-    const idx = products.findIndex(p => p.id === editingProductId);
-    if (idx !== -1) {
-      products[idx] = { ...products[idx], name, price: parseInt(price), cat, emoji, desc, img, badge };
-    }
-    editingProductId = null;
-    document.getElementById('addProductBtn').textContent = '➕ Ajouter le produit';
-    showToast('Produit modifié avec succès ! ✓');
-  } else {
-    const newId = Date.now();
-    products.push({ id: newId, name, price: parseInt(price), cat, emoji, desc, img, badge });
-    showToast('Produit ajouté avec succès ! ✓');
-  }
-
-  saveProducts();
-  renderProducts();
-  renderFilters();
-
-  // Reset form
-  ['pName','pPrice','pEmoji','pDesc','pBadge'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('pCat').value = '';
-  document.getElementById('pImg').value = '';
-  currentImgData = '';
-  clearImgPreview();
-}
-
-function renderAdminList() {
-  const list = document.getElementById('adminProductList');
-  if (products.length === 0) {
-    list.innerHTML = '<p style="color:var(--muted);text-align:center;padding:2rem">Aucun produit. Ajoutez-en depuis l\'onglet "Ajouter".</p>';
-    return;
-  }
-  list.innerHTML = products.map(p => `
-    <div class="admin-product-item">
-      <div class="admin-product-item-info">
-        <div class="admin-product-item-name">${p.emoji} ${p.name}</div>
-        <div class="admin-product-item-meta">${p.cat} · ${Number(p.price).toLocaleString('fr')} FCFA ${p.badge ? `· <span style="color:var(--primary)">${p.badge}</span>` : ''}</div>
-      </div>
-      <div class="admin-product-actions">
-        <button class="btn-edit" onclick="editProduct(${p.id})">✏️ Modifier</button>
-        <button class="btn-delete" onclick="deleteProduct(${p.id})">🗑️ Sup.</button>
+      <div class="cta-right">
+        <span class="cta-phone">99 81 20 72</span>
+        <span class="cta-phone">93 00 39 41</span>
+        <span class="cta-phone-label">Appelez ou WhatsApp</span>
       </div>
     </div>
-  `).join('');
-}
 
-function editProduct(id) {
-  const p = products.find(x => x.id === id);
-  if (!p) return;
-  editingProductId = id;
-  document.getElementById('pName').value  = p.name;
-  document.getElementById('pPrice').value = p.price;
-  document.getElementById('pCat').value   = p.cat;
-  document.getElementById('pEmoji').value = p.emoji || '';
-  document.getElementById('pDesc').value  = p.desc || '';
-  document.getElementById('pImg').value   = (p.img && !p.img.startsWith('data:')) ? p.img : '';
-  document.getElementById('pBadge').value = p.badge || '';
-  currentImgData = p.img || '';
-  if (p.img) setImgPreview(p.img); else clearImgPreview();
-  document.getElementById('addProductBtn').textContent = '💾 Sauvegarder les modifications';
-  switchAdminTab('add', document.querySelectorAll('.admin-tab')[0]);
-  showToast('Produit chargé. Modifiez et sauvegardez.');
-}
+    <!-- FOOTER -->
+    <div class="footer">
+      <div class="footer-aet">
+        <div class="footer-logo">
+          <span class="a">A</span><span class="dot">.</span><span class="e">E</span><span class="dot">.</span><span class="t">T</span>
+        </div>
+        <div class="footer-fullname">Alban Eloh Technology</div>
+      </div>
+      <div class="footer-location">
+        <strong>Lomé, Togo</strong><br>
+        Formation Web Moderne
+      </div>
+    </div>
 
-function deleteProduct(id) {
-  if (!confirm('Supprimer ce produit ?')) return;
-  products = products.filter(p => p.id !== id);
-  saveProducts();
-  renderProducts();
-  renderFilters();
-  renderAdminList();
-  showToast('Produit supprimé.');
-}
+  </div><!-- /content -->
+</div><!-- /poster -->
 
-function loadAdminSettings() {
-  const s = getSettings();
-  document.getElementById('settingsWA1').value  = s.wa;
-  document.getElementById('settingsName').value = s.shopName;
-}
-
-function saveSettings() {
-  const s = getSettings();
-  s.wa       = document.getElementById('settingsWA1').value.trim() || s.wa;
-  s.shopName = document.getElementById('settingsName').value.trim() || s.shopName;
-  const newPass = document.getElementById('settingsPass').value.trim();
-  if (newPass) s.pass = newPass;
-  localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
-  showToast('Réglages sauvegardés ! ✓');
-}
-
-// ══════════════════════════════════
-// UTILS
-// ══════════════════════════════════
-function openModal(id) {
-  document.getElementById(id).classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
-function closeModal(id) {
-  document.getElementById(id).classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-document.querySelectorAll('.modal-overlay').forEach(m => {
-  m.addEventListener('click', function(e) {
-    if (e.target === this) closeModal(this.id);
-  });
-});
-
-function showToast(msg, error = false) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast' + (error ? ' error' : '');
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-// ══════════════════════════════════
-// INIT
-// ══════════════════════════════════
-loadProducts();
-renderProducts();
-renderFilters();
-initEmojiGrid();
-
-</script>
 </body>
 </html>

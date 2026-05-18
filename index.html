@@ -695,23 +695,16 @@ import {
   orderBy, onSnapshot, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-/* ============================================================
-   ⚠️  CONFIGURATION FIREBASE - À REMPLACER PAR LA VÔTRE
-   ============================================================
-   1. Allez sur https://console.firebase.google.com/
-   2. Créez un nouveau projet (ou utilisez un existant)
-   3. Activez l'Authentification > Email/Mot de passe
-   4. Activez Firestore Database (mode production)
-   5. Dans Paramètres du projet > Vos applications, ajoutez une app Web
-   6. Copiez la config ci-dessous
-============================================================ */
+/* 🔥 Configuration Firebase — gestion-salaire-9d3e9 */
 const firebaseConfig = {
-  apiKey: "VOTRE_API_KEY",
-  authDomain: "VOTRE_PROJET.firebaseapp.com",
-  projectId: "VOTRE_PROJET",
-  storageBucket: "VOTRE_PROJET.appspot.com",
-  messagingSenderId: "VOTRE_SENDER_ID",
-  appId: "VOTRE_APP_ID"
+  apiKey: "AIzaSyB5hpkRlFZ9HFRRbpQlvpHwMNDja37Nr2s",
+  authDomain: "gestion-salaire-9d3e9.firebaseapp.com",
+  databaseURL: "https://gestion-salaire-9d3e9-default-rtdb.firebaseio.com",
+  projectId: "gestion-salaire-9d3e9",
+  storageBucket: "gestion-salaire-9d3e9.firebasestorage.app",
+  messagingSenderId: "1090226725870",
+  appId: "1:1090226725870:web:d16c25eb46397b3f2de4ff",
+  measurementId: "G-MJCB7XVY6D"
 };
 
 /* RÈGLES FIRESTORE recommandées (à copier dans Firestore > Règles) :
@@ -739,10 +732,8 @@ try {
 }
 
 // Si la config Firebase n'est pas remplie → mode démo (localStorage)
-if (firebaseConfig.apiKey === "VOTRE_API_KEY") {
-  useFirebase = false;
-  console.warn("⚠️ Configurez Firebase dans index.html (recherchez 'VOTRE_API_KEY'). Mode démo activé.");
-}
+// Config Firebase déjà configurée — mode Firebase actif
+// Si Firebase échoue à l'init, le mode démo localStorage prend le relais automatiquement
 
 /* ============ UTILITAIRES ============ */
 const $ = sel => document.querySelector(sel);
@@ -1239,6 +1230,5 @@ $('#expenseDate').value = today;
 // Empty initial render
 renderAll();
 </script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>

@@ -1,2774 +1,1244 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<meta name="description" content="A.E.T - Alban Eloh Technology - Formation professionnelle en création de sites web et applications à Lomé, Togo."/>
-<meta name="theme-color" content="#0a0a0f"/>
-<title>A.E.T — Alban Eloh Technology | Formation Web & Apps</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@300;400;500;600;700;800&family=Barlow+Condensed:wght@400;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet"/>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FinancePro — Gestionnaire Financier Personnel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-:root{
-  --bg:#07070c;
-  --bg2:#0f0f1a;
-  --bg3:#14141f;
-  --orange:#f97316;
-  --orange2:#fb923c;
-  --orange-glow:rgba(249,115,22,.4);
-  --blue:#3b82f6;
-  --blue2:#60a5fa;
-  --text:#e5e7eb;
-  --muted:#9ca3af;
-  --card:#14141f;
-  --card-hover:#1a1a28;
-  --border:#1e1e30;
-  --border-light:#2a2a40;
-  --success:#22c55e;
-  --gradient-1:linear-gradient(135deg,#f97316 0%,#fb923c 100%);
-  --gradient-2:linear-gradient(135deg,#3b82f6 0%,#60a5fa 100%);
-  --gradient-dark:linear-gradient(180deg,#0a0a14 0%,#07070c 100%);
-}
-*{margin:0;padding:0;box-sizing:border-box;}
-html{scroll-behavior:smooth;}
-body{background:var(--bg);color:var(--text);font-family:'Barlow',sans-serif;font-size:16px;line-height:1.6;overflow-x:hidden;}
-body.no-scroll{overflow:hidden;height:100vh;}
+  *{margin:0;padding:0;box-sizing:border-box;font-family:'Inter',sans-serif}
+  :root{
+    --primary:#6366f1;
+    --primary-dark:#4f46e5;
+    --primary-light:#818cf8;
+    --success:#10b981;
+    --success-light:#34d399;
+    --danger:#ef4444;
+    --danger-light:#f87171;
+    --warning:#f59e0b;
+    --bg:#0f172a;
+    --bg-2:#1e293b;
+    --bg-3:#334155;
+    --card:rgba(30,41,59,0.7);
+    --card-hover:rgba(30,41,59,0.9);
+    --border:rgba(148,163,184,0.15);
+    --text:#f1f5f9;
+    --text-muted:#94a3b8;
+    --text-dim:#64748b;
+    --gradient:linear-gradient(135deg,#6366f1 0%,#8b5cf6 50%,#ec4899 100%);
+    --gradient-success:linear-gradient(135deg,#10b981 0%,#059669 100%);
+    --gradient-danger:linear-gradient(135deg,#ef4444 0%,#dc2626 100%);
+    --shadow:0 10px 40px rgba(0,0,0,0.3);
+    --shadow-glow:0 0 60px rgba(99,102,241,0.3);
+  }
+  body{
+    background:var(--bg);
+    color:var(--text);
+    min-height:100vh;
+    overflow-x:hidden;
+  }
+  body::before{
+    content:'';
+    position:fixed;
+    inset:0;
+    background:
+      radial-gradient(circle at 20% 10%,rgba(99,102,241,0.15) 0%,transparent 50%),
+      radial-gradient(circle at 80% 80%,rgba(236,72,153,0.12) 0%,transparent 50%),
+      radial-gradient(circle at 50% 50%,rgba(139,92,246,0.08) 0%,transparent 60%);
+    z-index:-1;
+    pointer-events:none;
+  }
+  /* ============ AUTH SCREEN ============ */
+  .auth-screen{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .auth-box{
+    width:100%;
+    max-width:440px;
+    background:var(--card);
+    backdrop-filter:blur(20px);
+    border:1px solid var(--border);
+    border-radius:24px;
+    padding:48px 40px;
+    box-shadow:var(--shadow),var(--shadow-glow);
+    animation:fadeUp .6s ease;
+  }
+  @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  .logo{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:12px;
+    margin-bottom:8px;
+  }
+  .logo-icon{
+    width:52px;height:52px;
+    border-radius:14px;
+    background:var(--gradient);
+    display:flex;align-items:center;justify-content:center;
+    font-size:24px;
+    box-shadow:0 8px 24px rgba(99,102,241,0.4);
+  }
+  .logo-text{
+    font-size:28px;font-weight:800;
+    background:var(--gradient);
+    -webkit-background-clip:text;
+    -webkit-text-fill-color:transparent;
+    background-clip:text;
+  }
+  .auth-subtitle{
+    text-align:center;
+    color:var(--text-muted);
+    margin-bottom:32px;
+    font-size:14px;
+  }
+  .auth-tabs{
+    display:flex;
+    background:rgba(15,23,42,0.6);
+    border-radius:12px;
+    padding:4px;
+    margin-bottom:24px;
+  }
+  .auth-tab{
+    flex:1;
+    padding:10px;
+    text-align:center;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:600;
+    font-size:14px;
+    color:var(--text-muted);
+    transition:all .25s;
+  }
+  .auth-tab.active{
+    background:var(--gradient);
+    color:#fff;
+    box-shadow:0 4px 12px rgba(99,102,241,0.3);
+  }
+  .form-group{margin-bottom:18px}
+  .form-label{
+    display:block;
+    font-size:13px;
+    font-weight:500;
+    color:var(--text-muted);
+    margin-bottom:8px;
+  }
+  .form-input{
+    width:100%;
+    padding:14px 16px;
+    background:rgba(15,23,42,0.6);
+    border:1px solid var(--border);
+    border-radius:12px;
+    color:var(--text);
+    font-size:15px;
+    transition:all .25s;
+  }
+  .form-input:focus{
+    outline:none;
+    border-color:var(--primary);
+    box-shadow:0 0 0 3px rgba(99,102,241,0.15);
+  }
+  .form-input::placeholder{color:var(--text-dim)}
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    padding:14px 20px;
+    border:none;
+    border-radius:12px;
+    font-weight:600;
+    font-size:15px;
+    cursor:pointer;
+    transition:all .25s;
+    text-decoration:none;
+  }
+  .btn-primary{
+    width:100%;
+    background:var(--gradient);
+    color:#fff;
+    box-shadow:0 8px 24px rgba(99,102,241,0.3);
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(99,102,241,0.45)}
+  .btn-primary:disabled{opacity:.6;cursor:not-allowed;transform:none}
+  .auth-error{
+    background:rgba(239,68,68,0.1);
+    border:1px solid rgba(239,68,68,0.3);
+    color:var(--danger-light);
+    padding:12px 14px;
+    border-radius:10px;
+    font-size:13px;
+    margin-bottom:16px;
+    display:none;
+  }
+  .auth-error.show{display:block;animation:shake .4s}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+  .auth-success{
+    background:rgba(16,185,129,0.1);
+    border:1px solid rgba(16,185,129,0.3);
+    color:var(--success-light);
+    padding:12px 14px;
+    border-radius:10px;
+    font-size:13px;
+    margin-bottom:16px;
+    display:none;
+  }
+  .auth-success.show{display:block}
+  .auth-footer{
+    text-align:center;
+    margin-top:20px;
+    font-size:13px;
+    color:var(--text-muted);
+  }
+  .auth-footer a{color:var(--primary-light);text-decoration:none;font-weight:500}
 
-/* ═══════════════════════════════════════════════════════════
-   SPLASH SCREEN — Animation d'ouverture
-═══════════════════════════════════════════════════════════ */
-#splash{
-  position:fixed;inset:0;z-index:99999;
-  background:radial-gradient(ellipse at center,#15151f 0%,#07070c 70%);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  transition:opacity .8s ease,visibility .8s ease;
-}
-#splash.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+  /* ============ APP LAYOUT ============ */
+  .app{display:none;min-height:100vh}
+  .app.active{display:block}
+  .header{
+    position:sticky;top:0;z-index:100;
+    background:rgba(15,23,42,0.85);
+    backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--border);
+    padding:16px 32px;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .header-left{display:flex;align-items:center;gap:14px}
+  .header-logo{
+    width:42px;height:42px;border-radius:11px;
+    background:var(--gradient);
+    display:flex;align-items:center;justify-content:center;
+    font-size:18px;color:#fff;
+  }
+  .header-title{font-size:18px;font-weight:700;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .header-right{display:flex;align-items:center;gap:14px}
+  .user-chip{
+    display:flex;align-items:center;gap:10px;
+    padding:8px 14px;
+    background:rgba(30,41,59,0.6);
+    border:1px solid var(--border);
+    border-radius:100px;
+    font-size:13px;
+  }
+  .user-avatar{
+    width:30px;height:30px;border-radius:50%;
+    background:var(--gradient);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:13px;color:#fff;
+  }
+  .btn-icon{
+    width:40px;height:40px;border-radius:10px;
+    background:rgba(30,41,59,0.6);
+    border:1px solid var(--border);
+    color:var(--text);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+    transition:all .2s;
+  }
+  .btn-icon:hover{background:rgba(239,68,68,0.15);color:var(--danger-light);border-color:rgba(239,68,68,0.3)}
 
-/* Particules d'arrière-plan */
-.splash-particles{position:absolute;inset:0;overflow:hidden;}
-.particle{
-  position:absolute;width:4px;height:4px;border-radius:50%;
-  background:var(--orange);opacity:0;
-  animation:floatUp 3s ease-in infinite;
-}
-.particle.blue{background:var(--blue);}
-@keyframes floatUp{
-  0%{transform:translateY(0) scale(0);opacity:0;}
-  20%{opacity:1;}
-  100%{transform:translateY(-100vh) scale(1);opacity:0;}
-}
+  .container{max-width:1400px;margin:0 auto;padding:32px}
+  .tabs{
+    display:flex;gap:8px;margin-bottom:28px;
+    background:var(--card);
+    backdrop-filter:blur(20px);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:6px;
+    overflow-x:auto;
+  }
+  .tab-btn{
+    flex:1;
+    min-width:120px;
+    padding:12px 18px;
+    background:transparent;border:none;
+    color:var(--text-muted);
+    font-weight:600;font-size:14px;
+    border-radius:10px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    transition:all .25s;
+  }
+  .tab-btn:hover{color:var(--text)}
+  .tab-btn.active{background:var(--gradient);color:#fff;box-shadow:0 4px 14px rgba(99,102,241,0.3)}
+  .tab-content{display:none;animation:fade .35s}
+  .tab-content.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 
-/* Logo central */
-.splash-logo-wrap{
-  position:relative;z-index:2;text-align:center;
-  animation:logoIn 1.2s cubic-bezier(.22,1,.36,1);
-}
-@keyframes logoIn{
-  0%{opacity:0;transform:scale(.7);}
-  100%{opacity:1;transform:scale(1);}
-}
+  /* ============ DASHBOARD ============ */
+  .stats-grid{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    gap:20px;margin-bottom:28px;
+  }
+  .stat-card{
+    background:var(--card);
+    backdrop-filter:blur(20px);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:24px;
+    position:relative;overflow:hidden;
+    transition:all .3s;
+  }
+  .stat-card:hover{transform:translateY(-3px);border-color:rgba(99,102,241,0.3)}
+  .stat-card::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:3px;
+    background:var(--gradient);
+  }
+  .stat-card.success::before{background:var(--gradient-success)}
+  .stat-card.danger::before{background:var(--gradient-danger)}
+  .stat-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px}
+  .stat-label{color:var(--text-muted);font-size:13px;font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+  .stat-icon{
+    width:42px;height:42px;border-radius:11px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:18px;
+  }
+  .stat-icon.primary{background:rgba(99,102,241,0.15);color:var(--primary-light)}
+  .stat-icon.success{background:rgba(16,185,129,0.15);color:var(--success-light)}
+  .stat-icon.danger{background:rgba(239,68,68,0.15);color:var(--danger-light)}
+  .stat-icon.warning{background:rgba(245,158,11,0.15);color:var(--warning)}
+  .stat-value{font-size:28px;font-weight:800;margin-bottom:6px;letter-spacing:-.5px}
+  .stat-value.success{color:var(--success-light)}
+  .stat-value.danger{color:var(--danger-light)}
+  .stat-foot{font-size:12px;color:var(--text-muted)}
 
-.splash-logo-circle{
-  width:140px;height:140px;margin:0 auto 2rem;border-radius:50%;
-  background:var(--gradient-1);
-  display:flex;align-items:center;justify-content:center;
-  position:relative;
-  box-shadow:0 0 60px rgba(249,115,22,.5),0 0 120px rgba(249,115,22,.2);
-  animation:pulse 2s ease-in-out infinite;
-}
-@keyframes pulse{
-  0%,100%{box-shadow:0 0 60px rgba(249,115,22,.5),0 0 120px rgba(249,115,22,.2);}
-  50%{box-shadow:0 0 80px rgba(249,115,22,.7),0 0 160px rgba(249,115,22,.4);}
-}
-.splash-logo-circle::before{
-  content:'';position:absolute;inset:-6px;border-radius:50%;
-  border:2px solid var(--orange);opacity:.4;
-  animation:ring 2s linear infinite;
-}
-.splash-logo-circle::after{
-  content:'';position:absolute;inset:-14px;border-radius:50%;
-  border:1px solid var(--blue);opacity:.3;
-  animation:ring 3s linear infinite reverse;
-}
-@keyframes ring{
-  0%{transform:rotate(0deg) scale(1);opacity:.4;}
-  50%{opacity:.7;}
-  100%{transform:rotate(360deg) scale(1.1);opacity:.4;}
-}
-.splash-logo-text{
-  font-family:'Bebas Neue',sans-serif;font-size:3rem;
-  color:#000;letter-spacing:3px;font-weight:700;
-}
+  .grid-2{display:grid;grid-template-columns:2fr 1fr;gap:24px;margin-bottom:28px}
+  @media(max-width:900px){.grid-2{grid-template-columns:1fr}}
+  .panel{
+    background:var(--card);
+    backdrop-filter:blur(20px);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:24px;
+  }
+  .panel-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+  .panel-title{font-size:16px;font-weight:700;display:flex;align-items:center;gap:10px}
+  .panel-title i{color:var(--primary-light)}
+  .chart-wrap{position:relative;height:280px}
 
-.splash-brand{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:clamp(2.2rem,6vw,4rem);
-  color:#fff;letter-spacing:4px;line-height:1;
-  margin-bottom:.5rem;
-  background:linear-gradient(180deg,#fff 0%,#999 100%);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-}
-.splash-brand em{color:var(--orange);font-style:normal;-webkit-text-fill-color:var(--orange);}
-.splash-tagline{
-  font-size:.85rem;letter-spacing:6px;text-transform:uppercase;
-  color:var(--muted);font-weight:500;margin-bottom:.5rem;
-  opacity:0;animation:fadeIn .8s .8s forwards;
-}
-.splash-subtitle{
-  font-size:.75rem;letter-spacing:3px;text-transform:uppercase;
-  color:var(--orange);font-weight:700;
-  opacity:0;animation:fadeIn .8s 1.1s forwards;
-}
-@keyframes fadeIn{to{opacity:1;}}
+  /* ============ FORMS ============ */
+  .form-card{
+    background:var(--card);
+    backdrop-filter:blur(20px);
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:28px;
+    margin-bottom:24px;
+  }
+  .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px}
+  .form-row{display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-top:8px}
+  select.form-input{cursor:pointer}
+  .btn-success{background:var(--gradient-success);color:#fff;box-shadow:0 6px 18px rgba(16,185,129,0.3)}
+  .btn-success:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(16,185,129,0.4)}
+  .btn-danger{background:var(--gradient-danger);color:#fff;box-shadow:0 6px 18px rgba(239,68,68,0.3)}
+  .btn-danger:hover{transform:translateY(-2px);box-shadow:0 10px 24px rgba(239,68,68,0.4)}
 
-/* Barre de progression */
-.splash-progress{
-  width:280px;max-width:80vw;height:3px;
-  background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;
-  margin-top:3rem;
-  opacity:0;animation:fadeIn .5s 1.4s forwards;
-}
-.splash-progress-bar{
-  height:100%;width:0;
-  background:var(--gradient-1);
-  border-radius:3px;
-  animation:loadBar 2.2s 1.4s ease-out forwards;
-}
-@keyframes loadBar{to{width:100%;}}
+  /* ============ TABLE ============ */
+  .table-wrap{overflow-x:auto;border-radius:14px;border:1px solid var(--border)}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  thead{background:rgba(15,23,42,0.6)}
+  th{
+    text-align:left;padding:14px 16px;
+    font-weight:600;color:var(--text-muted);
+    font-size:12px;text-transform:uppercase;letter-spacing:.5px;
+    border-bottom:1px solid var(--border);
+  }
+  td{padding:14px 16px;border-bottom:1px solid rgba(148,163,184,0.08)}
+  tbody tr:hover{background:rgba(99,102,241,0.05)}
+  tbody tr:last-child td{border-bottom:none}
+  .badge{
+    display:inline-flex;align-items:center;gap:5px;
+    padding:4px 10px;border-radius:100px;
+    font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;
+  }
+  .badge.income{background:rgba(16,185,129,0.15);color:var(--success-light)}
+  .badge.expense{background:rgba(239,68,68,0.15);color:var(--danger-light)}
+  .amount-pos{color:var(--success-light);font-weight:700}
+  .amount-neg{color:var(--danger-light);font-weight:700}
+  .btn-mini{
+    width:32px;height:32px;border-radius:8px;
+    background:rgba(239,68,68,0.1);color:var(--danger-light);
+    border:1px solid rgba(239,68,68,0.2);
+    cursor:pointer;display:inline-flex;align-items:center;justify-content:center;
+    transition:all .2s;
+  }
+  .btn-mini:hover{background:rgba(239,68,68,0.2)}
+  .empty{text-align:center;padding:50px 20px;color:var(--text-muted)}
+  .empty i{font-size:42px;margin-bottom:14px;opacity:.4}
 
-.splash-status{
-  font-size:.7rem;letter-spacing:3px;text-transform:uppercase;
-  color:var(--muted);margin-top:1rem;
-  opacity:0;animation:fadeIn .5s 1.5s forwards;
-}
+  .filters{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px}
+  .filter-input{
+    padding:10px 14px;
+    background:rgba(15,23,42,0.6);
+    border:1px solid var(--border);
+    border-radius:10px;color:var(--text);font-size:14px;
+  }
 
-/* ═══════════════════════════════════════════════════════════
-   MODAL D'INSCRIPTION — Avant accès au site
-═══════════════════════════════════════════════════════════ */
-#welcomeModal{
-  position:fixed;inset:0;z-index:9998;
-  background:rgba(7,7,12,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-  display:flex;align-items:center;justify-content:center;
-  padding:1.5rem;opacity:0;visibility:hidden;
-  transition:opacity .4s ease,visibility .4s ease;
-}
-#welcomeModal.show{opacity:1;visibility:visible;}
-.modal-card{
-  background:linear-gradient(180deg,#16162a 0%,#0f0f1a 100%);
-  border:1px solid var(--border-light);
-  border-radius:20px;
-  max-width:480px;width:100%;
-  padding:2.5rem 2rem;
-  position:relative;overflow:hidden;
-  transform:translateY(30px) scale(.95);
-  transition:transform .4s cubic-bezier(.22,1,.36,1);
-  box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 1px rgba(249,115,22,.05);
-}
-#welcomeModal.show .modal-card{transform:translateY(0) scale(1);}
-.modal-card::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:3px;
-  background:var(--gradient-1);
-}
-.modal-card::after{
-  content:'';position:absolute;top:-50%;right:-30%;width:300px;height:300px;
-  background:radial-gradient(circle,rgba(249,115,22,.15) 0%,transparent 70%);
-  pointer-events:none;
-}
-.modal-header{text-align:center;margin-bottom:1.75rem;position:relative;}
-.modal-logo{
-  width:64px;height:64px;margin:0 auto 1rem;border-radius:50%;
-  background:var(--gradient-1);
-  display:flex;align-items:center;justify-content:center;
-  font-family:'Bebas Neue',sans-serif;font-size:1.6rem;color:#000;letter-spacing:2px;
-  box-shadow:0 8px 24px rgba(249,115,22,.4);
-}
-.modal-title{
-  font-family:'Bebas Neue',sans-serif;font-size:2rem;
-  color:#fff;letter-spacing:2px;margin-bottom:.3rem;line-height:1;
-}
-.modal-subtitle{font-size:.92rem;color:var(--muted);}
-.modal-subtitle strong{color:var(--orange);}
+  /* ============ TOAST ============ */
+  .toast-container{position:fixed;top:24px;right:24px;z-index:1000;display:flex;flex-direction:column;gap:10px}
+  .toast{
+    background:var(--card);
+    backdrop-filter:blur(20px);
+    border:1px solid var(--border);
+    border-radius:12px;
+    padding:14px 18px;
+    display:flex;align-items:center;gap:12px;
+    box-shadow:var(--shadow);
+    animation:slideIn .35s ease;
+    min-width:280px;
+  }
+  @keyframes slideIn{from{transform:translateX(120%);opacity:0}to{transform:translateX(0);opacity:1}}
+  .toast.success{border-left:3px solid var(--success)}
+  .toast.error{border-left:3px solid var(--danger)}
+  .toast.info{border-left:3px solid var(--primary)}
+  .toast i{font-size:18px}
+  .toast.success i{color:var(--success-light)}
+  .toast.error i{color:var(--danger-light)}
+  .toast.info i{color:var(--primary-light)}
 
-.modal-form .form-group{margin-bottom:1rem;}
-.modal-form label{
-  display:block;font-size:.7rem;font-weight:700;letter-spacing:2px;
-  text-transform:uppercase;color:var(--muted);margin-bottom:.4rem;
-}
-.modal-form input,.modal-form select{
-  width:100%;background:#0a0a14;border:1px solid var(--border);
-  border-radius:10px;padding:.85rem 1rem;color:var(--text);
-  font-family:'Barlow',sans-serif;font-size:.95rem;outline:none;
-  transition:all .2s;
-}
-.modal-form input:focus,.modal-form select:focus{
-  border-color:var(--orange);
-  box-shadow:0 0 0 3px rgba(249,115,22,.15);
-}
-.modal-form select option{background:#0a0a14;}
-.modal-row{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
-.modal-submit{
-  width:100%;background:var(--gradient-1);color:#000;
-  font-weight:800;font-size:.95rem;letter-spacing:2px;text-transform:uppercase;
-  padding:1rem;border:none;border-radius:10px;cursor:pointer;
-  transition:all .2s;margin-top:.5rem;
-  box-shadow:0 8px 20px rgba(249,115,22,.3);
-}
-.modal-submit:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(249,115,22,.4);}
-.modal-submit:active{transform:translateY(0);}
-.modal-footer{
-  margin-top:1.25rem;padding-top:1.25rem;border-top:1px solid var(--border);
-  font-size:.78rem;color:var(--muted);text-align:center;
-}
-.modal-footer a{color:var(--orange);text-decoration:none;font-weight:600;}
-.modal-skip{
-  display:block;margin-top:.75rem;background:none;border:none;
-  color:var(--muted);font-size:.8rem;cursor:pointer;
-  text-decoration:underline;font-family:inherit;
-}
-.modal-skip:hover{color:var(--text);}
+  /* loader */
+  .loader{
+    width:18px;height:18px;border:2px solid rgba(255,255,255,0.3);
+    border-top-color:#fff;border-radius:50%;
+    animation:spin .7s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
 
-.modal-error{
-  background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);
-  color:#ef4444;padding:.7rem 1rem;border-radius:8px;
-  font-size:.85rem;margin-bottom:1rem;display:none;
-}
-.modal-error.show{display:block;animation:shake .4s;}
-@keyframes shake{
-  0%,100%{transform:translateX(0);}
-  25%{transform:translateX(-6px);}
-  75%{transform:translateX(6px);}
-}
-
-/* ═══════════════════════════════════════════════════════════
-   MENU NAVIGATION — Fixe et professionnel
-═══════════════════════════════════════════════════════════ */
-nav{
-  position:fixed;top:0;left:0;right:0;z-index:1000;
-  background:rgba(7,7,12,.75);
-  backdrop-filter:blur(20px) saturate(180%);
-  -webkit-backdrop-filter:blur(20px) saturate(180%);
-  border-bottom:1px solid transparent;
-  padding:0 1.5rem;
-  transition:all .3s ease;
-}
-nav.scrolled{
-  background:rgba(7,7,12,.92);
-  border-bottom-color:var(--border);
-  box-shadow:0 4px 30px rgba(0,0,0,.3);
-}
-.nav-inner{
-  max-width:1200px;margin:auto;
-  display:flex;align-items:center;justify-content:space-between;
-  height:72px;
-}
-.nav-logo{
-  display:flex;align-items:center;gap:.7rem;
-  text-decoration:none;
-}
-.nav-logo-icon{
-  width:42px;height:42px;border-radius:10px;
-  background:var(--gradient-1);
-  display:flex;align-items:center;justify-content:center;
-  font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:#000;
-  letter-spacing:1px;font-weight:700;
-  box-shadow:0 4px 14px rgba(249,115,22,.3);
-  transition:transform .25s;
-}
-.nav-logo:hover .nav-logo-icon{transform:rotate(-5deg) scale(1.05);}
-.nav-logo-text{display:flex;flex-direction:column;line-height:1;}
-.nav-logo-text .brand{
-  font-family:'Bebas Neue',sans-serif;font-size:1.4rem;
-  color:#fff;letter-spacing:2px;
-}
-.nav-logo-text .sub{
-  font-size:.6rem;color:var(--muted);letter-spacing:2px;
-  text-transform:uppercase;margin-top:2px;
-}
-
-.nav-links{display:flex;gap:.2rem;list-style:none;align-items:center;}
-.nav-links a{
-  color:var(--muted);text-decoration:none;
-  font-size:.82rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;
-  padding:.6rem 1rem;border-radius:8px;
-  transition:all .25s;position:relative;
-}
-.nav-links a::before{
-  content:'';position:absolute;bottom:0;left:50%;width:0;height:2px;
-  background:var(--orange);transition:all .25s;transform:translateX(-50%);
-}
-.nav-links a:hover,.nav-links a.active{color:#fff;}
-.nav-links a.active::before{width:60%;}
-
-.nav-cta{
-  background:var(--gradient-1);color:#000;
-  font-weight:800;font-size:.78rem;letter-spacing:1.5px;text-transform:uppercase;
-  padding:.7rem 1.4rem;border-radius:8px;text-decoration:none;
-  transition:all .25s;
-  box-shadow:0 4px 14px rgba(249,115,22,.3);
-}
-.nav-cta:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(249,115,22,.45);}
-
-.hamburger{
-  display:none;flex-direction:column;gap:5px;cursor:pointer;padding:.5rem;
-  background:none;border:none;
-}
-.hamburger span{display:block;width:24px;height:2px;background:#fff;transition:all .3s;border-radius:2px;}
-.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg);}
-.hamburger.open span:nth-child(2){opacity:0;}
-.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg);}
-
-.mobile-menu{
-  position:fixed;top:72px;left:0;right:0;
-  background:rgba(7,7,12,.98);backdrop-filter:blur(20px);
-  border-bottom:1px solid var(--border);
-  z-index:999;padding:1.5rem;
-  transform:translateY(-110%);transition:transform .35s cubic-bezier(.22,1,.36,1);
-}
-.mobile-menu.open{transform:translateY(0);}
-.mobile-menu a{
-  display:flex;align-items:center;gap:.75rem;
-  color:var(--text);text-decoration:none;
-  font-weight:600;font-size:1rem;padding:1rem .75rem;
-  border-radius:10px;letter-spacing:1px;
-  transition:all .2s;
-}
-.mobile-menu a:hover{background:rgba(249,115,22,.08);color:var(--orange);padding-left:1.25rem;}
-.mobile-menu a.cta{
-  background:var(--gradient-1);color:#000;
-  justify-content:center;font-weight:800;text-transform:uppercase;
-  margin-top:.75rem;
-}
-.mobile-menu a.cta:hover{padding-left:.75rem;}
-
-/* ═══════════════════════════════════════════════════════════
-   HERO
-═══════════════════════════════════════════════════════════ */
-#accueil{
-  min-height:100vh;padding:120px 1.5rem 4rem;
-  display:flex;align-items:center;position:relative;overflow:hidden;
-  background:
-    radial-gradient(ellipse at 70% 30%,rgba(59,130,246,.10) 0%,transparent 50%),
-    radial-gradient(ellipse at 20% 80%,rgba(249,115,22,.08) 0%,transparent 50%);
-}
-.hero-grid-bg{
-  position:absolute;inset:0;
-  background-image:
-    linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
-  background-size:50px 50px;
-  mask-image:radial-gradient(ellipse at center,#000 30%,transparent 80%);
-  -webkit-mask-image:radial-gradient(ellipse at center,#000 30%,transparent 80%);
-  pointer-events:none;
-}
-.hero-inner{max-width:1200px;margin:auto;width:100%;position:relative;z-index:1;}
-
-.hero-badge{
-  display:inline-flex;gap:.6rem;align-items:center;
-  background:rgba(249,115,22,.1);
-  border:1px solid rgba(249,115,22,.3);
-  border-radius:50px;padding:.45rem 1rem;
-  font-size:.72rem;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;
-  color:var(--orange);margin-bottom:1.75rem;
-  animation:slideInLeft .8s ease;
-}
-.hero-badge span{
-  background:var(--orange);color:#000;
-  padding:.15rem .55rem;border-radius:50px;font-weight:800;
-}
-.hero-badge::before{
-  content:'';width:6px;height:6px;border-radius:50%;
-  background:var(--orange);box-shadow:0 0 12px var(--orange);
-  animation:blink 1.5s infinite;
-}
-@keyframes blink{
-  0%,100%{opacity:1;}
-  50%{opacity:.3;}
-}
-@keyframes slideInLeft{
-  from{opacity:0;transform:translateX(-30px);}
-  to{opacity:1;transform:translateX(0);}
-}
-@keyframes slideInUp{
-  from{opacity:0;transform:translateY(30px);}
-  to{opacity:1;transform:translateY(0);}
-}
-
-.hero-title{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:clamp(3.5rem,10vw,7.5rem);
-  line-height:.92;color:#fff;margin-bottom:1.25rem;
-  animation:slideInUp 1s ease .1s both;
-}
-.hero-title em{
-  background:var(--gradient-1);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  font-style:normal;
-}
-.hero-title .blue{
-  background:var(--gradient-2);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-}
-.hero-sub{
-  font-size:1.15rem;color:var(--muted);max-width:580px;
-  margin-bottom:2rem;font-weight:300;
-  animation:slideInUp 1s ease .3s both;
-}
-.hero-sub strong{color:var(--text);font-weight:600;}
-.hero-box{
-  background:rgba(59,130,246,.06);
-  border:1px solid rgba(59,130,246,.2);
-  border-left:3px solid var(--blue);
-  border-radius:12px;
-  padding:1.25rem 1.5rem;max-width:600px;margin-bottom:2.5rem;
-  animation:slideInUp 1s ease .5s both;
-  backdrop-filter:blur(10px);
-}
-.hero-box p{color:var(--text);font-size:.95rem;}
-.hero-box p span{color:var(--orange);font-weight:700;}
-.hero-btns{display:flex;gap:1rem;flex-wrap:wrap;animation:slideInUp 1s ease .7s both;}
-.btn-primary{
-  background:var(--gradient-1);color:#000;
-  font-weight:800;font-size:.9rem;letter-spacing:1.5px;text-transform:uppercase;
-  padding:1rem 2rem;border-radius:10px;text-decoration:none;
-  transition:all .25s;display:inline-flex;align-items:center;gap:.5rem;
-  box-shadow:0 8px 24px rgba(249,115,22,.3);
-}
-.btn-primary:hover{transform:translateY(-3px);box-shadow:0 14px 32px rgba(249,115,22,.45);}
-.btn-secondary{
-  border:1px solid var(--border-light);color:var(--text);
-  font-weight:700;font-size:.9rem;letter-spacing:1px;text-transform:uppercase;
-  padding:1rem 2rem;border-radius:10px;text-decoration:none;
-  transition:all .25s;display:inline-flex;align-items:center;gap:.5rem;
-  background:rgba(255,255,255,.02);
-}
-.btn-secondary:hover{border-color:var(--orange);color:var(--orange);background:rgba(249,115,22,.05);}
-
-.hero-stats{
-  margin-top:3.5rem;display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
-  gap:1.5rem;max-width:600px;
-  animation:slideInUp 1s ease .9s both;
-}
-.stat-item{
-  border-left:2px solid var(--orange);padding-left:1rem;
-}
-.stat-num{
-  font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#fff;
-  line-height:1;display:block;
-}
-.stat-lbl{font-size:.75rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
-
-/* ═══════════════════════════════════════════════════════════
-   SECTIONS GÉNÉRIQUES
-═══════════════════════════════════════════════════════════ */
-section{padding:6rem 1.5rem;position:relative;}
-.section-inner{max-width:1200px;margin:auto;}
-.section-label{
-  font-size:.72rem;font-weight:700;letter-spacing:4px;text-transform:uppercase;
-  color:var(--orange);margin-bottom:.75rem;
-  display:inline-flex;align-items:center;gap:.5rem;
-}
-.section-label::before{content:'';width:30px;height:1px;background:var(--orange);}
-.section-title{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:clamp(2.2rem,5vw,3.8rem);
-  color:#fff;line-height:1;margin-bottom:1rem;
-}
-.section-desc{color:var(--muted);max-width:650px;font-size:1.02rem;margin-bottom:3.5rem;}
-
-/* ═══════════════════════════════════════════════════════════
-   MODULES
-═══════════════════════════════════════════════════════════ */
-#formations{background:var(--bg2);position:relative;}
-#formations::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,var(--border-light),transparent);
-}
-.modules-grid{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));
-  gap:1.5rem;
-}
-.module-card{
-  background:var(--card);border:1px solid var(--border);
-  border-radius:14px;padding:1.75rem;
-  transition:all .3s cubic-bezier(.22,1,.36,1);
-  position:relative;overflow:hidden;
-}
-.module-card::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:3px;
-  background:var(--gradient-1);
-  transform:scaleX(.3);transform-origin:left;transition:transform .4s;
-}
-.module-card.blue::before{background:var(--gradient-2);}
-.module-card:hover{
-  border-color:var(--orange);transform:translateY(-6px);
-  background:var(--card-hover);
-  box-shadow:0 20px 40px rgba(0,0,0,.4),0 0 0 1px rgba(249,115,22,.1);
-}
-.module-card.blue:hover{
-  border-color:var(--blue);
-  box-shadow:0 20px 40px rgba(0,0,0,.4),0 0 0 1px rgba(59,130,246,.1);
-}
-.module-card:hover::before{transform:scaleX(1);}
-.module-num{
-  font-family:'Bebas Neue',sans-serif;font-size:3.2rem;
-  color:rgba(249,115,22,.15);line-height:1;margin-bottom:.5rem;
-}
-.module-card.blue .module-num{color:rgba(59,130,246,.15);}
-.module-icon{font-size:1.9rem;margin-bottom:.75rem;}
-.module-title{
-  font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:700;
-  color:#fff;margin-bottom:.5rem;text-transform:uppercase;letter-spacing:1px;
-}
-.module-desc{color:var(--muted);font-size:.9rem;margin-bottom:1.25rem;}
-.module-topics{list-style:none;display:flex;flex-direction:column;gap:.45rem;}
-.module-topics li{
-  font-size:.83rem;color:var(--text);
-  display:flex;align-items:flex-start;gap:.5rem;
-}
-.module-topics li::before{content:'▸';color:var(--orange);flex-shrink:0;margin-top:1px;}
-.module-card.blue .module-topics li::before{color:var(--blue);}
-.module-duration{
-  margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border);
-  font-size:.78rem;color:var(--muted);display:flex;align-items:center;gap:.4rem;
-}
-
-.tech-tags{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1rem;}
-.tech-tag{
-  background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.25);
-  color:var(--orange);padding:.4rem 1rem;border-radius:50px;
-  font-size:.78rem;font-weight:700;letter-spacing:.5px;
-  transition:all .2s;
-}
-.tech-tag:hover{background:rgba(249,115,22,.15);transform:translateY(-2px);}
-.tech-tag.blue{
-  background:rgba(59,130,246,.08);border-color:rgba(59,130,246,.25);
-  color:var(--blue);
-}
-.tech-tag.blue:hover{background:rgba(59,130,246,.15);}
-
-.audience-grid{
-  margin-top:3rem;display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:1rem;
-}
-.audience-card{
-  background:var(--card);border:1px solid var(--border);
-  border-radius:12px;padding:1.5rem;text-align:center;
-  transition:all .25s;
-}
-.audience-card:hover{border-color:var(--orange);transform:translateY(-3px);}
-.audience-card .ico{font-size:2.2rem;margin-bottom:.6rem;}
-.audience-card strong{color:#fff;display:block;margin-bottom:.3rem;font-size:.95rem;}
-.audience-card span{color:var(--muted);font-size:.82rem;}
-
-/* ═══════════════════════════════════════════════════════════
-   TARIFS
-═══════════════════════════════════════════════════════════ */
-#tarifs{background:var(--bg);}
-.pricing-grid{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));
-  gap:1.75rem;max-width:1000px;
-}
-.price-card{
-  background:var(--card);border:1px solid var(--border);
-  border-radius:16px;padding:2rem;transition:all .3s;
-  position:relative;
-}
-.price-card:hover{transform:translateY(-4px);border-color:var(--border-light);}
-.price-card.featured{
-  border-color:var(--orange);
-  background:linear-gradient(180deg,rgba(249,115,22,.06) 0%,rgba(249,115,22,.02) 100%);
-  box-shadow:0 20px 40px rgba(0,0,0,.3),0 0 0 1px rgba(249,115,22,.2);
-  transform:scale(1.02);
-}
-.price-card.featured:hover{transform:scale(1.02) translateY(-4px);}
-.price-card.featured::after{
-  content:'⭐ POPULAIRE';position:absolute;top:-12px;left:50%;
-  transform:translateX(-50%);background:var(--gradient-1);color:#000;
-  font-size:.68rem;font-weight:800;letter-spacing:2px;
-  padding:.3rem 1rem;border-radius:50px;
-  box-shadow:0 4px 12px rgba(249,115,22,.4);
-}
-.price-name{
-  font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:700;
-  text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:.5rem;
-}
-.price-amount{font-family:'Bebas Neue',sans-serif;font-size:3.5rem;color:#fff;line-height:1;}
-.price-currency{font-size:1.2rem;color:var(--orange);vertical-align:top;margin-top:.5rem;display:inline-block;}
-.price-period{font-size:.82rem;color:var(--muted);margin-bottom:1.75rem;margin-top:.3rem;}
-.price-features{list-style:none;display:flex;flex-direction:column;gap:.65rem;margin-bottom:2rem;}
-.price-features li{font-size:.88rem;color:var(--text);display:flex;gap:.6rem;align-items:flex-start;}
-.price-features li .chk{color:var(--success);flex-shrink:0;font-weight:bold;}
-.price-features li .x{color:#ef4444;flex-shrink:0;opacity:.5;}
-.price-features li.disabled{color:var(--muted);text-decoration:line-through;text-decoration-color:rgba(156,163,175,.3);}
-.btn-price{
-  display:block;text-align:center;padding:.95rem;border-radius:10px;
-  font-weight:800;font-size:.88rem;letter-spacing:1.5px;text-transform:uppercase;
-  text-decoration:none;transition:all .25s;
-  border:1px solid var(--orange);color:var(--orange);
-}
-.btn-price:hover{background:var(--orange);color:#000;transform:translateY(-2px);}
-.price-card.featured .btn-price{background:var(--gradient-1);color:#000;border-color:transparent;box-shadow:0 6px 20px rgba(249,115,22,.3);}
-.price-card.featured .btn-price:hover{box-shadow:0 10px 28px rgba(249,115,22,.45);}
-.price-note{
-  margin-top:2.5rem;
-  background:rgba(59,130,246,.06);
-  border:1px solid rgba(59,130,246,.2);
-  border-radius:12px;padding:1.4rem 1.75rem;font-size:.88rem;color:var(--muted);
-}
-.price-note strong{color:var(--blue);}
-
-/* ═══════════════════════════════════════════════════════════
-   PLANNING
-═══════════════════════════════════════════════════════════ */
-#planning{background:var(--bg2);}
-.planning-grid{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));
-  gap:1.25rem;margin-bottom:2.5rem;
-}
-.session-card{
-  background:var(--card);border:1px solid var(--border);
-  border-radius:12px;padding:1.5rem;transition:all .25s;
-  position:relative;overflow:hidden;
-}
-.session-card::after{
-  content:'';position:absolute;top:0;right:0;width:60px;height:60px;
-  background:radial-gradient(circle at top right,rgba(249,115,22,.08) 0%,transparent 70%);
-}
-.session-card:hover{border-color:var(--orange);transform:translateY(-3px);}
-.session-day{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--orange);letter-spacing:1px;margin-bottom:.25rem;}
-.session-time{font-size:.88rem;color:var(--blue);font-weight:600;margin-bottom:.75rem;}
-.session-title{font-weight:700;color:#fff;font-size:.95rem;margin-bottom:.4rem;}
-.session-info{font-size:.82rem;color:var(--muted);}
-.session-badge{
-  display:inline-block;margin-top:.85rem;font-size:.68rem;font-weight:700;
-  letter-spacing:2px;text-transform:uppercase;padding:.25rem .8rem;border-radius:50px;
-}
-.badge-open{background:rgba(34,197,94,.1);color:var(--success);border:1px solid rgba(34,197,94,.25);}
-.badge-full{background:rgba(239,68,68,.1);color:#ef4444;border:1px solid rgba(239,68,68,.25);}
-.badge-soon{background:rgba(249,115,22,.1);color:var(--orange);border:1px solid rgba(249,115,22,.25);}
-.planning-note{
-  background:var(--card);border:1px solid var(--border);
-  border-left:3px solid var(--orange);border-radius:10px;
-  padding:1.4rem 1.75rem;font-size:.92rem;color:var(--muted);line-height:1.9;
-}
-.planning-note strong{color:var(--text);}
-
-/* ═══════════════════════════════════════════════════════════
-   INSCRIPTION
-═══════════════════════════════════════════════════════════ */
-#inscription{background:var(--bg);}
-.form-wrap{display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:start;}
-.form-info h3{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#fff;margin-bottom:1rem;letter-spacing:1px;}
-.form-info > p{color:var(--muted);font-size:.95rem;margin-bottom:1.75rem;}
-.steps{display:flex;flex-direction:column;gap:1.25rem;}
-.step{display:flex;gap:1rem;align-items:flex-start;}
-.step-num{
-  width:36px;height:36px;border-radius:50%;
-  background:var(--gradient-1);color:#000;font-weight:800;font-size:1rem;
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  box-shadow:0 4px 12px rgba(249,115,22,.3);
-}
-.step-text strong{display:block;color:#fff;font-weight:700;font-size:.95rem;margin-bottom:.2rem;}
-.step-text span{color:var(--muted);font-size:.85rem;}
-.payment-methods{margin-top:2.25rem;display:flex;flex-direction:column;gap:.75rem;}
-.pay-method{
-  background:var(--card);border:1px solid var(--border);
-  border-radius:10px;padding:1rem 1.25rem;
-  display:flex;align-items:center;gap:.85rem;transition:all .25s;
-}
-.pay-method:hover{border-color:var(--orange);transform:translateX(4px);}
-.pay-icon{font-size:1.6rem;}
-.pay-info strong{display:block;color:#fff;font-size:.92rem;}
-.pay-info span{color:var(--muted);font-size:.78rem;}
-
-.reg-form{
-  background:var(--card);border:1px solid var(--border);
-  border-radius:16px;padding:2.25rem;
-  position:relative;overflow:hidden;
-}
-.reg-form::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:3px;
-  background:var(--gradient-1);
-}
-.reg-form h3{
-  font-family:'Bebas Neue',sans-serif;font-size:1.9rem;color:#fff;
-  margin-bottom:1.5rem;letter-spacing:1.5px;
-}
-.form-group{margin-bottom:1.25rem;}
-.form-group label{
-  display:block;font-size:.72rem;font-weight:700;letter-spacing:2px;
-  text-transform:uppercase;color:var(--muted);margin-bottom:.5rem;
-}
-.form-group input,.form-group select,.form-group textarea{
-  width:100%;background:var(--bg2);border:1px solid var(--border);
-  border-radius:10px;padding:.85rem 1rem;color:var(--text);
-  font-family:'Barlow',sans-serif;font-size:.92rem;outline:none;
-  transition:all .2s;
-}
-.form-group input:focus,.form-group select:focus,.form-group textarea:focus{
-  border-color:var(--orange);
-  box-shadow:0 0 0 3px rgba(249,115,22,.15);
-}
-.form-group select option{background:var(--bg2);}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;}
-.form-submit{
-  width:100%;background:var(--gradient-1);color:#000;
-  font-weight:800;font-size:1rem;letter-spacing:2px;text-transform:uppercase;
-  padding:1rem;border:none;border-radius:10px;cursor:pointer;
-  transition:all .25s;margin-top:.5rem;
-  box-shadow:0 8px 24px rgba(249,115,22,.3);
-}
-.form-submit:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(249,115,22,.45);}
-.form-success{
-  display:none;background:rgba(34,197,94,.08);
-  border:1px solid rgba(34,197,94,.3);
-  border-radius:12px;padding:1.75rem;text-align:center;margin-top:1rem;
-}
-.form-success h4{color:var(--success);font-size:1.2rem;margin-bottom:.5rem;}
-.form-success p{color:var(--muted);font-size:.88rem;}
-
-/* ═══════════════════════════════════════════════════════════
-   CONTACT
-═══════════════════════════════════════════════════════════ */
-#contact{background:var(--bg2);}
-.contact-grid{display:grid;grid-template-columns:1fr 1fr;gap:3rem;}
-.contact-info h3{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:#fff;margin-bottom:.75rem;letter-spacing:1px;}
-.contact-info > p{color:var(--muted);font-size:.95rem;margin-bottom:2rem;}
-.contact-items{display:flex;flex-direction:column;gap:1rem;}
-.contact-item{
-  display:flex;gap:1rem;align-items:flex-start;
-  background:var(--card);border:1px solid var(--border);
-  border-radius:12px;padding:1.25rem 1.5rem;transition:all .25s;
-}
-.contact-item:hover{border-color:var(--orange);transform:translateX(4px);}
-.contact-item .icon{font-size:1.5rem;flex-shrink:0;}
-.contact-item strong{display:block;color:#fff;font-size:.92rem;margin-bottom:.25rem;}
-.contact-item span{color:var(--muted);font-size:.85rem;}
-.contact-item a{color:var(--orange);text-decoration:none;transition:color .2s;}
-.contact-item a:hover{color:var(--orange2);}
-.wa-btn{
-  display:inline-flex;align-items:center;gap:.85rem;
-  background:#25d366;color:#fff;font-weight:800;font-size:1rem;
-  padding:1.1rem 2.25rem;border-radius:10px;text-decoration:none;
-  margin-top:1.75rem;transition:all .25s;
-  box-shadow:0 8px 24px rgba(37,211,102,.3);
-}
-.wa-btn:hover{background:#1ebe5d;transform:translateY(-3px);box-shadow:0 12px 32px rgba(37,211,102,.45);}
-.contact-form{
-  background:var(--card);border:1px solid var(--border);
-  border-radius:16px;padding:2.25rem;
-  position:relative;overflow:hidden;
-}
-.contact-form::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:3px;
-  background:var(--gradient-2);
-}
-.contact-form h3{font-family:'Bebas Neue',sans-serif;font-size:1.75rem;color:#fff;margin-bottom:1.5rem;letter-spacing:1.5px;}
-
-/* ═══════════════════════════════════════════════════════════
-   CTA FINAL
-═══════════════════════════════════════════════════════════ */
-.cta-final{
-  background:var(--gradient-1);padding:4rem 1.5rem;text-align:center;
-  position:relative;overflow:hidden;
-}
-.cta-final::before{
-  content:'';position:absolute;inset:0;
-  background-image:
-    linear-gradient(rgba(0,0,0,.08) 1px,transparent 1px),
-    linear-gradient(90deg,rgba(0,0,0,.08) 1px,transparent 1px);
-  background-size:40px 40px;
-  opacity:.3;
-}
-.cta-final-inner{max-width:800px;margin:auto;position:relative;z-index:1;}
-.cta-final h2{
-  font-family:'Bebas Neue',sans-serif;
-  font-size:clamp(2.2rem,5vw,3.8rem);
-  color:#000;letter-spacing:2px;margin-bottom:.75rem;line-height:1;
-}
-.cta-final p{color:rgba(0,0,0,.75);font-size:1.05rem;margin-bottom:1.75rem;}
-.cta-phones{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-bottom:1.5rem;}
-.cta-phone{
-  background:#000;color:#fff;font-weight:800;
-  padding:1rem 2rem;border-radius:10px;text-decoration:none;font-size:1.05rem;
-  transition:all .25s;display:inline-flex;align-items:center;gap:.5rem;
-}
-.cta-phone:hover{background:#222;transform:translateY(-3px);box-shadow:0 12px 28px rgba(0,0,0,.3);}
-.cta-final small{color:rgba(0,0,0,.65);font-size:.85rem;}
-
-/* ═══════════════════════════════════════════════════════════
-   FOOTER
-═══════════════════════════════════════════════════════════ */
-footer{background:var(--bg);border-top:1px solid var(--border);padding:4rem 1.5rem 2rem;}
-.footer-inner{max-width:1200px;margin:auto;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:3rem;}
-.footer-brand .logo{
-  display:flex;align-items:center;gap:.7rem;margin-bottom:1rem;
-}
-.footer-brand .logo-icon{
-  width:42px;height:42px;border-radius:10px;
-  background:var(--gradient-1);
-  display:flex;align-items:center;justify-content:center;
-  font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:#000;letter-spacing:1px;
-}
-.footer-brand .logo-text{
-  font-family:'Bebas Neue',sans-serif;font-size:1.5rem;color:#fff;letter-spacing:2px;
-}
-.footer-brand p{color:var(--muted);font-size:.88rem;max-width:300px;line-height:1.7;}
-.footer-socials{margin-top:1.25rem;display:flex;gap:.75rem;}
-.footer-socials a{
-  width:38px;height:38px;border-radius:10px;
-  background:var(--card);border:1px solid var(--border);
-  display:flex;align-items:center;justify-content:center;
-  color:var(--muted);text-decoration:none;transition:all .2s;
-}
-.footer-socials a:hover{background:var(--orange);color:#000;border-color:var(--orange);transform:translateY(-2px);}
-.footer-col h4{
-  font-family:'Barlow Condensed',sans-serif;font-size:.9rem;font-weight:700;
-  text-transform:uppercase;letter-spacing:2.5px;color:#fff;margin-bottom:1.25rem;
-}
-.footer-col ul{list-style:none;display:flex;flex-direction:column;gap:.6rem;}
-.footer-col ul a{color:var(--muted);text-decoration:none;font-size:.88rem;transition:all .2s;}
-.footer-col ul a:hover{color:var(--orange);padding-left:4px;}
-.footer-bottom{
-  max-width:1200px;margin:3rem auto 0;padding-top:1.75rem;
-  border-top:1px solid var(--border);
-  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.5rem;
-  font-size:.82rem;color:var(--muted);
-}
-.footer-bottom span em{color:var(--orange);font-style:normal;font-weight:600;}
-
-/* ═══════════════════════════════════════════════════════════
-   TOAST
-═══════════════════════════════════════════════════════════ */
-.toast{
-  position:fixed;bottom:2rem;right:2rem;
-  background:#1a1a2e;border:1px solid var(--success);
-  border-radius:12px;padding:1rem 1.5rem;z-index:9999;
-  transform:translateY(100px);opacity:0;transition:all .4s;max-width:340px;
-  box-shadow:0 12px 32px rgba(0,0,0,.5);
-}
-.toast.show{transform:translateY(0);opacity:1;}
-.toast.error{border-color:#ef4444;}
-.toast strong{color:var(--success);display:block;margin-bottom:.25rem;font-size:.95rem;}
-.toast.error strong{color:#ef4444;}
-.toast span{color:var(--muted);font-size:.85rem;}
-
-/* ═══════════════════════════════════════════════════════════
-   SCROLL TO TOP
-═══════════════════════════════════════════════════════════ */
-#scrollTop{
-  position:fixed;bottom:2rem;left:2rem;z-index:998;
-  width:48px;height:48px;border-radius:50%;
-  background:var(--gradient-1);color:#000;
-  border:none;cursor:pointer;font-size:1.2rem;
-  box-shadow:0 8px 24px rgba(249,115,22,.4);
-  opacity:0;visibility:hidden;transform:translateY(20px);
-  transition:all .3s;
-}
-#scrollTop.show{opacity:1;visibility:visible;transform:translateY(0);}
-#scrollTop:hover{transform:translateY(-4px);box-shadow:0 12px 32px rgba(249,115,22,.55);}
-
-/* WhatsApp floating */
-.wa-float{
-  position:fixed;bottom:2rem;right:2rem;z-index:998;
-  width:56px;height:56px;border-radius:50%;
-  background:#25d366;color:#fff;
-  display:flex;align-items:center;justify-content:center;
-  text-decoration:none;font-size:1.5rem;
-  box-shadow:0 8px 24px rgba(37,211,102,.4);
-  transition:all .25s;
-  animation:waPulse 2.5s infinite;
-}
-.wa-float:hover{transform:scale(1.1) rotate(8deg);}
-@keyframes waPulse{
-  0%,100%{box-shadow:0 8px 24px rgba(37,211,102,.4),0 0 0 0 rgba(37,211,102,.4);}
-  50%{box-shadow:0 8px 24px rgba(37,211,102,.4),0 0 0 16px rgba(37,211,102,0);}
-}
-
-/* ═══════════════════════════════════════════════════════════
-   REVEAL ANIMATIONS (Intersection Observer)
-═══════════════════════════════════════════════════════════ */
-.reveal{opacity:0;transform:translateY(30px);transition:opacity .8s ease,transform .8s ease;}
-.reveal.visible{opacity:1;transform:translateY(0);}
-
-/* ═══════════════════════════════════════════════════════════
-   RESPONSIVE
-═══════════════════════════════════════════════════════════ */
-@media(max-width:900px){
-  .footer-inner{grid-template-columns:1fr 1fr;}
-  .footer-brand{grid-column:1/-1;}
-}
-@media(max-width:768px){
-  .nav-links,.nav-cta{display:none;}
-  .hamburger{display:flex;}
-  .form-wrap,.contact-grid{grid-template-columns:1fr;}
-  .form-row,.modal-row{grid-template-columns:1fr;}
-  .footer-inner{grid-template-columns:1fr;gap:2rem;}
-  .footer-bottom{flex-direction:column;text-align:center;}
-  section{padding:4.5rem 1.25rem;}
-  .nav-logo-text .sub{display:none;}
-  #accueil{padding:100px 1.25rem 3rem;}
-  .hero-stats{grid-template-columns:1fr 1fr;gap:1rem;}
-  .wa-float{bottom:1.25rem;right:1.25rem;}
-  #scrollTop{bottom:1.25rem;left:1.25rem;}
-  .modal-card{padding:2rem 1.5rem;}
-}
-@media(max-width:480px){
-  .splash-logo-circle{width:110px;height:110px;}
-  .splash-logo-text{font-size:2.3rem;}
-  .hero-btns{flex-direction:column;width:100%;}
-  .hero-btns a{justify-content:center;width:100%;}
-}
+  @media(max-width:768px){
+    .container{padding:16px}
+    .header{padding:14px 16px}
+    .header-title{display:none}
+    .tabs{flex-wrap:nowrap}
+    .tab-btn{min-width:auto;padding:10px 12px;font-size:13px}
+    .tab-btn span{display:none}
+    .auth-box{padding:36px 24px}
+  }
 </style>
 </head>
-<body class="no-scroll">
+<body>
 
-<!-- ═══════════════════════════════════════════════════════════
-     SPLASH SCREEN
-═══════════════════════════════════════════════════════════ -->
-<div id="splash">
-  <div class="splash-particles" id="splashParticles"></div>
-  <div class="splash-logo-wrap">
-    <div class="splash-logo-circle">
-      <div class="splash-logo-text">AET</div>
+<!-- =================== AUTH SCREEN =================== -->
+<div id="authScreen" class="auth-screen">
+  <div class="auth-box">
+    <div class="logo">
+      <div class="logo-icon"><i class="fas fa-wallet"></i></div>
+      <div class="logo-text">FinancePro</div>
     </div>
-    <h1 class="splash-brand"><em>A</em>LBAN <em>E</em>LOH <em>T</em>ECHNOLOGY</h1>
-    <p class="splash-tagline">Formation Web &amp; Applications</p>
-    <p class="splash-subtitle">★ Lomé · Togo ★</p>
-  </div>
-  <div class="splash-progress">
-    <div class="splash-progress-bar"></div>
-  </div>
-  <p class="splash-status">Chargement en cours...</p>
-</div>
+    <p class="auth-subtitle">Votre gestionnaire financier personnel</p>
 
-<!-- ═══════════════════════════════════════════════════════════
-     MODAL D'INSCRIPTION (avant accès au site)
-═══════════════════════════════════════════════════════════ -->
-<div id="welcomeModal">
-  <div class="modal-card">
-    <div class="modal-header">
-      <div class="modal-logo">AET</div>
-      <h2 class="modal-title">BIENVENUE !</h2>
-      <p class="modal-subtitle">Inscrivez-vous pour découvrir nos <strong>formations</strong></p>
+    <div class="auth-tabs">
+      <div class="auth-tab active" data-tab="login">Connexion</div>
+      <div class="auth-tab" data-tab="signup">Inscription</div>
     </div>
 
-    <div class="modal-error" id="modalError"></div>
+    <div id="authError" class="auth-error"></div>
+    <div id="authSuccess" class="auth-success"></div>
 
-    <form class="modal-form" id="welcomeForm" onsubmit="handleWelcomeSubmit(event)">
-      <div class="modal-row">
-        <div class="form-group">
-          <label>Prénom *</label>
-          <input type="text" id="wPrenom" placeholder="Votre prénom" required>
-        </div>
-        <div class="form-group">
-          <label>Nom *</label>
-          <input type="text" id="wNom" placeholder="Votre nom" required>
-        </div>
+    <!-- LOGIN -->
+    <form id="loginForm">
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input type="email" id="loginEmail" class="form-input" placeholder="vous@exemple.com" required />
       </div>
       <div class="form-group">
-        <label>Téléphone / WhatsApp *</label>
-        <input type="tel" id="wTel" placeholder="Ex : 99 00 00 00" required>
+        <label class="form-label">Mot de passe</label>
+        <input type="password" id="loginPassword" class="form-input" placeholder="••••••••" required />
+      </div>
+      <button type="submit" class="btn btn-primary" id="loginBtn">
+        <span>Se connecter</span>
+      </button>
+      <div class="auth-footer">
+        <a href="#" id="forgotLink">Mot de passe oublié ?</a>
+      </div>
+    </form>
+
+    <!-- SIGNUP -->
+    <form id="signupForm" style="display:none">
+      <div class="form-group">
+        <label class="form-label">Nom complet</label>
+        <input type="text" id="signupName" class="form-input" placeholder="Jean Dupont" required />
       </div>
       <div class="form-group">
-        <label>Email (optionnel)</label>
-        <input type="email" id="wEmail" placeholder="votreemail@exemple.com">
+        <label class="form-label">Email</label>
+        <input type="email" id="signupEmail" class="form-input" placeholder="vous@exemple.com" required />
       </div>
       <div class="form-group">
-        <label>Vous êtes... *</label>
-        <select id="wProfil" required>
-          <option value="">-- Sélectionnez --</option>
-          <option>Étudiant(e)</option>
-          <option>Professionnel(le)</option>
-          <option>Entrepreneur(e)</option>
-          <option>Débutant(e) curieux(se)</option>
-          <option>Autre</option>
-        </select>
+        <label class="form-label">Mot de passe</label>
+        <input type="password" id="signupPassword" class="form-input" placeholder="6 caractères minimum" required minlength="6" />
       </div>
-      <button type="submit" class="modal-submit">Accéder au site →</button>
-      <p class="modal-footer">
-        Vos infos sont protégées · Aucun spam ·<br>
-        <a href="javascript:void(0)" onclick="skipWelcome()">Voir le site sans inscription</a>
-      </p>
+      <button type="submit" class="btn btn-primary" id="signupBtn">
+        <span>Créer mon compte</span>
+      </button>
     </form>
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════
-     NAVIGATION
-═══════════════════════════════════════════════════════════ -->
-<nav id="mainNav">
-  <div class="nav-inner">
-    <a href="#accueil" class="nav-logo">
-      <div class="nav-logo-icon">AET</div>
-      <div class="nav-logo-text">
-        <span class="brand">A.E.T</span>
-        <span class="sub">Alban Eloh Technology</span>
+<!-- =================== MAIN APP =================== -->
+<div id="app" class="app">
+  <div class="header">
+    <div class="header-left">
+      <div class="header-logo"><i class="fas fa-wallet"></i></div>
+      <div class="header-title">FinancePro</div>
+    </div>
+    <div class="header-right">
+      <div class="user-chip">
+        <div class="user-avatar" id="userAvatar">U</div>
+        <span id="userName">Utilisateur</span>
       </div>
-    </a>
-    <ul class="nav-links">
-      <li><a href="#accueil" class="active">Accueil</a></li>
-      <li><a href="#formations">Formations</a></li>
-      <li><a href="#tarifs">Tarifs</a></li>
-      <li><a href="#planning">Planning</a></li>
-      <li><a href="#contact">Contact</a></li>
-    </ul>
-    <a href="#inscription" class="nav-cta">S'inscrire</a>
-    <button class="hamburger" id="hamburger" onclick="toggleMenu()" aria-label="Menu">
-      <span></span><span></span><span></span>
-    </button>
-  </div>
-</nav>
-<div class="mobile-menu" id="mobileMenu">
-  <a href="#accueil" onclick="closeMenu()">🏠 <span>Accueil</span></a>
-  <a href="#formations" onclick="closeMenu()">📚 <span>Formations</span></a>
-  <a href="#tarifs" onclick="closeMenu()">💰 <span>Tarifs</span></a>
-  <a href="#planning" onclick="closeMenu()">📅 <span>Planning</span></a>
-  <a href="#contact" onclick="closeMenu()">📞 <span>Contact</span></a>
-  <a href="#inscription" class="cta" onclick="closeMenu()">✍️ S'inscrire maintenant</a>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════
-     HERO
-═══════════════════════════════════════════════════════════ -->
-<section id="accueil">
-  <div class="hero-grid-bg"></div>
-  <div class="hero-inner">
-    <div class="hero-badge"><span>FORMATION</span> Pratique &amp; Professionnelle</div>
-    <h1 class="hero-title">
-      CRÉATION<br>
-      DE <em>SITES WEB</em><br>
-      <span class="blue">&amp; APPLICATIONS</span>
-    </h1>
-    <p class="hero-sub">Maîtrisez le développement web moderne — <strong>de zéro à la mise en ligne.</strong> Formation complète, étape par étape, accessible aux débutants.</p>
-    <div class="hero-box">
-      <p>Créez des <span>sites web professionnels</span> et des <span>applications connectées</span> avec une base de données en temps réel. Formation complète, étape par étape, accessible aux <strong>débutants.</strong></p>
-    </div>
-    <div class="hero-btns">
-      <a href="#inscription" class="btn-primary">S'inscrire maintenant →</a>
-      <a href="#formations" class="btn-secondary">Voir les modules</a>
-    </div>
-    <div class="hero-stats">
-      <div class="stat-item"><span class="stat-num">6</span><span class="stat-lbl">Modules</span></div>
-      <div class="stat-item"><span class="stat-num">7+</span><span class="stat-lbl">Semaines</span></div>
-      <div class="stat-item"><span class="stat-num">100%</span><span class="stat-lbl">Pratique</span></div>
-      <div class="stat-item"><span class="stat-num">5</span><span class="stat-lbl">Max / groupe</span></div>
+      <button class="btn-icon" id="logoutBtn" title="Déconnexion"><i class="fas fa-sign-out-alt"></i></button>
     </div>
   </div>
-</section>
 
-<!-- ═══════════════════════════════════════════════════════════
-     FORMATIONS
-═══════════════════════════════════════════════════════════ -->
-<section id="formations">
-  <div class="section-inner">
-    <p class="section-label reveal">Modules de formation</p>
-    <h2 class="section-title reveal">6 MODULES COMPLETS</h2>
-    <p class="section-desc reveal">Du HTML de base jusqu'au déploiement en ligne, chaque module construit sur le précédent pour une progression naturelle.</p>
-
-    <div class="modules-grid">
-      <div class="module-card reveal">
-        <div class="module-num">01</div>
-        <div class="module-icon">🌐</div>
-        <div class="module-title">HTML5 — Structure Web</div>
-        <p class="module-desc">Apprenez à structurer le contenu de vos pages web avec les bonnes balises sémantiques.</p>
-        <ul class="module-topics">
-          <li>Structure d'une page HTML (head, body, sections)</li>
-          <li>Balises sémantiques : header, nav, main, footer</li>
-          <li>Formulaires HTML complets</li>
-          <li>Tableaux, listes, médias (images, vidéos)</li>
-          <li>Liens et ancres de navigation</li>
-          <li>Bonnes pratiques SEO de base</li>
-        </ul>
-        <div class="module-duration">⏱ Durée : 1 semaine — Niveau : Débutant</div>
-      </div>
-
-      <div class="module-card blue reveal">
-        <div class="module-num">02</div>
-        <div class="module-icon">🎨</div>
-        <div class="module-title">CSS3 &amp; Design</div>
-        <p class="module-desc">Stylisez, animez et rendez votre site responsive pour tous les écrans.</p>
-        <ul class="module-topics">
-          <li>Sélecteurs, propriétés, box model</li>
-          <li>Flexbox &amp; CSS Grid (mises en page modernes)</li>
-          <li>Design responsive (mobile-first)</li>
-          <li>Animations et transitions CSS</li>
-          <li>Variables CSS (custom properties)</li>
-          <li>Typographie, couleurs, dégradés</li>
-        </ul>
-        <div class="module-duration">⏱ Durée : 1 semaine — Niveau : Débutant</div>
-      </div>
-
-      <div class="module-card reveal">
-        <div class="module-num">03</div>
-        <div class="module-icon">⚡</div>
-        <div class="module-title">JavaScript</div>
-        <p class="module-desc">Ajoutez l'interactivité, la logique et les appels API à vos pages web.</p>
-        <ul class="module-topics">
-          <li>Variables, fonctions, conditions, boucles</li>
-          <li>Manipulation du DOM (document HTML)</li>
-          <li>Événements utilisateur (clic, saisie...)</li>
-          <li>Fetch API &amp; appels serveur</li>
-          <li>JSON et traitement de données</li>
-          <li>Stockage local (localStorage)</li>
-        </ul>
-        <div class="module-duration">⏱ Durée : 2 semaines — Niveau : Intermédiaire</div>
-      </div>
-
-      <div class="module-card blue reveal">
-        <div class="module-num">04</div>
-        <div class="module-icon">🔥</div>
-        <div class="module-title">Firebase / Base de données</div>
-        <p class="module-desc">Lisez, écrivez et synchronisez vos données en temps réel avec Firebase.</p>
-        <ul class="module-topics">
-          <li>Introduction à Firebase &amp; Firestore</li>
-          <li>Authentification utilisateurs (email/mdp)</li>
-          <li>Lecture et écriture de données en temps réel</li>
-          <li>Règles de sécurité Firebase</li>
-          <li>Firebase Storage (images, fichiers)</li>
-          <li>Projet pratique : app connectée complète</li>
-        </ul>
-        <div class="module-duration">⏱ Durée : 2 semaines — Niveau : Intermédiaire</div>
-      </div>
-
-      <div class="module-card reveal">
-        <div class="module-num">05</div>
-        <div class="module-icon">🐙</div>
-        <div class="module-title">GitHub</div>
-        <p class="module-desc">Versionnez votre code, collaborez sur vos projets et ne perdez plus jamais votre travail.</p>
-        <ul class="module-topics">
-          <li>Git : init, add, commit, push, pull</li>
-          <li>Création et gestion de dépôts GitHub</li>
-          <li>Branches et pull requests</li>
-          <li>Collaboration en équipe</li>
-          <li>Gestion des conflits de code</li>
-          <li>README professionnel</li>
-        </ul>
-        <div class="module-duration">⏱ Durée : 3 jours — Niveau : Débutant</div>
-      </div>
-
-      <div class="module-card blue reveal">
-        <div class="module-num">06</div>
-        <div class="module-icon">🚀</div>
-        <div class="module-title">Déploiement en ligne</div>
-        <p class="module-desc">Publiez votre site sur GitHub Pages ou Firebase Hosting gratuitement.</p>
-        <ul class="module-topics">
-          <li>Déploiement sur GitHub Pages</li>
-          <li>Firebase Hosting (domaine personnalisé)</li>
-          <li>Nom de domaine personnalisé</li>
-          <li>Certificat SSL (HTTPS)</li>
-          <li>Optimisation des performances</li>
-          <li>Projet final : site en ligne complet</li>
-        </ul>
-        <div class="module-duration">⏱ Durée : 3 jours — Niveau : Tous niveaux</div>
-      </div>
+  <div class="container">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="dashboard"><i class="fas fa-chart-pie"></i><span>Tableau de bord</span></button>
+      <button class="tab-btn" data-tab="income"><i class="fas fa-arrow-down"></i><span>Entrées</span></button>
+      <button class="tab-btn" data-tab="expense"><i class="fas fa-arrow-up"></i><span>Sorties</span></button>
+      <button class="tab-btn" data-tab="history"><i class="fas fa-list"></i><span>Historique</span></button>
     </div>
 
-    <div style="margin-top:3.5rem;" class="reveal">
-      <p class="section-label">Technologies couvertes</p>
-      <div class="tech-tags">
-        <span class="tech-tag">HTML5</span>
-        <span class="tech-tag blue">CSS3</span>
-        <span class="tech-tag">JavaScript</span>
-        <span class="tech-tag blue">GitHub</span>
-        <span class="tech-tag">Firebase</span>
-        <span class="tech-tag blue">Firestore</span>
-        <span class="tech-tag">GitHub Pages</span>
-      </div>
-    </div>
-
-    <div class="audience-grid reveal">
-      <div class="audience-card">
-        <div class="ico">🎓</div>
-        <strong>Débutants</strong>
-        <span>Aucune connaissance préalable requise</span>
-      </div>
-      <div class="audience-card">
-        <div class="ico">💼</div>
-        <strong>Entrepreneurs</strong>
-        <span>Créez votre propre site ou app métier</span>
-      </div>
-      <div class="audience-card">
-        <div class="ico">🔧</div>
-        <strong>Professionnels</strong>
-        <span>Digitalisez vos outils et services</span>
-      </div>
-      <div class="audience-card">
-        <div class="ico">🚀</div>
-        <strong>Étudiants</strong>
-        <span>Acquérez des compétences pratiques</span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════════
-     TARIFS
-═══════════════════════════════════════════════════════════ -->
-<section id="tarifs">
-  <div class="section-inner">
-    <p class="section-label reveal">Nos tarifs</p>
-    <h2 class="section-title reveal">FORMULES &amp; PRIX</h2>
-    <p class="section-desc reveal">Choisissez la formule qui correspond à vos objectifs. Paiement par Mobile Money ou virement bancaire.</p>
-
-    <div class="pricing-grid">
-      <div class="price-card reveal">
-        <div class="price-name">Essentiel</div>
-        <div><span class="price-currency">FCFA</span><span class="price-amount">25 000</span></div>
-        <div class="price-period">/ 3 modules (HTML + CSS + JS)</div>
-        <ul class="price-features">
-          <li><span class="chk">✓</span> Module HTML5 complet</li>
-          <li><span class="chk">✓</span> Module CSS3 &amp; Design</li>
-          <li><span class="chk">✓</span> Module JavaScript</li>
-          <li><span class="chk">✓</span> Support WhatsApp</li>
-          <li><span class="chk">✓</span> Ressources téléchargeables</li>
-          <li class="disabled"><span class="x">✗</span> Firebase / Base de données</li>
-          <li class="disabled"><span class="x">✗</span> GitHub &amp; Déploiement</li>
-          <li class="disabled"><span class="x">✗</span> Projet final certifié</li>
-        </ul>
-        <a href="#inscription" class="btn-price" onclick="selectFormule('Essentiel — 25 000 FCFA')">Choisir Essentiel</a>
-      </div>
-
-      <div class="price-card featured reveal">
-        <div class="price-name">Formation Complète</div>
-        <div><span class="price-currency">FCFA</span><span class="price-amount">50 000</span></div>
-        <div class="price-period">/ 6 modules complets</div>
-        <ul class="price-features">
-          <li><span class="chk">✓</span> Tous les 6 modules</li>
-          <li><span class="chk">✓</span> HTML5, CSS3, JavaScript</li>
-          <li><span class="chk">✓</span> Firebase &amp; Firestore</li>
-          <li><span class="chk">✓</span> GitHub &amp; Déploiement</li>
-          <li><span class="chk">✓</span> Projet final en ligne</li>
-          <li><span class="chk">✓</span> Attestation de formation</li>
-          <li><span class="chk">✓</span> Suivi personnalisé</li>
-          <li><span class="chk">✓</span> Support prioritaire</li>
-        </ul>
-        <a href="#inscription" class="btn-price" onclick="selectFormule('Formation Complète — 50 000 FCFA')">Choisir Formation Complète</a>
-      </div>
-
-      <div class="price-card reveal">
-        <div class="price-name">Accompagnement Pro</div>
-        <div><span class="price-currency">FCFA</span><span class="price-amount">80 000</span></div>
-        <div class="price-period">/ Formation + Projet client</div>
-        <ul class="price-features">
-          <li><span class="chk">✓</span> Formation complète (6 modules)</li>
-          <li><span class="chk">✓</span> Développement d'un vrai projet</li>
-          <li><span class="chk">✓</span> Coaching individuel</li>
-          <li><span class="chk">✓</span> Portfolio professionnel</li>
-          <li><span class="chk">✓</span> Site mis en ligne pour vous</li>
-          <li><span class="chk">✓</span> Attestation officielle</li>
-          <li><span class="chk">✓</span> 3 mois de support après formation</li>
-          <li><span class="chk">✓</span> Recommandation professionnelle</li>
-        </ul>
-        <a href="#inscription" class="btn-price" onclick="selectFormule('Accompagnement Pro — 80 000 FCFA')">Choisir Pro</a>
-      </div>
-    </div>
-
-    <div class="price-note reveal">
-      <strong>💳 Modes de paiement acceptés :</strong> Flooz (Moov), T-Money (Togocom), virement bancaire. Paiement en 2 fois possible pour la formule complète et Pro. Contactez-nous au <strong style="color:var(--orange);">99 81 20 72</strong> pour tout arrangement.
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════════
-     PLANNING
-═══════════════════════════════════════════════════════════ -->
-<section id="planning">
-  <div class="section-inner">
-    <p class="section-label reveal">Disponibilité des cours</p>
-    <h2 class="section-title reveal">PLANNING DES SESSIONS</h2>
-    <p class="section-desc reveal">Sessions disponibles à Lomé, Togo. Présentiel et accompagnement à distance disponibles.</p>
-
-    <div class="planning-grid">
-      <div class="session-card reveal">
-        <div class="session-day">LUN – MER</div>
-        <div class="session-time">🕗 08h00 – 10h00</div>
-        <div class="session-title">Session Matin — Débutants</div>
-        <div class="session-info">HTML5 + CSS3 · Groupe de 5 max</div>
-        <span class="session-badge badge-open">Places disponibles</span>
-      </div>
-      <div class="session-card reveal">
-        <div class="session-day">LUN – MER</div>
-        <div class="session-time">🕓 16h00 – 18h00</div>
-        <div class="session-title">Session Soir — Travailleurs</div>
-        <div class="session-info">Tous modules · Idéal après le travail</div>
-        <span class="session-badge badge-open">Places disponibles</span>
-      </div>
-      <div class="session-card reveal">
-        <div class="session-day">MAR – JEU</div>
-        <div class="session-time">🕙 10h00 – 12h00</div>
-        <div class="session-title">Session JavaScript Avancé</div>
-        <div class="session-info">Firebase + API · Niveau intermédiaire</div>
-        <span class="session-badge badge-full">Complet</span>
-      </div>
-      <div class="session-card reveal">
-        <div class="session-day">SAMEDI</div>
-        <div class="session-time">🕗 09h00 – 13h00</div>
-        <div class="session-title">Session Weekend Intensive</div>
-        <div class="session-info">Formation accélérée · Tous niveaux</div>
-        <span class="session-badge badge-open">Places disponibles</span>
-      </div>
-      <div class="session-card reveal">
-        <div class="session-day">VENDREDI</div>
-        <div class="session-time">🕓 15h00 – 17h00</div>
-        <div class="session-title">Atelier Projet Personnel</div>
-        <div class="session-info">Travaillez sur votre propre projet</div>
-        <span class="session-badge badge-soon">Bientôt</span>
-      </div>
-      <div class="session-card reveal">
-        <div class="session-day">SUR DEMANDE</div>
-        <div class="session-time">📱 À distance / WhatsApp</div>
-        <div class="session-title">Cours Particuliers</div>
-        <div class="session-info">Horaire flexible · 1-à-1 personnalisé</div>
-        <span class="session-badge badge-open">Disponible</span>
-      </div>
-    </div>
-
-    <div class="planning-note reveal">
-      <strong>📍 Lieu :</strong> Lomé, Togo — adresse exacte communiquée après inscription.<br>
-      <strong>📱 Distance :</strong> Suivi possible via WhatsApp, partage d'écran et vidéo.<br>
-      <strong>⚠️ Note :</strong> Les horaires peuvent être ajustés selon les disponibilités. Contactez-nous pour organiser un créneau personnalisé.
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════════
-     INSCRIPTION
-═══════════════════════════════════════════════════════════ -->
-<section id="inscription">
-  <div class="section-inner">
-    <p class="section-label reveal">Rejoignez-nous</p>
-    <h2 class="section-title reveal">S'INSCRIRE À LA FORMATION</h2>
-
-    <div class="form-wrap">
-      <div class="form-info reveal">
-        <h3>Comment ça fonctionne ?</h3>
-        <p>L'inscription se fait en 3 étapes simples. Pas besoin de carte bancaire en ligne — nous acceptons Mobile Money et virement.</p>
-        <div class="steps">
-          <div class="step">
-            <div class="step-num">1</div>
-            <div class="step-text">
-              <strong>Remplissez le formulaire</strong>
-              <span>Vos informations et la formule choisie</span>
-            </div>
+    <!-- DASHBOARD TAB -->
+    <div id="tab-dashboard" class="tab-content active">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-header">
+            <div class="stat-label">Solde Total</div>
+            <div class="stat-icon primary"><i class="fas fa-wallet"></i></div>
           </div>
-          <div class="step">
-            <div class="step-num">2</div>
-            <div class="step-text">
-              <strong>Effectuez le paiement</strong>
-              <span>Via Flooz, T-Money ou virement bancaire</span>
-            </div>
-          </div>
-          <div class="step">
-            <div class="step-num">3</div>
-            <div class="step-text">
-              <strong>Confirmation WhatsApp</strong>
-              <span>Nous vous confirmons votre place et l'horaire</span>
-            </div>
-          </div>
+          <div class="stat-value" id="statBalance">0,00 €</div>
+          <div class="stat-foot">Solde net actuel</div>
         </div>
-
-        <div class="payment-methods">
-          <p class="section-label" style="margin-bottom:.75rem;">Modes de paiement</p>
-          <div class="pay-method">
-            <div class="pay-icon">📱</div>
-            <div class="pay-info">
-              <strong>Flooz (Moov Money)</strong>
-              <span>Envoyez au : 93 00 39 41 — Nom : ELOH Alban</span>
-            </div>
+        <div class="stat-card success">
+          <div class="stat-header">
+            <div class="stat-label">Entrées Totales</div>
+            <div class="stat-icon success"><i class="fas fa-arrow-trend-up"></i></div>
           </div>
-          <div class="pay-method">
-            <div class="pay-icon">📱</div>
-            <div class="pay-info">
-              <strong>T-Money (Togocom)</strong>
-              <span>Envoyez au : 99 81 20 72 — Nom : ELOH Alban</span>
-            </div>
+          <div class="stat-value success" id="statIncome">0,00 €</div>
+          <div class="stat-foot" id="statIncomeCount">0 transactions</div>
+        </div>
+        <div class="stat-card danger">
+          <div class="stat-header">
+            <div class="stat-label">Sorties Totales</div>
+            <div class="stat-icon danger"><i class="fas fa-arrow-trend-down"></i></div>
           </div>
-          <div class="pay-method">
-            <div class="pay-icon">🏦</div>
-            <div class="pay-info">
-              <strong>Virement bancaire</strong>
-              <span>Contactez-nous pour les coordonnées bancaires</span>
-            </div>
+          <div class="stat-value danger" id="statExpense">0,00 €</div>
+          <div class="stat-foot" id="statExpenseCount">0 transactions</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-header">
+            <div class="stat-label">Ce Mois-ci</div>
+            <div class="stat-icon warning"><i class="fas fa-calendar"></i></div>
           </div>
+          <div class="stat-value" id="statMonth">0,00 €</div>
+          <div class="stat-foot" id="statMonthLabel">Solde du mois</div>
         </div>
       </div>
 
-      <div class="reg-form reveal">
-        <h3>FORMULAIRE D'INSCRIPTION</h3>
-        <div id="regFormContainer">
-          <div class="form-row">
-            <div class="form-group">
-              <label>Prénom *</label>
-              <input type="text" id="prenom" placeholder="Votre prénom"/>
-            </div>
-            <div class="form-group">
-              <label>Nom *</label>
-              <input type="text" id="nom" placeholder="Votre nom"/>
-            </div>
+      <div class="grid-2">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title"><i class="fas fa-chart-line"></i> Évolution sur 6 mois</div>
           </div>
-          <div class="form-group">
-            <label>Téléphone / WhatsApp *</label>
-            <input type="tel" id="tel" placeholder="Ex : 99 00 00 00"/>
-          </div>
-          <div class="form-group">
-            <label>Email (optionnel)</label>
-            <input type="email" id="email" placeholder="votreemail@exemple.com"/>
-          </div>
-          <div class="form-group">
-            <label>Formule choisie *</label>
-            <select id="formule">
-              <option value="">-- Sélectionnez une formule --</option>
-              <option value="Essentiel — 25 000 FCFA">Essentiel — 25 000 FCFA (3 modules)</option>
-              <option value="Formation Complète — 50 000 FCFA">Formation Complète — 50 000 FCFA (6 modules)</option>
-              <option value="Accompagnement Pro — 80 000 FCFA">Accompagnement Pro — 80 000 FCFA</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Session préférée *</label>
-            <select id="session">
-              <option value="">-- Sélectionnez une session --</option>
-              <option>Session Matin (Lun-Mer 08h–10h)</option>
-              <option>Session Soir (Lun-Mer 16h–18h)</option>
-              <option>Session Weekend (Sam 09h–13h)</option>
-              <option>Cours particuliers (horaire à définir)</option>
-              <option>À distance via WhatsApp</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Mode de paiement *</label>
-            <select id="paiement">
-              <option value="">-- Sélectionnez --</option>
-              <option>Flooz (Moov Money)</option>
-              <option>T-Money (Togocom)</option>
-              <option>Virement bancaire</option>
-              <option>En 2 fois</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label>Message / Questions (optionnel)</label>
-            <textarea id="message" rows="3" placeholder="Parlez-nous de vous, de vos objectifs..."></textarea>
-          </div>
-          <button class="form-submit" onclick="submitInscription()">ENVOYER MON INSCRIPTION →</button>
+          <div class="chart-wrap"><canvas id="chartLine"></canvas></div>
         </div>
-        <div class="form-success" id="formSuccess">
-          <h4>✅ Inscription reçue !</h4>
-          <p>Merci <span id="successName"></span>. Nous vous contacterons sur WhatsApp dans les 24h pour confirmer votre place et les détails du paiement.</p>
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title"><i class="fas fa-chart-pie"></i> Répartition</div>
+          </div>
+          <div class="chart-wrap"><canvas id="chartDoughnut"></canvas></div>
         </div>
       </div>
-    </div>
-  </div>
-</section>
 
-<!-- ═══════════════════════════════════════════════════════════
-     CONTACT
-═══════════════════════════════════════════════════════════ -->
-<section id="contact">
-  <div class="section-inner">
-    <p class="section-label reveal">Nous joindre</p>
-    <h2 class="section-title reveal">CONTACT</h2>
-
-    <div class="contact-grid">
-      <div class="reveal">
-        <div class="contact-info">
-          <h3>Parlons de votre projet</h3>
-          <p>Une question sur la formation ? Besoin d'un devis pour un site web ? Contactez-nous directement sur WhatsApp pour une réponse rapide.</p>
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><i class="fas fa-tags"></i> Dépenses par catégorie</div>
         </div>
+        <div class="chart-wrap" style="height:300px"><canvas id="chartBar"></canvas></div>
+      </div>
+    </div>
 
-        <div class="contact-items">
-          <div class="contact-item">
-            <div class="icon">📞</div>
+    <!-- INCOME TAB -->
+    <div id="tab-income" class="tab-content">
+      <div class="form-card">
+        <div class="panel-head">
+          <div class="panel-title"><i class="fas fa-plus-circle" style="color:var(--success-light)"></i> Ajouter une entrée</div>
+        </div>
+        <form id="incomeForm">
+          <div class="form-grid">
             <div>
-              <strong>Téléphone / WhatsApp</strong>
-              <span><a href="tel:+22899812072">99 81 20 72</a> &nbsp;|&nbsp; <a href="tel:+22893003941">93 00 39 41</a></span>
+              <label class="form-label">Description</label>
+              <input type="text" id="incomeDesc" class="form-input" placeholder="Ex: Salaire" required />
             </div>
-          </div>
-          <div class="contact-item">
-            <div class="icon">📍</div>
             <div>
-              <strong>Localisation</strong>
-              <span>Lomé, Togo — adresse exacte sur RDV</span>
+              <label class="form-label">Montant (€)</label>
+              <input type="number" step="0.01" min="0.01" id="incomeAmount" class="form-input" placeholder="0.00" required />
             </div>
-          </div>
-          <div class="contact-item">
-            <div class="icon">🕐</div>
             <div>
-              <strong>Disponibilité</strong>
-              <span>Lundi – Samedi · 08h00 – 19h00</span>
+              <label class="form-label">Catégorie</label>
+              <select id="incomeCategory" class="form-input">
+                <option value="Salaire">💼 Salaire</option>
+                <option value="Freelance">💻 Freelance</option>
+                <option value="Investissement">📈 Investissement</option>
+                <option value="Vente">🏷️ Vente</option>
+                <option value="Cadeau">🎁 Cadeau</option>
+                <option value="Remboursement">↩️ Remboursement</option>
+                <option value="Autre">📌 Autre</option>
+              </select>
             </div>
-          </div>
-          <div class="contact-item">
-            <div class="icon">✉️</div>
             <div>
-              <strong>Email</strong>
-              <span><a href="/cdn-cgi/l/email-protection#ef8e8a9b9b8a8c87818083808896daaf88828e8683c18c8082"><span class="__cf_email__" data-cfemail="bfdedacbcbdadcd7d1d0d3d0d8c68affd8d2ded6d391dcd0d2">[email&#160;protected]</span></a></span>
+              <label class="form-label">Date</label>
+              <input type="date" id="incomeDate" class="form-input" required />
             </div>
           </div>
-        </div>
-
-        <a href="https://wa.me/22899812072?text=Bonjour%2C%20je%20suis%20int%C3%A9ress%C3%A9(e)%20par%20la%20formation%20AET" class="wa-btn" target="_blank">
-          <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-          Écrire sur WhatsApp
-        </a>
+          <div class="form-row" style="margin-top:18px">
+            <button type="submit" class="btn btn-success"><i class="fas fa-check"></i> Ajouter l'entrée</button>
+          </div>
+        </form>
       </div>
 
-      <div class="contact-form reveal">
-        <h3>ENVOYEZ UN MESSAGE</h3>
-        <div class="form-group">
-          <label>Votre nom *</label>
-          <input type="text" id="cNom" placeholder="Votre nom complet"/>
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><i class="fas fa-arrow-down" style="color:var(--success-light)"></i> Dernières entrées</div>
         </div>
-        <div class="form-group">
-          <label>Téléphone *</label>
-          <input type="tel" id="cTel" placeholder="99 00 00 00"/>
+        <div id="incomeList" class="table-wrap"></div>
+      </div>
+    </div>
+
+    <!-- EXPENSE TAB -->
+    <div id="tab-expense" class="tab-content">
+      <div class="form-card">
+        <div class="panel-head">
+          <div class="panel-title"><i class="fas fa-minus-circle" style="color:var(--danger-light)"></i> Ajouter une sortie</div>
         </div>
-        <div class="form-group">
-          <label>Sujet *</label>
-          <select id="cSujet">
-            <option value="">-- Sélectionnez --</option>
-            <option>Renseignement formation</option>
-            <option>Inscription</option>
-            <option>Création de site web</option>
-            <option>Partenariat</option>
-            <option>Autre</option>
+        <form id="expenseForm">
+          <div class="form-grid">
+            <div>
+              <label class="form-label">Description</label>
+              <input type="text" id="expenseDesc" class="form-input" placeholder="Ex: Courses" required />
+            </div>
+            <div>
+              <label class="form-label">Montant (€)</label>
+              <input type="number" step="0.01" min="0.01" id="expenseAmount" class="form-input" placeholder="0.00" required />
+            </div>
+            <div>
+              <label class="form-label">Catégorie</label>
+              <select id="expenseCategory" class="form-input">
+                <option value="Alimentation">🍽️ Alimentation</option>
+                <option value="Logement">🏠 Logement</option>
+                <option value="Transport">🚗 Transport</option>
+                <option value="Loisirs">🎮 Loisirs</option>
+                <option value="Santé">⚕️ Santé</option>
+                <option value="Shopping">🛍️ Shopping</option>
+                <option value="Factures">📄 Factures</option>
+                <option value="Éducation">📚 Éducation</option>
+                <option value="Restaurant">🍕 Restaurant</option>
+                <option value="Autre">📌 Autre</option>
+              </select>
+            </div>
+            <div>
+              <label class="form-label">Date</label>
+              <input type="date" id="expenseDate" class="form-input" required />
+            </div>
+          </div>
+          <div class="form-row" style="margin-top:18px">
+            <button type="submit" class="btn btn-danger"><i class="fas fa-check"></i> Ajouter la sortie</button>
+          </div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><i class="fas fa-arrow-up" style="color:var(--danger-light)"></i> Dernières sorties</div>
+        </div>
+        <div id="expenseList" class="table-wrap"></div>
+      </div>
+    </div>
+
+    <!-- HISTORY TAB -->
+    <div id="tab-history" class="tab-content">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title"><i class="fas fa-list"></i> Historique complet</div>
+        </div>
+        <div class="filters">
+          <select id="filterType" class="filter-input">
+            <option value="all">Tous types</option>
+            <option value="income">Entrées</option>
+            <option value="expense">Sorties</option>
           </select>
+          <input type="text" id="filterSearch" class="filter-input" placeholder="🔍 Rechercher..." style="flex:1;min-width:200px" />
+          <button class="btn btn-primary" style="width:auto;padding:10px 16px" id="exportBtn"><i class="fas fa-download"></i> Exporter CSV</button>
         </div>
-        <div class="form-group">
-          <label>Message *</label>
-          <textarea id="cMessage" rows="4" placeholder="Votre message..."></textarea>
-        </div>
-        <button class="form-submit" onclick="submitContact()" style="margin-top:0;">ENVOYER →</button>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ═══════════════════════════════════════════════════════════
-     CTA FINAL
-═══════════════════════════════════════════════════════════ -->
-<div class="cta-final">
-  <div class="cta-final-inner">
-    <h2>INSCRIVEZ-VOUS MAINTENANT</h2>
-    <p>Formation disponible à Lomé, Togo — Contactez-nous dès aujourd'hui</p>
-    <div class="cta-phones">
-      <a href="tel:+22899812072" class="cta-phone">📞 99 81 20 72</a>
-      <a href="tel:+22893003941" class="cta-phone">📞 93 00 39 41</a>
-    </div>
-    <small>Appelez ou envoyez un WhatsApp · Réponse rapide garantie</small>
-  </div>
-</div>
-
-<!-- ═══════════════════════════════════════════════════════════
-     FOOTER
-═══════════════════════════════════════════════════════════ -->
-<footer>
-  <div class="footer-inner">
-    <div class="footer-brand">
-      <div class="logo">
-        <div class="logo-icon">AET</div>
-        <div class="logo-text">A.E.T</div>
-      </div>
-      <p>Alban Eloh Technology — Formation web professionnelle à Lomé, Togo. De zéro à la mise en ligne.</p>
-      <div class="footer-socials">
-        <a href="https://wa.me/22899812072" target="_blank" aria-label="WhatsApp">💬</a>
-        <a href="tel:+22899812072" aria-label="Téléphone">📞</a>
-        <a href="/cdn-cgi/l/email-protection#99f8fcededfcfaf1f7f6f5f6fee0acd9fef4f8f0f5b7faf6f4" aria-label="Email">✉️</a>
-      </div>
-    </div>
-    <div class="footer-col">
-      <h4>Navigation</h4>
-      <ul>
-        <li><a href="#accueil">Accueil</a></li>
-        <li><a href="#formations">Formations</a></li>
-        <li><a href="#tarifs">Tarifs</a></li>
-        <li><a href="#planning">Planning</a></li>
-        <li><a href="#inscription">Inscription</a></li>
-        <li><a href="#contact">Contact</a></li>
-      </ul>
-    </div>
-    <div class="footer-col">
-      <h4>Formations</h4>
-      <ul>
-        <li><a href="#formations">HTML5</a></li>
-        <li><a href="#formations">CSS3 &amp; Design</a></li>
-        <li><a href="#formations">JavaScript</a></li>
-        <li><a href="#formations">Firebase</a></li>
-        <li><a href="#formations">GitHub</a></li>
-        <li><a href="#formations">Déploiement</a></li>
-      </ul>
-    </div>
-    <div class="footer-col">
-      <h4>Contact</h4>
-      <ul>
-        <li><a href="tel:+22899812072">📞 99 81 20 72</a></li>
-        <li><a href="tel:+22893003941">📞 93 00 39 41</a></li>
-        <li><a href="/cdn-cgi/l/email-protection#10717564647573787e7f7c7f77692550777d71797c3e737f7d">✉️ <span class="__cf_email__" data-cfemail="741511000011171c1a1b181b130d41341319151d185a171b19">[email&#160;protected]</span></a></li>
-        <li><a href="https://wa.me/22899812072" target="_blank">💬 WhatsApp</a></li>
-        <li><span style="color:var(--muted)">📍 Lomé, Togo</span></li>
-      </ul>
-    </div>
-  </div>
-  <div class="footer-bottom">
-    <span>© 2025 <em>A.E.T – Alban Eloh Technology</em>. Tous droits réservés.</span>
-    <span>Fait au Togo 🇹🇬, pour le Togo.</span>
-  </div>
-</footer>
-
-<!-- WhatsApp flottant -->
-<a href="https://wa.me/22899812072?text=Bonjour%2C%20je%20souhaite%20des%20informations" class="wa-float" target="_blank" aria-label="WhatsApp">
-  <svg width="28" height="28" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-</a>
-
-<!-- Bouton scroll top -->
-<button id="scrollTop" onclick="scrollToTop()" aria-label="Retour en haut">↑</button>
-
-<!-- ═══════════════════════════════════════════════════════════
-     PANNEAU ADMIN — Gestion des modules, paramètres et contacts
-═══════════════════════════════════════════════════════════ -->
-<style>
-/* Bouton d'accès admin (discret, en bas à gauche) */
-#adminTrigger{
-  position:fixed;bottom:20px;left:20px;width:38px;height:38px;
-  background:rgba(20,20,31,.7);border:1px solid var(--border);
-  border-radius:50%;display:flex;align-items:center;justify-content:center;
-  cursor:pointer;z-index:9998;opacity:.25;transition:opacity .3s,transform .2s;
-  backdrop-filter:blur(8px);color:var(--muted);font-size:1rem;
-}
-#adminTrigger:hover{opacity:1;transform:scale(1.1);border-color:var(--orange);color:var(--orange);}
-
-/* Overlay admin */
-#adminOverlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(12px);
-  z-index:100000;display:none;align-items:center;justify-content:center;
-  padding:1rem;overflow-y:auto;
-}
-#adminOverlay.show{display:flex;}
-
-/* Panneau admin */
-.admin-panel{
-  background:linear-gradient(180deg,#0f0f1a 0%,#0a0a14 100%);
-  border:1px solid var(--border-light);border-radius:18px;
-  width:100%;max-width:1100px;max-height:92vh;display:flex;flex-direction:column;
-  box-shadow:0 25px 60px rgba(0,0,0,.6),0 0 0 1px rgba(249,115,22,.1);
-  overflow:hidden;
-}
-.admin-header{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:1.2rem 1.8rem;border-bottom:1px solid var(--border);
-  background:linear-gradient(135deg,rgba(249,115,22,.08),rgba(59,130,246,.04));
-}
-.admin-header h2{
-  font-family:'Bebas Neue',sans-serif;color:#fff;font-size:1.7rem;
-  letter-spacing:2px;display:flex;align-items:center;gap:.6rem;
-}
-.admin-header .badge{
-  background:var(--gradient-1);color:#fff;padding:.2rem .6rem;
-  border-radius:6px;font-size:.65rem;font-family:'Barlow',sans-serif;
-  letter-spacing:1px;font-weight:700;
-}
-.admin-close{
-  background:transparent;border:1px solid var(--border-light);color:var(--text);
-  width:38px;height:38px;border-radius:10px;cursor:pointer;font-size:1.2rem;
-  display:flex;align-items:center;justify-content:center;transition:all .2s;
-}
-.admin-close:hover{background:#ef4444;border-color:#ef4444;color:#fff;}
-
-/* Onglets */
-.admin-tabs{
-  display:flex;gap:.3rem;padding:0 1.8rem;border-bottom:1px solid var(--border);
-  overflow-x:auto;background:rgba(0,0,0,.2);
-}
-.admin-tab{
-  background:transparent;border:none;color:var(--muted);padding:1rem 1.2rem;
-  cursor:pointer;font-family:'Barlow',sans-serif;font-weight:600;font-size:.85rem;
-  border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;
-  letter-spacing:.5px;text-transform:uppercase;
-}
-.admin-tab:hover{color:var(--text);}
-.admin-tab.active{color:var(--orange);border-bottom-color:var(--orange);}
-
-/* Contenu */
-.admin-content{
-  padding:1.8rem;overflow-y:auto;flex:1;
-}
-.admin-tab-content{display:none;}
-.admin-tab-content.active{display:block;animation:fadeIn .25s;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
-
-/* Formulaires admin */
-.adm-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem;}
-.adm-row.full{grid-template-columns:1fr;}
-.adm-row.triple{grid-template-columns:1fr 1fr 1fr;}
-.adm-field{display:flex;flex-direction:column;gap:.4rem;}
-.adm-field label{
-  color:var(--muted);font-size:.78rem;font-weight:600;
-  text-transform:uppercase;letter-spacing:.5px;
-}
-.adm-field input,.adm-field textarea,.adm-field select{
-  background:#0a0a14;border:1px solid var(--border-light);color:var(--text);
-  padding:.7rem .9rem;border-radius:8px;font-family:'Barlow',sans-serif;font-size:.92rem;
-  transition:border-color .2s,box-shadow .2s;
-}
-.adm-field input:focus,.adm-field textarea:focus,.adm-field select:focus{
-  outline:none;border-color:var(--orange);box-shadow:0 0 0 3px rgba(249,115,22,.15);
-}
-.adm-field textarea{resize:vertical;min-height:80px;font-family:'Barlow',sans-serif;}
-.adm-field small{color:var(--muted);font-size:.75rem;font-style:italic;}
-
-/* Boutons admin */
-.adm-btn{
-  background:var(--gradient-1);color:#fff;border:none;padding:.75rem 1.4rem;
-  border-radius:10px;cursor:pointer;font-weight:700;font-family:'Barlow',sans-serif;
-  font-size:.88rem;letter-spacing:.5px;text-transform:uppercase;
-  transition:transform .15s,box-shadow .2s;display:inline-flex;align-items:center;gap:.5rem;
-}
-.adm-btn:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(249,115,22,.4);}
-.adm-btn.blue{background:var(--gradient-2);}
-.adm-btn.blue:hover{box-shadow:0 8px 20px rgba(59,130,246,.4);}
-.adm-btn.ghost{background:transparent;border:1px solid var(--border-light);color:var(--text);}
-.adm-btn.ghost:hover{border-color:var(--orange);color:var(--orange);box-shadow:none;}
-.adm-btn.danger{background:linear-gradient(135deg,#ef4444,#dc2626);}
-.adm-btn.danger:hover{box-shadow:0 8px 20px rgba(239,68,68,.4);}
-.adm-btn.sm{padding:.45rem .85rem;font-size:.75rem;}
-
-.adm-actions{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:1.2rem;
-  padding-top:1.2rem;border-top:1px solid var(--border);}
-
-/* Carte module éditable */
-.adm-module{
-  background:#0a0a14;border:1px solid var(--border);border-radius:12px;
-  padding:1.2rem;margin-bottom:1rem;position:relative;
-}
-.adm-module-header{
-  display:flex;align-items:center;justify-content:space-between;
-  margin-bottom:1rem;padding-bottom:.8rem;border-bottom:1px solid var(--border);
-}
-.adm-module-title{
-  color:#fff;font-weight:700;font-size:.95rem;display:flex;align-items:center;gap:.6rem;
-}
-.adm-module-title .num{
-  background:var(--gradient-1);color:#fff;width:28px;height:28px;
-  border-radius:8px;display:flex;align-items:center;justify-content:center;
-  font-size:.8rem;font-weight:700;
-}
-.adm-topics-list{display:flex;flex-direction:column;gap:.4rem;margin-top:.4rem;}
-.adm-topic-row{display:flex;gap:.5rem;align-items:center;}
-.adm-topic-row input{flex:1;}
-.adm-topic-remove{
-  background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.3);
-  color:#ef4444;width:32px;height:32px;border-radius:8px;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;
-}
-.adm-topic-remove:hover{background:#ef4444;color:#fff;}
-
-/* Login */
-.admin-login{padding:2.5rem;text-align:center;max-width:420px;margin:0 auto;}
-.admin-login .icon-lock{
-  width:70px;height:70px;margin:0 auto 1.2rem;
-  background:var(--gradient-1);border-radius:50%;display:flex;align-items:center;
-  justify-content:center;font-size:1.8rem;
-  box-shadow:0 0 30px rgba(249,115,22,.3);
-}
-.admin-login h3{
-  font-family:'Bebas Neue',sans-serif;color:#fff;font-size:1.8rem;
-  letter-spacing:2px;margin-bottom:.4rem;
-}
-.admin-login p{color:var(--muted);font-size:.9rem;margin-bottom:1.8rem;}
-.adm-error{
-  background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);
-  color:#fca5a5;padding:.7rem 1rem;border-radius:8px;font-size:.85rem;
-  margin-bottom:1rem;display:none;
-}
-.adm-error.show{display:block;}
-.adm-success{
-  background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);
-  color:#86efac;padding:.7rem 1rem;border-radius:8px;font-size:.85rem;
-  margin-bottom:1rem;
-}
-
-.adm-section-title{
-  color:#fff;font-family:'Bebas Neue',sans-serif;font-size:1.3rem;
-  letter-spacing:1.5px;margin-bottom:1rem;padding-bottom:.6rem;
-  border-bottom:1px solid var(--border);display:flex;align-items:center;gap:.6rem;
-}
-.adm-info{
-  background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.2);
-  border-radius:10px;padding:.9rem 1.1rem;color:#93c5fd;font-size:.85rem;
-  margin-bottom:1.2rem;line-height:1.5;
-}
-
-@media(max-width:720px){
-  .adm-row,.adm-row.triple{grid-template-columns:1fr;}
-  .admin-header h2{font-size:1.3rem;}
-  .admin-content{padding:1.2rem;}
-  .admin-tabs{padding:0 1rem;}
-  .admin-tab{padding:.8rem .7rem;font-size:.75rem;}
-}
-</style>
-
-<!-- Bouton trigger admin (discret) -->
-<button id="adminTrigger" onclick="openAdmin()" title="Administration (Ctrl+Shift+A)" aria-label="Administration">⚙️</button>
-
-<!-- Overlay panneau admin -->
-<div id="adminOverlay" onclick="if(event.target===this)closeAdmin()">
-  <div class="admin-panel">
-    <div class="admin-header">
-      <h2>⚡ ADMIN A.E.T <span class="badge">PRIVÉ</span></h2>
-      <button class="admin-close" onclick="closeAdmin()" aria-label="Fermer">✕</button>
-    </div>
-
-    <!-- Écran de connexion -->
-    <div id="admLogin" class="admin-login">
-      <div class="icon-lock">🔐</div>
-      <h3>ACCÈS ADMINISTRATEUR</h3>
-      <p>Entrez le mot de passe pour gérer le site</p>
-      <div id="admLoginError" class="adm-error"></div>
-      <div class="adm-field" style="text-align:left;">
-        <input type="password" id="admPass" placeholder="Mot de passe administrateur" onkeydown="if(event.key==='Enter')admLogin()" autocomplete="current-password"/>
-      </div>
-      <div style="margin-top:1.2rem;">
-        <button class="adm-btn" onclick="admLogin()" style="width:100%;justify-content:center;">🔓 Se connecter</button>
-      </div>
-      <p style="margin-top:1.5rem;font-size:.75rem;">💡 Mot de passe par défaut : <code style="background:#1a1a28;padding:.15rem .4rem;border-radius:4px;color:var(--orange);">aet2025</code></p>
-    </div>
-
-    <!-- Interface admin (cachée jusqu'à connexion) -->
-    <div id="admMain" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
-      <div class="admin-tabs">
-        <button class="admin-tab active" data-tab="modules" onclick="showAdmTab('modules')">📚 Modules</button>
-        <button class="admin-tab" data-tab="contacts" onclick="showAdmTab('contacts')">📞 Contacts &amp; N°</button>
-        <button class="admin-tab" data-tab="tarifs" onclick="showAdmTab('tarifs')">💰 Tarifs</button>
-        <button class="admin-tab" data-tab="site" onclick="showAdmTab('site')">⚙️ Paramètres site</button>
-        <button class="admin-tab" data-tab="data" onclick="showAdmTab('data')">💾 Données</button>
-      </div>
-
-      <div class="admin-content">
-        <!-- ONGLET MODULES -->
-        <div class="admin-tab-content active" id="admTab-modules">
-          <div class="adm-info">💡 Modifiez le titre, la description, les sujets et la durée de chaque module. Cliquez sur <strong>« + Ajouter un module »</strong> pour en créer de nouveaux.</div>
-          <h3 class="adm-section-title">📚 Modules de formation</h3>
-          <div id="admModulesList"></div>
-          <button class="adm-btn blue" onclick="admAddModule()">+ Ajouter un module</button>
-          <div class="adm-actions">
-            <button class="adm-btn" onclick="admSaveAll()">💾 Enregistrer tout</button>
-            <button class="adm-btn ghost" onclick="admReset('modules')">↻ Réinitialiser modules</button>
-          </div>
-        </div>
-
-        <!-- ONGLET CONTACTS -->
-        <div class="admin-tab-content" id="admTab-contacts">
-          <div class="adm-info">📞 Ces numéros seront utilisés partout sur le site : header, footer, boutons WhatsApp, formulaires d'inscription, etc.</div>
-          <h3 class="adm-section-title">📞 Numéros &amp; Contact</h3>
-          <div class="adm-row">
-            <div class="adm-field">
-              <label>Téléphone principal (WhatsApp)</label>
-              <input type="tel" id="admPhone1" placeholder="99 81 20 72"/>
-              <small>Format affiché. Sans indicatif.</small>
-            </div>
-            <div class="adm-field">
-              <label>WhatsApp (avec indicatif, sans +)</label>
-              <input type="text" id="admWhatsapp" placeholder="22899812072"/>
-              <small>Ex: 22899812072 (228 = Togo)</small>
-            </div>
-          </div>
-          <div class="adm-row">
-            <div class="adm-field">
-              <label>Téléphone secondaire</label>
-              <input type="tel" id="admPhone2" placeholder="93 00 39 41"/>
-            </div>
-            <div class="adm-field">
-              <label>Téléphone secondaire (international)</label>
-              <input type="text" id="admPhone2Intl" placeholder="22893003941"/>
-            </div>
-          </div>
-          <div class="adm-row">
-            <div class="adm-field">
-              <label>Email</label>
-              <input type="email" id="admEmail" placeholder="contact@aet.tg"/>
-            </div>
-            <div class="adm-field">
-              <label>Localisation</label>
-              <input type="text" id="admLocation" placeholder="Lomé, Togo"/>
-            </div>
-          </div>
-          <div class="adm-row full">
-            <div class="adm-field">
-              <label>Horaires de disponibilité</label>
-              <input type="text" id="admHours" placeholder="Lundi – Samedi · 08h00 – 19h00"/>
-            </div>
-          </div>
-          <div class="adm-actions">
-            <button class="adm-btn" onclick="admSaveAll()">💾 Enregistrer</button>
-            <button class="adm-btn ghost" onclick="admReset('contacts')">↻ Réinitialiser</button>
-          </div>
-        </div>
-
-        <!-- ONGLET TARIFS -->
-        <div class="admin-tab-content" id="admTab-tarifs">
-          <div class="adm-info">💰 Modifiez le nom, le prix et la description des 3 formules de tarification.</div>
-          <h3 class="adm-section-title">💰 Formules &amp; prix</h3>
-          <div id="admPricesList"></div>
-          <div class="adm-actions">
-            <button class="adm-btn" onclick="admSaveAll()">💾 Enregistrer</button>
-            <button class="adm-btn ghost" onclick="admReset('tarifs')">↻ Réinitialiser</button>
-          </div>
-        </div>
-
-        <!-- ONGLET PARAMÈTRES SITE -->
-        <div class="admin-tab-content" id="admTab-site">
-          <div class="adm-info">⚙️ Personnalisez le titre, la description et les textes principaux du site.</div>
-          <h3 class="adm-section-title">⚙️ Paramètres généraux</h3>
-          <div class="adm-row full">
-            <div class="adm-field">
-              <label>Titre du site (onglet navigateur)</label>
-              <input type="text" id="admSiteTitle" placeholder="A.E.T — Alban Eloh Technology"/>
-            </div>
-          </div>
-          <div class="adm-row">
-            <div class="adm-field">
-              <label>Nom court (logo)</label>
-              <input type="text" id="admBrandShort" placeholder="A.E.T"/>
-            </div>
-            <div class="adm-field">
-              <label>Nom complet (footer)</label>
-              <input type="text" id="admBrandFull" placeholder="Alban Eloh Technology"/>
-            </div>
-          </div>
-          <div class="adm-row full">
-            <div class="adm-field">
-              <label>Description meta (SEO)</label>
-              <textarea id="admMetaDesc" rows="2"></textarea>
-            </div>
-          </div>
-          <h3 class="adm-section-title" style="margin-top:1.5rem;">🎯 Section Hero (accueil)</h3>
-          <div class="adm-row full">
-            <div class="adm-field">
-              <label>Titre principal (hero)</label>
-              <input type="text" id="admHeroTitle" placeholder="FORMATION WEB &amp; APPS"/>
-            </div>
-          </div>
-          <div class="adm-row full">
-            <div class="adm-field">
-              <label>Sous-titre hero</label>
-              <textarea id="admHeroSub" rows="2"></textarea>
-            </div>
-          </div>
-          <h3 class="adm-section-title" style="margin-top:1.5rem;">🔐 Sécurité</h3>
-          <div class="adm-row">
-            <div class="adm-field">
-              <label>Nouveau mot de passe admin</label>
-              <input type="password" id="admNewPass" placeholder="Laisser vide pour ne pas changer"/>
-              <small>Min. 4 caractères</small>
-            </div>
-            <div class="adm-field">
-              <label>Confirmer le mot de passe</label>
-              <input type="password" id="admNewPass2" placeholder="Répéter le nouveau mot de passe"/>
-            </div>
-          </div>
-          <div class="adm-actions">
-            <button class="adm-btn" onclick="admSaveAll()">💾 Enregistrer tout</button>
-            <button class="adm-btn ghost" onclick="admReset('site')">↻ Réinitialiser</button>
-          </div>
-        </div>
-
-        <!-- ONGLET DONNÉES -->
-        <div class="admin-tab-content" id="admTab-data">
-          <div class="adm-info">💾 Exportez vos données en JSON pour les sauvegarder, ou importez un fichier de sauvegarde. <strong>Les données sont stockées localement</strong> dans votre navigateur.</div>
-          <h3 class="adm-section-title">📤 Exporter les données</h3>
-          <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">Téléchargez une sauvegarde complète au format JSON.</p>
-          <button class="adm-btn" onclick="admExport()">📥 Télécharger sauvegarde JSON</button>
-          
-          <h3 class="adm-section-title" style="margin-top:2rem;">📤 Importer une sauvegarde</h3>
-          <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">Sélectionnez un fichier JSON précédemment exporté.</p>
-          <input type="file" id="admImportFile" accept=".json" style="display:none" onchange="admImport(event)"/>
-          <button class="adm-btn blue" onclick="document.getElementById('admImportFile').click()">📂 Choisir un fichier JSON</button>
-
-          <h3 class="adm-section-title" style="margin-top:2rem;color:#fca5a5;">⚠️ Zone dangereuse</h3>
-          <p style="color:var(--muted);font-size:.9rem;margin-bottom:1rem;">Réinitialiser efface <strong>toutes</strong> les modifications et restaure le contenu original.</p>
-          <button class="adm-btn danger" onclick="admResetAll()">🗑️ Tout réinitialiser</button>
-
-          <h3 class="adm-section-title" style="margin-top:2rem;">🚪 Déconnexion</h3>
-          <button class="adm-btn ghost" onclick="admLogout()">🔒 Se déconnecter</button>
-        </div>
+        <div id="historyList" class="table-wrap"></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Toast -->
-<div class="toast" id="toast">
-  <strong id="toastTitle">✅ Message envoyé !</strong>
-  <span id="toastMsg">Nous vous répondrons dans les plus brefs délais.</span>
-</div>
+<div class="toast-container" id="toastContainer"></div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-/* ═══════════════════════════════════════════════════════════
-   SPLASH SCREEN
-═══════════════════════════════════════════════════════════ */
-function createParticles(){
-  const container = document.getElementById('splashParticles');
-  for(let i=0;i<25;i++){
-    const p = document.createElement('div');
-    p.className = 'particle' + (Math.random()>.5 ? ' blue' : '');
-    p.style.left = Math.random()*100 + '%';
-    p.style.bottom = '-20px';
-    p.style.animationDelay = (Math.random()*3) + 's';
-    p.style.animationDuration = (2 + Math.random()*2) + 's';
-    container.appendChild(p);
-  }
-}
-createParticles();
+<!-- Firebase v9 modular SDK -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import {
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  onAuthStateChanged, signOut, updateProfile, sendPasswordResetEmail
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import {
+  getFirestore, collection, addDoc, deleteDoc, doc, query, where,
+  orderBy, onSnapshot, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    document.getElementById('splash').classList.add('hidden');
-    // Afficher modal si l'utilisateur n'est pas déjà inscrit
-    setTimeout(() => {
-      const registered = localStorage.getItem('aet_user');
-      if(!registered){
-        document.getElementById('welcomeModal').classList.add('show');
-      } else {
-        document.body.classList.remove('no-scroll');
-      }
-    }, 400);
-  }, 3800);
-});
-
-/* ═══════════════════════════════════════════════════════════
-   MODAL D'INSCRIPTION
-═══════════════════════════════════════════════════════════ */
-function handleWelcomeSubmit(e){
-  e.preventDefault();
-  const prenom = document.getElementById('wPrenom').value.trim();
-  const nom = document.getElementById('wNom').value.trim();
-  const tel = document.getElementById('wTel').value.trim();
-  const email = document.getElementById('wEmail').value.trim();
-  const profil = document.getElementById('wProfil').value;
-  const errorBox = document.getElementById('modalError');
-
-  if(!prenom || !nom || !tel || !profil){
-    errorBox.textContent = '⚠️ Merci de remplir tous les champs obligatoires (*).';
-    errorBox.classList.add('show');
-    return;
-  }
-  if(tel.replace(/\D/g,'').length < 8){
-    errorBox.textContent = '⚠️ Le numéro de téléphone semble invalide.';
-    errorBox.classList.add('show');
-    return;
-  }
-
-  errorBox.classList.remove('show');
-
-  // Stocker dans localStorage
-  const userData = {prenom, nom, tel, email, profil, date: new Date().toISOString()};
-  localStorage.setItem('aet_user', JSON.stringify(userData));
-
-  // Pré-remplir le formulaire d'inscription principal
-  document.getElementById('prenom').value = prenom;
-  document.getElementById('nom').value = nom;
-  document.getElementById('tel').value = tel;
-  if(email) document.getElementById('email').value = email;
-
-  // Fermer modal
-  document.getElementById('welcomeModal').classList.remove('show');
-  document.body.classList.remove('no-scroll');
-
-  // Toast de bienvenue
-  setTimeout(() => {
-    showToast('🎉 Bienvenue ' + prenom + ' !', 'Découvrez nos formations ci-dessous.');
-  }, 500);
-}
-
-function skipWelcome(){
-  document.getElementById('welcomeModal').classList.remove('show');
-  document.body.classList.remove('no-scroll');
-}
-
-/* ═══════════════════════════════════════════════════════════
-   NAVIGATION
-═══════════════════════════════════════════════════════════ */
-const nav = document.getElementById('mainNav');
-const sections = document.querySelectorAll('section[id]');
-const navLinks = document.querySelectorAll('.nav-links a');
-
-window.addEventListener('scroll', () => {
-  // Nav scrolled style
-  if(window.scrollY > 30) nav.classList.add('scrolled');
-  else nav.classList.remove('scrolled');
-
-  // Active link
-  let current = '';
-  sections.forEach(s => {
-    if(window.scrollY >= s.offsetTop - 120) current = s.id;
-  });
-  navLinks.forEach(a => {
-    a.classList.remove('active');
-    if(a.getAttribute('href') === '#' + current) a.classList.add('active');
-  });
-
-  // Scroll top button
-  if(window.scrollY > 600) document.getElementById('scrollTop').classList.add('show');
-  else document.getElementById('scrollTop').classList.remove('show');
-});
-
-function toggleMenu(){
-  document.getElementById('mobileMenu').classList.toggle('open');
-  document.getElementById('hamburger').classList.toggle('open');
-}
-function closeMenu(){
-  document.getElementById('mobileMenu').classList.remove('open');
-  document.getElementById('hamburger').classList.remove('open');
-}
-function scrollToTop(){window.scrollTo({top:0,behavior:'smooth'});}
-
-/* ═══════════════════════════════════════════════════════════
-   REVEAL ON SCROLL
-═══════════════════════════════════════════════════════════ */
-const observer = new IntersectionObserver(entries => {
-  entries.forEach(entry => {
-    if(entry.isIntersecting){
-      entry.target.classList.add('visible');
-      observer.unobserve(entry.target);
-    }
-  });
-},{threshold:.12, rootMargin:'0px 0px -50px 0px'});
-document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
-
-/* ═══════════════════════════════════════════════════════════
-   TOAST
-═══════════════════════════════════════════════════════════ */
-function showToast(title, msg, type='success'){
-  const t = document.getElementById('toast');
-  document.getElementById('toastTitle').textContent = title;
-  document.getElementById('toastMsg').textContent = msg;
-  t.classList.toggle('error', type==='error');
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 4000);
-}
-
-/* ═══════════════════════════════════════════════════════════
-   SÉLECTION DE FORMULE (depuis cartes tarifs)
-═══════════════════════════════════════════════════════════ */
-function selectFormule(value){
-  setTimeout(() => {
-    const sel = document.getElementById('formule');
-    if(sel){
-      sel.value = value;
-      sel.style.borderColor = 'var(--orange)';
-      setTimeout(() => sel.style.borderColor = '', 1500);
-    }
-  }, 600);
-}
-
-/* ═══════════════════════════════════════════════════════════
-   FORMULAIRE INSCRIPTION
-═══════════════════════════════════════════════════════════ */
-function submitInscription(){
-  const prenom = document.getElementById('prenom').value.trim();
-  const nom = document.getElementById('nom').value.trim();
-  const tel = document.getElementById('tel').value.trim();
-  const email = document.getElementById('email').value.trim();
-  const formule = document.getElementById('formule').value;
-  const session = document.getElementById('session').value;
-  const paiement = document.getElementById('paiement').value;
-  const message = document.getElementById('message').value.trim();
-
-  if(!prenom || !nom || !tel || !formule || !session || !paiement){
-    showToast('⚠️ Champs manquants', 'Veuillez remplir tous les champs obligatoires.', 'error');
-    return;
-  }
-
-  const waText = encodeURIComponent(
-    `*Nouvelle inscription AET*\n\n` +
-    `👤 Nom : ${prenom} ${nom}\n` +
-    `📞 Tél : ${tel}\n` +
-    (email ? `✉️ Email : ${email}\n` : '') +
-    `📚 Formule : ${formule}\n` +
-    `🕐 Session : ${session}\n` +
-    `💳 Paiement : ${paiement}\n` +
-    (message ? `💬 Message : ${message}` : '')
-  );
-
-  document.getElementById('successName').textContent = prenom;
-  document.getElementById('regFormContainer').style.display = 'none';
-  document.getElementById('formSuccess').style.display = 'block';
-
-  setTimeout(() => {
-    window.open(`https://wa.me/22899812072?text=${waText}`, '_blank');
-  }, 800);
-}
-
-/* ═══════════════════════════════════════════════════════════
-   FORMULAIRE CONTACT
-═══════════════════════════════════════════════════════════ */
-function submitContact(){
-  const nom = document.getElementById('cNom').value.trim();
-  const tel = document.getElementById('cTel').value.trim();
-  const sujet = document.getElementById('cSujet').value;
-  const msg = document.getElementById('cMessage').value.trim();
-
-  if(!nom || !tel || !sujet || !msg){
-    showToast('⚠️ Champs manquants', 'Veuillez remplir tous les champs.', 'error');
-    return;
-  }
-
-  const waNum = (window.AET_DATA && AET_DATA.contacts && AET_DATA.contacts.whatsapp) || '22899812072';
-  const waText = encodeURIComponent(
-    `*Message AET*\n\n` +
-    `👤 Nom : ${nom}\n` +
-    `📞 Tél : ${tel}\n` +
-    `📋 Sujet : ${sujet}\n` +
-    `💬 Message : ${msg}`
-  );
-
-  window.open(`https://wa.me/${waNum}?text=${waText}`, '_blank');
-  showToast('✅ Redirection WhatsApp', 'Votre message a été préparé sur WhatsApp.');
-
-  document.getElementById('cNom').value = '';
-  document.getElementById('cTel').value = '';
-  document.getElementById('cSujet').value = '';
-  document.getElementById('cMessage').value = '';
-}
-
-/* ═══════════════════════════════════════════════════════════
-   ╔══════════════════════════════════════════════════════╗
-   ║   PANNEAU ADMIN — Logique complète                  ║
-   ╚══════════════════════════════════════════════════════╝
-═══════════════════════════════════════════════════════════ */
-
-/* Données par défaut (capturées depuis le HTML d'origine) */
-const AET_DEFAULTS = {
-  password: 'aet2025',
-  site: {
-    title: 'A.E.T — Alban Eloh Technology | Formation Web & Apps',
-    brandShort: 'A.E.T',
-    brandFull: 'Alban Eloh Technology',
-    metaDesc: 'A.E.T - Alban Eloh Technology - Formation professionnelle en création de sites web et applications à Lomé, Togo.',
-    heroTitle: 'FORMATION WEB & APPS',
-    heroSub: 'Maîtrisez le développement web moderne — <strong>de zéro à la mise en ligne.</strong> Formation complète, étape par étape, accessible aux débutants.'
-  },
-  contacts: {
-    phone1: '99 81 20 72',
-    phone1Intl: '22899812072',
-    phone2: '93 00 39 41',
-    phone2Intl: '22893003941',
-    whatsapp: '22899812072',
-    email: 'contact@aet.tg',
-    location: 'Lomé, Togo — adresse exacte sur RDV',
-    hours: 'Lundi – Samedi · 08h00 – 19h00'
-  },
-  modules: [
-    {num:'01', icon:'🌐', title:'HTML5 — Structure Web', desc:"Apprenez à structurer le contenu de vos pages web avec les bonnes balises sémantiques.", topics:["Structure d'une page HTML (head, body, sections)","Balises sémantiques : header, nav, main, footer","Formulaires HTML complets","Tableaux, listes, médias (images, vidéos)","Liens et ancres de navigation","Bonnes pratiques SEO de base"], duration:"⏱ Durée : 1 semaine — Niveau : Débutant", color:''},
-    {num:'02', icon:'🎨', title:'CSS3 & Design', desc:"Stylisez, animez et rendez votre site responsive pour tous les écrans.", topics:["Sélecteurs, propriétés, box model","Flexbox & CSS Grid (mises en page modernes)","Design responsive (mobile-first)","Animations et transitions CSS","Variables CSS (custom properties)","Typographie, couleurs, dégradés"], duration:"⏱ Durée : 1 semaine — Niveau : Débutant", color:'blue'},
-    {num:'03', icon:'⚡', title:'JavaScript', desc:"Ajoutez l'interactivité, la logique et les appels API à vos pages web.", topics:["Variables, fonctions, conditions, boucles","Manipulation du DOM (document HTML)","Événements utilisateur (clic, saisie...)","Fetch API & appels serveur","JSON et traitement de données","Stockage local (localStorage)"], duration:"⏱ Durée : 2 semaines — Niveau : Intermédiaire", color:''},
-    {num:'04', icon:'🔥', title:'Firebase / Base de données', desc:"Lisez, écrivez et synchronisez vos données en temps réel avec Firebase.", topics:["Introduction à Firebase & Firestore","Authentification utilisateurs (email/mdp)","Lecture et écriture de données en temps réel","Règles de sécurité Firebase","Firebase Storage (images, fichiers)","Projet pratique : app connectée complète"], duration:"⏱ Durée : 2 semaines — Niveau : Intermédiaire", color:'blue'},
-    {num:'05', icon:'🐙', title:'GitHub', desc:"Versionnez votre code, collaborez sur vos projets et ne perdez plus jamais votre travail.", topics:["Git : init, add, commit, push, pull","Création et gestion de dépôts GitHub","Branches et pull requests","Collaboration en équipe","Gestion des conflits de code","README professionnel"], duration:"⏱ Durée : 3 jours — Niveau : Débutant", color:''},
-    {num:'06', icon:'🚀', title:'Déploiement en ligne', desc:"Publiez votre site sur GitHub Pages ou Firebase Hosting gratuitement.", topics:["Déploiement sur GitHub Pages","Firebase Hosting (domaine personnalisé)","Nom de domaine personnalisé","Certificat SSL (HTTPS)","Optimisation des performances","Projet final : site en ligne complet"], duration:"⏱ Durée : 3 jours — Niveau : Tous niveaux", color:'blue'}
-  ],
-  prices: [
-    {name:'Essentiel', currency:'FCFA', amount:'25 000', period:'/ 3 modules (HTML + CSS + JS)', featured:false},
-    {name:'Formation Complète', currency:'FCFA', amount:'50 000', period:'/ 6 modules complets', featured:true},
-    {name:'Accompagnement Pro', currency:'FCFA', amount:'80 000', period:'/ Formation + Projet client', featured:false}
-  ]
+/* ============================================================
+   ⚠️  CONFIGURATION FIREBASE - À REMPLACER PAR LA VÔTRE
+   ============================================================
+   1. Allez sur https://console.firebase.google.com/
+   2. Créez un nouveau projet (ou utilisez un existant)
+   3. Activez l'Authentification > Email/Mot de passe
+   4. Activez Firestore Database (mode production)
+   5. Dans Paramètres du projet > Vos applications, ajoutez une app Web
+   6. Copiez la config ci-dessous
+============================================================ */
+const firebaseConfig = {
+  apiKey: "VOTRE_API_KEY",
+  authDomain: "VOTRE_PROJET.firebaseapp.com",
+  projectId: "VOTRE_PROJET",
+  storageBucket: "VOTRE_PROJET.appspot.com",
+  messagingSenderId: "VOTRE_SENDER_ID",
+  appId: "VOTRE_APP_ID"
 };
 
-/* État global */
-window.AET_DATA = null;
-let admUnlocked = false;
-
-/* Chargement / sauvegarde */
-function admLoadData(){
-  try {
-    const saved = localStorage.getItem('aet_admin_data');
-    if(saved){
-      const parsed = JSON.parse(saved);
-      // Fusion avec valeurs par défaut (pour ajouts futurs)
-      window.AET_DATA = {
-        password: parsed.password || AET_DEFAULTS.password,
-        site: {...AET_DEFAULTS.site, ...(parsed.site||{})},
-        contacts: {...AET_DEFAULTS.contacts, ...(parsed.contacts||{})},
-        modules: parsed.modules || AET_DEFAULTS.modules,
-        prices: parsed.prices || AET_DEFAULTS.prices
-      };
-    } else {
-      window.AET_DATA = JSON.parse(JSON.stringify(AET_DEFAULTS));
-    }
-  } catch(e){
-    console.warn('Admin data load failed, using defaults', e);
-    window.AET_DATA = JSON.parse(JSON.stringify(AET_DEFAULTS));
-  }
-}
-
-function admPersist(){
-  localStorage.setItem('aet_admin_data', JSON.stringify(window.AET_DATA));
-}
-
-/* Hydratation du DOM : applique AET_DATA au site visible */
-function admHydrate(){
-  if(!window.AET_DATA) return;
-  const d = window.AET_DATA;
-
-  // Titre & meta
-  document.title = d.site.title;
-  const metaDesc = document.querySelector('meta[name="description"]');
-  if(metaDesc) metaDesc.setAttribute('content', d.site.metaDesc);
-
-  // Hero
-  const heroTitle = document.querySelector('.hero-title');
-  if(heroTitle) heroTitle.textContent = d.site.heroTitle;
-  const heroSub = document.querySelector('.hero-sub');
-  if(heroSub) heroSub.innerHTML = d.site.heroSub;
-
-  // Modules : reconstruire la grille
-  const modulesGrid = document.querySelector('.modules-grid');
-  if(modulesGrid){
-    modulesGrid.innerHTML = d.modules.map(m => `
-      <div class="module-card ${m.color||''} reveal visible">
-        <div class="module-num">${escapeHtml(m.num)}</div>
-        <div class="module-icon">${escapeHtml(m.icon)}</div>
-        <div class="module-title">${escapeHtml(m.title)}</div>
-        <p class="module-desc">${escapeHtml(m.desc)}</p>
-        <ul class="module-topics">
-          ${m.topics.map(t => `<li>${escapeHtml(t)}</li>`).join('')}
-        </ul>
-        <div class="module-duration">${escapeHtml(m.duration)}</div>
-      </div>
-    `).join('');
-  }
-
-  // Compteur de modules dans le hero
-  const statNum = document.querySelector('.stat-num');
-  if(statNum && d.modules.length) statNum.textContent = d.modules.length;
-  // Titre de section
-  const formationsTitle = document.querySelector('#formations .section-title');
-  if(formationsTitle) formationsTitle.textContent = `${d.modules.length} MODULES COMPLETS`;
-
-  // Prix
-  const priceCards = document.querySelectorAll('.price-card');
-  priceCards.forEach((card, idx) => {
-    if(!d.prices[idx]) return;
-    const p = d.prices[idx];
-    const nameEl = card.querySelector('.price-name');
-    const curEl = card.querySelector('.price-currency');
-    const amtEl = card.querySelector('.price-amount');
-    const perEl = card.querySelector('.price-period');
-    if(nameEl) nameEl.textContent = p.name;
-    if(curEl) curEl.textContent = p.currency;
-    if(amtEl) amtEl.textContent = p.amount;
-    if(perEl) perEl.textContent = p.period;
-  });
-
-  // Numéros de téléphone — mettre à jour tous les liens tel: et wa.me
-  const c = d.contacts;
-  document.querySelectorAll('a[href^="tel:"]').forEach(a => {
-    const intlA = '+' + c.phone1Intl;
-    const intlB = '+' + c.phone2Intl;
-    // Déterminer s'il s'agit du 1er ou 2e numéro selon l'ancien numéro
-    const oldHref = a.getAttribute('href');
-    if(oldHref.includes('99812072') || oldHref.includes(c.phone1Intl) || a.dataset.aetPhone==='1'){
-      a.href = 'tel:' + intlA;
-      a.dataset.aetPhone = '1';
-      // Mettre à jour le texte si c'est uniquement un numéro
-      updatePhoneText(a, c.phone1);
-    } else if(oldHref.includes('93003941') || oldHref.includes(c.phone2Intl) || a.dataset.aetPhone==='2'){
-      a.href = 'tel:' + intlB;
-      a.dataset.aetPhone = '2';
-      updatePhoneText(a, c.phone2);
-    }
-  });
-
-  // WhatsApp
-  document.querySelectorAll('a[href*="wa.me"]').forEach(a => {
-    const url = new URL(a.href);
-    const text = url.searchParams.get('text');
-    let newUrl = `https://wa.me/${c.whatsapp}`;
-    if(text) newUrl += `?text=${encodeURIComponent(text)}`;
-    a.href = newUrl;
-  });
-
-  // Localisation, horaires & email dans la section contact
-  const contactItems = document.querySelectorAll('#contact .contact-item');
-  contactItems.forEach(item => {
-    const strong = item.querySelector('strong');
-    if(!strong) return;
-    const label = strong.textContent.toLowerCase();
-    const span = item.querySelector('span');
-    if(!span) return;
-    if(label.includes('localisation')){
-      span.textContent = c.location;
-    } else if(label.includes('disponibilité') || label.includes('disponibilite')){
-      span.textContent = c.hours;
-    } else if(label.includes('email')){
-      span.innerHTML = `<a href="mailto:${escapeHtml(c.email)}">${escapeHtml(c.email)}</a>`;
-    }
-  });
-
-  // Email dans le footer (remplacer le lien protégé Cloudflare si présent)
-  const footerEmails = document.querySelectorAll('footer a[href*="email-protection"], footer a[href^="mailto:"]');
-  footerEmails.forEach(a => {
-    a.href = 'mailto:' + c.email;
-    a.innerHTML = `✉️ ${escapeHtml(c.email)}`;
-  });
-
-  // Logo / brand short
-  document.querySelectorAll('.logo-text').forEach(el => { el.textContent = d.site.brandShort; });
-  document.querySelectorAll('.logo-icon').forEach(el => { el.textContent = d.site.brandShort.replace(/\./g,''); });
-
-  // Splash brand
-  const splashBrand = document.querySelector('.splash-logo');
-  if(splashBrand && d.site.brandShort) splashBrand.textContent = d.site.brandShort;
-
-  // Footer brand description
-  const footerBrandP = document.querySelector('.footer-brand p');
-  if(footerBrandP) footerBrandP.textContent = `${d.site.brandFull} — Formation web professionnelle à ${c.location.split(' — ')[0]}. De zéro à la mise en ligne.`;
-}
-
-function updatePhoneText(a, newDisplay){
-  // Si le texte interne est juste un numéro (pas d'enfants HTML complexes), on le met à jour
-  if(a.children.length === 0){
-    // texte simple
-    const txt = a.textContent.trim();
-    if(/^[\d\s+().-]+$/.test(txt)){
-      a.textContent = newDisplay;
-    } else if(txt.startsWith('📞')){
-      a.textContent = '📞 ' + newDisplay;
+/* RÈGLES FIRESTORE recommandées (à copier dans Firestore > Règles) :
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /transactions/{docId} {
+      allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
     }
   }
 }
+*/
 
-function escapeHtml(s){
-  if(s == null) return '';
-  return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-}
+let app, auth, db, currentUser=null, transactions=[], unsubscribe=null;
+let useFirebase = true;
 
-/* Ouverture / fermeture du panneau */
-function openAdmin(){
-  document.getElementById('adminOverlay').classList.add('show');
-  document.body.style.overflow = 'hidden';
-  if(admUnlocked){ admShowMain(); }
-  else { document.getElementById('admLogin').style.display='block'; document.getElementById('admMain').style.display='none'; setTimeout(()=>document.getElementById('admPass').focus(),100); }
-}
-function closeAdmin(){
-  document.getElementById('adminOverlay').classList.remove('show');
-  document.body.style.overflow = '';
+try {
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+} catch(e) {
+  console.warn("Firebase non configuré, mode démo local activé", e);
+  useFirebase = false;
 }
 
-/* Connexion */
-function admLogin(){
-  const pass = document.getElementById('admPass').value;
-  const err = document.getElementById('admLoginError');
-  if(pass === window.AET_DATA.password){
-    admUnlocked = true;
-    err.classList.remove('show');
-    document.getElementById('admPass').value = '';
-    admShowMain();
-  } else {
-    err.textContent = '❌ Mot de passe incorrect.';
-    err.classList.add('show');
-  }
-}
-function admLogout(){
-  admUnlocked = false;
-  closeAdmin();
-  showToast('🔒 Déconnecté', 'Session admin terminée.');
-}
-function admShowMain(){
-  document.getElementById('admLogin').style.display='none';
-  document.getElementById('admMain').style.display='flex';
-  admFillForms();
-  admRenderModules();
-  admRenderPrices();
+// Si la config Firebase n'est pas remplie → mode démo (localStorage)
+if (firebaseConfig.apiKey === "VOTRE_API_KEY") {
+  useFirebase = false;
+  console.warn("⚠️ Configurez Firebase dans index.html (recherchez 'VOTRE_API_KEY'). Mode démo activé.");
 }
 
-/* Navigation entre onglets */
-function showAdmTab(tab){
-  document.querySelectorAll('.admin-tab').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
-  document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.toggle('active', c.id==='admTab-'+tab));
+/* ============ UTILITAIRES ============ */
+const $ = sel => document.querySelector(sel);
+const $$ = sel => document.querySelectorAll(sel);
+const fmt = n => new Intl.NumberFormat('fr-FR',{style:'currency',currency:'EUR'}).format(n||0);
+const fmtDate = d => {
+  const dt = d instanceof Date ? d : new Date(d);
+  return dt.toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'});
+};
+function toast(msg, type='success'){
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  const icon = type==='success'?'check-circle':type==='error'?'circle-exclamation':'circle-info';
+  t.innerHTML = `<i class="fas fa-${icon}"></i><span>${msg}</span>`;
+  $('#toastContainer').appendChild(t);
+  setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(120%)';setTimeout(()=>t.remove(),350)},3000);
 }
 
-/* Remplissage des champs depuis AET_DATA */
-function admFillForms(){
-  const d = window.AET_DATA;
-  // Contacts
-  document.getElementById('admPhone1').value = d.contacts.phone1;
-  document.getElementById('admWhatsapp').value = d.contacts.whatsapp;
-  document.getElementById('admPhone2').value = d.contacts.phone2;
-  document.getElementById('admPhone2Intl').value = d.contacts.phone2Intl;
-  document.getElementById('admEmail').value = d.contacts.email;
-  document.getElementById('admLocation').value = d.contacts.location;
-  document.getElementById('admHours').value = d.contacts.hours;
-  // Site
-  document.getElementById('admSiteTitle').value = d.site.title;
-  document.getElementById('admBrandShort').value = d.site.brandShort;
-  document.getElementById('admBrandFull').value = d.site.brandFull;
-  document.getElementById('admMetaDesc').value = d.site.metaDesc;
-  document.getElementById('admHeroTitle').value = d.site.heroTitle;
-  document.getElementById('admHeroSub').value = d.site.heroSub;
-  document.getElementById('admNewPass').value = '';
-  document.getElementById('admNewPass2').value = '';
-}
-
-/* Rendu de la liste des modules */
-function admRenderModules(){
-  const list = document.getElementById('admModulesList');
-  const d = window.AET_DATA;
-  list.innerHTML = d.modules.map((m, idx) => `
-    <div class="adm-module" data-idx="${idx}">
-      <div class="adm-module-header">
-        <div class="adm-module-title"><span class="num">${escapeHtml(m.num)}</span> ${escapeHtml(m.title || 'Module sans titre')}</div>
-        <div style="display:flex;gap:.4rem;">
-          ${idx>0 ? `<button class="adm-btn ghost sm" onclick="admMoveModule(${idx},-1)" title="Monter">↑</button>`:''}
-          ${idx<d.modules.length-1 ? `<button class="adm-btn ghost sm" onclick="admMoveModule(${idx},1)" title="Descendre">↓</button>`:''}
-          <button class="adm-btn danger sm" onclick="admRemoveModule(${idx})">🗑️ Supprimer</button>
-        </div>
-      </div>
-      <div class="adm-row triple">
-        <div class="adm-field">
-          <label>N° (ex: 01)</label>
-          <input type="text" data-m="num" value="${escapeHtml(m.num)}" onchange="admUpdateModule(${idx},'num',this.value)"/>
-        </div>
-        <div class="adm-field">
-          <label>Icône (emoji)</label>
-          <input type="text" data-m="icon" value="${escapeHtml(m.icon)}" onchange="admUpdateModule(${idx},'icon',this.value)"/>
-        </div>
-        <div class="adm-field">
-          <label>Couleur</label>
-          <select onchange="admUpdateModule(${idx},'color',this.value)">
-            <option value="" ${m.color===''?'selected':''}>🟠 Orange</option>
-            <option value="blue" ${m.color==='blue'?'selected':''}>🔵 Bleu</option>
-          </select>
-        </div>
-      </div>
-      <div class="adm-row full">
-        <div class="adm-field">
-          <label>Titre du module</label>
-          <input type="text" value="${escapeHtml(m.title)}" onchange="admUpdateModule(${idx},'title',this.value)"/>
-        </div>
-      </div>
-      <div class="adm-row full">
-        <div class="adm-field">
-          <label>Description</label>
-          <textarea rows="2" onchange="admUpdateModule(${idx},'desc',this.value)">${escapeHtml(m.desc)}</textarea>
-        </div>
-      </div>
-      <div class="adm-field">
-        <label>Sujets abordés (un par ligne)</label>
-        <div class="adm-topics-list" id="topics-${idx}">
-          ${m.topics.map((t, ti) => `
-            <div class="adm-topic-row">
-              <input type="text" value="${escapeHtml(t)}" onchange="admUpdateTopic(${idx},${ti},this.value)"/>
-              <button class="adm-topic-remove" onclick="admRemoveTopic(${idx},${ti})" title="Supprimer">✕</button>
-            </div>
-          `).join('')}
-        </div>
-        <button class="adm-btn ghost sm" style="margin-top:.5rem;align-self:flex-start;" onclick="admAddTopic(${idx})">+ Ajouter un sujet</button>
-      </div>
-      <div class="adm-row full" style="margin-top:1rem;">
-        <div class="adm-field">
-          <label>Durée &amp; niveau</label>
-          <input type="text" value="${escapeHtml(m.duration)}" onchange="admUpdateModule(${idx},'duration',this.value)"/>
-        </div>
-      </div>
-    </div>
-  `).join('');
-}
-
-function admUpdateModule(idx, field, value){
-  window.AET_DATA.modules[idx][field] = value;
-}
-function admUpdateTopic(idx, ti, value){
-  window.AET_DATA.modules[idx].topics[ti] = value;
-}
-function admAddTopic(idx){
-  window.AET_DATA.modules[idx].topics.push('Nouveau sujet');
-  admRenderModules();
-}
-function admRemoveTopic(idx, ti){
-  window.AET_DATA.modules[idx].topics.splice(ti, 1);
-  admRenderModules();
-}
-function admAddModule(){
-  const nextNum = String(window.AET_DATA.modules.length + 1).padStart(2, '0');
-  window.AET_DATA.modules.push({
-    num: nextNum,
-    icon: '✨',
-    title: 'Nouveau module',
-    desc: 'Description du nouveau module.',
-    topics: ['Sujet 1', 'Sujet 2', 'Sujet 3'],
-    duration: '⏱ Durée : à définir — Niveau : Débutant',
-    color: window.AET_DATA.modules.length % 2 === 0 ? '' : 'blue'
-  });
-  admRenderModules();
-  showToast('✨ Module ajouté', 'N\'oubliez pas d\'enregistrer.');
-}
-function admRemoveModule(idx){
-  if(!confirm('Supprimer ce module ?')) return;
-  window.AET_DATA.modules.splice(idx, 1);
-  admRenderModules();
-}
-function admMoveModule(idx, dir){
-  const arr = window.AET_DATA.modules;
-  const ni = idx + dir;
-  if(ni<0 || ni>=arr.length) return;
-  [arr[idx], arr[ni]] = [arr[ni], arr[idx]];
-  admRenderModules();
-}
-
-/* Rendu des prix */
-function admRenderPrices(){
-  const list = document.getElementById('admPricesList');
-  const d = window.AET_DATA;
-  list.innerHTML = d.prices.map((p, idx) => `
-    <div class="adm-module">
-      <div class="adm-module-header">
-        <div class="adm-module-title"><span class="num">${idx+1}</span> ${escapeHtml(p.name)} ${p.featured?'<span style="font-size:.7rem;background:var(--orange);color:#fff;padding:.15rem .5rem;border-radius:6px;margin-left:.5rem;">★ MISE EN AVANT</span>':''}</div>
-      </div>
-      <div class="adm-row">
-        <div class="adm-field">
-          <label>Nom de la formule</label>
-          <input type="text" value="${escapeHtml(p.name)}" onchange="window.AET_DATA.prices[${idx}].name=this.value"/>
-        </div>
-        <div class="adm-field">
-          <label>Devise</label>
-          <input type="text" value="${escapeHtml(p.currency)}" onchange="window.AET_DATA.prices[${idx}].currency=this.value"/>
-        </div>
-      </div>
-      <div class="adm-row">
-        <div class="adm-field">
-          <label>Montant</label>
-          <input type="text" value="${escapeHtml(p.amount)}" onchange="window.AET_DATA.prices[${idx}].amount=this.value"/>
-        </div>
-        <div class="adm-field">
-          <label>Période / sous-titre</label>
-          <input type="text" value="${escapeHtml(p.period)}" onchange="window.AET_DATA.prices[${idx}].period=this.value"/>
-        </div>
-      </div>
-    </div>
-  `).join('');
-}
-
-/* Sauvegarde générale */
-function admSaveAll(){
-  const d = window.AET_DATA;
-  // Contacts
-  d.contacts.phone1 = document.getElementById('admPhone1').value.trim() || d.contacts.phone1;
-  d.contacts.whatsapp = document.getElementById('admWhatsapp').value.trim().replace(/\D/g,'') || d.contacts.whatsapp;
-  d.contacts.phone1Intl = d.contacts.whatsapp; // synchroniser
-  d.contacts.phone2 = document.getElementById('admPhone2').value.trim() || d.contacts.phone2;
-  d.contacts.phone2Intl = document.getElementById('admPhone2Intl').value.trim().replace(/\D/g,'') || d.contacts.phone2Intl;
-  d.contacts.email = document.getElementById('admEmail').value.trim() || d.contacts.email;
-  d.contacts.location = document.getElementById('admLocation').value.trim() || d.contacts.location;
-  d.contacts.hours = document.getElementById('admHours').value.trim() || d.contacts.hours;
-  // Site
-  d.site.title = document.getElementById('admSiteTitle').value.trim() || d.site.title;
-  d.site.brandShort = document.getElementById('admBrandShort').value.trim() || d.site.brandShort;
-  d.site.brandFull = document.getElementById('admBrandFull').value.trim() || d.site.brandFull;
-  d.site.metaDesc = document.getElementById('admMetaDesc').value.trim() || d.site.metaDesc;
-  d.site.heroTitle = document.getElementById('admHeroTitle').value.trim() || d.site.heroTitle;
-  d.site.heroSub = document.getElementById('admHeroSub').value.trim() || d.site.heroSub;
-  // Mot de passe
-  const np1 = document.getElementById('admNewPass').value;
-  const np2 = document.getElementById('admNewPass2').value;
-  if(np1 || np2){
-    if(np1 !== np2){ showToast('⚠️ Mots de passe différents','Veuillez vérifier la confirmation.','error'); return; }
-    if(np1.length < 4){ showToast('⚠️ Mot de passe trop court','Minimum 4 caractères.','error'); return; }
-    d.password = np1;
-    document.getElementById('admNewPass').value=''; document.getElementById('admNewPass2').value='';
-    showToast('🔐 Mot de passe modifié','Le nouveau mot de passe est actif.');
-  }
-  admPersist();
-  admHydrate();
-  showToast('✅ Enregistré !', 'Les modifications sont visibles sur le site.');
-}
-
-/* Réinitialisations */
-function admReset(section){
-  if(!confirm(`Réinitialiser ${section==='modules'?'les modules':section==='contacts'?'les contacts':section==='tarifs'?'les tarifs':'les paramètres'} ?`)) return;
-  if(section==='modules') window.AET_DATA.modules = JSON.parse(JSON.stringify(AET_DEFAULTS.modules));
-  else if(section==='contacts') window.AET_DATA.contacts = JSON.parse(JSON.stringify(AET_DEFAULTS.contacts));
-  else if(section==='tarifs') window.AET_DATA.prices = JSON.parse(JSON.stringify(AET_DEFAULTS.prices));
-  else if(section==='site') window.AET_DATA.site = JSON.parse(JSON.stringify(AET_DEFAULTS.site));
-  admPersist();
-  admHydrate();
-  admFillForms();
-  admRenderModules();
-  admRenderPrices();
-  showToast('↻ Réinitialisé', 'Section restaurée aux valeurs par défaut.');
-}
-function admResetAll(){
-  if(!confirm('⚠️ ATTENTION : Cela effacera TOUTES vos modifications. Continuer ?')) return;
-  localStorage.removeItem('aet_admin_data');
-  admLoadData();
-  admHydrate();
-  admFillForms();
-  admRenderModules();
-  admRenderPrices();
-  showToast('🗑️ Tout réinitialisé', 'Le contenu original a été restauré.');
-}
-
-/* Export / Import JSON */
-function admExport(){
-  const blob = new Blob([JSON.stringify(window.AET_DATA, null, 2)], {type:'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  const date = new Date().toISOString().slice(0,10);
-  a.href = url;
-  a.download = `aet-backup-${date}.json`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  showToast('📥 Sauvegarde téléchargée', `Fichier : aet-backup-${date}.json`);
-}
-function admImport(event){
-  const file = event.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const data = JSON.parse(e.target.result);
-      if(!data.modules || !data.contacts){ throw new Error('Format invalide'); }
-      if(!confirm('Remplacer toutes les données actuelles par celles du fichier ?')) return;
-      window.AET_DATA = {
-        password: data.password || AET_DEFAULTS.password,
-        site: {...AET_DEFAULTS.site, ...(data.site||{})},
-        contacts: {...AET_DEFAULTS.contacts, ...(data.contacts||{})},
-        modules: data.modules || AET_DEFAULTS.modules,
-        prices: data.prices || AET_DEFAULTS.prices
-      };
-      admPersist();
-      admHydrate();
-      admFillForms();
-      admRenderModules();
-      admRenderPrices();
-      showToast('✅ Importé !', 'Données restaurées depuis le fichier.');
-    } catch(err){
-      showToast('❌ Erreur', 'Fichier JSON invalide.','error');
-    }
+/* ============ AUTH UI ============ */
+$$('.auth-tab').forEach(tab=>{
+  tab.onclick = ()=>{
+    $$('.auth-tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    const name = tab.dataset.tab;
+    $('#loginForm').style.display = name==='login'?'block':'none';
+    $('#signupForm').style.display = name==='signup'?'block':'none';
+    $('#authError').classList.remove('show');
+    $('#authSuccess').classList.remove('show');
   };
-  reader.readAsText(file);
-  event.target.value = '';
+});
+
+function authError(msg){
+  const el = $('#authError');
+  el.textContent = msg;
+  el.classList.add('show');
+  $('#authSuccess').classList.remove('show');
+}
+function authSuccess(msg){
+  const el = $('#authSuccess');
+  el.textContent = msg;
+  el.classList.add('show');
+  $('#authError').classList.remove('show');
+}
+function fbErrorMessage(err){
+  const code = err.code || '';
+  const map = {
+    'auth/email-already-in-use':'Cet email est déjà utilisé.',
+    'auth/invalid-email':'Email invalide.',
+    'auth/weak-password':'Mot de passe trop faible (6 caractères min).',
+    'auth/user-not-found':'Aucun compte trouvé avec cet email.',
+    'auth/wrong-password':'Mot de passe incorrect.',
+    'auth/invalid-credential':'Email ou mot de passe incorrect.',
+    'auth/too-many-requests':'Trop de tentatives. Réessayez plus tard.',
+    'auth/network-request-failed':'Problème de connexion réseau.'
+  };
+  return map[code] || (err.message || 'Une erreur est survenue.');
 }
 
-/* Raccourci clavier Ctrl+Shift+A */
-document.addEventListener('keydown', e => {
-  if(e.ctrlKey && e.shiftKey && (e.key==='A' || e.key==='a')){
-    e.preventDefault();
-    openAdmin();
-  }
-  if(e.key==='Escape' && document.getElementById('adminOverlay').classList.contains('show')){
-    closeAdmin();
+/* ============ MODE DÉMO (localStorage) ============ */
+const DEMO_KEY = 'finpro_demo';
+function demoGetUsers(){ return JSON.parse(localStorage.getItem(DEMO_KEY+'_users')||'{}'); }
+function demoSaveUsers(u){ localStorage.setItem(DEMO_KEY+'_users', JSON.stringify(u)); }
+function demoCurrent(){ return JSON.parse(localStorage.getItem(DEMO_KEY+'_current')||'null'); }
+function demoSetCurrent(u){
+  if(u) localStorage.setItem(DEMO_KEY+'_current', JSON.stringify(u));
+  else localStorage.removeItem(DEMO_KEY+'_current');
+}
+function demoGetTx(uid){ return JSON.parse(localStorage.getItem(DEMO_KEY+'_tx_'+uid)||'[]'); }
+function demoSaveTx(uid, tx){ localStorage.setItem(DEMO_KEY+'_tx_'+uid, JSON.stringify(tx)); }
+
+async function hashPwd(pwd){
+  const buf = new TextEncoder().encode(pwd+'_finpro_salt');
+  const h = await crypto.subtle.digest('SHA-256', buf);
+  return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+/* ============ SIGNUP ============ */
+$('#signupForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const btn = $('#signupBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="loader"></div>';
+  const name = $('#signupName').value.trim();
+  const email = $('#signupEmail').value.trim();
+  const password = $('#signupPassword').value;
+
+  try {
+    if(useFirebase){
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(cred.user, { displayName: name });
+      authSuccess('Compte créé ! Connexion en cours...');
+    } else {
+      const users = demoGetUsers();
+      if(users[email]) throw {code:'auth/email-already-in-use'};
+      const hash = await hashPwd(password);
+      const uid = 'demo_'+Date.now();
+      users[email] = { uid, name, email, password: hash };
+      demoSaveUsers(users);
+      demoSetCurrent({uid, name, email});
+      authSuccess('Compte créé ! Connexion en cours...');
+      setTimeout(()=>handleSignedIn({uid, displayName:name, email}), 600);
+    }
+  } catch(err){
+    authError(fbErrorMessage(err));
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span>Créer mon compte</span>';
   }
 });
 
-/* Initialisation au chargement */
-admLoadData();
-admHydrate();
+/* ============ LOGIN ============ */
+$('#loginForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const btn = $('#loginBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="loader"></div>';
+  const email = $('#loginEmail').value.trim();
+  const password = $('#loginPassword').value;
+
+  try {
+    if(useFirebase){
+      await signInWithEmailAndPassword(auth, email, password);
+    } else {
+      const users = demoGetUsers();
+      const u = users[email];
+      if(!u) throw {code:'auth/user-not-found'};
+      const hash = await hashPwd(password);
+      if(u.password !== hash) throw {code:'auth/wrong-password'};
+      demoSetCurrent({uid:u.uid, name:u.name, email:u.email});
+      handleSignedIn({uid:u.uid, displayName:u.name, email:u.email});
+    }
+  } catch(err){
+    authError(fbErrorMessage(err));
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<span>Se connecter</span>';
+  }
+});
+
+/* ============ FORGOT PASSWORD ============ */
+$('#forgotLink').addEventListener('click', async e=>{
+  e.preventDefault();
+  const email = $('#loginEmail').value.trim();
+  if(!email){ authError('Saisissez votre email puis cliquez sur "Mot de passe oublié".'); return; }
+  if(!useFirebase){
+    authError('La récupération par email nécessite Firebase configuré.');
+    return;
+  }
+  try{
+    await sendPasswordResetEmail(auth, email);
+    authSuccess('Email de réinitialisation envoyé !');
+  }catch(err){ authError(fbErrorMessage(err)); }
+});
+
+/* ============ AUTH STATE ============ */
+if(useFirebase){
+  onAuthStateChanged(auth, user=>{
+    if(user) handleSignedIn(user);
+    else handleSignedOut();
+  });
+} else {
+  const u = demoCurrent();
+  if(u) handleSignedIn({uid:u.uid, displayName:u.name, email:u.email});
+}
+
+function handleSignedIn(user){
+  currentUser = user;
+  $('#authScreen').style.display = 'none';
+  $('#app').classList.add('active');
+  const name = user.displayName || user.email.split('@')[0];
+  $('#userName').textContent = name;
+  $('#userAvatar').textContent = name.charAt(0).toUpperCase();
+  loadTransactions();
+  toast(`Bienvenue ${name} !`, 'success');
+}
+function handleSignedOut(){
+  currentUser = null;
+  if(unsubscribe){ unsubscribe(); unsubscribe=null; }
+  transactions = [];
+  $('#app').classList.remove('active');
+  $('#authScreen').style.display = 'flex';
+}
+
+/* ============ LOGOUT ============ */
+$('#logoutBtn').onclick = async ()=>{
+  if(useFirebase) await signOut(auth);
+  else { demoSetCurrent(null); handleSignedOut(); }
+  toast('Déconnecté avec succès','info');
+};
+
+/* ============ TABS NAV ============ */
+$$('.tab-btn').forEach(btn=>{
+  btn.onclick = ()=>{
+    $$('.tab-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    $$('.tab-content').forEach(c=>c.classList.remove('active'));
+    $('#tab-'+btn.dataset.tab).classList.add('active');
+  };
+});
+
+/* ============ DATA: LOAD ============ */
+function loadTransactions(){
+  if(useFirebase){
+    if(unsubscribe) unsubscribe();
+    const q = query(
+      collection(db,'transactions'),
+      where('userId','==',currentUser.uid),
+      orderBy('date','desc')
+    );
+    unsubscribe = onSnapshot(q, snap=>{
+      transactions = snap.docs.map(d=>({id:d.id, ...d.data()}));
+      renderAll();
+    }, err=>{
+      console.error(err);
+      toast('Erreur de chargement','error');
+    });
+  } else {
+    transactions = demoGetTx(currentUser.uid).sort((a,b)=>new Date(b.date)-new Date(a.date));
+    renderAll();
+  }
+}
+
+/* ============ DATA: ADD ============ */
+async function addTransaction(type){
+  const desc = $('#'+type+'Desc').value.trim();
+  const amount = parseFloat($('#'+type+'Amount').value);
+  const category = $('#'+type+'Category').value;
+  const date = $('#'+type+'Date').value;
+  if(!desc || !amount || !date){ toast('Tous les champs sont requis','error'); return; }
+
+  const data = {
+    userId: currentUser.uid,
+    type, description:desc, amount, category, date,
+    createdAt: Date.now()
+  };
+
+  try {
+    if(useFirebase){
+      await addDoc(collection(db,'transactions'),{...data, createdAt: serverTimestamp()});
+    } else {
+      const tx = demoGetTx(currentUser.uid);
+      data.id = 'tx_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+      tx.push(data);
+      demoSaveTx(currentUser.uid, tx);
+      transactions = tx.sort((a,b)=>new Date(b.date)-new Date(a.date));
+      renderAll();
+    }
+    toast(type==='income'?'Entrée ajoutée ✓':'Sortie ajoutée ✓','success');
+    $('#'+type+'Form').reset();
+    $('#'+type+'Date').value = new Date().toISOString().slice(0,10);
+  } catch(err){
+    console.error(err);
+    toast('Erreur lors de l\'ajout','error');
+  }
+}
+
+$('#incomeForm').addEventListener('submit', e=>{e.preventDefault();addTransaction('income')});
+$('#expenseForm').addEventListener('submit', e=>{e.preventDefault();addTransaction('expense')});
+
+/* ============ DATA: DELETE ============ */
+window.delTx = async (id)=>{
+  if(!confirm('Supprimer cette transaction ?')) return;
+  try{
+    if(useFirebase){
+      await deleteDoc(doc(db,'transactions',id));
+    } else {
+      let tx = demoGetTx(currentUser.uid).filter(t=>t.id!==id);
+      demoSaveTx(currentUser.uid, tx);
+      transactions = tx.sort((a,b)=>new Date(b.date)-new Date(a.date));
+      renderAll();
+    }
+    toast('Transaction supprimée','info');
+  }catch(err){ toast('Erreur de suppression','error'); }
+};
+
+/* ============ RENDER ============ */
+let chartLine, chartDoughnut, chartBar;
+
+function renderAll(){
+  renderStats();
+  renderLists();
+  renderHistory();
+  renderCharts();
+}
+
+function renderStats(){
+  const inc = transactions.filter(t=>t.type==='income');
+  const exp = transactions.filter(t=>t.type==='expense');
+  const incSum = inc.reduce((s,t)=>s+t.amount,0);
+  const expSum = exp.reduce((s,t)=>s+t.amount,0);
+  $('#statBalance').textContent = fmt(incSum-expSum);
+  $('#statIncome').textContent = fmt(incSum);
+  $('#statExpense').textContent = fmt(expSum);
+  $('#statIncomeCount').textContent = `${inc.length} transaction${inc.length>1?'s':''}`;
+  $('#statExpenseCount').textContent = `${exp.length} transaction${exp.length>1?'s':''}`;
+
+  const now = new Date();
+  const monthTx = transactions.filter(t=>{
+    const d = new Date(t.date);
+    return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
+  });
+  const monthBal = monthTx.reduce((s,t)=>s + (t.type==='income'?t.amount:-t.amount), 0);
+  $('#statMonth').textContent = fmt(monthBal);
+  $('#statMonth').className = 'stat-value '+(monthBal>=0?'success':'danger');
+  $('#statMonthLabel').textContent = now.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+}
+
+function txRow(t, withType=false){
+  return `<tr>
+    <td>${fmtDate(t.date)}</td>
+    <td><strong>${escapeHtml(t.description)}</strong></td>
+    <td><span class="badge ${t.type}">${t.category}</span></td>
+    ${withType?`<td><span class="badge ${t.type}">${t.type==='income'?'Entrée':'Sortie'}</span></td>`:''}
+    <td class="${t.type==='income'?'amount-pos':'amount-neg'}">${t.type==='income'?'+':'-'}${fmt(t.amount)}</td>
+    <td><button class="btn-mini" onclick="delTx('${t.id}')"><i class="fas fa-trash"></i></button></td>
+  </tr>`;
+}
+
+function escapeHtml(s){return String(s).replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+
+function renderLists(){
+  ['income','expense'].forEach(type=>{
+    const arr = transactions.filter(t=>t.type===type).slice(0,20);
+    const el = $('#'+type+'List');
+    if(!arr.length){
+      el.innerHTML = `<div class="empty"><i class="fas fa-inbox"></i><div>Aucune ${type==='income'?'entrée':'sortie'} pour le moment</div></div>`;
+      return;
+    }
+    el.innerHTML = `<table>
+      <thead><tr><th>Date</th><th>Description</th><th>Catégorie</th><th>Montant</th><th></th></tr></thead>
+      <tbody>${arr.map(t=>txRow(t)).join('')}</tbody>
+    </table>`;
+  });
+}
+
+function renderHistory(){
+  const type = $('#filterType').value;
+  const search = $('#filterSearch').value.toLowerCase();
+  let arr = transactions;
+  if(type!=='all') arr = arr.filter(t=>t.type===type);
+  if(search) arr = arr.filter(t=>
+    t.description.toLowerCase().includes(search) ||
+    t.category.toLowerCase().includes(search)
+  );
+  const el = $('#historyList');
+  if(!arr.length){
+    el.innerHTML = `<div class="empty"><i class="fas fa-search"></i><div>Aucune transaction trouvée</div></div>`;
+    return;
+  }
+  el.innerHTML = `<table>
+    <thead><tr><th>Date</th><th>Description</th><th>Catégorie</th><th>Type</th><th>Montant</th><th></th></tr></thead>
+    <tbody>${arr.map(t=>txRow(t,true)).join('')}</tbody>
+  </table>`;
+}
+
+$('#filterType').addEventListener('change', renderHistory);
+$('#filterSearch').addEventListener('input', renderHistory);
+
+/* ============ EXPORT CSV ============ */
+$('#exportBtn').onclick = ()=>{
+  if(!transactions.length){ toast('Aucune donnée à exporter','info'); return; }
+  const headers = ['Date','Description','Catégorie','Type','Montant (€)'];
+  const rows = transactions.map(t=>[
+    t.date,
+    `"${t.description.replace(/"/g,'""')}"`,
+    t.category,
+    t.type==='income'?'Entrée':'Sortie',
+    (t.type==='income'?t.amount:-t.amount).toFixed(2)
+  ]);
+  const csv = [headers.join(','), ...rows.map(r=>r.join(','))].join('\n');
+  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `finances_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Export CSV téléchargé ✓','success');
+};
+
+/* ============ CHARTS ============ */
+function renderCharts(){
+  // --- Line chart: 6 derniers mois ---
+  const months = [];
+  const now = new Date();
+  for(let i=5;i>=0;i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    months.push({
+      label: d.toLocaleDateString('fr-FR',{month:'short',year:'2-digit'}),
+      year: d.getFullYear(), month: d.getMonth()
+    });
+  }
+  const incData = months.map(m =>
+    transactions.filter(t=>{
+      const d=new Date(t.date);
+      return t.type==='income' && d.getMonth()===m.month && d.getFullYear()===m.year;
+    }).reduce((s,t)=>s+t.amount,0)
+  );
+  const expData = months.map(m =>
+    transactions.filter(t=>{
+      const d=new Date(t.date);
+      return t.type==='expense' && d.getMonth()===m.month && d.getFullYear()===m.year;
+    }).reduce((s,t)=>s+t.amount,0)
+  );
+  if(chartLine) chartLine.destroy();
+  chartLine = new Chart($('#chartLine'),{
+    type:'line',
+    data:{
+      labels: months.map(m=>m.label),
+      datasets:[
+        {label:'Entrées',data:incData,borderColor:'#10b981',backgroundColor:'rgba(16,185,129,0.15)',tension:.4,fill:true,borderWidth:3,pointRadius:5,pointBackgroundColor:'#10b981'},
+        {label:'Sorties',data:expData,borderColor:'#ef4444',backgroundColor:'rgba(239,68,68,0.15)',tension:.4,fill:true,borderWidth:3,pointRadius:5,pointBackgroundColor:'#ef4444'}
+      ]
+    },
+    options: chartOpts()
+  });
+
+  // --- Doughnut: Entrées vs Sorties ---
+  const incTotal = transactions.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const expTotal = transactions.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  if(chartDoughnut) chartDoughnut.destroy();
+  chartDoughnut = new Chart($('#chartDoughnut'),{
+    type:'doughnut',
+    data:{
+      labels:['Entrées','Sorties'],
+      datasets:[{
+        data:[incTotal||0, expTotal||0],
+        backgroundColor:['#10b981','#ef4444'],
+        borderColor:'rgba(15,23,42,0.8)',
+        borderWidth:3,
+        hoverOffset:10
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{position:'bottom', labels:{color:'#94a3b8', padding:14, font:{size:13, weight:'600'}}},
+        tooltip:{callbacks:{label:c=>` ${c.label}: ${fmt(c.parsed)}`}}
+      },
+      cutout:'65%'
+    }
+  });
+
+  // --- Bar: dépenses par catégorie ---
+  const expCats = {};
+  transactions.filter(t=>t.type==='expense').forEach(t=>{
+    expCats[t.category] = (expCats[t.category]||0) + t.amount;
+  });
+  const sortedCats = Object.entries(expCats).sort((a,b)=>b[1]-a[1]);
+  if(chartBar) chartBar.destroy();
+  chartBar = new Chart($('#chartBar'),{
+    type:'bar',
+    data:{
+      labels: sortedCats.map(c=>c[0]),
+      datasets:[{
+        label:'Dépenses',
+        data: sortedCats.map(c=>c[1]),
+        backgroundColor: sortedCats.map((_,i)=>{
+          const colors = ['#6366f1','#8b5cf6','#ec4899','#f59e0b','#10b981','#06b6d4','#ef4444','#f97316','#84cc16','#a855f7'];
+          return colors[i%colors.length];
+        }),
+        borderRadius:8,
+        borderSkipped:false
+      }]
+    },
+    options: chartOpts(true)
+  });
+}
+
+function chartOpts(noLegend=false){
+  return {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{display:!noLegend, position:'top', labels:{color:'#94a3b8', font:{size:13, weight:'600'}, padding:14}},
+      tooltip:{
+        backgroundColor:'rgba(15,23,42,0.95)',
+        borderColor:'rgba(99,102,241,0.4)',
+        borderWidth:1, padding:12, cornerRadius:10,
+        callbacks:{label:c=>` ${c.dataset.label||c.label}: ${fmt(c.parsed.y ?? c.parsed)}`}
+      }
+    },
+    scales:{
+      x:{ grid:{color:'rgba(148,163,184,0.08)'}, ticks:{color:'#94a3b8'} },
+      y:{ grid:{color:'rgba(148,163,184,0.08)'}, ticks:{color:'#94a3b8', callback:v=>fmt(v)} }
+    }
+  };
+}
+
+// Default date to today
+const today = new Date().toISOString().slice(0,10);
+$('#incomeDate').value = today;
+$('#expenseDate').value = today;
+
+// Empty initial render
+renderAll();
 </script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>

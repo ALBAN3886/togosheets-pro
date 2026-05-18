@@ -116,7 +116,7 @@ onAuthStateChanged(auth, user => {
     const name = user.displayName || user.email.split('@')[0];
     $('#userName').textContent = name;
     $('#userAvatar').textContent = name.charAt(0).toUpperCase();
-    const _ed = document.getElementById('userEmailDisp'); if(_ed) _ed.textContent = user.email;
+    const _ed=document.getElementById('userEmailDisp'); if(_ed) _ed.textContent=user.email;
     loadAll();
     toast(`Bienvenue ${name} ! 👋`, 'success');
   } else {
@@ -211,9 +211,9 @@ function fbErr(e) {
 function loadAll() {
   // Transactions (onSnapshot = temps réel)
   if (unsubTx) unsubTx();
-  const q = query(collection(db,'transactions'), where('userId','==',currentUser.uid), orderBy('date','desc'));
+  const q = query(collection(db,'transactions'), where('userId','==',currentUser.uid));
   unsubTx = onSnapshot(q, snap => {
-    transactions = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    transactions = snap.docs.map(d => ({ id:d.id, ...d.data() })).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
     renderAll();
   }, err => { console.error(err); toast('Erreur chargement transactions','error'); });
 
@@ -237,7 +237,7 @@ function loadAll() {
     }
     renderSalaryPage();
     renderDashboard();
-  }, e => console.error('sal snap:', e));
+  }, e => console.error('sal snap err:', e));
 
   // Budgets
   if (unsubBudg) unsubBudg();
@@ -254,22 +254,19 @@ window.saveSalary = async () => {
   const prime  = parseFloat($('#salPrime').value)  || 0;
   const autres = parseFloat($('#salAutres').value) || 0;
   const cfg = {
-    userId:       currentUser.uid,
-    net:          net,
-    prime_fixe:   prime,
-    autres_fixes: autres,
-    poste:        $('#salPoste').value.trim(),
-    payday:       parseInt($('#salPayday').value) || 25,
-    total:        net + prime + autres,
+    userId: currentUser.uid,
+    net, prime_fixe: prime, autres_fixes: autres,
+    poste:  $('#salPoste').value.trim(),
+    payday: parseInt($('#salPayday').value) || 25,
+    total:  net + prime + autres,
   };
   try {
     loader(true);
-    // Mise à jour locale IMMÉDIATE avant Firebase
     salaryConfig = { net:cfg.net, prime_fixe:cfg.prime_fixe, autres_fixes:cfg.autres_fixes,
                      poste:cfg.poste, payday:cfg.payday, total:cfg.total };
     renderAll();
     await setDoc(doc(db,'salary_config',currentUser.uid), cfg);
-    toast('✅ Configuration enregistrée — Dashboard mis à jour !','success');
+    toast('✅ Salaire enregistré — Dashboard mis à jour !','success');
   } catch(e) { toast('Erreur: '+e.message,'error'); }
   loader(false);
 };

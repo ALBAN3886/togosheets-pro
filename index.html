@@ -116,7 +116,8 @@ onAuthStateChanged(auth, user => {
     const name = user.displayName || user.email.split('@')[0];
     $('#userName').textContent = name;
     $('#userAvatar').textContent = name.charAt(0).toUpperCase();
-    $('#userEmailDisp').textContent = user.email;
+    const emailDisp = document.getElementById('userEmailDisp');
+    if (emailDisp) emailDisp.textContent = user.email;
     loadAll();
     toast(`Bienvenue ${name} ! 👋`, 'success');
   } else {
@@ -223,9 +224,11 @@ function loadAll() {
   unsubSal = onSnapshot(salRef, snap => {
     if (snap.exists()) {
       salaryConfig = snap.data();
-      renderSalaryPage();
-      renderDashboard();
+    } else {
+      salaryConfig = { net:0, prime_fixe:0, autres_fixes:0, poste:'', payday:25, total:0 };
     }
+    renderSalaryPage();
+    renderDashboard();
   });
 
   // Budgets
@@ -251,6 +254,9 @@ window.saveSalary = async () => {
   try {
     loader(true);
     await setDoc(doc(db,'salary_config',currentUser.uid), cfg);
+    // Mettre à jour l'état local immédiatement sans attendre le snapshot
+    salaryConfig = cfg;
+    renderAll();
     toast('Configuration salaire enregistrée ✓','success');
   } catch(e) { toast(e.message,'error'); }
   loader(false);
@@ -351,6 +357,8 @@ window.saveTx = async () => {
       toast('Opération enregistrée ✓','success');
     }
     closeModal('txModal');
+    // Le onSnapshot va déclencher renderAll automatiquement
+    // mais on force aussi un render local immédiat pour réactivité
   } catch(e) { toast(e.message,'error'); }
   loader(false);
 };
@@ -475,7 +483,9 @@ function renderDashboard() {
   const totalOut = mTx.filter(t=>t.flow==='out').reduce((s,t)=>s+t.amount,0);
   const totalSave= transactions.filter(t=>t.flow==='save').reduce((s,t)=>s+t.amount,0);
   const solde    = totalIn - totalOut;
-  const salRef   = salaryConfig.total || (salaryConfig.net + salaryConfig.prime_fixe + salaryConfig.autres_fixes) || totalIn || 1;
+  // Utiliser le salaire configuré comme référence, sinon les revenus du mois
+  const salCfgTotal = (salaryConfig.total) || ((salaryConfig.net||0)+(salaryConfig.prime_fixe||0)+(salaryConfig.autres_fixes||0));
+  const salRef   = salCfgTotal || totalIn || 1;
   const pctDep   = Math.min(100, Math.round(totalOut / salRef * 100));
 
   setTxt('dSolde',    fmt(solde));
@@ -610,8 +620,9 @@ function renderSalaryPage() {
   setVal('salAutres', s.autres_fixes||'');
   setVal('salPoste',  s.poste||'');
   setVal('salPayday', s.payday||25);
-  const total = s.total || (s.net+s.prime_fixe+s.autres_fixes)||0;
+  const total = s.total || ((s.net||0)+(s.prime_fixe||0)+(s.autres_fixes||0))||0;
   setTxt('salTotalCalc', fmt(total));
+  updateSalTotal();
 
   const m = getViewMonth();
   const spent = txOfMonth(transactions,m).filter(t=>t.flow==='out').reduce((s,t)=>s+t.amount,0);

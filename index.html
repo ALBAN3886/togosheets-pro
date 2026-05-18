@@ -116,8 +116,7 @@ onAuthStateChanged(auth, user => {
     const name = user.displayName || user.email.split('@')[0];
     $('#userName').textContent = name;
     $('#userAvatar').textContent = name.charAt(0).toUpperCase();
-    const _emailDisp = document.getElementById('userEmailDisp');
-    if (_emailDisp) _emailDisp.textContent = user.email;
+    const _ed = document.getElementById('userEmailDisp'); if(_ed) _ed.textContent = user.email;
     loadAll();
     toast(`Bienvenue ${name} ! 👋`, 'success');
   } else {
@@ -218,30 +217,27 @@ function loadAll() {
     renderAll();
   }, err => { console.error(err); toast('Erreur chargement transactions','error'); });
 
-  // Salaire config — temps réel, même si doc absent
+  // Salaire config
   if (unsubSal) unsubSal();
   const salDocRef = doc(db, 'salary_config', currentUser.uid);
   unsubSal = onSnapshot(salDocRef, snap => {
     if (snap.exists()) {
       const d = snap.data();
       salaryConfig = {
-        net:          parseFloat(d.net)          || 0,
-        prime_fixe:   parseFloat(d.prime_fixe)   || 0,
-        autres_fixes: parseFloat(d.autres_fixes) || 0,
+        net:          Number(d.net)          || 0,
+        prime_fixe:   Number(d.prime_fixe)   || 0,
+        autres_fixes: Number(d.autres_fixes) || 0,
         poste:        d.poste  || '',
-        payday:       d.payday || 25,
-        total:        parseFloat(d.total)        || 0,
+        payday:       Number(d.payday) || 25,
+        total:        Number(d.total)  || 0,
       };
-      // Recalcule total au cas où il manque
-      if (!salaryConfig.total) {
-        salaryConfig.total = salaryConfig.net + salaryConfig.prime_fixe + salaryConfig.autres_fixes;
-      }
+      if (!salaryConfig.total) salaryConfig.total = salaryConfig.net + salaryConfig.prime_fixe + salaryConfig.autres_fixes;
     } else {
       salaryConfig = { net:0, prime_fixe:0, autres_fixes:0, poste:'', payday:25, total:0 };
     }
     renderSalaryPage();
     renderDashboard();
-  }, err => console.error('Sal snapshot err:', err));
+  }, e => console.error('sal snap:', e));
 
   // Budgets
   if (unsubBudg) unsubBudg();
@@ -268,12 +264,13 @@ window.saveSalary = async () => {
   };
   try {
     loader(true);
-    // Mettre à jour local AVANT Firebase pour affichage immédiat
-    salaryConfig = { ...cfg };
+    // Mise à jour locale IMMÉDIATE avant Firebase
+    salaryConfig = { net:cfg.net, prime_fixe:cfg.prime_fixe, autres_fixes:cfg.autres_fixes,
+                     poste:cfg.poste, payday:cfg.payday, total:cfg.total };
     renderAll();
     await setDoc(doc(db,'salary_config',currentUser.uid), cfg);
-    toast('Configuration enregistrée ✓ — Dashboard mis à jour','success');
-  } catch(e) { toast('Erreur: ' + e.message,'error'); }
+    toast('✅ Configuration enregistrée — Dashboard mis à jour !','success');
+  } catch(e) { toast('Erreur: '+e.message,'error'); }
   loader(false);
 };
 
@@ -496,9 +493,7 @@ function renderDashboard() {
   const totalOut = mTx.filter(t=>t.flow==='out').reduce((s,t)=>s+t.amount,0);
   const totalSave= transactions.filter(t=>t.flow==='save').reduce((s,t)=>s+t.amount,0);
   const solde    = totalIn - totalOut;
-  const salRef   = (salaryConfig.total > 0)
-    ? salaryConfig.total
-    : ((salaryConfig.net||0) + (salaryConfig.prime_fixe||0) + (salaryConfig.autres_fixes||0)) || totalIn || 1;
+  const salRef   = (salaryConfig.total > 0) ? salaryConfig.total : ((salaryConfig.net||0)+(salaryConfig.prime_fixe||0)+(salaryConfig.autres_fixes||0)) || totalIn || 1;
   const pctDep   = Math.min(100, Math.round(totalOut / salRef * 100));
 
   setTxt('dSolde',    fmt(solde));
@@ -633,10 +628,10 @@ function renderSalaryPage() {
   setVal('salAutres', s.autres_fixes || '');
   setVal('salPoste',  s.poste  || '');
   setVal('salPayday', s.payday || 25);
-  // Recalcule et affiche le total depuis les champs (évite d'afficher 0)
+  const total = (s.total > 0) ? s.total : ((s.net||0)+(s.prime_fixe||0)+(s.autres_fixes||0));
+  setTxt('salTotalCalc', fmt(total));
   updateSalTotal();
 
-  const total = (s.total > 0) ? s.total : ((s.net||0) + (s.prime_fixe||0) + (s.autres_fixes||0));
   const m = getViewMonth();
   const spent = txOfMonth(transactions,m).filter(t=>t.flow==='out').reduce((s,t)=>s+t.amount,0);
   const left  = total - spent;

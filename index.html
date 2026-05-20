@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>MonBudget Togo — Gestion Financière</title>
+<title>AET MonBudget — Gestion Financière Personnelle</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
@@ -17,8 +17,8 @@ import { getAuth, onAuthStateChanged, signInWithEmailAndPassword,
          sendPasswordResetEmail, EmailAuthProvider,
          reauthenticateWithCredential, updatePassword }          from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, addDoc, doc, deleteDoc,
-         updateDoc, query, where, orderBy, onSnapshot,
-         serverTimestamp, setDoc, getDoc }                       from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+         updateDoc, query, where, orderBy, onSnapshot, getDocs,
+         serverTimestamp, setDoc, getDoc, limit }               from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey:            "AIzaSyB5hpkRlFZ9HFRRbpQlvpHwMNDja37Nr2s",
@@ -117,6 +117,21 @@ onAuthStateChanged(auth, user => {
     $('#userName').textContent = name;
     $('#userAvatar').textContent = name.charAt(0).toUpperCase();
     const _ed=document.getElementById('userEmailDisp'); if(_ed) _ed.textContent=user.email;
+    // ── Enregistrer la session de connexion ──
+    addDoc(collection(db,'sessions'), {
+      userId:      user.uid,
+      email:       user.email,
+      displayName: user.displayName || '',
+      loginAt:     serverTimestamp(),
+      userAgent:   navigator.userAgent,
+    }).catch(()=>{});
+    // ── Mettre à jour le profil utilisateur ──
+    setDoc(doc(db,'users', user.uid), {
+      userId:      user.uid,
+      email:       user.email,
+      displayName: user.displayName || '',
+      lastSeen:    serverTimestamp(),
+    }, { merge: true }).catch(()=>{});
     loadAll();
     toast(`Bienvenue ${name} ! 👋`, 'success');
   } else {
@@ -128,6 +143,8 @@ onAuthStateChanged(auth, user => {
     transactions = []; salaryConfig = { net:0, prime_fixe:0, autres_fixes:0, poste:'', payday:25 }; budgets = [];
     $('#app').style.display = 'none';
     $('#authScreen').style.display = 'flex';
+    // Vérifier si c'est le mode admin
+    checkAdminMode();
   }
 });
 
@@ -778,7 +795,255 @@ function setVal(id,v){ const e=document.getElementById(id); if(e) e.value=v; }
 function escHtml(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
 // ══════════════════════════════════════════
-// ══ BLOC-NOTES CALENDRIER ══
+// ══ PANNEAU ADMIN SECRET ══
+// ══════════════════════════════════════════
+const ADMIN_EMAIL    = 'albaneloh@admin.monbudget';   // ← ton email admin
+const ADMIN_PASSWORD = 'AET@Admin2025!';              // ← ton mot de passe admin
+const ADMIN_PARAM    = 'admin';                       // ?admin dans l'URL
+
+let adminMode = false;
+let unsubAdminUsers = null, unsubAdminSessions = null, unsubAdminTx = null;
+let adminAllTx = [], adminAllSessions = [], adminAllUsers = [];
+let adminSelectedUser = null;
+
+function checkAdminMode() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.has(ADMIN_PARAM)) {
+    adminMode = true;
+    document.getElementById('authScreen').style.display = 'none';
+    document.getElementById('adminLoginScreen').style.display = 'flex';
+  }
+}
+
+window.doAdminLogin = async () => {
+  const email = document.getElementById('adminEmail').value.trim();
+  const pwd   = document.getElementById('adminPwd').value;
+  const err   = document.getElementById('adminLoginErr');
+  err.textContent = '';
+  if (email !== ADMIN_EMAIL || pwd !== ADMIN_PASSWORD) {
+    err.textContent = 'Identifiants incorrects.';
+    return;
+  }
+  loader(true);
+  // Connexion Firebase avec le compte admin (doit exister dans Firebase Auth)
+  try {
+    await signInWithEmailAndPassword(auth, email, pwd);
+    document.getElementById('adminLoginScreen').style.display = 'none';
+    document.getElementById('adminPanel').style.display = 'block';
+    loadAdminData();
+  } catch(e) {
+    // Si le compte n'existe pas encore, on l'utilise sans Firebase Auth
+    document.getElementById('adminLoginScreen').style.display = 'none';
+    document.getElementById('adminPanel').style.display = 'block';
+    loadAdminData();
+  }
+  loader(false);
+};
+
+window.doAdminLogout = () => {
+  signOut(auth).catch(()=>{});
+  if (unsubAdminUsers)    { unsubAdminUsers();    unsubAdminUsers = null; }
+  if (unsubAdminSessions) { unsubAdminSessions(); unsubAdminSessions = null; }
+  if (unsubAdminTx)       { unsubAdminTx();       unsubAdminTx = null; }
+  document.getElementById('adminPanel').style.display = 'none';
+  window.location.href = window.location.pathname;
+};
+
+function loadAdminData() {
+  // Users en temps réel
+  if (unsubAdminUsers) unsubAdminUsers();
+  unsubAdminUsers = onSnapshot(collection(db,'users'), snap => {
+    adminAllUsers = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    renderAdminUsers();
+  });
+
+  // Sessions en temps réel
+  if (unsubAdminSessions) unsubAdminSessions();
+  const qSess = query(collection(db,'sessions'), orderBy('loginAt','desc'), limit(200));
+  unsubAdminSessions = onSnapshot(qSess, snap => {
+    adminAllSessions = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    renderAdminUsers();
+    renderAdminSessions();
+  });
+
+  // Toutes les transactions
+  if (unsubAdminTx) unsubAdminTx();
+  unsubAdminTx = onSnapshot(collection(db,'transactions'), snap => {
+    adminAllTx = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    renderAdminUsers();
+    if (adminSelectedUser) renderAdminUserDetail(adminSelectedUser);
+  });
+}
+
+function fmtTs(ts) {
+  if (!ts) return '—';
+  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+function renderAdminUsers() {
+  const el = document.getElementById('adminUserList');
+  if (!el) return;
+  const now = Date.now();
+
+  // Stats globales
+  const totalUsers = adminAllUsers.length;
+  const totalTx    = adminAllTx.length;
+  const totalSess  = adminAllSessions.length;
+  // Connexions dernières 24h
+  const conn24h = adminAllSessions.filter(s => {
+    if (!s.loginAt) return false;
+    const d = s.loginAt.toDate ? s.loginAt.toDate() : new Date(s.loginAt);
+    return (now - d.getTime()) < 86400000;
+  }).length;
+
+  document.getElementById('adStatUsers').textContent  = totalUsers;
+  document.getElementById('adStatTx').textContent     = totalTx;
+  document.getElementById('adStatSess').textContent   = totalSess;
+  document.getElementById('adStatConn24').textContent = conn24h;
+
+  if (!adminAllUsers.length) {
+    el.innerHTML = '<div class="empty-state"><i class="fas fa-users"></i><p>Aucun utilisateur</p></div>';
+    return;
+  }
+
+  el.innerHTML = adminAllUsers.map(u => {
+    const userTx   = adminAllTx.filter(t => t.userId === u.userId);
+    const userSess = adminAllSessions.filter(s => s.userId === u.userId);
+    const lastSess = userSess[0];
+    const lastTime = lastSess?.loginAt ? fmtTs(lastSess.loginAt) : '—';
+    const lastSeen = u.lastSeen ? fmtTs(u.lastSeen) : '—';
+    // Actif si connexion < 5min
+    const isOnline = lastSess?.loginAt && ((now - (lastSess.loginAt.toDate?.()?.getTime()||0)) < 300000);
+    return `<div class="admin-user-row" onclick="adminSelectUser('${u.userId}')">
+      <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+        <div class="admin-avatar">${(u.displayName||u.email||'?').charAt(0).toUpperCase()}</div>
+        <div style="min-width:0">
+          <div style="font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px">
+            ${escHtml(u.displayName||'Sans nom')}
+            ${isOnline ? '<span class="online-dot" title="En ligne récemment"></span>' : ''}
+          </div>
+          <div style="font-size:11px;color:var(--muted);font-family:\'DM Mono\',monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(u.email||'')}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:18px;font-size:12px;font-family:\'DM Mono\',monospace;flex-shrink:0">
+        <div style="text-align:center"><div style="color:var(--primary-l);font-weight:700">${userTx.length}</div><div style="color:var(--muted)">opérations</div></div>
+        <div style="text-align:center"><div style="color:var(--success-l);font-weight:700">${userSess.length}</div><div style="color:var(--muted)">connexions</div></div>
+        <div style="text-align:right;display:none" class="md-show"><div style="color:var(--muted)">${lastTime}</div><div style="color:var(--dim);font-size:10px">dernière co.</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderAdminSessions() {
+  const el = document.getElementById('adminSessionList');
+  if (!el) return;
+  if (!adminAllSessions.length) {
+    el.innerHTML = '<div class="empty-state"><i class="fas fa-clock"></i><p>Aucune connexion enregistrée</p></div>';
+    return;
+  }
+  el.innerHTML = adminAllSessions.slice(0,50).map(s => {
+    const user = adminAllUsers.find(u => u.userId === s.userId);
+    const name = s.displayName || user?.displayName || s.email || '?';
+    const ua = s.userAgent || '';
+    const device = ua.includes('Mobile') ? '📱 Mobile' : '💻 Desktop';
+    return `<div class="admin-session-row">
+      <div style="display:flex;align-items:center;gap:10px;flex:1">
+        <div class="admin-avatar" style="width:30px;height:30px;font-size:12px">${name.charAt(0).toUpperCase()}</div>
+        <div>
+          <div style="font-size:13px;font-weight:700">${escHtml(name)}</div>
+          <div style="font-size:11px;color:var(--muted);font-family:\'DM Mono\',monospace">${escHtml(s.email||'')}</div>
+        </div>
+      </div>
+      <div style="text-align:right;font-size:12px;font-family:\'DM Mono\',monospace">
+        <div style="color:var(--text)">${fmtTs(s.loginAt)}</div>
+        <div style="color:var(--muted);font-size:11px">${device}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.adminSelectUser = (uid) => {
+  adminSelectedUser = uid;
+  renderAdminUserDetail(uid);
+  document.getElementById('adminDetailPanel').style.display = 'block';
+  document.getElementById('adminDetailPanel').scrollIntoView({behavior:'smooth'});
+};
+
+window.closeAdminDetail = () => {
+  document.getElementById('adminDetailPanel').style.display = 'none';
+  adminSelectedUser = null;
+};
+
+function renderAdminUserDetail(uid) {
+  const user    = adminAllUsers.find(u => u.userId === uid);
+  const userTx  = adminAllTx.filter(t => t.userId === uid).sort((a,b)=>(b.date||'')>(a.date||'')?1:-1);
+  const userSess= adminAllSessions.filter(s => s.userId === uid);
+  if (!user) return;
+
+  const totalIn  = userTx.filter(t=>t.flow==='in').reduce((s,t)=>s+t.amount,0);
+  const totalOut = userTx.filter(t=>t.flow==='out').reduce((s,t)=>s+t.amount,0);
+  const totalSave= userTx.filter(t=>t.flow==='save').reduce((s,t)=>s+t.amount,0);
+
+  const el = document.getElementById('adminDetailPanel');
+  el.querySelector('#adDetailName').textContent  = user.displayName || 'Sans nom';
+  el.querySelector('#adDetailEmail').textContent = user.email || '—';
+  el.querySelector('#adDetailIn').textContent    = fmt(totalIn);
+  el.querySelector('#adDetailOut').textContent   = fmt(totalOut);
+  el.querySelector('#adDetailSave').textContent  = fmt(totalSave);
+  el.querySelector('#adDetailSess').textContent  = userSess.length + ' connexion(s)';
+
+  // Historique transactions
+  const txEl = el.querySelector('#adDetailTxList');
+  if (!userTx.length) {
+    txEl.innerHTML = '<div class="empty-state"><i class="fas fa-inbox"></i><p>Aucune opération</p></div>';
+  } else {
+    const TYPE_INFO2 = {salaire:'💼',prime:'🏅',autres_in:'📥',out:'📤',save:'🏦'};
+    txEl.innerHTML = `<div class="table-wrap"><table>
+      <thead><tr><th>Date</th><th>Description</th><th>Type</th><th>Montant</th></tr></thead>
+      <tbody>${userTx.slice(0,30).map(t => `<tr>
+        <td style="font-size:12px">${t.date||'—'}</td>
+        <td style="font-size:12px">${escHtml(t.description||'')}</td>
+        <td>${TYPE_INFO2[t.subtype]||'?'} ${t.subtype||''}</td>
+        <td class="amount ${t.flow==='out'?'neg':t.flow==='save'?'save':'pos'}" style="font-size:12px">
+          ${t.flow==='out'?'-':'+'}${fmt(t.amount)}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  }
+
+  // Historique sessions
+  const sessEl = el.querySelector('#adDetailSessList');
+  sessEl.innerHTML = userSess.slice(0,10).map(s => {
+    const ua = s.userAgent||'';
+    const device = ua.includes('Mobile') ? '📱' : '💻';
+    return `<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;font-family:\'DM Mono\',monospace;display:flex;justify-content:space-between">
+      <span style="color:var(--muted)">${device} ${fmtTs(s.loginAt)}</span>
+    </div>`;
+  }).join('') || '<div style="color:var(--muted);font-size:12px;padding:8px 0">Aucune session</div>';
+}
+
+window.adminSwitchTab = (tab) => {
+  ['users','sessions'].forEach(t => {
+    document.getElementById('adTab-'+t).classList.toggle('active', t===tab);
+    document.getElementById('adPane-'+t).style.display = t===tab?'block':'none';
+  });
+};
+
+// Vérification au chargement
+window.addEventListener('DOMContentLoaded', () => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.has(ADMIN_PARAM)) {
+    adminMode = true;
+    setTimeout(() => {
+      const authSc = document.getElementById('authScreen');
+      const adminSc = document.getElementById('adminLoginScreen');
+      if (authSc) authSc.style.display = 'none';
+      if (adminSc) adminSc.style.display = 'flex';
+    }, 100);
+  }
+});
+
+// ══════════════════════════════════════════
 // ══════════════════════════════════════════
 let notes = [];
 let noteCalYear  = new Date().getFullYear();
@@ -1225,14 +1490,86 @@ select.form-input option{background:var(--bg2)}
 <div id="globalLoader"><div class="spin"></div></div>
 <div id="toastContainer"></div>
 
+<!-- ════════════════ SPLASH SCREEN AET ════════════════ -->
+<div id="aetSplash" style="position:fixed;inset:0;z-index:99999;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0">
+  <div style="position:absolute;inset:0;background:
+    radial-gradient(circle at 20% 20%,rgba(99,102,241,.25) 0%,transparent 50%),
+    radial-gradient(circle at 80% 80%,rgba(236,72,153,.18) 0%,transparent 50%),
+    radial-gradient(circle at 50% 50%,rgba(139,92,246,.12) 0%,transparent 60%);
+    pointer-events:none"></div>
+
+  <!-- Logo AET animé -->
+  <div id="splashLogo" style="opacity:0;transform:translateY(30px);transition:all .7s cubic-bezier(.34,1.56,.64,1)">
+    <div style="width:90px;height:90px;border-radius:24px;background:linear-gradient(135deg,#6366f1,#8b5cf6,#ec4899);display:flex;align-items:center;justify-content:center;font-size:38px;margin:0 auto 20px;box-shadow:0 20px 60px rgba(99,102,241,.5)">📊</div>
+  </div>
+
+  <!-- Texte AET -->
+  <div id="splashText" style="opacity:0;transform:translateY(20px);transition:all .7s cubic-bezier(.34,1.56,.64,1) .2s;text-align:center">
+    <div style="font-size:13px;font-weight:700;letter-spacing:4px;color:var(--muted);text-transform:uppercase;margin-bottom:8px">Bienvenue sur</div>
+    <div style="font-size:32px;font-weight:800;background:linear-gradient(135deg,#6366f1,#8b5cf6,#ec4899);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1;margin-bottom:6px">AET MonBudget</div>
+    <div style="font-size:14px;font-weight:600;color:var(--primary-l);letter-spacing:1px">ALBAN ELOH TECHNOLOGY</div>
+    <div style="font-size:12px;color:var(--muted);margin-top:8px">Gestion financière personnelle · Franc CFA</div>
+  </div>
+
+  <!-- Barre de chargement -->
+  <div id="splashBar" style="opacity:0;transition:opacity .4s .5s;margin-top:48px;width:200px">
+    <div style="height:3px;background:rgba(148,163,184,.15);border-radius:2px;overflow:hidden">
+      <div id="splashProgress" style="height:100%;width:0%;background:linear-gradient(90deg,#6366f1,#ec4899);border-radius:2px;transition:width 1.8s ease-out"></div>
+    </div>
+    <div style="text-align:center;margin-top:10px;font-size:11px;color:var(--dim);font-family:'DM Mono',monospace">Chargement…</div>
+  </div>
+
+  <!-- Copyright -->
+  <div id="splashFooter" style="position:absolute;bottom:28px;font-size:11px;color:var(--dim);opacity:0;transition:opacity .4s .6s">
+    © 2025 A.E.T. · Alban Eloh Technology · Togo
+  </div>
+</div>
+
+<script>
+(function() {
+  // Vérifier si mode admin avant d'afficher le splash
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('admin')) {
+    document.getElementById('aetSplash').style.display = 'none';
+    return;
+  }
+  // Animer le splash
+  requestAnimationFrame(() => {
+    setTimeout(() => {
+      const logo = document.getElementById('splashLogo');
+      const text = document.getElementById('splashText');
+      const bar  = document.getElementById('splashBar');
+      const foot = document.getElementById('splashFooter');
+      const prog = document.getElementById('splashProgress');
+      if (logo) { logo.style.opacity='1'; logo.style.transform='translateY(0)'; }
+      if (text) { text.style.opacity='1'; text.style.transform='translateY(0)'; }
+      if (bar)  { bar.style.opacity='1'; }
+      if (foot) { foot.style.opacity='1'; }
+      setTimeout(() => { if (prog) prog.style.width='100%'; }, 50);
+    }, 80);
+  });
+  // Cacher le splash après 2.4s
+  window.addEventListener('DOMContentLoaded', () => {
+    setTimeout(() => {
+      const splash = document.getElementById('aetSplash');
+      if (splash) {
+        splash.style.transition = 'opacity .5s ease';
+        splash.style.opacity = '0';
+        setTimeout(() => { splash.style.display = 'none'; }, 500);
+      }
+    }, 2400);
+  });
+})();
+</script>
+
 <!-- ════════════════ AUTH ════════════════ -->
 <div id="authScreen" class="auth-screen">
   <div class="auth-box">
     <div class="logo">
-      <div class="logo-icon"><i class="fas fa-wallet"></i></div>
-      <div class="logo-text">MonBudget</div>
+      <div class="logo-icon"><i class="fas fa-chart-line"></i></div>
+      <div class="logo-text">AET MonBudget</div>
     </div>
-    <p class="auth-subtitle">Gestion financière personnelle · Franc CFA</p>
+    <p class="auth-subtitle">ALBAN ELOH TECHNOLOGY · Gestion financière · Franc CFA</p>
 
     <div class="auth-tabs-bar">
       <div class="auth-tab-btn active" data-auth="login" onclick="switchAuthTab('login')">Connexion</div>
@@ -1243,7 +1580,7 @@ select.form-input option{background:var(--bg2)}
     <div id="authForm-login">
       <div class="form-group">
         <label class="form-label">Email</label>
-        <input type="email" id="loginEmail" class="form-input" placeholder="vous@exemple.com" onkeydown="if(event.key==='Enter')doLogin()"/>
+        <input type="email" id="loginEmail" class="form-input" placeholder="votre@email.com" onkeydown="if(event.key==='Enter')doLogin()"/>
       </div>
       <div class="form-group">
         <label class="form-label">Mot de passe</label>
@@ -1258,11 +1595,11 @@ select.form-input option{background:var(--bg2)}
     <div id="authForm-signup" style="display:none">
       <div class="form-group">
         <label class="form-label">Nom complet</label>
-        <input type="text" id="signupName" class="form-input" placeholder="Jean Dupont"/>
+        <input type="text" id="signupName" class="form-input" placeholder="Votre nom complet"/>
       </div>
       <div class="form-group">
         <label class="form-label">Email</label>
-        <input type="email" id="signupEmail" class="form-input" placeholder="vous@exemple.com"/>
+        <input type="email" id="signupEmail" class="form-input" placeholder="votre@email.com"/>
       </div>
       <div class="form-group">
         <label class="form-label">Mot de passe (min. 6 caractères)</label>
@@ -1284,8 +1621,8 @@ select.form-input option{background:var(--bg2)}
   <!-- HEADER -->
   <div class="header">
     <div class="header-left">
-      <div class="header-logo"><i class="fas fa-wallet"></i></div>
-      <div class="header-title">MonBudget Togo</div>
+      <div class="header-logo"><i class="fas fa-chart-line"></i></div>
+      <div class="header-title">AET MonBudget</div>
     </div>
     <div class="header-right">
       <div class="user-chip">
@@ -1506,7 +1843,7 @@ select.form-input option{background:var(--bg2)}
           </div>
           <div class="form-group form-full">
             <label class="form-label">🏷️ Poste / Fonction</label>
-            <input class="form-input" id="salPoste" placeholder="ex: Technicien AP Industry Eau Vitale"/>
+            <input class="form-input" id="salPoste" placeholder="ex: Votre poste / fonction"/>
           </div>
         </div>
         <div class="form-group">
@@ -1689,6 +2026,145 @@ select.form-input option{background:var(--bg2)}
 <!-- ════════════════ FAB ════════════════ -->
 <button onclick="openTxModal()" style="position:fixed;bottom:26px;right:26px;width:56px;height:56px;border-radius:50%;background:var(--grad);border:none;font-size:24px;color:#fff;cursor:pointer;z-index:200;box-shadow:0 8px 28px rgba(99,102,241,.45);display:flex;align-items:center;justify-content:center;transition:transform .2s,box-shadow .2s" onmouseover="this.style.transform='scale(1.12)'" onmouseout="this.style.transform='none'">＋</button>
 
+<!-- ════════════════ ADMIN LOGIN ════════════════ -->
+<div id="adminLoginScreen" style="display:none;min-height:100vh;align-items:center;justify-content:center;padding:20px;background:var(--bg)">
+  <div style="width:100%;max-width:380px;background:var(--card);backdrop-filter:blur(24px);border:1px solid rgba(239,68,68,.25);border-radius:24px;padding:40px 34px;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="width:56px;height:56px;border-radius:14px;background:linear-gradient(135deg,#ef4444,#dc2626);display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 12px">🔐</div>
+      <div style="font-size:20px;font-weight:800;color:var(--danger-l)">Accès Administrateur</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">Zone sécurisée — accès restreint</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Identifiant admin</label>
+      <input type="email" id="adminEmail" class="form-input" placeholder="admin@…" onkeydown="if(event.key==='Enter')doAdminLogin()"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Mot de passe</label>
+      <input type="password" id="adminPwd" class="form-input" placeholder="••••••••" onkeydown="if(event.key==='Enter')doAdminLogin()"/>
+    </div>
+    <div class="form-err" id="adminLoginErr"></div>
+    <button class="btn-full" style="background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;margin-top:8px" onclick="doAdminLogin()"><i class="fas fa-shield-halved"></i> &nbsp;Accéder au panneau</button>
+    <div style="text-align:center;margin-top:16px"><a href="?" style="font-size:12px;color:var(--muted);text-decoration:none">← Retour à l'application</a></div>
+  </div>
+</div>
+
+<!-- ════════════════ ADMIN PANEL ════════════════ -->
+<div id="adminPanel" style="display:none;min-height:100vh;background:var(--bg);padding:0">
+
+  <!-- Header admin -->
+  <div style="position:sticky;top:0;z-index:100;background:rgba(15,23,42,.92);backdrop-filter:blur(20px);border-bottom:1px solid rgba(239,68,68,.2);padding:14px 24px;display:flex;align-items:center;justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#ef4444,#dc2626);display:flex;align-items:center;justify-content:center;font-size:16px">🔐</div>
+      <div>
+        <div style="font-size:15px;font-weight:800;color:var(--danger-l)">Panneau Administrateur</div>
+        <div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">AET MonBudget — Vue privée</div>
+      </div>
+    </div>
+    <button onclick="doAdminLogout()" style="padding:8px 16px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);color:var(--danger-l);border-radius:9px;cursor:pointer;font-size:13px;font-weight:700"><i class="fas fa-sign-out-alt"></i> Déconnexion</button>
+  </div>
+
+  <div style="max-width:1300px;margin:0 auto;padding:24px 20px">
+
+    <!-- Stats globales -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px">
+      <div class="ad-stat-card" style="border-top-color:#6366f1">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">👥 Utilisateurs</div>
+        <div style="font-size:28px;font-weight:800;font-family:'DM Mono',monospace;color:var(--primary-l)" id="adStatUsers">0</div>
+      </div>
+      <div class="ad-stat-card" style="border-top-color:#10b981">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">📊 Opérations</div>
+        <div style="font-size:28px;font-weight:800;font-family:'DM Mono',monospace;color:var(--success-l)" id="adStatTx">0</div>
+      </div>
+      <div class="ad-stat-card" style="border-top-color:#f59e0b">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">🔑 Connexions total</div>
+        <div style="font-size:28px;font-weight:800;font-family:'DM Mono',monospace;color:var(--warning)" id="adStatSess">0</div>
+      </div>
+      <div class="ad-stat-card" style="border-top-color:#ef4444">
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">⚡ Conn. 24h</div>
+        <div style="font-size:28px;font-weight:800;font-family:'DM Mono',monospace;color:var(--danger-l)" id="adStatConn24">0</div>
+      </div>
+    </div>
+
+    <!-- Tabs admin -->
+    <div style="display:flex;gap:6px;margin-bottom:20px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:5px;width:fit-content">
+      <button id="adTab-users" class="sub-tab active" onclick="adminSwitchTab('users')"><i class="fas fa-users"></i> Utilisateurs</button>
+      <button id="adTab-sessions" class="sub-tab" onclick="adminSwitchTab('sessions')"><i class="fas fa-clock-rotate-left"></i> Connexions récentes</button>
+    </div>
+
+    <!-- Pane : Users -->
+    <div id="adPane-users">
+      <div class="panel" style="padding:0">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:800;font-size:14px;display:flex;align-items:center;gap:8px"><i class="fas fa-users" style="color:var(--primary-l)"></i> Tous les comptes inscrits <span style="font-size:12px;color:var(--muted);font-weight:400">(temps réel)</span></div>
+        <div id="adminUserList"></div>
+      </div>
+    </div>
+
+    <!-- Pane : Sessions -->
+    <div id="adPane-sessions" style="display:none">
+      <div class="panel" style="padding:0">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:800;font-size:14px;display:flex;align-items:center;gap:8px"><i class="fas fa-clock-rotate-left" style="color:var(--warning)"></i> Historique des connexions <span style="font-size:12px;color:var(--muted);font-weight:400">(50 dernières)</span></div>
+        <div id="adminSessionList"></div>
+      </div>
+    </div>
+
+    <!-- Détail utilisateur -->
+    <div id="adminDetailPanel" style="display:none;margin-top:24px">
+      <div class="panel">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div class="admin-avatar" style="width:44px;height:44px;font-size:18px" id="adDetailAvatar">?</div>
+            <div>
+              <div style="font-size:16px;font-weight:800" id="adDetailName">—</div>
+              <div style="font-size:12px;color:var(--muted);font-family:'DM Mono',monospace" id="adDetailEmail">—</div>
+            </div>
+          </div>
+          <button onclick="closeAdminDetail()" style="padding:7px 14px;background:rgba(148,163,184,.1);border:1px solid var(--border);color:var(--muted);border-radius:8px;cursor:pointer;font-size:12px"><i class="fas fa-xmark"></i> Fermer</button>
+        </div>
+
+        <!-- Stats user -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-bottom:20px">
+          <div style="background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2);border-radius:10px;padding:14px;text-align:center">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Revenus</div>
+            <div style="font-size:15px;font-weight:800;color:var(--success-l);font-family:'DM Mono',monospace" id="adDetailIn">0</div>
+          </div>
+          <div style="background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:14px;text-align:center">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Dépenses</div>
+            <div style="font-size:15px;font-weight:800;color:var(--danger-l);font-family:'DM Mono',monospace" id="adDetailOut">0</div>
+          </div>
+          <div style="background:rgba(167,139,250,.07);border:1px solid rgba(167,139,250,.2);border-radius:10px;padding:14px;text-align:center">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Épargne</div>
+            <div style="font-size:15px;font-weight:800;color:var(--save);font-family:'DM Mono',monospace" id="adDetailSave">0</div>
+          </div>
+          <div style="background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.2);border-radius:10px;padding:14px;text-align:center">
+            <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Sessions</div>
+            <div style="font-size:15px;font-weight:800;color:var(--primary-l);font-family:'DM Mono',monospace" id="adDetailSess">0</div>
+          </div>
+        </div>
+
+        <!-- Transactions -->
+        <div style="font-size:13px;font-weight:800;margin-bottom:10px"><i class="fas fa-list"></i> Historique des opérations (30 dernières)</div>
+        <div id="adDetailTxList"></div>
+
+        <!-- Sessions -->
+        <div style="font-size:13px;font-weight:800;margin-top:20px;margin-bottom:10px"><i class="fas fa-clock"></i> Historique des connexions</div>
+        <div id="adDetailSessList"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<style>
+.ad-stat-card{background:var(--card);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:14px;padding:20px;border-top:3px solid var(--primary)}
+.admin-user-row{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid rgba(148,163,184,.07);cursor:pointer;transition:background .15s;gap:12px;flex-wrap:wrap}
+.admin-user-row:hover{background:rgba(99,102,241,.05)}
+.admin-user-row:last-child{border-bottom:none}
+.admin-avatar{width:36px;height:36px;min-width:36px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff}
+.admin-session-row{display:flex;align-items:center;justify-content:space-between;padding:12px 20px;border-bottom:1px solid rgba(148,163,184,.07);flex-wrap:wrap;gap:8px}
+.admin-session-row:last-child{border-bottom:none}
+.online-dot{width:8px;height:8px;border-radius:50%;background:#10b981;box-shadow:0 0 6px #10b981;display:inline-block}
+</style>
+
 <script>
 // Sub-tabs revenus
 window.revSubTab = tab => {
@@ -1697,6 +2173,18 @@ window.revSubTab = tab => {
     document.getElementById('rp-'+t).style.display = t===tab ? 'block':'none';
   });
 };
+// Vérification admin au chargement
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.has('admin')) {
+    document.addEventListener('DOMContentLoaded', () => {
+      const authSc  = document.getElementById('authScreen');
+      const adminSc = document.getElementById('adminLoginScreen');
+      if (authSc)  authSc.style.display  = 'none';
+      if (adminSc) adminSc.style.display = 'flex';
+    });
+  }
+})();
 </script>
 </body>
 </html>

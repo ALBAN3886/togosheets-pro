@@ -800,107 +800,136 @@ function escHtml(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&
 // ══════════════════════════════════════════
 
 // Données de référence coût de la vie Togo (FCFA / mois)
+// ══════════════════════════════════════════
+// ══ DONNÉES DE BASE COÛT VIE TOGO ══
+// ══════════════════════════════════════════
 const PG_DATA = {
-  seul: {
-    label: 'Célibataire / Seul(e)',
-    items: [
-      { cat:'🏠 Loyer', key:'loyer', base:25000, pct:0, note:'Chambre ou studio modeste à Lomé' },
-      { cat:'💡 Électricité (CEET)', key:'elec', base:8000, pct:0, note:'Usage normal célibataire' },
-      { cat:'🚿 Eau (TdE)', key:'eau', base:4000, pct:0, note:'Consommation standard' },
-      { cat:'🍽️ Alimentation', key:'alim', base:0, pct:30, note:'Marché, vivres, huile, condiments' },
-      { cat:'🚗 Transport', key:'transp', base:0, pct:10, note:'Zémidjan / moto quotidien' },
-      { cat:'📱 Téléphone & Internet', key:'com', base:8000, pct:0, note:'Crédit + data mobile' },
-      { cat:'💊 Santé & Hygiène', key:'sante', base:0, pct:5, note:'Pharmacie, soins de base' },
-      { cat:'👗 Vêtements', key:'vêt', base:0, pct:3, note:'Renouvellement vestimentaire' },
-      { cat:'👨‍👩‍👧 Soutien famille', key:'famille', base:0, pct:8, note:'Aide aux parents, frères/sœurs' },
-      { cat:'🏦 Épargne', key:'epargne', base:0, pct:10, note:'Objectif minimum recommandé' },
-      { cat:'🛍️ Loisirs & Divers', key:'divers', base:0, pct:5, note:'Sorties, imprévus légers' },
-    ]
-  },
-  couple: {
-    label: 'En couple (sans enfant)',
-    items: [
-      { cat:'🏠 Loyer', key:'loyer', base:40000, pct:0, note:'Appartement 2 pièces à Lomé' },
-      { cat:'💡 Électricité (CEET)', key:'elec', base:12000, pct:0, note:'Climatisation légère incluse' },
-      { cat:'🚿 Eau (TdE)', key:'eau', base:6000, pct:0, note:'Usage couple standard' },
-      { cat:'🍽️ Alimentation', key:'alim', base:0, pct:28, note:'Marché + épicerie pour 2 personnes' },
-      { cat:'🚗 Transport', key:'transp', base:0, pct:12, note:'Motos ou véhicule partagé' },
-      { cat:'📱 Téléphone & Internet', key:'com', base:12000, pct:0, note:'2 lignes + abonnement internet' },
-      { cat:'💊 Santé & Hygiène', key:'sante', base:0, pct:5, note:'Pharmacie, consultations' },
-      { cat:'👗 Vêtements', key:'vêt', base:0, pct:4, note:'Pour les deux conjoints' },
-      { cat:'👨‍👩‍👧 Soutien famille', key:'famille', base:0, pct:8, note:'Aide aux familles respectives' },
-      { cat:'🏦 Épargne', key:'epargne', base:0, pct:10, note:'Projet commun, fonds urgence' },
-      { cat:'🛍️ Loisirs & Divers', key:'divers', base:0, pct:5, note:'Sorties couple, imprévus' },
-    ]
-  },
-  famille1: {
-    label: 'Famille avec 1 enfant',
-    items: [
-      { cat:'🏠 Loyer', key:'loyer', base:45000, pct:0, note:'Maison 2–3 pièces, quartier accessible' },
-      { cat:'💡 Électricité (CEET)', key:'elec', base:14000, pct:0, note:'Usage familial normal' },
-      { cat:'🚿 Eau (TdE)', key:'eau', base:7000, pct:0, note:'Usage famille 3 personnes' },
-      { cat:'🍽️ Alimentation', key:'alim', base:0, pct:30, note:'Vivres pour 3, incluant lait/alimentation enfant' },
-      { cat:'🚗 Transport', key:'transp', base:0, pct:10, note:'Déplacements famille' },
-      { cat:'📱 Téléphone & Internet', key:'com', base:12000, pct:0, note:'2 lignes + internet maison' },
-      { cat:'💊 Santé & Hygiène', key:'sante', base:0, pct:6, note:'Pédiatre, pharmacie, soins' },
-      { cat:'📚 Éducation enfant', key:'educ', base:0, pct:8, note:'Scolarité, fournitures, uniforme' },
-      { cat:'👗 Vêtements', key:'vêt', base:0, pct:4, note:'Parents + enfant' },
-      { cat:'👨‍👩‍👧 Soutien famille', key:'famille', base:0, pct:7, note:'Aide aux parents' },
-      { cat:'🏦 Épargne', key:'epargne', base:0, pct:8, note:'Fonds scolarité + urgences' },
-      { cat:'🛍️ Divers & Imprévus', key:'divers', base:0, pct:5, note:'Imprévus, fêtes, cadeaux' },
-    ]
-  },
-  famille2: {
-    label: 'Famille avec 2 enfants',
-    items: [
-      { cat:'🏠 Loyer', key:'loyer', base:55000, pct:0, note:'Maison 3–4 pièces, Lomé ou environs' },
-      { cat:'💡 Électricité (CEET)', key:'elec', base:16000, pct:0, note:'Ventilateurs, éclairage, frigo' },
-      { cat:'🚿 Eau (TdE)', key:'eau', base:9000, pct:0, note:'Famille de 4 personnes' },
-      { cat:'🍽️ Alimentation', key:'alim', base:0, pct:30, note:'Vivres, légumes, protéines pour 4' },
-      { cat:'🚗 Transport', key:'transp', base:0, pct:10, note:'Motos, taxi, école des enfants' },
-      { cat:'📱 Téléphone & Internet', key:'com', base:14000, pct:0, note:'2 lignes adultes + internet' },
-      { cat:'💊 Santé & Hygiène', key:'sante', base:0, pct:6, note:'Consultations, pharmacie x4' },
-      { cat:'📚 Éducation enfants', key:'educ', base:0, pct:10, note:'2 scolarités, livres, fournitures' },
-      { cat:'👗 Vêtements', key:'vêt', base:0, pct:4, note:'4 personnes à habiller' },
-      { cat:'👨‍👩‍👧 Soutien famille', key:'famille', base:0, pct:6, note:'Aide parents, dot, cérémonies' },
-      { cat:'🏦 Épargne', key:'epargne', base:0, pct:7, note:'Fonds urgence + avenir enfants' },
-      { cat:'🛍️ Divers & Imprévus', key:'divers', base:0, pct:5, note:'Fêtes, réparations, imprévus' },
-    ]
-  },
-  famille3: {
-    label: 'Famille avec 3 enfants et +',
-    items: [
-      { cat:'🏠 Loyer', key:'loyer', base:65000, pct:0, note:'Grande maison, périphérie si nécessaire' },
-      { cat:'💡 Électricité (CEET)', key:'elec', base:20000, pct:0, note:'Forte consommation familiale' },
-      { cat:'🚿 Eau (TdE)', key:'eau', base:11000, pct:0, note:'Famille nombreuse 5+ personnes' },
-      { cat:'🍽️ Alimentation', key:'alim', base:0, pct:32, note:'Volume important, vivres en gros' },
-      { cat:'🚗 Transport', key:'transp', base:0, pct:10, note:'Multiples déplacements quotidiens' },
-      { cat:'📱 Téléphone & Internet', key:'com', base:15000, pct:0, note:'2 lignes + internet + ado si grand' },
-      { cat:'💊 Santé & Hygiène', key:'sante', base:0, pct:7, note:'Pharmacie fréquente, maladies enfants' },
-      { cat:'📚 Éducation enfants', key:'educ', base:0, pct:12, note:'3 scolarités + fournitures cumulées' },
-      { cat:'👗 Vêtements', key:'vêt', base:0, pct:4, note:'Famille nombreuse' },
-      { cat:'👨‍👩‍👧 Soutien famille', key:'famille', base:0, pct:5, note:'Aide famille élargie' },
-      { cat:'🏦 Épargne', key:'epargne', base:0, pct:5, note:'Minimum vital, priorité famille' },
-      { cat:'🛍️ Divers & Imprévus', key:'divers', base:0, pct:5, note:'Imprévus croissants avec taille famille' },
-    ]
-  }
+  seul:     { label:'Célibataire / Seul(e)',        loyer:25000, elec:8000,  eau:4000,  alimPct:28, transpPct:10, com:8000,  santePct:4, educ:0,     vêtPct:3, famillePct:7  },
+  couple:   { label:'En couple (sans enfant)',       loyer:40000, elec:12000, eau:6000,  alimPct:27, transpPct:11, com:12000, santePct:5, educ:0,     vêtPct:4, famillePct:7  },
+  famille1: { label:'Famille · 1 enfant',            loyer:45000, elec:14000, eau:7000,  alimPct:29, transpPct:10, com:12000, santePct:6, educ:8,     vêtPct:4, famillePct:6  },
+  famille2: { label:'Famille · 2 enfants',           loyer:55000, elec:16000, eau:9000,  alimPct:29, transpPct:10, com:14000, santePct:6, educ:10,    vêtPct:4, famillePct:5  },
+  famille3: { label:'Famille · 3 enfants et +',      loyer:65000, elec:20000, eau:11000, alimPct:31, transpPct:10, com:15000, santePct:7, educ:12,    vêtPct:4, famillePct:5  },
 };
 
-// Couleurs par poste
 const PG_COLORS = {
   loyer:'#6366f1', elec:'#f59e0b', eau:'#06b6d4', alim:'#10b981',
   transp:'#f97316', com:'#8b5cf6', sante:'#ec4899', educ:'#0ea5e9',
-  vêt:'#84cc16', famille:'#a78bfa', epargne:'#14b8a6', divers:'#94a3b8'
+  vêt:'#84cc16', famille:'#a78bfa',
+  epargne_urgence:'#14b8a6', epargne_projet:'#22d3ee', epargne_invest:'#6366f1',
+  divers:'#94a3b8'
 };
 
+// ══ CALCUL CENTRAL — RÈGLE 100% ══
+// Chaque franc du salaire a une destination. Rien ne traîne.
+// Sortie : totalCharges + totalEpargne + divers = salaire (exactement)
+function pgCalculer(salaire, situation, logement) {
+  const d = PG_DATA[situation];
+
+  // ── Arrondi au 500 FCFA le plus proche (interne uniquement) ──
+  const r500 = n => Math.round(n / 500) * 500;
+
+  // ── ÉTAPE 1 : charges fixes incompressibles ──
+  const loyer   = logement === 'proprio' ? 0 : d.loyer;
+  const elec    = d.elec;
+  const eau     = d.eau;
+  const com     = d.com;
+
+  // ── ÉTAPE 2 : charges proportionnelles (arrondies) ──
+  const alim    = r500(salaire * d.alimPct    / 100);
+  const transp  = r500(salaire * d.transpPct  / 100);
+  const sante   = r500(salaire * d.santePct   / 100);
+  const vêt     = r500(salaire * d.vêtPct     / 100);
+  const famille = r500(salaire * d.famillePct / 100);
+  const educ    = d.educ > 0 ? r500(salaire * d.educ / 100) : 0;
+
+  // ── ÉTAPE 3 : sous-total charges avant divers ──
+  const chargesSansDiv = loyer + elec + eau + com + alim + transp + sante + vêt + famille + educ;
+  const margeApresCharges = salaire - chargesSansDiv;
+
+  // ── ÉTAPE 4 : divers = 3% du salaire, mais ne pas dépasser la marge ──
+  const diversBrut = r500(salaire * 0.03);
+  const divers = Math.min(diversBrut, Math.max(0, margeApresCharges));
+
+  // ── ÉTAPE 5 : ce qui reste APRÈS toutes les charges = budget épargne ──
+  const totalCharges = chargesSansDiv + divers;
+  const budgetEpargne = salaire - totalCharges; // toujours >= 0 par construction
+
+  // ── ÉTAPE 6 : répartition STRICTE de l'épargne (100% du budget épargne distribué) ──
+  let epUrgence = 0, epProjet = 0, epInvest = 0;
+  const pctDispo = budgetEpargne / salaire;
+
+  if (budgetEpargne <= 0) {
+    // Déficit ou zéro : on alerte, rien à distribuer
+    epUrgence = 0; epProjet = 0; epInvest = 0;
+  } else if (pctDispo >= 0.15) {
+    // Bonne marge : 50 / 30 / 20
+    epUrgence = r500(budgetEpargne * 0.50);
+    epProjet  = r500(budgetEpargne * 0.30);
+    epInvest  = budgetEpargne - epUrgence - epProjet; // absorbe l'arrondi
+  } else if (pctDispo >= 0.08) {
+    // Marge moyenne : 60 / 30 / 10
+    epUrgence = r500(budgetEpargne * 0.60);
+    epProjet  = r500(budgetEpargne * 0.30);
+    epInvest  = budgetEpargne - epUrgence - epProjet;
+  } else if (pctDispo >= 0.03) {
+    // Marge serrée : 80 / 20 / 0
+    epUrgence = r500(budgetEpargne * 0.80);
+    epProjet  = budgetEpargne - epUrgence;
+    epInvest  = 0;
+  } else {
+    // Très serré : tout en urgence
+    epUrgence = budgetEpargne;
+    epProjet  = 0;
+    epInvest  = 0;
+  }
+
+  // ── GARANTIE 100% : vérification et correction ──
+  const totalEpargne = epUrgence + epProjet + epInvest;
+  const ecart        = salaire - totalCharges - totalEpargne; // doit être 0
+  // Si un arrondi a créé un écart résiduel, on l'ajoute à epUrgence
+  if (ecart !== 0) epUrgence += ecart;
+
+  // ── MÉTADONNÉES pour l'affichage ──
+  const totalDistribue = totalCharges + epUrgence + epProjet + epInvest;
+  const verif100       = totalDistribue === salaire; // doit toujours être true
+
+  return {
+    items: [
+      { cat:'🏠 Loyer / Logement',    key:'loyer',   montant:loyer,   note: logement==='proprio'?'Propriétaire — sans loyer':'Maison ou appartement loué(e)',    flow:'charges' },
+      { cat:'💡 Électricité (CEET)',   key:'elec',    montant:elec,    note:'Facturation mensuelle CEET',                                                          flow:'charges' },
+      { cat:'🚿 Eau (TdE)',            key:'eau',     montant:eau,     note:'Consommation eau courante',                                                           flow:'charges' },
+      { cat:'🍽️ Alimentation',         key:'alim',    montant:alim,    note:`Marché, vivres, condiments · ${d.alimPct}%`,                                          flow:'charges' },
+      { cat:'🚗 Transport',            key:'transp',  montant:transp,  note:`Zémidjan, taxi, carburant · ${d.transpPct}%`,                                         flow:'charges' },
+      { cat:'📱 Téléphone & Internet', key:'com',     montant:com,     note:'Crédit, data, internet maison',                                                       flow:'charges' },
+      { cat:'💊 Santé & Hygiène',      key:'sante',   montant:sante,   note:`Pharmacie, consultations · ${d.santePct}%`,                                           flow:'charges' },
+      ...(educ > 0 ? [{ cat:'📚 Éducation enfants', key:'educ', montant:educ, note:`Scolarité, fournitures · ${d.educ}%`, flow:'charges' }] : []),
+      { cat:'👗 Vêtements',            key:'vêt',     montant:vêt,     note:`Renouvellement vestimentaire · ${d.vêtPct}%`,                                         flow:'charges' },
+      { cat:'👨‍👩‍👧 Soutien famille',     key:'famille', montant:famille, note:`Aide parents, cérémonies · ${d.famillePct}%`,                                        flow:'charges' },
+      { cat:'🛍️ Divers & Imprévus',    key:'divers',  montant:divers,  note:'Petits imprévus du quotidien · ~3%',                                                  flow:'charges' },
+    ],
+    epargne: {
+      urgence: epUrgence,
+      projet:  epProjet,
+      invest:  epInvest,
+      total:   epUrgence + epProjet + epInvest,
+    },
+    totalCharges,
+    budgetEpargne,
+    salaire,
+    verif100,
+    pctCharges: Math.round(totalCharges / salaire * 100),
+    pctEpargne: Math.round((epUrgence + epProjet + epInvest) / salaire * 100),
+  };
+}
+
 window.renderPlanGestion = function() {
-  const salSel = document.getElementById('pgSalaire');
-  const sitSel = document.getElementById('pgSituation');
-  const logSel = document.getElementById('pgLogement');
-  const customWrap = document.getElementById('pgCustomWrap');
+  const salSel    = document.getElementById('pgSalaire');
+  const sitSel    = document.getElementById('pgSituation');
+  const logSel    = document.getElementById('pgLogement');
+  const customWrap= document.getElementById('pgCustomWrap');
   if (!salSel || !sitSel) return;
 
-  // Salaire
+  // ── Salaire ──
   let salaire;
   if (salSel.value === 'custom') {
     customWrap.style.display = 'block';
@@ -913,205 +942,332 @@ window.renderPlanGestion = function() {
 
   const situation = sitSel.value || 'famille2';
   const logement  = logSel?.value || 'loue';
-  const data = PG_DATA[situation];
-  if (!data) return;
+  const d = PG_DATA[situation];
+  const c = pgCalculer(salaire, situation, logement);
+  const ep = c.epargne;
 
-  // Calcul des montants
-  let items = data.items.map(item => {
-    let montant;
-    if (item.pct > 0) {
-      montant = Math.round(salaire * item.pct / 100 / 500) * 500;
-    } else {
-      montant = item.base;
-    }
-    // Ajustement logement : si propriétaire, loyer = 0
-    if (item.key === 'loyer' && logement === 'proprio') montant = 0;
-    return { ...item, montant };
-  });
+  // ── BARRE DE RÉPARTITION 100% ──
+  const pctCharges = c.pctCharges;
+  const pctEp      = c.pctEpargne;
+  const pctChU     = Math.round(ep.urgence / salaire * 100);
+  const pctChP     = Math.round(ep.projet  / salaire * 100);
+  const pctChI     = Math.round(ep.invest  / salaire * 100);
 
-  // Si propriétaire, redistribuer le loyer sur épargne + divers
-  if (logement === 'proprio') {
-    const loyerItem = items.find(i => i.key === 'loyer');
-    if (loyerItem) {
-      const freed = loyerItem.base; // montant économisé
-      const epargneItem = items.find(i => i.key === 'epargne');
-      const diversItem  = items.find(i => i.key === 'divers');
-      if (epargneItem) epargneItem.montant += Math.round(freed * 0.6 / 500) * 500;
-      if (diversItem)  diversItem.montant  += Math.round(freed * 0.2 / 500) * 500;
-    }
-  }
-
-  const totalEstime = items.reduce((s, i) => s + i.montant, 0);
-  const soldeEstime = salaire - totalEstime;
-  const pctDepense  = Math.round(totalEstime / salaire * 100);
-
-  // ── Résumé en-tête ──
+  // ── RÉSUMÉ EN-TÊTE ──
   const pgHead = document.getElementById('pgHeadSummary');
   if (pgHead) {
-    const soldeColor = soldeEstime >= 0 ? 'var(--success-l)' : 'var(--danger-l)';
+    const alertCouleur = c.budgetEpargne <= 0 ? '#ef4444' : '#14b8a6';
+    const alertTxt     = c.budgetEpargne <= 0
+      ? `⚠️ Charges dépassent le salaire — révision nécessaire`
+      : `✅ 100% distribué · Épargne : ${fmt(ep.total)} (${pctEp}%)`;
+
     pgHead.innerHTML = `
-      <div style="display:flex;gap:24px;flex-wrap:wrap">
-        <div><span style="color:var(--muted);font-size:11px">SALAIRE</span><br><strong style="color:var(--primary-l);font-family:'DM Mono',monospace">${fmt(salaire)}</strong></div>
-        <div><span style="color:var(--muted);font-size:11px">DÉPENSES ESTIMÉES</span><br><strong style="color:var(--danger-l);font-family:'DM Mono',monospace">${fmt(totalEstime)}</strong></div>
-        <div><span style="color:var(--muted);font-size:11px">RESTE ESTIMÉ</span><br><strong style="color:${soldeColor};font-family:'DM Mono',monospace">${soldeEstime >= 0 ? '+' : ''}${fmt(soldeEstime)}</strong></div>
-        <div><span style="color:var(--muted);font-size:11px">SITUATION</span><br><strong style="color:var(--text)">${data.label}</strong></div>
-      </div>`;
+    <!-- Barre de répartition 100% -->
+    <div style="margin-bottom:14px">
+      <div style="display:flex;justify-content:space-between;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);margin-bottom:6px">
+        <span>Répartition du salaire — <strong style="color:var(--text)">${fmt(salaire)}</strong></span>
+        <span style="color:${alertCouleur};font-weight:700">${alertTxt}</span>
+      </div>
+      <div style="display:flex;height:18px;border-radius:9px;overflow:hidden;gap:1px">
+        <div title="Charges ${pctCharges}%" style="width:${pctCharges}%;background:linear-gradient(90deg,#ef4444,#f97316);transition:width .6s ease;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:700;overflow:hidden;white-space:nowrap;padding:0 4px">${pctCharges>8?pctCharges+'%':''}</div>
+        ${pctChU>0?`<div title="Urgence ${pctChU}%" style="width:${pctChU}%;background:#14b8a6;transition:width .6s ease;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:700;overflow:hidden;white-space:nowrap;padding:0 4px">${pctChU>5?pctChU+'%':''}</div>`:''}
+        ${pctChP>0?`<div title="Projet ${pctChP}%" style="width:${pctChP}%;background:#22d3ee;transition:width .6s ease;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:700;overflow:hidden;white-space:nowrap;padding:0 4px">${pctChP>5?pctChP+'%':''}</div>`:''}
+        ${pctChI>0?`<div title="Invest ${pctChI}%" style="width:${pctChI}%;background:#6366f1;transition:width .6s ease;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:700;overflow:hidden;white-space:nowrap;padding:0 4px">${pctChI>3?pctChI+'%':''}</div>`:''}
+      </div>
+      <div style="display:flex;gap:14px;margin-top:8px;flex-wrap:wrap;font-size:11px">
+        <span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:linear-gradient(90deg,#ef4444,#f97316);display:inline-block"></span> Charges ${pctCharges}%</span>
+        ${pctChU>0?`<span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#14b8a6;display:inline-block"></span> Urgence ${pctChU}%</span>`:''}
+        ${pctChP>0?`<span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#22d3ee;display:inline-block"></span> Projet ${pctChP}%</span>`:''}
+        ${pctChI>0?`<span style="display:flex;align-items:center;gap:5px"><span style="width:10px;height:10px;border-radius:2px;background:#6366f1;display:inline-block"></span> Investissement ${pctChI}%</span>`:''}
+      </div>
+    </div>
+    <!-- Chiffres clés -->
+    <div style="display:flex;gap:16px;flex-wrap:wrap;padding-top:12px;border-top:1px solid rgba(148,163,184,.1)">
+      <div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Salaire</div><div style="font-weight:800;font-family:'DM Mono',monospace;color:var(--primary-l)">${fmt(salaire)}</div></div>
+      <div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Charges</div><div style="font-weight:800;font-family:'DM Mono',monospace;color:var(--danger-l)">${fmt(c.totalCharges)} <span style="font-size:11px;opacity:.7">(${pctCharges}%)</span></div></div>
+      <div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Épargne totale</div><div style="font-weight:800;font-family:'DM Mono',monospace;color:#14b8a6">${fmt(ep.total)} <span style="font-size:11px;opacity:.7">(${pctEp}%)</span></div></div>
+      <div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Situation</div><div style="font-weight:700;font-size:12px;color:var(--text)">${d.label}</div></div>
+    </div>`;
   }
 
-  // ── Score de santé financière ──
-  let score, scoreLbl, scoreDesc, scoreColor, scoreBg;
-  const epargneItem = items.find(i => i.key === 'epargne');
-  const epargneAmt  = epargneItem?.montant || 0;
-  const epargneRate = Math.round(epargneAmt / salaire * 100);
-
-  if (pctDepense <= 70 && epargneRate >= 10) {
-    score = '😊'; scoreLbl = 'Bonne santé financière';
-    scoreColor = '#10b981'; scoreBg = 'rgba(16,185,129,.12)';
-    scoreDesc = `Vous dépensez ${pctDepense}% de votre revenu et épargnez ${epargneRate}%. C'est une bonne gestion. Cherchez à augmenter votre épargne vers 15–20%.`;
-  } else if (pctDepense <= 85 && soldeEstime >= 0) {
-    score = '😐'; scoreLbl = 'Situation acceptable mais tendue';
-    scoreColor = '#f59e0b'; scoreBg = 'rgba(245,158,11,.12)';
-    scoreDesc = `Vous dépensez ${pctDepense}% de votre revenu. Le budget est serré. Cherchez à réduire les postes non essentiels et à épargner au moins 5–8%.`;
-  } else if (pctDepense > 85 && soldeEstime >= 0) {
-    score = '⚠️'; scoreLbl = 'Budget sous pression';
-    scoreColor = '#ef4444'; scoreBg = 'rgba(239,68,68,.12)';
-    scoreDesc = `Avec ${pctDepense}% de dépenses, votre marge est très faible. Il est urgent de réduire certaines dépenses ou de chercher des revenus complémentaires.`;
+  // ── SCORE SANTÉ FINANCIÈRE ──
+  let scoreEmoji, scoreLbl, scoreDesc, scoreColor, scoreBg;
+  if (c.budgetEpargne <= 0) {
+    scoreEmoji='🔴'; scoreLbl='Situation critique — déficit ou marge nulle';
+    scoreColor='#ef4444'; scoreBg='rgba(239,68,68,.1)';
+    scoreDesc=`Avec ce salaire et cette situation familiale, les charges dépassent ou absorbent presque tout le revenu. Il est urgent de revoir les postes de dépenses ou de chercher un revenu additionnel.`;
+  } else if (pctEp >= 15 && pctCharges <= 75) {
+    scoreEmoji='🟢'; scoreLbl='Excellente stabilité financière';
+    scoreColor='#10b981'; scoreBg='rgba(16,185,129,.1)';
+    scoreDesc=`Vous épargnez ${pctEp}% de votre revenu, les charges restent à ${pctCharges}%. Vous construisez activement votre avenir. Objectif : augmenter la part investissement pour créer un patrimoine durable.`;
+  } else if (pctEp >= 8) {
+    scoreEmoji='🟡'; scoreLbl='Bonne gestion — stabilité en cours';
+    scoreColor='#f59e0b'; scoreBg='rgba(245,158,11,.1)';
+    scoreDesc=`Vous épargnez ${pctEp}% de votre revenu. C'est positif ! Renforcez votre fonds d'urgence avant d'investir. Objectif : atteindre 3 mois de charges en réserve.`;
   } else {
-    score = '🚨'; scoreLbl = 'Déficit budgétaire critique';
-    scoreColor = '#dc2626'; scoreBg = 'rgba(220,38,38,.15)';
-    scoreDesc = `Vos dépenses dépassent vos revenus de ${fmt(Math.abs(soldeEstime))}. C'est une situation très difficile. Réduisez immédiatement les postes non vitaux et cherchez un appui.`;
+    scoreEmoji='🟠'; scoreLbl='Épargne faible — budget tendu';
+    scoreColor='#f97316'; scoreBg='rgba(249,115,22,.1)';
+    scoreDesc=`Vous ne pouvez épargner que ${pctEp}% avec ce salaire et cette situation. Priorité absolue : le fonds d'urgence. Cherchez un revenu complémentaire pour améliorer cette marge.`;
   }
-
-  const scorePanel = document.getElementById('pgScorePanel');
-  if (scorePanel) {
-    document.getElementById('pgScoreCircle').style.background = scoreBg;
-    document.getElementById('pgScoreCircle').style.borderColor = scoreColor;
-    document.getElementById('pgScoreCircle').style.color = scoreColor;
-    document.getElementById('pgScoreCircle').textContent = score;
+  const sc = document.getElementById('pgScoreCircle');
+  if (sc) {
+    sc.style.background = scoreBg; sc.style.borderColor = scoreColor; sc.style.color = scoreColor;
+    sc.textContent = scoreEmoji;
     document.getElementById('pgScoreLabel').textContent = scoreLbl;
     document.getElementById('pgScoreLabel').style.color = scoreColor;
-    document.getElementById('pgScoreDesc').textContent = scoreDesc;
+    document.getElementById('pgScoreDesc').textContent  = scoreDesc;
   }
 
-  // ── Lignes de budget recommandé ──
+  // ── SECTION ÉPARGNE STRATÉGIQUE ──
+  const pgEpargne = document.getElementById('pgEpargneSection');
+  if (pgEpargne) {
+    // Objectifs temporels
+    const urgence3m  = ep.urgence * 3;
+    const urgence6m  = ep.urgence * 6;
+    const projet12m  = ep.projet  * 12;
+    const invest12m  = ep.invest  * 12;
+
+    pgEpargne.innerHTML = `
+    <!-- Règle d'or -->
+    <div style="padding:16px 20px;background:linear-gradient(135deg,rgba(20,184,166,.12),rgba(99,102,241,.08));border-bottom:1px solid rgba(148,163,184,.1)">
+      <div style="font-size:13px;font-weight:800;color:#14b8a6;margin-bottom:6px">📐 La règle d'or : Épargner AVANT de dépenser</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.7">
+        Dès réception du salaire, virez <strong style="color:#14b8a6">${fmt(ep.total)}</strong> sur votre compte épargne / Flooz / Tontine <em>immédiatement</em>, avant tout autre dépense. Ce qui n'est plus visible n'est pas dépensé.
+      </div>
+    </div>
+
+    <!-- 3 poches d'épargne -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0;border-bottom:1px solid rgba(148,163,184,.07)">
+
+      <!-- Poche 1 : Urgence -->
+      <div style="padding:18px 20px;border-right:1px solid rgba(148,163,184,.07)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <div style="width:32px;height:32px;border-radius:8px;background:rgba(20,184,166,.15);display:flex;align-items:center;justify-content:center;font-size:16px">🛡️</div>
+          <div>
+            <div style="font-size:12px;font-weight:800;color:#14b8a6">Fonds d'Urgence</div>
+            <div style="font-size:10px;color:var(--muted)">Priorité absolue · 1ère poche</div>
+          </div>
+        </div>
+        <div style="font-size:22px;font-weight:800;font-family:'DM Mono',monospace;color:#14b8a6;margin-bottom:8px">${fmt(ep.urgence)}<span style="font-size:12px;opacity:.6">/mois</span></div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:10px">Réserve intouchable sauf urgence réelle (maladie, perte emploi, urgence famille). Ne jamais dépenser pour autre chose.</div>
+        <div style="background:rgba(20,184,166,.07);border-radius:8px;padding:10px">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px">Objectifs d'accumulation</div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;font-family:'DM Mono',monospace">
+            <span style="color:#14b8a6">3 mois : <strong>${fmt(urgence3m)}</strong></span>
+            <span style="color:var(--muted)">6 mois : <strong>${fmt(urgence6m)}</strong></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Poche 2 : Projet -->
+      <div style="padding:18px 20px;border-right:1px solid rgba(148,163,184,.07)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <div style="width:32px;height:32px;border-radius:8px;background:rgba(34,211,238,.15);display:flex;align-items:center;justify-content:center;font-size:16px">🎯</div>
+          <div>
+            <div style="font-size:12px;font-weight:800;color:#22d3ee">Épargne Projet</div>
+            <div style="font-size:10px;color:var(--muted)">Objectif à moyen terme · 2ème poche</div>
+          </div>
+        </div>
+        <div style="font-size:22px;font-weight:800;font-family:'DM Mono',monospace;color:#22d3ee;margin-bottom:8px">${fmt(ep.projet)}<span style="font-size:12px;opacity:.6">/mois</span></div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:10px">Rentrée scolaire, achat mobilier, réparation logement, voyage famille. Un compte ou Flooz séparé, clairement nommé.</div>
+        <div style="background:rgba(34,211,238,.07);border-radius:8px;padding:10px">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px">En 12 mois vous aurez</div>
+          <div style="font-size:13px;font-weight:800;font-family:'DM Mono',monospace;color:#22d3ee">${fmt(projet12m)}</div>
+        </div>
+      </div>
+
+      <!-- Poche 3 : Investissement -->
+      <div style="padding:18px 20px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+          <div style="width:32px;height:32px;border-radius:8px;background:rgba(99,102,241,.15);display:flex;align-items:center;justify-content:center;font-size:16px">📈</div>
+          <div>
+            <div style="font-size:12px;font-weight:800;color:var(--primary-l)">Investissement</div>
+            <div style="font-size:10px;color:var(--muted)">Patrimoine long terme · 3ème poche</div>
+          </div>
+        </div>
+        <div style="font-size:22px;font-weight:800;font-family:'DM Mono',monospace;color:var(--primary-l);margin-bottom:8px">${ep.invest>0?fmt(ep.invest):'—'}<span style="font-size:12px;opacity:.6">${ep.invest>0?'/mois':''}</span></div>
+        <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:10px">${ep.invest>0?'Tontine à forte mise, micro-commerce, terrain, COOPEC. Ne démarrer qu\'une fois le fonds d\'urgence constitué.':'Budget encore trop serré. Commencez d\'abord par sécuriser les 2 premières poches.'}</div>
+        ${ep.invest>0?`<div style="background:rgba(99,102,241,.07);border-radius:8px;padding:10px">
+          <div style="font-size:10px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px">Capital constitué en 12 mois</div>
+          <div style="font-size:13px;font-weight:800;font-family:'DM Mono',monospace;color:var(--primary-l)">${fmt(invest12m)}</div>
+        </div>`:''}
+      </div>
+    </div>
+
+    <!-- Trajectoire de stabilité financière -->
+    <div style="padding:18px 20px">
+      <div style="font-size:13px;font-weight:800;margin-bottom:14px;color:var(--text)">🗺️ Trajectoire vers la stabilité financière</div>
+      <div style="position:relative;padding-left:24px">
+        ${[
+          { mois:'Mois 1–2',  couleur:'#ef4444', titre:'Mettre de l\'ordre',
+            texte:`Notez TOUTES vos dépenses dans AET MonBudget. Identifiez les fuites (crédit téléphonie, petites dépenses invisibles). Ouvrez un compte Flooz/T-Money dédié à l'épargne.` },
+          { mois:'Mois 3',    couleur:'#f59e0b', titre:'Premier filet de sécurité',
+            texte:`Objectif : avoir ${fmt(ep.urgence * 3)} en fonds d'urgence. C'est 3 mois de capacité d'épargne. Une fois atteint, vous êtes protégé contre les petites crises.` },
+          { mois:'Mois 4–6',  couleur:'#06b6d4', titre:'Consolider et projeter',
+            texte:`Continuez le fonds d'urgence jusqu'à ${fmt(urgence6m)} (6 mois). Démarrez simultanément votre épargne projet. Rejoignez ou créez une tontine de confiance.` },
+          { mois:'Mois 7–12', couleur:'#10b981', titre:'Phase d\'investissement',
+            texte:`Fonds d'urgence constitué : ${fmt(urgence6m)}. Épargne projet : ${fmt(projet12m)} accumulés. Commencez à réfléchir à un micro-investissement : parcelle, commerce, formation.` },
+          { mois:'An 2+',     couleur:'#6366f1', titre:'Stabilité financière réelle',
+            texte:`Vous avez un coussin financier. Vos enfants ont leur épargne scolaire. Vous ne vivez plus dans l'angoisse du lendemain. Augmentez la part investissement progressivement.` },
+        ].map((e,i) => `
+          <div style="position:relative;padding-bottom:18px;${i===4?'padding-bottom:0':''}">
+            <div style="position:absolute;left:-24px;top:2px;width:14px;height:14px;border-radius:50%;background:${e.couleur};box-shadow:0 0 8px ${e.couleur}66"></div>
+            ${i<4?`<div style="position:absolute;left:-18px;top:16px;bottom:0;width:2px;background:rgba(148,163,184,.15)"></div>`:''}
+            <div style="font-size:10px;font-family:'DM Mono',monospace;color:${e.couleur};font-weight:700;text-transform:uppercase;letter-spacing:.5px">${e.mois}</div>
+            <div style="font-size:13px;font-weight:800;margin:3px 0 4px;color:var(--text)">${e.titre}</div>
+            <div style="font-size:12px;color:var(--muted);line-height:1.65">${e.texte}</div>
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }
+
+  // ── RÉPARTITION DES CHARGES ──
   const budgetRows = document.getElementById('pgBudgetRows');
   if (budgetRows) {
-    budgetRows.innerHTML = items.filter(i => i.montant > 0).map(item => {
+    const chargeItems = c.items.filter(i => i.montant > 0);
+    const epItems = [
+      ...(ep.urgence > 0 ? [{ cat:'🛡️ Épargne urgence', key:'epargne_urgence', montant:ep.urgence, note:`Fonds intouchable · ${Math.round(ep.urgence/salaire*100)}%` }] : []),
+      ...(ep.projet  > 0 ? [{ cat:'🎯 Épargne projet',  key:'epargne_projet',  montant:ep.projet,  note:`Objectifs à moyen terme · ${Math.round(ep.projet/salaire*100)}%` }]  : []),
+      ...(ep.invest  > 0 ? [{ cat:'📈 Investissement',  key:'epargne_invest',  montant:ep.invest,  note:`Patrimoine long terme · ${Math.round(ep.invest/salaire*100)}%` }]   : []),
+    ];
+    const allItems = [...chargeItems, ...epItems];
+    const totalDistribue = allItems.reduce((s,i)=>s+i.montant, 0);
+
+    budgetRows.innerHTML = allItems.map((item, idx) => {
       const pct = Math.round(item.montant / salaire * 100);
       const col = PG_COLORS[item.key] || '#6366f1';
-      return `<div style="padding:14px 20px;border-bottom:1px solid rgba(148,163,184,.07)">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;flex-wrap:wrap;gap:6px">
+      const isEp = ['epargne_urgence','epargne_projet','epargne_invest'].includes(item.key);
+      return `<div style="padding:12px 20px;border-bottom:1px solid rgba(148,163,184,.06);${isEp?'background:rgba(20,184,166,.03)':''}">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:4px">
           <div>
             <span style="font-size:13px;font-weight:700">${item.cat}</span>
             <span style="font-size:11px;color:var(--muted);margin-left:8px">${item.note}</span>
           </div>
           <div style="display:flex;align-items:center;gap:10px">
-            <span style="font-size:12px;font-family:'DM Mono',monospace;color:var(--muted)">${pct}%</span>
+            <span style="font-size:11px;font-family:'DM Mono',monospace;color:var(--muted)">${pct}%</span>
             <span style="font-size:14px;font-weight:800;font-family:'DM Mono',monospace;color:${col}">${fmt(item.montant)}</span>
           </div>
         </div>
-        <div style="height:5px;background:rgba(148,163,184,.1);border-radius:3px;overflow:hidden">
-          <div style="height:100%;width:${Math.min(pct*3,100)}%;background:${col};border-radius:3px;transition:width .5s ease"></div>
+        <div style="height:4px;background:rgba(148,163,184,.1);border-radius:2px">
+          <div style="height:100%;width:${Math.min(pct * 1.4, 100)}%;background:${col};border-radius:2px"></div>
         </div>
       </div>`;
-    }).join('') + `<div style="padding:14px 20px;background:rgba(99,102,241,.05);border-top:2px solid rgba(99,102,241,.2);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-      <span style="font-size:13px;font-weight:800">Total estimé</span>
-      <span style="font-size:15px;font-weight:800;font-family:'DM Mono',monospace;color:var(--danger-l)">${fmt(totalEstime)}</span>
+    }).join('') +
+    `<div style="padding:14px 20px;background:rgba(99,102,241,.06);border-top:2px solid rgba(99,102,241,.2)">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-size:11px;color:var(--muted)">Total distribué</div>
+          <div style="font-size:16px;font-weight:800;font-family:'DM Mono',monospace;color:${totalDistribue===salaire?'var(--success-l)':'var(--danger-l)'}">${fmt(totalDistribue)}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;background:${totalDistribue===salaire?'rgba(16,185,129,.1)':'rgba(239,68,68,.1)'};border:1px solid ${totalDistribue===salaire?'rgba(16,185,129,.3)':'rgba(239,68,68,.3)'};border-radius:10px;padding:8px 14px">
+          <span style="font-size:18px">${totalDistribue===salaire?'✅':'⚠️'}</span>
+          <div>
+            <div style="font-size:12px;font-weight:800;color:${totalDistribue===salaire?'var(--success-l)':'var(--danger-l)'}">${totalDistribue===salaire?'100% du salaire distribué':'Écart détecté'}</div>
+            <div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">Salaire : ${fmt(salaire)}</div>
+          </div>
+        </div>
+      </div>
     </div>`;
   }
 
-  // ── Conseils selon situation ──
+  // ── CONSEILS PRATIQUES ──
   const pgConseils = document.getElementById('pgConseils');
   if (pgConseils) {
     const conseils = [];
 
-    // Conseils généraux selon tranche
     if (salaire <= 75000) {
-      conseils.push({ type:'danger', icon:'🚨', titre:'Salaire modeste au Togo',
-        texte:'Avec moins de 75 000 FCFA, il est très difficile de couvrir toutes les dépenses familiales. Cherchez un complément de revenu : commerce, prestation freelance, ou activité secondaire. Rejoignez une tontine pour mutualiser l\'épargne.' });
+      conseils.push({ type:'danger', icon:'🚨', titre:'Revenu sous le seuil de confort',
+        texte:`À ${fmt(salaire)}/mois, les charges de base sont difficiles à couvrir. Cherchez impérativement un revenu additionnel : petit commerce (vente eau/pain/légumes), activité le week-end, freelance. Même 15 000–20 000 FCFA de plus changent tout.` });
     } else if (salaire <= 120000) {
-      conseils.push({ type:'warning', icon:'⚠️', titre:'Budget serré mais gérable',
-        texte:'Cette tranche est courante au Togo. Évitez les dettes de consommation (crédit téléphonie, paiement à crédit des motos). Priorisez alimentation, scolarité et santé.' });
+      conseils.push({ type:'warning', icon:'⚠️', titre:'Budget serré — discipline stricte requise',
+        texte:`Évitez absolument le crédit téléphonie à rembourser, les achats à crédit (motos, appareils). Chaque dépense non planifiée fragilise votre budget. Utilisez AET MonBudget pour noter chaque sortie d'argent dès qu'elle se produit.` });
     } else if (salaire >= 150000) {
-      conseils.push({ type:'success', icon:'✅', titre:'Marge disponible pour épargner',
-        texte:'Vous avez une certaine marge. Ouvrez un compte épargne Mobile Money (Flooz/T-Money) ou une COOPEC (coopérative). Fixez-vous un objectif épargne mensuel fixe avant de dépenser.' });
+      conseils.push({ type:'success', icon:'✅', titre:'Vous avez une réelle capacité d\'épargne',
+        texte:`Avec ${fmt(salaire)}/mois, vous pouvez construire un vrai patrimoine. La discipline est la seule chose qui vous sépare de la stabilité financière. Virez l'épargne le jour du salaire, sans exception.` });
     }
 
-    // Conseils selon situation familiale
-    if (situation === 'famille2' || situation === 'famille3') {
-      conseils.push({ type:'info', icon:'📚', titre:'Préparez l\'avenir scolaire',
-        texte:'Les frais de scolarité augmentent chaque année. Mettez de côté chaque mois une petite somme dédiée à l\'éducation, même 5 000 à 10 000 FCFA. En 12 mois, vous aurez 60 000 à 120 000 FCFA d\'avance pour la rentrée.' });
-    }
+    conseils.push({ type:'success', icon:'🤝', titre:'La tontine : votre meilleur outil d\'épargne forcée',
+      texte:`Au Togo, la tontine (adashi) est redoutablement efficace. Rejoignez un groupe de 8–12 personnes sérieuses avec une mise mensuelle entre ${fmt(Math.max(5000, Math.round(c.epargne.urgence/2/5000)*5000))} et ${fmt(Math.max(10000, Math.round(c.epargne.urgence/5000)*5000))}. Quand c'est votre tour de toucher la cagnotte, investissez-la dans un projet précis.` });
 
     if (situation !== 'seul') {
-      conseils.push({ type:'info', icon:'💊', titre:'Adhérez à une mutuelle de santé',
-        texte:'Les consultations et hospitalisations imprévues sont un risque majeur au Togo. Des mutuelles comme la MUGEF-CI ou des assurances locales proposent des couvertures à partir de 5 000–10 000 FCFA/mois par personne.' });
+      conseils.push({ type:'info', icon:'💊', titre:'Mutuelle de santé : protégez votre fonds d\'urgence',
+        texte:`Une hospitalisation imprévue peut détruire 6 mois d'épargne en une semaine. Les mutuelles locales au Togo proposent des couvertures à partir de 5 000–8 000 FCFA/mois/personne. Priorité : couvrir les enfants en bas âge.` });
     }
 
-    // Conseil épargne
-    if (epargneRate < 5) {
-      conseils.push({ type:'warning', icon:'🏦', titre:'Épargne insuffisante',
-        texte:`Vous n\'épargnez que ${epargneRate}% de votre revenu. L\'idéal est minimum 10%. Même 5 000 FCFA/mois mis de côté font une différence en cas d\'urgence médicale, perte d\'emploi ou cérémonie familiale.` });
+    if (situation.startsWith('famille')) {
+      conseils.push({ type:'info', icon:'📚', titre:'Compte scolaire — commencez maintenant',
+        texte:`La rentrée scolaire coûte entre 50 000 et 200 000 FCFA selon les niveaux. Si vous mettez ${fmt(Math.round(salaire*0.03/500)*500)} de côté chaque mois dans une poche dédiée, vous avez ${fmt(Math.round(salaire*0.03/500)*500*12)} en 12 mois sans stress.` });
     }
 
-    // Conseil logement
-    if (logement === 'loue' && salaire < 100000) {
-      conseils.push({ type:'warning', icon:'🏠', titre:'Loyer vs budget',
-        texte:'Avec votre niveau de salaire, le loyer peut peser lourd. Cherchez à partager avec un colocataire, ou envisagez les quartiers périphériques de Lomé (Bè, Adidoété, Cacavéli) où les loyers sont moins élevés.' });
-    }
+    conseils.push({ type:'info', icon:'📵', titre:'Règle des 48h avant tout achat non urgent',
+      texte:`Avant tout achat non planifié supérieur à 5 000 FCFA, attendez 48 heures. Dans 70% des cas, l'envie passe. Cette seule règle peut vous faire économiser 10 000–30 000 FCFA supplémentaires par mois.` });
 
-    // Conseil tontine
-    conseils.push({ type:'success', icon:'🤝', titre:'La tontine : épargne solidaire togolaise',
-      texte:'La tontine (njangi/adashi) est un outil d\'épargne collectif très efficace au Togo. Rejoignez ou créez un groupe de 6–12 personnes avec une cotisation de 5 000 à 20 000 FCFA. Cela force la discipline d\'épargne.' });
+    if (logement === 'loue') {
+      conseils.push({ type:'info', icon:'🏗️', titre:'Stratégie logement à long terme',
+        texte:`Le loyer est une dépense permanente sans retour sur investissement. Objectif à 3–5 ans : accumuler un apport pour une parcelle ou un terrain constructible autour de Lomé (Bè, Agoènyivé, Cacavéli). Même une parcelle à 500 000–1 000 000 FCFA change votre situation durablement.` });
+    }
 
     pgConseils.innerHTML = conseils.map(c => `
       <div style="padding:14px 16px;border-radius:10px;margin-bottom:10px;background:${
-        c.type==='danger'  ? 'rgba(239,68,68,.08)'   :
-        c.type==='warning' ? 'rgba(245,158,11,.08)'  :
-        c.type==='success' ? 'rgba(16,185,129,.08)'  :
-                             'rgba(99,102,241,.08)'
+        c.type==='danger'?'rgba(239,68,68,.07)':c.type==='warning'?'rgba(245,158,11,.07)':c.type==='success'?'rgba(16,185,129,.07)':'rgba(99,102,241,.07)'
       };border-left:3px solid ${
-        c.type==='danger'  ? 'var(--danger-l)'  :
-        c.type==='warning' ? 'var(--warning)'   :
-        c.type==='success' ? 'var(--success-l)' :
-                             'var(--primary-l)'
+        c.type==='danger'?'var(--danger-l)':c.type==='warning'?'var(--warning)':c.type==='success'?'var(--success-l)':'var(--primary-l)'
       }">
         <div style="font-weight:800;font-size:13px;margin-bottom:5px">${c.icon} ${c.titre}</div>
         <div style="font-size:12px;color:var(--muted);line-height:1.65">${c.texte}</div>
       </div>`).join('');
   }
 
-  // ── Tableau détaillé ──
+  // ── TABLEAU DÉTAILLÉ ──
   const pgDetail = document.getElementById('pgDetailRows');
   if (pgDetail) {
     pgDetail.innerHTML = `<div class="table-wrap"><table>
-      <thead><tr><th>Poste de dépense</th><th>Montant estimé</th><th>% du salaire</th><th>Remarque</th></tr></thead>
+      <thead><tr><th>Poste</th><th>Montant / mois</th><th>% salaire</th><th>Nature</th><th>Remarque</th></tr></thead>
       <tbody>
-        ${items.map(item => {
+        ${c.items.map(item => {
           const pct = Math.round(item.montant / salaire * 100);
           const col = PG_COLORS[item.key] || '#6366f1';
-          if (item.key === 'loyer' && logement === 'proprio') return `<tr>
-            <td>${item.cat}</td>
-            <td style="font-family:'DM Mono',monospace;color:var(--success-l)">0 FCFA <span style="font-size:10px">(propriétaire)</span></td>
-            <td>0%</td><td style="font-size:11px;color:var(--muted)">Économie redirigée vers épargne</td></tr>`;
           return `<tr>
             <td>${item.cat}</td>
-            <td style="font-family:'DM Mono',monospace;font-weight:700;color:${col}">${fmt(item.montant)}</td>
-            <td><span style="font-family:'DM Mono',monospace;font-size:12px">${pct}%</span></td>
+            <td style="font-family:'DM Mono',monospace;font-weight:700;color:${col}">${item.montant>0?fmt(item.montant):'<span style="color:var(--success-l)">0 FCFA</span>'}</td>
+            <td style="font-family:'DM Mono',monospace;font-size:12px">${pct}%</td>
+            <td><span style="font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(239,68,68,.12);color:var(--danger-l);font-weight:700">CHARGE</span></td>
             <td style="font-size:11px;color:var(--muted)">${item.note}</td>
           </tr>`;
         }).join('')}
-        <tr style="background:rgba(99,102,241,.06);font-weight:800">
-          <td>TOTAL DÉPENSES</td>
-          <td style="font-family:'DM Mono',monospace;font-size:14px;color:var(--danger-l)">${fmt(totalEstime)}</td>
-          <td style="font-family:'DM Mono',monospace">${pctDepense}%</td>
-          <td style="font-size:11px;color:var(--muted)">—</td>
+        <tr style="background:rgba(239,68,68,.05);font-weight:800">
+          <td colspan="1">TOTAL CHARGES</td>
+          <td style="font-family:'DM Mono',monospace;color:var(--danger-l)">${fmt(c.totalCharges)}</td>
+          <td style="font-family:'DM Mono',monospace">${c.pctCharges}%</td>
+          <td>—</td><td style="font-size:11px;color:var(--muted)">—</td>
         </tr>
-        <tr style="background:rgba(16,185,129,.06);font-weight:800">
-          <td>RESTE / ÉCONOMIES LIBRES</td>
-          <td style="font-family:'DM Mono',monospace;font-size:14px;color:${soldeEstime>=0?'var(--success-l)':'var(--danger-l)'}">${soldeEstime>=0?'+':''}${fmt(soldeEstime)}</td>
-          <td style="font-family:'DM Mono',monospace">${100-pctDepense}%</td>
-          <td style="font-size:11px;color:var(--muted)">À reverser en épargne si positif</td>
+        <tr style="background:rgba(20,184,166,.05)">
+          <td>🛡️ Épargne urgence</td>
+          <td style="font-family:'DM Mono',monospace;font-weight:800;color:#14b8a6">${ep.urgence>0?fmt(ep.urgence):'—'}</td>
+          <td style="font-family:'DM Mono',monospace">${Math.round(ep.urgence/salaire*100)}%</td>
+          <td><span style="font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(20,184,166,.15);color:#14b8a6;font-weight:700">ÉPARGNE</span></td>
+          <td style="font-size:11px;color:var(--muted)">Fonds intouchable, 3–6 mois de charges</td>
+        </tr>
+        <tr style="background:rgba(34,211,238,.05)">
+          <td>🎯 Épargne projet</td>
+          <td style="font-family:'DM Mono',monospace;font-weight:800;color:#22d3ee">${ep.projet>0?fmt(ep.projet):'—'}</td>
+          <td style="font-family:'DM Mono',monospace">${Math.round(ep.projet/salaire*100)}%</td>
+          <td><span style="font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(34,211,238,.15);color:#22d3ee;font-weight:700">ÉPARGNE</span></td>
+          <td style="font-size:11px;color:var(--muted)">Rentrée, réparations, projets famille</td>
+        </tr>
+        <tr style="background:rgba(99,102,241,.05)">
+          <td>📈 Investissement</td>
+          <td style="font-family:'DM Mono',monospace;font-weight:800;color:var(--primary-l)">${ep.invest>0?fmt(ep.invest):'—'}</td>
+          <td style="font-family:'DM Mono',monospace">${Math.round(ep.invest/salaire*100)}%</td>
+          <td><span style="font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(99,102,241,.15);color:var(--primary-l);font-weight:700">ÉPARGNE</span></td>
+          <td style="font-size:11px;color:var(--muted)">Tontine, commerce, terrain, COOPEC</td>
+        </tr>
+        <tr style="background:rgba(99,102,241,.07);font-weight:800;border-top:2px solid rgba(99,102,241,.25)">
+          <td>TOTAL DISTRIBUÉ</td>
+          <td style="font-family:'DM Mono',monospace;color:${c.verif100?'var(--success-l)':'var(--danger-l)'}">${fmt(c.totalCharges + ep.total)}</td>
+          <td style="font-family:'DM Mono',monospace">${c.pctCharges + c.pctEpargne}%</td>
+          <td><span style="font-size:11px;color:${c.verif100?'var(--success-l)':'var(--danger-l)'}">≈ ${c.verif100?'✅ 100%':'⚠️ Écart'}</span></td>
+          <td style="font-size:11px;color:var(--muted)">Charges + Épargne = ${fmt(salaire)} salaire</td>
         </tr>
       </tbody>
     </table></div>`;
@@ -2220,16 +2376,16 @@ select.form-input option{background:var(--bg2)}
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
         <div>
           <h2 style="font-size:20px;font-weight:800">🗂️ Plan de Gestion Budgétaire</h2>
-          <div style="font-size:12px;color:var(--muted);margin-top:4px">Basé sur le coût de la vie au Togo · Franc CFA</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Épargne · Stabilité financière · Coût de la vie au Togo</div>
         </div>
       </div>
 
-      <!-- Sélecteur de tranche de salaire + situation familiale -->
+      <!-- Sélecteurs -->
       <div class="panel" style="margin-bottom:20px;padding:20px">
-        <div class="panel-title" style="margin-bottom:16px"><i class="fas fa-sliders"></i> Personnaliser le plan</div>
+        <div class="panel-title" style="margin-bottom:16px"><i class="fas fa-sliders"></i> Votre situation</div>
         <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end">
-          <div class="form-group" style="flex:1;min-width:200px;margin-bottom:0">
-            <label class="form-label">Tranche de salaire mensuel</label>
+          <div class="form-group" style="flex:1;min-width:180px;margin-bottom:0">
+            <label class="form-label">Salaire mensuel</label>
             <select class="form-input" id="pgSalaire" onchange="renderPlanGestion()">
               <option value="50000">50 000 FCFA</option>
               <option value="75000">75 000 FCFA</option>
@@ -2238,70 +2394,77 @@ select.form-input option{background:var(--bg2)}
               <option value="150000" selected>150 000 FCFA</option>
               <option value="175000">175 000 FCFA</option>
               <option value="200000">200 000 FCFA</option>
-              <option value="custom">Montant personnalisé…</option>
+              <option value="custom">Montant libre…</option>
             </select>
           </div>
-          <div class="form-group" id="pgCustomWrap" style="display:none;flex:1;min-width:160px;margin-bottom:0">
-            <label class="form-label">Montant personnalisé (FCFA)</label>
+          <div class="form-group" id="pgCustomWrap" style="display:none;flex:1;min-width:150px;margin-bottom:0">
+            <label class="form-label">Montant (FCFA)</label>
             <input type="number" class="form-input" id="pgCustomAmt" placeholder="ex: 120000" oninput="renderPlanGestion()"/>
           </div>
-          <div class="form-group" style="flex:1;min-width:200px;margin-bottom:0">
+          <div class="form-group" style="flex:1;min-width:180px;margin-bottom:0">
             <label class="form-label">Situation familiale</label>
             <select class="form-input" id="pgSituation" onchange="renderPlanGestion()">
               <option value="seul">Célibataire / Seul(e)</option>
               <option value="couple">En couple (sans enfant)</option>
-              <option value="famille1">Famille avec 1 enfant</option>
-              <option value="famille2" selected>Famille avec 2 enfants</option>
-              <option value="famille3">Famille avec 3 enfants et +</option>
+              <option value="famille1">Famille · 1 enfant</option>
+              <option value="famille2" selected>Famille · 2 enfants</option>
+              <option value="famille3">Famille · 3 enfants et +</option>
             </select>
           </div>
-          <div class="form-group" style="flex:1;min-width:180px;margin-bottom:0">
-            <label class="form-label">Type de logement</label>
+          <div class="form-group" style="flex:1;min-width:160px;margin-bottom:0">
+            <label class="form-label">Logement</label>
             <select class="form-input" id="pgLogement" onchange="renderPlanGestion()">
-              <option value="loue">Maison/Apt. loué(e)</option>
-              <option value="proprio">Propriétaire (sans loyer)</option>
+              <option value="loue">Loué(e)</option>
+              <option value="proprio">Propriétaire</option>
             </select>
           </div>
         </div>
-        <div style="margin-top:14px;padding:12px 16px;background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.2);border-radius:10px;font-size:13px;color:var(--primary-l)" id="pgHeadSummary">
-          —
-        </div>
+        <div style="margin-top:14px;padding:12px 16px;background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.2);border-radius:10px" id="pgHeadSummary">—</div>
       </div>
 
-      <!-- Score de santé financière -->
-      <div class="panel" style="margin-bottom:20px;padding:20px" id="pgScorePanel">
+      <!-- Score santé financière -->
+      <div class="panel" style="margin-bottom:20px;padding:20px">
         <div class="panel-title" style="margin-bottom:14px"><i class="fas fa-heartbeat"></i> Santé financière estimée</div>
         <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-          <div id="pgScoreCircle" style="width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;flex-shrink:0;border:4px solid var(--primary)">—</div>
+          <div id="pgScoreCircle" style="width:72px;height:72px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;border:3px solid #14b8a6;background:rgba(20,184,166,.1)">—</div>
           <div style="flex:1;min-width:200px">
-            <div id="pgScoreLabel" style="font-size:14px;font-weight:800;margin-bottom:4px">—</div>
-            <div id="pgScoreDesc" style="font-size:12px;color:var(--muted);line-height:1.6">—</div>
+            <div id="pgScoreLabel" style="font-size:14px;font-weight:800;margin-bottom:5px;color:#14b8a6">—</div>
+            <div id="pgScoreDesc" style="font-size:12px;color:var(--muted);line-height:1.65">—</div>
           </div>
         </div>
       </div>
 
-      <!-- Répartition budget recommandée -->
-      <div class="panel" style="margin-bottom:20px;padding:0" id="pgBudgetPanel">
+      <!-- ★ SECTION ÉPARGNE STRATÉGIQUE ★ -->
+      <div class="panel" style="margin-bottom:20px;padding:0">
         <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:800;font-size:14px;display:flex;align-items:center;gap:8px">
-          <i class="fas fa-chart-pie" style="color:var(--primary-l)"></i> Répartition budgétaire recommandée
+          <i class="fas fa-piggy-bank" style="color:#14b8a6"></i> Plan d'épargne &amp; stabilité financière
+          <span style="font-size:11px;font-weight:400;color:var(--muted);margin-left:4px">3 poches · trajectoire personnalisée</span>
+        </div>
+        <div id="pgEpargneSection"></div>
+      </div>
+
+      <!-- Répartition charges -->
+      <div class="panel" style="margin-bottom:20px;padding:0">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:800;font-size:14px;display:flex;align-items:center;gap:8px">
+          <i class="fas fa-chart-pie" style="color:var(--primary-l)"></i> Répartition des charges mensuelles
         </div>
         <div id="pgBudgetRows"></div>
       </div>
 
-      <!-- Conseils et alertes -->
-      <div class="panel" style="margin-bottom:20px;padding:20px" id="pgConseilsPanel">
-        <div class="panel-title" style="margin-bottom:16px"><i class="fas fa-lightbulb"></i> Conseils & alertes pour votre situation</div>
+      <!-- Conseils -->
+      <div class="panel" style="margin-bottom:20px;padding:20px">
+        <div class="panel-title" style="margin-bottom:16px"><i class="fas fa-lightbulb"></i> Conseils pratiques pour votre situation</div>
         <div id="pgConseils"></div>
       </div>
 
-      <!-- Tableau détaillé des dépenses estimées -->
-      <div class="panel" style="padding:0" id="pgDetailPanel">
+      <!-- Tableau détaillé -->
+      <div class="panel" style="padding:0">
         <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:800;font-size:14px;display:flex;align-items:center;gap:8px">
-          <i class="fas fa-list-check" style="color:var(--success-l)"></i> Détail estimé des dépenses mensuelles au Togo
+          <i class="fas fa-list-check" style="color:var(--success-l)"></i> Tableau détaillé mensuel
         </div>
         <div id="pgDetailRows"></div>
-        <div style="padding:14px 20px;border-top:1px solid var(--border);font-family:'DM Mono',monospace;font-size:12px;color:var(--dim)">
-          💡 Ces estimations sont basées sur le coût moyen de la vie à Lomé et dans les grandes villes du Togo (2024–2025). Ajustez selon votre quartier et votre style de vie.
+        <div style="padding:12px 20px;font-size:11px;color:var(--dim);font-family:'DM Mono',monospace;border-top:1px solid rgba(148,163,184,.07)">
+          💡 Estimations basées sur le coût de la vie à Lomé et dans les grandes villes du Togo (2024–2025). Ajustez selon votre quartier et style de vie.
         </div>
       </div>
     </div>

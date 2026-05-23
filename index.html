@@ -255,6 +255,7 @@ function loadAll() {
     }
     renderSalaryPage();
     renderDashboard();
+    pgAutoFillSalary && pgAutoFillSalary();
   }, e => console.error('sal err:', e));
 
   // Budgets
@@ -795,8 +796,356 @@ function setVal(id,v){ const e=document.getElementById(id); if(e) e.value=v; }
 function escHtml(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
 // ══════════════════════════════════════════
-// ══ PANNEAU ADMIN SECRET ══
+// ══ PLAN DE GESTION BUDGÉTAIRE ══
 // ══════════════════════════════════════════
+
+// Données de référence coût de la vie Togo (FCFA / mois)
+const PG_DATA = {
+  seul: {
+    label: 'Célibataire / Seul(e)',
+    items: [
+      { cat:'🏠 Loyer', key:'loyer', base:25000, pct:0, note:'Chambre ou studio modeste à Lomé' },
+      { cat:'💡 Électricité (CEET)', key:'elec', base:8000, pct:0, note:'Usage normal célibataire' },
+      { cat:'🚿 Eau (TdE)', key:'eau', base:4000, pct:0, note:'Consommation standard' },
+      { cat:'🍽️ Alimentation', key:'alim', base:0, pct:30, note:'Marché, vivres, huile, condiments' },
+      { cat:'🚗 Transport', key:'transp', base:0, pct:10, note:'Zémidjan / moto quotidien' },
+      { cat:'📱 Téléphone & Internet', key:'com', base:8000, pct:0, note:'Crédit + data mobile' },
+      { cat:'💊 Santé & Hygiène', key:'sante', base:0, pct:5, note:'Pharmacie, soins de base' },
+      { cat:'👗 Vêtements', key:'vêt', base:0, pct:3, note:'Renouvellement vestimentaire' },
+      { cat:'👨‍👩‍👧 Soutien famille', key:'famille', base:0, pct:8, note:'Aide aux parents, frères/sœurs' },
+      { cat:'🏦 Épargne', key:'epargne', base:0, pct:10, note:'Objectif minimum recommandé' },
+      { cat:'🛍️ Loisirs & Divers', key:'divers', base:0, pct:5, note:'Sorties, imprévus légers' },
+    ]
+  },
+  couple: {
+    label: 'En couple (sans enfant)',
+    items: [
+      { cat:'🏠 Loyer', key:'loyer', base:40000, pct:0, note:'Appartement 2 pièces à Lomé' },
+      { cat:'💡 Électricité (CEET)', key:'elec', base:12000, pct:0, note:'Climatisation légère incluse' },
+      { cat:'🚿 Eau (TdE)', key:'eau', base:6000, pct:0, note:'Usage couple standard' },
+      { cat:'🍽️ Alimentation', key:'alim', base:0, pct:28, note:'Marché + épicerie pour 2 personnes' },
+      { cat:'🚗 Transport', key:'transp', base:0, pct:12, note:'Motos ou véhicule partagé' },
+      { cat:'📱 Téléphone & Internet', key:'com', base:12000, pct:0, note:'2 lignes + abonnement internet' },
+      { cat:'💊 Santé & Hygiène', key:'sante', base:0, pct:5, note:'Pharmacie, consultations' },
+      { cat:'👗 Vêtements', key:'vêt', base:0, pct:4, note:'Pour les deux conjoints' },
+      { cat:'👨‍👩‍👧 Soutien famille', key:'famille', base:0, pct:8, note:'Aide aux familles respectives' },
+      { cat:'🏦 Épargne', key:'epargne', base:0, pct:10, note:'Projet commun, fonds urgence' },
+      { cat:'🛍️ Loisirs & Divers', key:'divers', base:0, pct:5, note:'Sorties couple, imprévus' },
+    ]
+  },
+  famille1: {
+    label: 'Famille avec 1 enfant',
+    items: [
+      { cat:'🏠 Loyer', key:'loyer', base:45000, pct:0, note:'Maison 2–3 pièces, quartier accessible' },
+      { cat:'💡 Électricité (CEET)', key:'elec', base:14000, pct:0, note:'Usage familial normal' },
+      { cat:'🚿 Eau (TdE)', key:'eau', base:7000, pct:0, note:'Usage famille 3 personnes' },
+      { cat:'🍽️ Alimentation', key:'alim', base:0, pct:30, note:'Vivres pour 3, incluant lait/alimentation enfant' },
+      { cat:'🚗 Transport', key:'transp', base:0, pct:10, note:'Déplacements famille' },
+      { cat:'📱 Téléphone & Internet', key:'com', base:12000, pct:0, note:'2 lignes + internet maison' },
+      { cat:'💊 Santé & Hygiène', key:'sante', base:0, pct:6, note:'Pédiatre, pharmacie, soins' },
+      { cat:'📚 Éducation enfant', key:'educ', base:0, pct:8, note:'Scolarité, fournitures, uniforme' },
+      { cat:'👗 Vêtements', key:'vêt', base:0, pct:4, note:'Parents + enfant' },
+      { cat:'👨‍👩‍👧 Soutien famille', key:'famille', base:0, pct:7, note:'Aide aux parents' },
+      { cat:'🏦 Épargne', key:'epargne', base:0, pct:8, note:'Fonds scolarité + urgences' },
+      { cat:'🛍️ Divers & Imprévus', key:'divers', base:0, pct:5, note:'Imprévus, fêtes, cadeaux' },
+    ]
+  },
+  famille2: {
+    label: 'Famille avec 2 enfants',
+    items: [
+      { cat:'🏠 Loyer', key:'loyer', base:55000, pct:0, note:'Maison 3–4 pièces, Lomé ou environs' },
+      { cat:'💡 Électricité (CEET)', key:'elec', base:16000, pct:0, note:'Ventilateurs, éclairage, frigo' },
+      { cat:'🚿 Eau (TdE)', key:'eau', base:9000, pct:0, note:'Famille de 4 personnes' },
+      { cat:'🍽️ Alimentation', key:'alim', base:0, pct:30, note:'Vivres, légumes, protéines pour 4' },
+      { cat:'🚗 Transport', key:'transp', base:0, pct:10, note:'Motos, taxi, école des enfants' },
+      { cat:'📱 Téléphone & Internet', key:'com', base:14000, pct:0, note:'2 lignes adultes + internet' },
+      { cat:'💊 Santé & Hygiène', key:'sante', base:0, pct:6, note:'Consultations, pharmacie x4' },
+      { cat:'📚 Éducation enfants', key:'educ', base:0, pct:10, note:'2 scolarités, livres, fournitures' },
+      { cat:'👗 Vêtements', key:'vêt', base:0, pct:4, note:'4 personnes à habiller' },
+      { cat:'👨‍👩‍👧 Soutien famille', key:'famille', base:0, pct:6, note:'Aide parents, dot, cérémonies' },
+      { cat:'🏦 Épargne', key:'epargne', base:0, pct:7, note:'Fonds urgence + avenir enfants' },
+      { cat:'🛍️ Divers & Imprévus', key:'divers', base:0, pct:5, note:'Fêtes, réparations, imprévus' },
+    ]
+  },
+  famille3: {
+    label: 'Famille avec 3 enfants et +',
+    items: [
+      { cat:'🏠 Loyer', key:'loyer', base:65000, pct:0, note:'Grande maison, périphérie si nécessaire' },
+      { cat:'💡 Électricité (CEET)', key:'elec', base:20000, pct:0, note:'Forte consommation familiale' },
+      { cat:'🚿 Eau (TdE)', key:'eau', base:11000, pct:0, note:'Famille nombreuse 5+ personnes' },
+      { cat:'🍽️ Alimentation', key:'alim', base:0, pct:32, note:'Volume important, vivres en gros' },
+      { cat:'🚗 Transport', key:'transp', base:0, pct:10, note:'Multiples déplacements quotidiens' },
+      { cat:'📱 Téléphone & Internet', key:'com', base:15000, pct:0, note:'2 lignes + internet + ado si grand' },
+      { cat:'💊 Santé & Hygiène', key:'sante', base:0, pct:7, note:'Pharmacie fréquente, maladies enfants' },
+      { cat:'📚 Éducation enfants', key:'educ', base:0, pct:12, note:'3 scolarités + fournitures cumulées' },
+      { cat:'👗 Vêtements', key:'vêt', base:0, pct:4, note:'Famille nombreuse' },
+      { cat:'👨‍👩‍👧 Soutien famille', key:'famille', base:0, pct:5, note:'Aide famille élargie' },
+      { cat:'🏦 Épargne', key:'epargne', base:0, pct:5, note:'Minimum vital, priorité famille' },
+      { cat:'🛍️ Divers & Imprévus', key:'divers', base:0, pct:5, note:'Imprévus croissants avec taille famille' },
+    ]
+  }
+};
+
+// Couleurs par poste
+const PG_COLORS = {
+  loyer:'#6366f1', elec:'#f59e0b', eau:'#06b6d4', alim:'#10b981',
+  transp:'#f97316', com:'#8b5cf6', sante:'#ec4899', educ:'#0ea5e9',
+  vêt:'#84cc16', famille:'#a78bfa', epargne:'#14b8a6', divers:'#94a3b8'
+};
+
+window.renderPlanGestion = function() {
+  const salSel = document.getElementById('pgSalaire');
+  const sitSel = document.getElementById('pgSituation');
+  const logSel = document.getElementById('pgLogement');
+  const customWrap = document.getElementById('pgCustomWrap');
+  if (!salSel || !sitSel) return;
+
+  // Salaire
+  let salaire;
+  if (salSel.value === 'custom') {
+    customWrap.style.display = 'block';
+    salaire = parseFloat(document.getElementById('pgCustomAmt')?.value) || 0;
+  } else {
+    customWrap.style.display = 'none';
+    salaire = parseFloat(salSel.value) || 150000;
+  }
+  if (salaire <= 0) salaire = 150000;
+
+  const situation = sitSel.value || 'famille2';
+  const logement  = logSel?.value || 'loue';
+  const data = PG_DATA[situation];
+  if (!data) return;
+
+  // Calcul des montants
+  let items = data.items.map(item => {
+    let montant;
+    if (item.pct > 0) {
+      montant = Math.round(salaire * item.pct / 100 / 500) * 500;
+    } else {
+      montant = item.base;
+    }
+    // Ajustement logement : si propriétaire, loyer = 0
+    if (item.key === 'loyer' && logement === 'proprio') montant = 0;
+    return { ...item, montant };
+  });
+
+  // Si propriétaire, redistribuer le loyer sur épargne + divers
+  if (logement === 'proprio') {
+    const loyerItem = items.find(i => i.key === 'loyer');
+    if (loyerItem) {
+      const freed = loyerItem.base; // montant économisé
+      const epargneItem = items.find(i => i.key === 'epargne');
+      const diversItem  = items.find(i => i.key === 'divers');
+      if (epargneItem) epargneItem.montant += Math.round(freed * 0.6 / 500) * 500;
+      if (diversItem)  diversItem.montant  += Math.round(freed * 0.2 / 500) * 500;
+    }
+  }
+
+  const totalEstime = items.reduce((s, i) => s + i.montant, 0);
+  const soldeEstime = salaire - totalEstime;
+  const pctDepense  = Math.round(totalEstime / salaire * 100);
+
+  // ── Résumé en-tête ──
+  const pgHead = document.getElementById('pgHeadSummary');
+  if (pgHead) {
+    const soldeColor = soldeEstime >= 0 ? 'var(--success-l)' : 'var(--danger-l)';
+    pgHead.innerHTML = `
+      <div style="display:flex;gap:24px;flex-wrap:wrap">
+        <div><span style="color:var(--muted);font-size:11px">SALAIRE</span><br><strong style="color:var(--primary-l);font-family:'DM Mono',monospace">${fmt(salaire)}</strong></div>
+        <div><span style="color:var(--muted);font-size:11px">DÉPENSES ESTIMÉES</span><br><strong style="color:var(--danger-l);font-family:'DM Mono',monospace">${fmt(totalEstime)}</strong></div>
+        <div><span style="color:var(--muted);font-size:11px">RESTE ESTIMÉ</span><br><strong style="color:${soldeColor};font-family:'DM Mono',monospace">${soldeEstime >= 0 ? '+' : ''}${fmt(soldeEstime)}</strong></div>
+        <div><span style="color:var(--muted);font-size:11px">SITUATION</span><br><strong style="color:var(--text)">${data.label}</strong></div>
+      </div>`;
+  }
+
+  // ── Score de santé financière ──
+  let score, scoreLbl, scoreDesc, scoreColor, scoreBg;
+  const epargneItem = items.find(i => i.key === 'epargne');
+  const epargneAmt  = epargneItem?.montant || 0;
+  const epargneRate = Math.round(epargneAmt / salaire * 100);
+
+  if (pctDepense <= 70 && epargneRate >= 10) {
+    score = '😊'; scoreLbl = 'Bonne santé financière';
+    scoreColor = '#10b981'; scoreBg = 'rgba(16,185,129,.12)';
+    scoreDesc = `Vous dépensez ${pctDepense}% de votre revenu et épargnez ${epargneRate}%. C'est une bonne gestion. Cherchez à augmenter votre épargne vers 15–20%.`;
+  } else if (pctDepense <= 85 && soldeEstime >= 0) {
+    score = '😐'; scoreLbl = 'Situation acceptable mais tendue';
+    scoreColor = '#f59e0b'; scoreBg = 'rgba(245,158,11,.12)';
+    scoreDesc = `Vous dépensez ${pctDepense}% de votre revenu. Le budget est serré. Cherchez à réduire les postes non essentiels et à épargner au moins 5–8%.`;
+  } else if (pctDepense > 85 && soldeEstime >= 0) {
+    score = '⚠️'; scoreLbl = 'Budget sous pression';
+    scoreColor = '#ef4444'; scoreBg = 'rgba(239,68,68,.12)';
+    scoreDesc = `Avec ${pctDepense}% de dépenses, votre marge est très faible. Il est urgent de réduire certaines dépenses ou de chercher des revenus complémentaires.`;
+  } else {
+    score = '🚨'; scoreLbl = 'Déficit budgétaire critique';
+    scoreColor = '#dc2626'; scoreBg = 'rgba(220,38,38,.15)';
+    scoreDesc = `Vos dépenses dépassent vos revenus de ${fmt(Math.abs(soldeEstime))}. C'est une situation très difficile. Réduisez immédiatement les postes non vitaux et cherchez un appui.`;
+  }
+
+  const scorePanel = document.getElementById('pgScorePanel');
+  if (scorePanel) {
+    document.getElementById('pgScoreCircle').style.background = scoreBg;
+    document.getElementById('pgScoreCircle').style.borderColor = scoreColor;
+    document.getElementById('pgScoreCircle').style.color = scoreColor;
+    document.getElementById('pgScoreCircle').textContent = score;
+    document.getElementById('pgScoreLabel').textContent = scoreLbl;
+    document.getElementById('pgScoreLabel').style.color = scoreColor;
+    document.getElementById('pgScoreDesc').textContent = scoreDesc;
+  }
+
+  // ── Lignes de budget recommandé ──
+  const budgetRows = document.getElementById('pgBudgetRows');
+  if (budgetRows) {
+    budgetRows.innerHTML = items.filter(i => i.montant > 0).map(item => {
+      const pct = Math.round(item.montant / salaire * 100);
+      const col = PG_COLORS[item.key] || '#6366f1';
+      return `<div style="padding:14px 20px;border-bottom:1px solid rgba(148,163,184,.07)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px;flex-wrap:wrap;gap:6px">
+          <div>
+            <span style="font-size:13px;font-weight:700">${item.cat}</span>
+            <span style="font-size:11px;color:var(--muted);margin-left:8px">${item.note}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:12px;font-family:'DM Mono',monospace;color:var(--muted)">${pct}%</span>
+            <span style="font-size:14px;font-weight:800;font-family:'DM Mono',monospace;color:${col}">${fmt(item.montant)}</span>
+          </div>
+        </div>
+        <div style="height:5px;background:rgba(148,163,184,.1);border-radius:3px;overflow:hidden">
+          <div style="height:100%;width:${Math.min(pct*3,100)}%;background:${col};border-radius:3px;transition:width .5s ease"></div>
+        </div>
+      </div>`;
+    }).join('') + `<div style="padding:14px 20px;background:rgba(99,102,241,.05);border-top:2px solid rgba(99,102,241,.2);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+      <span style="font-size:13px;font-weight:800">Total estimé</span>
+      <span style="font-size:15px;font-weight:800;font-family:'DM Mono',monospace;color:var(--danger-l)">${fmt(totalEstime)}</span>
+    </div>`;
+  }
+
+  // ── Conseils selon situation ──
+  const pgConseils = document.getElementById('pgConseils');
+  if (pgConseils) {
+    const conseils = [];
+
+    // Conseils généraux selon tranche
+    if (salaire <= 75000) {
+      conseils.push({ type:'danger', icon:'🚨', titre:'Salaire modeste au Togo',
+        texte:'Avec moins de 75 000 FCFA, il est très difficile de couvrir toutes les dépenses familiales. Cherchez un complément de revenu : commerce, prestation freelance, ou activité secondaire. Rejoignez une tontine pour mutualiser l\'épargne.' });
+    } else if (salaire <= 120000) {
+      conseils.push({ type:'warning', icon:'⚠️', titre:'Budget serré mais gérable',
+        texte:'Cette tranche est courante au Togo. Évitez les dettes de consommation (crédit téléphonie, paiement à crédit des motos). Priorisez alimentation, scolarité et santé.' });
+    } else if (salaire >= 150000) {
+      conseils.push({ type:'success', icon:'✅', titre:'Marge disponible pour épargner',
+        texte:'Vous avez une certaine marge. Ouvrez un compte épargne Mobile Money (Flooz/T-Money) ou une COOPEC (coopérative). Fixez-vous un objectif épargne mensuel fixe avant de dépenser.' });
+    }
+
+    // Conseils selon situation familiale
+    if (situation === 'famille2' || situation === 'famille3') {
+      conseils.push({ type:'info', icon:'📚', titre:'Préparez l\'avenir scolaire',
+        texte:'Les frais de scolarité augmentent chaque année. Mettez de côté chaque mois une petite somme dédiée à l\'éducation, même 5 000 à 10 000 FCFA. En 12 mois, vous aurez 60 000 à 120 000 FCFA d\'avance pour la rentrée.' });
+    }
+
+    if (situation !== 'seul') {
+      conseils.push({ type:'info', icon:'💊', titre:'Adhérez à une mutuelle de santé',
+        texte:'Les consultations et hospitalisations imprévues sont un risque majeur au Togo. Des mutuelles comme la MUGEF-CI ou des assurances locales proposent des couvertures à partir de 5 000–10 000 FCFA/mois par personne.' });
+    }
+
+    // Conseil épargne
+    if (epargneRate < 5) {
+      conseils.push({ type:'warning', icon:'🏦', titre:'Épargne insuffisante',
+        texte:`Vous n\'épargnez que ${epargneRate}% de votre revenu. L\'idéal est minimum 10%. Même 5 000 FCFA/mois mis de côté font une différence en cas d\'urgence médicale, perte d\'emploi ou cérémonie familiale.` });
+    }
+
+    // Conseil logement
+    if (logement === 'loue' && salaire < 100000) {
+      conseils.push({ type:'warning', icon:'🏠', titre:'Loyer vs budget',
+        texte:'Avec votre niveau de salaire, le loyer peut peser lourd. Cherchez à partager avec un colocataire, ou envisagez les quartiers périphériques de Lomé (Bè, Adidoété, Cacavéli) où les loyers sont moins élevés.' });
+    }
+
+    // Conseil tontine
+    conseils.push({ type:'success', icon:'🤝', titre:'La tontine : épargne solidaire togolaise',
+      texte:'La tontine (njangi/adashi) est un outil d\'épargne collectif très efficace au Togo. Rejoignez ou créez un groupe de 6–12 personnes avec une cotisation de 5 000 à 20 000 FCFA. Cela force la discipline d\'épargne.' });
+
+    pgConseils.innerHTML = conseils.map(c => `
+      <div style="padding:14px 16px;border-radius:10px;margin-bottom:10px;background:${
+        c.type==='danger'  ? 'rgba(239,68,68,.08)'   :
+        c.type==='warning' ? 'rgba(245,158,11,.08)'  :
+        c.type==='success' ? 'rgba(16,185,129,.08)'  :
+                             'rgba(99,102,241,.08)'
+      };border-left:3px solid ${
+        c.type==='danger'  ? 'var(--danger-l)'  :
+        c.type==='warning' ? 'var(--warning)'   :
+        c.type==='success' ? 'var(--success-l)' :
+                             'var(--primary-l)'
+      }">
+        <div style="font-weight:800;font-size:13px;margin-bottom:5px">${c.icon} ${c.titre}</div>
+        <div style="font-size:12px;color:var(--muted);line-height:1.65">${c.texte}</div>
+      </div>`).join('');
+  }
+
+  // ── Tableau détaillé ──
+  const pgDetail = document.getElementById('pgDetailRows');
+  if (pgDetail) {
+    pgDetail.innerHTML = `<div class="table-wrap"><table>
+      <thead><tr><th>Poste de dépense</th><th>Montant estimé</th><th>% du salaire</th><th>Remarque</th></tr></thead>
+      <tbody>
+        ${items.map(item => {
+          const pct = Math.round(item.montant / salaire * 100);
+          const col = PG_COLORS[item.key] || '#6366f1';
+          if (item.key === 'loyer' && logement === 'proprio') return `<tr>
+            <td>${item.cat}</td>
+            <td style="font-family:'DM Mono',monospace;color:var(--success-l)">0 FCFA <span style="font-size:10px">(propriétaire)</span></td>
+            <td>0%</td><td style="font-size:11px;color:var(--muted)">Économie redirigée vers épargne</td></tr>`;
+          return `<tr>
+            <td>${item.cat}</td>
+            <td style="font-family:'DM Mono',monospace;font-weight:700;color:${col}">${fmt(item.montant)}</td>
+            <td><span style="font-family:'DM Mono',monospace;font-size:12px">${pct}%</span></td>
+            <td style="font-size:11px;color:var(--muted)">${item.note}</td>
+          </tr>`;
+        }).join('')}
+        <tr style="background:rgba(99,102,241,.06);font-weight:800">
+          <td>TOTAL DÉPENSES</td>
+          <td style="font-family:'DM Mono',monospace;font-size:14px;color:var(--danger-l)">${fmt(totalEstime)}</td>
+          <td style="font-family:'DM Mono',monospace">${pctDepense}%</td>
+          <td style="font-size:11px;color:var(--muted)">—</td>
+        </tr>
+        <tr style="background:rgba(16,185,129,.06);font-weight:800">
+          <td>RESTE / ÉCONOMIES LIBRES</td>
+          <td style="font-family:'DM Mono',monospace;font-size:14px;color:${soldeEstime>=0?'var(--success-l)':'var(--danger-l)'}">${soldeEstime>=0?'+':''}${fmt(soldeEstime)}</td>
+          <td style="font-family:'DM Mono',monospace">${100-pctDepense}%</td>
+          <td style="font-size:11px;color:var(--muted)">À reverser en épargne si positif</td>
+        </tr>
+      </tbody>
+    </table></div>`;
+  }
+};
+
+// Auto-initialisation quand on clique sur l'onglet
+const _origSwitchTab = window.switchTab;
+window.switchTab = function(tab) {
+  _origSwitchTab(tab);
+  if (tab === 'plangestion') {
+    setTimeout(renderPlanGestion, 50);
+  }
+};
+
+// Remplir automatiquement avec le salaire configuré si disponible
+function pgAutoFillSalary() {
+  const total = salaryConfig?.total || (salaryConfig?.net||0)+(salaryConfig?.prime_fixe||0)+(salaryConfig?.autres_fixes||0);
+  if (!total) return;
+  const sel = document.getElementById('pgSalaire');
+  if (!sel) return;
+  const tranches = [50000,75000,100000,125000,150000,175000,200000];
+  const closest = tranches.reduce((prev,curr) => Math.abs(curr-total) < Math.abs(prev-total) ? curr : prev);
+  if (Math.abs(closest - total) / total < 0.15) {
+    sel.value = String(closest);
+  } else {
+    sel.value = 'custom';
+    const customEl = document.getElementById('pgCustomAmt');
+    if (customEl) customEl.value = total;
+    document.getElementById('pgCustomWrap').style.display = 'block';
+  }
+}
+
+
 const ADMIN_EMAIL    = 'albaneloh@admin.monbudget';   // ← ton email admin
 const ADMIN_PASSWORD = 'AET@Admin2025!';              // ← ton mot de passe admin
 const ADMIN_PARAM    = 'admin';                       // ?admin dans l'URL
@@ -1445,8 +1794,7 @@ select.form-input option{background:var(--bg2)}
   .stats-grid{grid-template-columns:1fr 1fr}
   .rev-grid{grid-template-columns:1fr 1fr}
   .modal-box{padding:20px 16px}
-}
-@media(max-width:400px){
+}@media(max-width:400px){
   .stats-grid,.rev-grid{grid-template-columns:1fr}
 }
 
@@ -1646,6 +1994,7 @@ select.form-input option{background:var(--bg2)}
       <button class="tab-btn" data-tab="salaire" onclick="switchTab('salaire')"><i class="fas fa-briefcase"></i><span>Salaire</span></button>
       <button class="tab-btn" data-tab="historique" onclick="switchTab('historique')"><i class="fas fa-clock-rotate-left"></i><span>Historique</span></button>
       <button class="tab-btn" data-tab="notes" onclick="switchTab('notes')"><i class="fas fa-calendar-pen"></i><span>Notes</span></button>
+      <button class="tab-btn" data-tab="plangestion" onclick="switchTab('plangestion')"><i class="fas fa-map-signs"></i><span>Plan de Gestion</span></button>
     </div>
 
     <!-- ══ DASHBOARD ══ -->
@@ -1866,8 +2215,98 @@ select.form-input option{background:var(--bg2)}
       </div>
     </div>
 
-    <!-- ══ NOTES CALENDRIER ══ -->
-    <div id="tab-notes" class="tab-content">
+    <!-- ══ PLAN DE GESTION ══ -->
+    <div id="tab-plangestion" class="tab-content">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
+        <div>
+          <h2 style="font-size:20px;font-weight:800">🗂️ Plan de Gestion Budgétaire</h2>
+          <div style="font-size:12px;color:var(--muted);margin-top:4px">Basé sur le coût de la vie au Togo · Franc CFA</div>
+        </div>
+      </div>
+
+      <!-- Sélecteur de tranche de salaire + situation familiale -->
+      <div class="panel" style="margin-bottom:20px;padding:20px">
+        <div class="panel-title" style="margin-bottom:16px"><i class="fas fa-sliders"></i> Personnaliser le plan</div>
+        <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end">
+          <div class="form-group" style="flex:1;min-width:200px;margin-bottom:0">
+            <label class="form-label">Tranche de salaire mensuel</label>
+            <select class="form-input" id="pgSalaire" onchange="renderPlanGestion()">
+              <option value="50000">50 000 FCFA</option>
+              <option value="75000">75 000 FCFA</option>
+              <option value="100000">100 000 FCFA</option>
+              <option value="125000">125 000 FCFA</option>
+              <option value="150000" selected>150 000 FCFA</option>
+              <option value="175000">175 000 FCFA</option>
+              <option value="200000">200 000 FCFA</option>
+              <option value="custom">Montant personnalisé…</option>
+            </select>
+          </div>
+          <div class="form-group" id="pgCustomWrap" style="display:none;flex:1;min-width:160px;margin-bottom:0">
+            <label class="form-label">Montant personnalisé (FCFA)</label>
+            <input type="number" class="form-input" id="pgCustomAmt" placeholder="ex: 120000" oninput="renderPlanGestion()"/>
+          </div>
+          <div class="form-group" style="flex:1;min-width:200px;margin-bottom:0">
+            <label class="form-label">Situation familiale</label>
+            <select class="form-input" id="pgSituation" onchange="renderPlanGestion()">
+              <option value="seul">Célibataire / Seul(e)</option>
+              <option value="couple">En couple (sans enfant)</option>
+              <option value="famille1">Famille avec 1 enfant</option>
+              <option value="famille2" selected>Famille avec 2 enfants</option>
+              <option value="famille3">Famille avec 3 enfants et +</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:1;min-width:180px;margin-bottom:0">
+            <label class="form-label">Type de logement</label>
+            <select class="form-input" id="pgLogement" onchange="renderPlanGestion()">
+              <option value="loue">Maison/Apt. loué(e)</option>
+              <option value="proprio">Propriétaire (sans loyer)</option>
+            </select>
+          </div>
+        </div>
+        <div style="margin-top:14px;padding:12px 16px;background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.2);border-radius:10px;font-size:13px;color:var(--primary-l)" id="pgHeadSummary">
+          —
+        </div>
+      </div>
+
+      <!-- Score de santé financière -->
+      <div class="panel" style="margin-bottom:20px;padding:20px" id="pgScorePanel">
+        <div class="panel-title" style="margin-bottom:14px"><i class="fas fa-heartbeat"></i> Santé financière estimée</div>
+        <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+          <div id="pgScoreCircle" style="width:80px;height:80px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;flex-shrink:0;border:4px solid var(--primary)">—</div>
+          <div style="flex:1;min-width:200px">
+            <div id="pgScoreLabel" style="font-size:14px;font-weight:800;margin-bottom:4px">—</div>
+            <div id="pgScoreDesc" style="font-size:12px;color:var(--muted);line-height:1.6">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Répartition budget recommandée -->
+      <div class="panel" style="margin-bottom:20px;padding:0" id="pgBudgetPanel">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:800;font-size:14px;display:flex;align-items:center;gap:8px">
+          <i class="fas fa-chart-pie" style="color:var(--primary-l)"></i> Répartition budgétaire recommandée
+        </div>
+        <div id="pgBudgetRows"></div>
+      </div>
+
+      <!-- Conseils et alertes -->
+      <div class="panel" style="margin-bottom:20px;padding:20px" id="pgConseilsPanel">
+        <div class="panel-title" style="margin-bottom:16px"><i class="fas fa-lightbulb"></i> Conseils & alertes pour votre situation</div>
+        <div id="pgConseils"></div>
+      </div>
+
+      <!-- Tableau détaillé des dépenses estimées -->
+      <div class="panel" style="padding:0" id="pgDetailPanel">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:800;font-size:14px;display:flex;align-items:center;gap:8px">
+          <i class="fas fa-list-check" style="color:var(--success-l)"></i> Détail estimé des dépenses mensuelles au Togo
+        </div>
+        <div id="pgDetailRows"></div>
+        <div style="padding:14px 20px;border-top:1px solid var(--border);font-family:'DM Mono',monospace;font-size:12px;color:var(--dim)">
+          💡 Ces estimations sont basées sur le coût moyen de la vie à Lomé et dans les grandes villes du Togo (2024–2025). Ajustez selon votre quartier et votre style de vie.
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ NOTES CALENDRIER ══ -->    <div id="tab-notes" class="tab-content">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
         <h2 style="font-size:20px;font-weight:800">📝 Bloc-notes & Calendrier</h2>
         <div style="display:flex;gap:8px;align-items:center">

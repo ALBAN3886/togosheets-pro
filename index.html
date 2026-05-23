@@ -803,12 +803,43 @@ function escHtml(s){ return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&
 // ══════════════════════════════════════════
 // ══ DONNÉES DE BASE COÛT VIE TOGO ══
 // ══════════════════════════════════════════
+// ── Loyer : proportionnel au salaire, plafonné selon la situation ──
+// Règle : jamais > 25% du salaire. Jamais < 10% (si locataire).
+// Plafonds réels à Lomé : chambre seul 8–15k, studio 15–25k, 2p 25–40k, 3p 35–55k
+function calcLoyer(salaire, situation) {
+  const pcts  = { seul:0.18, couple:0.20, famille1:0.20, famille2:0.22, famille3:0.22 };
+  const maxs  = { seul:25000, couple:35000, famille1:40000, famille2:50000, famille3:55000 };
+  // Min = 10% du salaire (plancher logement décent), jamais en dessous
+  const minPct = 0.10;
+  const brut  = Math.round(salaire * pcts[situation] / 500) * 500;
+  const minV  = Math.round(salaire * minPct / 500) * 500;
+  return Math.min(maxs[situation], Math.max(minV, brut));
+}
+
+// ── Électricité et eau : proportionnels, plafonnés ──
+function calcElec(salaire, situation) {
+  const pcts = { seul:0.04, couple:0.05, famille1:0.055, famille2:0.06, famille3:0.065 };
+  const maxs = { seul:8000, couple:11000, famille1:13000, famille2:15000, famille3:18000 };
+  return Math.min(maxs[situation], Math.round(salaire * pcts[situation] / 500) * 500);
+}
+function calcEau(salaire, situation) {
+  const pcts = { seul:0.02, couple:0.025, famille1:0.03, famille2:0.035, famille3:0.04 };
+  const maxs = { seul:3000, couple:5000, famille1:6000, famille2:8000, famille3:10000 };
+  return Math.min(maxs[situation], Math.round(salaire * pcts[situation] / 500) * 500);
+}
+// ── Téléphone/Internet : proportionnel, plafonné ──
+function calcCom(salaire, situation) {
+  const pcts = { seul:0.04, couple:0.045, famille1:0.045, famille2:0.05, famille3:0.05 };
+  const maxs = { seul:6000, couple:9000, famille1:10000, famille2:12000, famille3:13000 };
+  return Math.min(maxs[situation], Math.round(salaire * pcts[situation] / 500) * 500);
+}
+
 const PG_DATA = {
-  seul:     { label:'Célibataire / Seul(e)',        loyer:25000, elec:8000,  eau:4000,  alimPct:28, transpPct:10, com:8000,  santePct:4, educ:0,     vêtPct:3, famillePct:7  },
-  couple:   { label:'En couple (sans enfant)',       loyer:40000, elec:12000, eau:6000,  alimPct:27, transpPct:11, com:12000, santePct:5, educ:0,     vêtPct:4, famillePct:7  },
-  famille1: { label:'Famille · 1 enfant',            loyer:45000, elec:14000, eau:7000,  alimPct:29, transpPct:10, com:12000, santePct:6, educ:8,     vêtPct:4, famillePct:6  },
-  famille2: { label:'Famille · 2 enfants',           loyer:55000, elec:16000, eau:9000,  alimPct:29, transpPct:10, com:14000, santePct:6, educ:10,    vêtPct:4, famillePct:5  },
-  famille3: { label:'Famille · 3 enfants et +',      loyer:65000, elec:20000, eau:11000, alimPct:31, transpPct:10, com:15000, santePct:7, educ:12,    vêtPct:4, famillePct:5  },
+  seul:     { label:'Célibataire / Seul(e)',        alimPct:25, transpPct:9,  santePct:4,  educ:0,  vêtPct:2, famillePct:5  },
+  couple:   { label:'En couple (sans enfant)',       alimPct:24, transpPct:9,  santePct:4,  educ:0,  vêtPct:2, famillePct:5  },
+  famille1: { label:'Famille · 1 enfant',            alimPct:25, transpPct:9,  santePct:4,  educ:5,  vêtPct:2, famillePct:4  },
+  famille2: { label:'Famille · 2 enfants',           alimPct:25, transpPct:9,  santePct:4,  educ:6,  vêtPct:2, famillePct:4  },
+  famille3: { label:'Famille · 3 enfants et +',      alimPct:26, transpPct:9,  santePct:4,  educ:7,  vêtPct:2, famillePct:4  },
 };
 
 const PG_COLORS = {
@@ -821,20 +852,20 @@ const PG_COLORS = {
 
 // ══ CALCUL CENTRAL — RÈGLE 100% ══
 // Chaque franc du salaire a une destination. Rien ne traîne.
-// Sortie : totalCharges + totalEpargne + divers = salaire (exactement)
+// Sortie : totalCharges + totalEpargne = salaire (exactement)
 function pgCalculer(salaire, situation, logement) {
   const d = PG_DATA[situation];
 
-  // ── Arrondi au 500 FCFA le plus proche (interne uniquement) ──
+  // ── Arrondi au 500 FCFA le plus proche ──
   const r500 = n => Math.round(n / 500) * 500;
 
-  // ── ÉTAPE 1 : charges fixes incompressibles ──
-  const loyer   = logement === 'proprio' ? 0 : d.loyer;
-  const elec    = d.elec;
-  const eau     = d.eau;
-  const com     = d.com;
+  // ── ÉTAPE 1 : charges fixes proportionnelles au salaire ──
+  const loyer   = logement === 'proprio' ? 0 : calcLoyer(salaire, situation);
+  const elec    = calcElec(salaire, situation);
+  const eau     = calcEau(salaire, situation);
+  const com     = calcCom(salaire, situation);
 
-  // ── ÉTAPE 2 : charges proportionnelles (arrondies) ──
+  // ── ÉTAPE 2 : charges proportionnelles ──
   const alim    = r500(salaire * d.alimPct    / 100);
   const transp  = r500(salaire * d.transpPct  / 100);
   const sante   = r500(salaire * d.santePct   / 100);
@@ -846,79 +877,79 @@ function pgCalculer(salaire, situation, logement) {
   const chargesSansDiv = loyer + elec + eau + com + alim + transp + sante + vêt + famille + educ;
   const margeApresCharges = salaire - chargesSansDiv;
 
-  // ── ÉTAPE 4 : divers = 3% du salaire, mais ne pas dépasser la marge ──
+  // ── ÉTAPE 4 : divers = 3% du salaire, plafonné à la marge ──
   const diversBrut = r500(salaire * 0.03);
   const divers = Math.min(diversBrut, Math.max(0, margeApresCharges));
 
-  // ── ÉTAPE 5 : ce qui reste APRÈS toutes les charges = budget épargne ──
+  // ── ÉTAPE 5 : budget épargne = ce qui reste après toutes les charges ──
   const totalCharges = chargesSansDiv + divers;
-  const budgetEpargne = salaire - totalCharges; // toujours >= 0 par construction
+  const budgetEpargne = salaire - totalCharges; // toujours >= 0
 
-  // ── ÉTAPE 6 : répartition STRICTE de l'épargne (100% du budget épargne distribué) ──
+  // ── ÉTAPE 6 : répartition STRICTE de l'épargne selon la règle 30-40% ──
+  // Logique inspirée des plans réels Togo :
+  //   - Si budget épargne >= 30% salaire → répartition pleine 3 poches
+  //   - Si 15-30% → 2 poches (urgence + projet)
+  //   - Si < 15% → tout en urgence (priorité absolue)
   let epUrgence = 0, epProjet = 0, epInvest = 0;
   const pctDispo = budgetEpargne / salaire;
 
   if (budgetEpargne <= 0) {
-    // Déficit ou zéro : on alerte, rien à distribuer
     epUrgence = 0; epProjet = 0; epInvest = 0;
-  } else if (pctDispo >= 0.15) {
-    // Bonne marge : 50 / 30 / 20
-    epUrgence = r500(budgetEpargne * 0.50);
-    epProjet  = r500(budgetEpargne * 0.30);
-    epInvest  = budgetEpargne - epUrgence - epProjet; // absorbe l'arrondi
-  } else if (pctDispo >= 0.08) {
-    // Marge moyenne : 60 / 30 / 10
-    epUrgence = r500(budgetEpargne * 0.60);
-    epProjet  = r500(budgetEpargne * 0.30);
+  } else if (pctDispo >= 0.30) {
+    // Bonne marge ≥ 30% : 40% urgence, 35% projet, 25% investissement
+    epUrgence = r500(budgetEpargne * 0.40);
+    epProjet  = r500(budgetEpargne * 0.35);
     epInvest  = budgetEpargne - epUrgence - epProjet;
-  } else if (pctDispo >= 0.03) {
-    // Marge serrée : 80 / 20 / 0
-    epUrgence = r500(budgetEpargne * 0.80);
+  } else if (pctDispo >= 0.20) {
+    // Marge correcte 20-30% : 50% urgence, 35% projet, 15% investissement
+    epUrgence = r500(budgetEpargne * 0.50);
+    epProjet  = r500(budgetEpargne * 0.35);
+    epInvest  = budgetEpargne - epUrgence - epProjet;
+  } else if (pctDispo >= 0.10) {
+    // Marge serrée 10-20% : 65% urgence, 35% projet
+    epUrgence = r500(budgetEpargne * 0.65);
     epProjet  = budgetEpargne - epUrgence;
     epInvest  = 0;
   } else {
-    // Très serré : tout en urgence
+    // Très serré < 10% : tout en urgence
     epUrgence = budgetEpargne;
     epProjet  = 0;
     epInvest  = 0;
   }
 
-  // ── GARANTIE 100% : vérification et correction ──
-  const totalEpargne = epUrgence + epProjet + epInvest;
-  const ecart        = salaire - totalCharges - totalEpargne; // doit être 0
-  // Si un arrondi a créé un écart résiduel, on l'ajoute à epUrgence
+  // ── GARANTIE 100% : correction d'arrondi résiduel ──
+  const ecart = salaire - totalCharges - epUrgence - epProjet - epInvest;
   if (ecart !== 0) epUrgence += ecart;
 
-  // ── MÉTADONNÉES pour l'affichage ──
-  const totalDistribue = totalCharges + epUrgence + epProjet + epInvest;
-  const verif100       = totalDistribue === salaire; // doit toujours être true
+  const verif100 = (totalCharges + epUrgence + epProjet + epInvest) === salaire;
+
+  // ── Notes loyer ──
+  const lPct  = logement === 'proprio' ? 0 : Math.round(loyer / salaire * 100);
+  const lNote = logement === 'proprio'
+    ? 'Propriétaire — sans loyer'
+    : `Chambre/logement loué · ${lPct}% du salaire`;
 
   return {
     items: [
-      { cat:'🏠 Loyer / Logement',    key:'loyer',   montant:loyer,   note: logement==='proprio'?'Propriétaire — sans loyer':'Maison ou appartement loué(e)',    flow:'charges' },
-      { cat:'💡 Électricité (CEET)',   key:'elec',    montant:elec,    note:'Facturation mensuelle CEET',                                                          flow:'charges' },
-      { cat:'🚿 Eau (TdE)',            key:'eau',     montant:eau,     note:'Consommation eau courante',                                                           flow:'charges' },
-      { cat:'🍽️ Alimentation',         key:'alim',    montant:alim,    note:`Marché, vivres, condiments · ${d.alimPct}%`,                                          flow:'charges' },
-      { cat:'🚗 Transport',            key:'transp',  montant:transp,  note:`Zémidjan, taxi, carburant · ${d.transpPct}%`,                                         flow:'charges' },
-      { cat:'📱 Téléphone & Internet', key:'com',     montant:com,     note:'Crédit, data, internet maison',                                                       flow:'charges' },
-      { cat:'💊 Santé & Hygiène',      key:'sante',   montant:sante,   note:`Pharmacie, consultations · ${d.santePct}%`,                                           flow:'charges' },
+      { cat:'🏠 Loyer / Logement',    key:'loyer',   montant:loyer,   note:lNote,                                                                               flow:'charges' },
+      { cat:'💡 Électricité (CEET)',   key:'elec',    montant:elec,    note:`Facturation CEET · ${Math.round(elec/salaire*100)}%`,                               flow:'charges' },
+      { cat:'🚿 Eau (TdE)',            key:'eau',     montant:eau,     note:`Consommation eau · ${Math.round(eau/salaire*100)}%`,                                flow:'charges' },
+      { cat:'🍽️ Alimentation',         key:'alim',    montant:alim,    note:`Marché, vivres, condiments · ${d.alimPct}%`,                                        flow:'charges' },
+      { cat:'🚗 Transport',            key:'transp',  montant:transp,  note:`Zémidjan, taxi, carburant · ${d.transpPct}%`,                                       flow:'charges' },
+      { cat:'📱 Téléphone & Internet', key:'com',     montant:com,     note:`Crédit, data, internet · ${Math.round(com/salaire*100)}%`,                          flow:'charges' },
+      { cat:'💊 Santé & Hygiène',      key:'sante',   montant:sante,   note:`Pharmacie, consultations · ${d.santePct}%`,                                         flow:'charges' },
       ...(educ > 0 ? [{ cat:'📚 Éducation enfants', key:'educ', montant:educ, note:`Scolarité, fournitures · ${d.educ}%`, flow:'charges' }] : []),
-      { cat:'👗 Vêtements',            key:'vêt',     montant:vêt,     note:`Renouvellement vestimentaire · ${d.vêtPct}%`,                                         flow:'charges' },
-      { cat:'👨‍👩‍👧 Soutien famille',     key:'famille', montant:famille, note:`Aide parents, cérémonies · ${d.famillePct}%`,                                        flow:'charges' },
-      { cat:'🛍️ Divers & Imprévus',    key:'divers',  montant:divers,  note:'Petits imprévus du quotidien · ~3%',                                                  flow:'charges' },
+      { cat:'👗 Vêtements',            key:'vêt',     montant:vêt,     note:`Renouvellement vestimentaire · ${d.vêtPct}%`,                                       flow:'charges' },
+      { cat:'👨‍👩‍👧 Soutien famille',     key:'famille', montant:famille, note:`Aide parents, cérémonies · ${d.famillePct}%`,                                      flow:'charges' },
+      { cat:'🛍️ Divers & Imprévus',    key:'divers',  montant:divers,  note:'Petits imprévus du quotidien · ~3%',                                                flow:'charges' },
     ],
-    epargne: {
-      urgence: epUrgence,
-      projet:  epProjet,
-      invest:  epInvest,
-      total:   epUrgence + epProjet + epInvest,
-    },
+    epargne: { urgence:epUrgence, projet:epProjet, invest:epInvest, total:epUrgence+epProjet+epInvest },
     totalCharges,
     budgetEpargne,
     salaire,
     verif100,
     pctCharges: Math.round(totalCharges / salaire * 100),
-    pctEpargne: Math.round((epUrgence + epProjet + epInvest) / salaire * 100),
+    pctEpargne: Math.round((epUrgence+epProjet+epInvest) / salaire * 100),
   };
 }
 
@@ -995,19 +1026,23 @@ window.renderPlanGestion = function() {
   if (c.budgetEpargne <= 0) {
     scoreEmoji='🔴'; scoreLbl='Situation critique — déficit ou marge nulle';
     scoreColor='#ef4444'; scoreBg='rgba(239,68,68,.1)';
-    scoreDesc=`Avec ce salaire et cette situation familiale, les charges dépassent ou absorbent presque tout le revenu. Il est urgent de revoir les postes de dépenses ou de chercher un revenu additionnel.`;
-  } else if (pctEp >= 15 && pctCharges <= 75) {
-    scoreEmoji='🟢'; scoreLbl='Excellente stabilité financière';
+    scoreDesc=`Avec ce salaire et cette situation, les charges dépassent ou absorbent tout le revenu. Revoyez les postes de dépenses ou cherchez un revenu additionnel en urgence.`;
+  } else if (pctEp >= 30) {
+    scoreEmoji='🟢'; scoreLbl='Excellente — vous suivez la règle des 30%+';
     scoreColor='#10b981'; scoreBg='rgba(16,185,129,.1)';
-    scoreDesc=`Vous épargnez ${pctEp}% de votre revenu, les charges restent à ${pctCharges}%. Vous construisez activement votre avenir. Objectif : augmenter la part investissement pour créer un patrimoine durable.`;
-  } else if (pctEp >= 8) {
+    scoreDesc=`Vous épargnez ${pctEp}% de votre revenu, les charges restent à ${pctCharges}%. Vous construisez activement votre avenir. Augmentez la part investissement progressivement.`;
+  } else if (pctEp >= 20) {
     scoreEmoji='🟡'; scoreLbl='Bonne gestion — stabilité en cours';
     scoreColor='#f59e0b'; scoreBg='rgba(245,158,11,.1)';
-    scoreDesc=`Vous épargnez ${pctEp}% de votre revenu. C'est positif ! Renforcez votre fonds d'urgence avant d'investir. Objectif : atteindre 3 mois de charges en réserve.`;
-  } else {
+    scoreDesc=`Vous épargnez ${pctEp}% de votre revenu. Bien ! Consolidez d'abord votre fonds d'urgence (3 mois de charges), puis démarrez l'investissement.`;
+  } else if (pctEp >= 10) {
     scoreEmoji='🟠'; scoreLbl='Épargne faible — budget tendu';
     scoreColor='#f97316'; scoreBg='rgba(249,115,22,.1)';
-    scoreDesc=`Vous ne pouvez épargner que ${pctEp}% avec ce salaire et cette situation. Priorité absolue : le fonds d'urgence. Cherchez un revenu complémentaire pour améliorer cette marge.`;
+    scoreDesc=`Vous épargnez seulement ${pctEp}%. Priorité absolue : fonds d'urgence. Cherchez un revenu complémentaire pour améliorer cette marge.`;
+  } else {
+    scoreEmoji='🔴'; scoreLbl='Situation très serrée — action requise';
+    scoreColor='#ef4444'; scoreBg='rgba(239,68,68,.1)';
+    scoreDesc=`Moins de 10% d'épargne possible. Même mettre 5 000 FCFA/mois de côté change tout sur 12 mois. Cherchez impérativement une source de revenu additionnelle.`;
   }
   const sc = document.getElementById('pgScoreCircle');
   if (sc) {
@@ -1941,17 +1976,67 @@ select.form-input option{background:var(--bg2)}
 
 /* ── RESPONSIVE ── */
 @media(max-width:768px){
-  .container{padding:14px 12px}
+  .container{padding:14px 12px;padding-bottom:80px}
   .header{padding:12px 14px}
   .header-title{display:none}
-  .tabs-nav{flex-wrap:nowrap}
-  .tab-btn{min-width:auto;padding:9px 10px;font-size:11px}
-  .tab-btn span{display:none}
+  /* Menu desktop caché sur mobile */
+  .tabs-nav{display:none}
   .stats-grid{grid-template-columns:1fr 1fr}
   .rev-grid{grid-template-columns:1fr 1fr}
   .modal-box{padding:20px 16px}
-}@media(max-width:400px){
+}
+@media(max-width:400px){
   .stats-grid,.rev-grid{grid-template-columns:1fr}
+}
+
+/* ── BOTTOM NAV MOBILE ── */
+.bottom-nav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;z-index:900;
+  background:var(--card);backdrop-filter:blur(20px);
+  border-top:1px solid var(--border);
+  padding:6px 0 max(6px,env(safe-area-inset-bottom));
+}
+.bottom-nav-grid{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:2px;
+}
+.bnav-btn{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:6px 2px;background:transparent;border:none;color:var(--muted);
+  font-size:9px;font-weight:700;cursor:pointer;transition:all .2s;
+  border-radius:10px;letter-spacing:.3px;line-height:1.2;
+  font-family:'Syne',sans-serif;
+}
+.bnav-btn i{font-size:16px;transition:all .2s}
+.bnav-btn.active{color:var(--primary-l)}
+.bnav-btn.active i{transform:translateY(-2px)}
+
+/* Bouton "Plus" et drawer */
+.bnav-more-drawer{
+  display:none;position:fixed;bottom:0;left:0;right:0;z-index:901;
+  background:var(--card);border-top:1px solid var(--border);
+  border-radius:18px 18px 0 0;padding:16px 12px max(16px,env(safe-area-inset-bottom));
+  transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
+}
+.bnav-more-drawer.open{transform:translateY(0)}
+.bnav-drawer-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+.bnav-drawer-item{
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  padding:14px 8px;border-radius:12px;background:rgba(99,102,241,.07);
+  border:1px solid rgba(99,102,241,.15);cursor:pointer;
+  color:var(--muted);font-size:10px;font-weight:700;text-align:center;
+  font-family:'Syne',sans-serif;transition:all .15s;
+}
+.bnav-drawer-item i{font-size:20px;color:var(--primary-l)}
+.bnav-drawer-item.active{background:rgba(99,102,241,.15);color:var(--primary-l)}
+.bnav-overlay{display:none;position:fixed;inset:0;z-index:899;background:rgba(0,0,0,.4)}
+.bnav-overlay.open{display:block}
+.bnav-drawer-handle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 6px}
+
+@media(max-width:768px){
+  .bottom-nav{display:block}
 }
 
 /* ── SCROLLBAR ── */
@@ -2517,6 +2602,103 @@ select.form-input option{background:var(--bg2)}
 
   </div><!-- /container -->
 </div><!-- /app -->
+
+<!-- ════ BOTTOM NAV MOBILE ════ -->
+<div class="bnav-overlay" id="bnavOverlay" onclick="closeBnavDrawer()"></div>
+
+<nav class="bottom-nav" id="bottomNav">
+  <div class="bottom-nav-grid">
+    <button class="bnav-btn active" id="bnav-dashboard" onclick="bnavSwitch('dashboard')">
+      <i class="fas fa-chart-pie"></i>Tableau
+    </button>
+    <button class="bnav-btn" id="bnav-revenus" onclick="bnavSwitch('revenus')">
+      <i class="fas fa-arrow-down"></i>Revenus
+    </button>
+    <button class="bnav-btn" id="bnav-depenses" onclick="bnavSwitch('depenses')">
+      <i class="fas fa-arrow-up"></i>Dépenses
+    </button>
+    <button class="bnav-btn" id="bnav-epargne" onclick="bnavSwitch('epargne')">
+      <i class="fas fa-piggy-bank"></i>Épargne
+    </button>
+    <button class="bnav-btn" id="bnav-more" onclick="openBnavDrawer()">
+      <i class="fas fa-grid-2"></i>Plus
+    </button>
+  </div>
+</nav>
+
+<!-- Drawer "Plus" -->
+<div class="bnav-more-drawer" id="bnavDrawer">
+  <div class="bnav-drawer-handle"></div>
+  <div style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;padding:0 4px">Navigation</div>
+  <div class="bnav-drawer-grid">
+    <div class="bnav-drawer-item" id="bnd-budget" onclick="bnavSwitch('budget');closeBnavDrawer()">
+      <i class="fas fa-bullseye"></i>Budget
+    </div>
+    <div class="bnav-drawer-item" id="bnd-salaire" onclick="bnavSwitch('salaire');closeBnavDrawer()">
+      <i class="fas fa-briefcase"></i>Salaire
+    </div>
+    <div class="bnav-drawer-item" id="bnd-historique" onclick="bnavSwitch('historique');closeBnavDrawer()">
+      <i class="fas fa-clock-rotate-left"></i>Historique
+    </div>
+    <div class="bnav-drawer-item" id="bnd-notes" onclick="bnavSwitch('notes');closeBnavDrawer()">
+      <i class="fas fa-calendar-pen"></i>Notes
+    </div>
+    <div class="bnav-drawer-item" id="bnd-plangestion" onclick="bnavSwitch('plangestion');closeBnavDrawer()">
+      <i class="fas fa-map-signs"></i>Plan Gestion
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Bottom nav logic ──
+const BNAV_MAIN = ['dashboard','revenus','depenses','epargne'];
+const BNAV_DRAWER = ['budget','salaire','historique','notes','plangestion'];
+
+window.bnavSwitch = function(tab) {
+  // Onglets principaux
+  BNAV_MAIN.forEach(t => {
+    const b = document.getElementById('bnav-'+t);
+    if (b) b.classList.toggle('active', t === tab);
+  });
+  // Onglets drawer
+  BNAV_DRAWER.forEach(t => {
+    const b = document.getElementById('bnd-'+t);
+    if (b) b.classList.toggle('active', t === tab);
+  });
+  // Bouton "Plus" actif si onglet drawer sélectionné
+  const moreBtn = document.getElementById('bnav-more');
+  if (moreBtn) moreBtn.classList.toggle('active', BNAV_DRAWER.includes(tab));
+  switchTab(tab);
+};
+
+window.openBnavDrawer = function() {
+  document.getElementById('bnavDrawer').classList.add('open');
+  document.getElementById('bnavOverlay').classList.add('open');
+};
+window.closeBnavDrawer = function() {
+  document.getElementById('bnavDrawer').classList.remove('open');
+  document.getElementById('bnavOverlay').classList.remove('open');
+};
+
+// Sync bottom nav when switchTab is called from desktop
+const _bnavOrig = window.switchTab;
+window.switchTab = function(tab) {
+  _bnavOrig(tab);
+  // Sync bottom nav state
+  if (window.innerWidth <= 768) {
+    BNAV_MAIN.forEach(t => {
+      const b = document.getElementById('bnav-'+t);
+      if (b) b.classList.toggle('active', t === tab);
+    });
+    BNAV_DRAWER.forEach(t => {
+      const b = document.getElementById('bnd-'+t);
+      if (b) b.classList.toggle('active', t === tab);
+    });
+    const moreBtn = document.getElementById('bnav-more');
+    if (moreBtn) moreBtn.classList.toggle('active', BNAV_DRAWER.includes(tab));
+  }
+};
+</script>
 
 <!-- ════════════════ TAB NOTES ════════════════ -->
 <script>

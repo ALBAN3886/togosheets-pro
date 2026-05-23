@@ -88,9 +88,24 @@ let editingTxId = null;
 let activeTab = 'dashboard';
 let selMonth = '';  // filtre mois actif (YYYY-MM)
 
-// ══ UTILITAIRES ══
+// ══ DEVISES ══
 const $ = s => document.querySelector(s);
-const fmt = n => new Intl.NumberFormat('fr-TG',{style:'currency',currency:'XOF',maximumFractionDigits:0}).format(n||0);
+const CURRENCIES = {
+  XOF: { code:'XOF', symbol:'XOF', name:'Franc CFA',    locale:'fr-TG', decimals:0, flag:'🇹🇬' },
+  USD: { code:'USD', symbol:'$',   name:'US Dollar',     locale:'en-US', decimals:2, flag:'🇺🇸' },
+  EUR: { code:'EUR', symbol:'€',   name:'Euro',          locale:'fr-FR', decimals:2, flag:'🇪🇺' },
+  GHS: { code:'GHS', symbol:'₵',   name:'Cedi (Ghana)',  locale:'en-GH', decimals:2, flag:'🇬🇭' },
+  NGN: { code:'NGN', symbol:'₦',   name:'Naira (Nigeria)',locale:'en-NG',decimals:0, flag:'🇳🇬' },
+};
+let activeCurrency = localStorage.getItem('aet_currency') || 'XOF';
+function fmt(n) {
+  const cur = CURRENCIES[activeCurrency] || CURRENCIES.XOF;
+  try {
+    return new Intl.NumberFormat(cur.locale,{style:'currency',currency:cur.code,maximumFractionDigits:cur.decimals}).format(n||0);
+  } catch(e) {
+    return (n||0).toLocaleString(cur.locale) + ' ' + cur.symbol;
+  }
+}
 const fmtDate = d => new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'});
 const monthOf = d => (d||'').substring(0,7);
 const todayISO = () => new Date().toISOString().slice(0,10);
@@ -224,6 +239,111 @@ function fbErr(e) {
     'auth/network-request-failed':'Erreur réseau.' };
   return m[e.code] || e.message || 'Erreur inconnue';
 }
+
+const LANG_DICT = {
+  fr: {
+    dashboard:'Tableau de bord', revenus:'Revenus', depenses:'Dépenses', epargne:'Épargne',
+    budget:'Budget', salaire:'Salaire', historique:'Historique', notes:'Notes', plangestion:'Plan de Gestion',
+    add:'Ajouter', addExpense:'Ajouter dépense', addSaving:'Ajouter épargne',
+    salaires:'💼 Salaires', primes:'🏅 Primes', autres:'📥 Autres',
+    totalMonth:'Total mois', totalSaved:'Total épargné',
+    currentMonth:'Mois courant', allMonths:'Tous les mois', allTypes:'Tous les types',
+    expenses:'📤 Dépenses', income:'📥 Revenus', savings:'🏦 Épargne',
+    salaryLabel:'💼 Salaire', primeLabel:'🏅 Primes', incomeLabel:'📥 Revenues',
+    welcome:'Bienvenue', logout:'Déconnexion',
+    saveBtn:'Enregistrer', cancel:'Annuler', close:'Fermer',
+    langTitle:'Paramètres de langue', currencyTitle:'Devise d\'affichage',
+    langNote:'Les données restent en français pour la compatibilité. Seule l\'interface est traduite.',
+    amount:'Montant', date:'Date', description:'Description', category:'Catégorie',
+    note:'Note (optionnel)', operationType:'Type d\'opération',
+    export:'Exporter CSV', search:'🔍 Rechercher...',
+    byCategory:'Par catégorie', financialHealth:'Santé financière estimée',
+  },
+  en: {
+    dashboard:'Dashboard', revenus:'Income', depenses:'Expenses', epargne:'Savings',
+    budget:'Budget', salaire:'Salary', historique:'History', notes:'Notes', plangestion:'Budget Plan',
+    add:'Add', addExpense:'Add expense', addSaving:'Add saving',
+    salaires:'💼 Salaries', primes:'🏅 Bonuses', autres:'📥 Other',
+    totalMonth:'This month', totalSaved:'Total saved',
+    currentMonth:'Current month', allMonths:'All months', allTypes:'All types',
+    expenses:'📤 Expenses', income:'📥 Income', savings:'🏦 Savings',
+    salaryLabel:'💼 Salary', primeLabel:'🏅 Bonuses', incomeLabel:'📥 Income',
+    welcome:'Welcome', logout:'Logout',
+    saveBtn:'Save', cancel:'Cancel', close:'Close',
+    langTitle:'Language settings', currencyTitle:'Display currency',
+    langNote:'Transaction data stays in French for compatibility. Only the interface is translated.',
+    amount:'Amount', date:'Date', description:'Description', category:'Category',
+    note:'Note (optional)', operationType:'Operation type',
+    export:'Export CSV', search:'🔍 Search...',
+    byCategory:'By category', financialHealth:'Estimated financial health',
+  },
+};
+
+let activeLang = localStorage.getItem('aet_lang') || 'fr';
+
+window.applyLang = function(lang) {
+  activeLang = lang;
+  localStorage.setItem('aet_lang', lang);
+  document.querySelectorAll('.lang-card').forEach(c => c.classList.toggle('active', c.dataset.lang === lang));
+  document.documentElement.lang = lang;
+  document.documentElement.dir = (lang === 'ar') ? 'rtl' : 'ltr';
+  document.body.style.direction = (lang === 'ar') ? 'rtl' : 'ltr';
+  const d = LANG_DICT[lang] || LANG_DICT.fr;
+  // Navigation tabs desktop
+  const tabLabels = {dashboard:d.dashboard, revenus:d.revenus, depenses:d.depenses,
+    epargne:d.epargne, budget:d.budget, salaire:d.salaire, historique:d.historique,
+    notes:d.notes, plangestion:d.plangestion };
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    const key = b.dataset.tab;
+    const sp = b.querySelector('span');
+    if (sp && tabLabels[key]) sp.textContent = tabLabels[key];
+  });
+  // Bottom nav labels
+  const bnavMap = { dashboard:d.dashboard, revenus:d.revenus, depenses:d.depenses, epargne:d.epargne };
+  Object.entries(bnavMap).forEach(([k,v])=>{
+    const btn = document.getElementById('bnav-'+k);
+    if (btn) { const nodes=[...btn.childNodes]; const textNode=nodes.find(n=>n.nodeType===3&&n.textContent.trim()); if(textNode) textNode.textContent=v; }
+  });
+  // Sub-tabs revenus
+  const rt = document.getElementById('rt-sal'); if(rt) rt.textContent=d.salaires;
+  const rp = document.getElementById('rt-prime'); if(rp) rp.textContent=d.primes;
+  const ra = document.getElementById('rt-aut'); if(ra) ra.textContent=d.autres;
+  // Historique filter
+  const hft = document.getElementById('hFilterType');
+  if (hft) {
+    const opts = hft.querySelectorAll('option');
+    const hmap = ['',d.income,d.expenses,d.savings,d.salaryLabel,d.primeLabel];
+    opts.forEach((o,i)=>{ if(hmap[i]!==undefined) o.textContent=hmap[i]||hft.options[0].textContent; });
+    hft.options[0].textContent = d.allTypes;
+  }
+  // Month picker default option
+  const mp = document.getElementById('monthPicker');
+  if (mp && mp.options[0]) mp.options[0].textContent = d.currentMonth;
+  // Search input placeholder
+  const hs = document.getElementById('hFilterSearch');
+  if (hs) hs.placeholder = d.search;
+  // Page titles
+  const titMap = {
+    'tab-dashboard': `<i class="fas fa-chart-pie" style="color:var(--primary-l)"></i> ${d.dashboard}`,
+    'tab-historique': `<i class="fas fa-clock-rotate-left" style="color:var(--primary-l)"></i> ${d.historique}`,
+  };
+  // Modal langue title
+  const lt = document.querySelector('#langModal .modal-title'); if(lt) lt.textContent='🌐 '+d.langTitle;
+  // Dashboard section labels
+  const eqEl = document.getElementById('dEquilibre');
+  // re-render to refresh currency symbols
+  if (typeof renderAll === 'function') renderAll();
+  toast(lang==='en'?'Language: English':'Langue : Français','success');
+};
+
+window.applyCurrency = function(code) {
+  if (!CURRENCIES[code]) return;
+  activeCurrency = code;
+  localStorage.setItem('aet_currency', code);
+  document.querySelectorAll('.currency-card').forEach(c => c.classList.toggle('active', c.dataset.cur === code));
+  if (typeof renderAll === 'function') renderAll();
+  toast(`${CURRENCIES[code].flag} ${CURRENCIES[code].name}`,'success');
+};
 
 // ══ CHARGEMENT DONNÉES ══
 function loadAll() {
@@ -479,12 +599,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', updateSalTotal);
   });
-  // Appliquer la langue sauvegardée
+  // Appliquer la langue et la devise sauvegardées
   const savedLang = localStorage.getItem('aet_lang') || 'fr';
+  const savedCur  = localStorage.getItem('aet_currency') || 'XOF';
+  activeLang = savedLang;
+  activeCurrency = savedCur;
   document.querySelectorAll('.lang-card').forEach(c => c.classList.toggle('active', c.dataset.lang === savedLang));
+  document.querySelectorAll('.currency-card').forEach(c => c.classList.toggle('active', c.dataset.cur === savedCur));
   document.documentElement.lang = savedLang;
   document.documentElement.dir = (savedLang === 'ar') ? 'rtl' : 'ltr';
   document.body.style.direction = (savedLang === 'ar') ? 'rtl' : 'ltr';
+  if (savedLang !== 'fr') setTimeout(()=>applyLang(savedLang), 500);
   switchTab('dashboard');
 });
 
@@ -1671,7 +1796,7 @@ window.renderPlanGestion = function() {
             const col = PG_COLORS[item.key] || '#6366f1';
             return `<tr>
               <td>${item.cat}</td>
-              <td style="font-family:'DM Mono',monospace;font-weight:700;color:${col}">${item.montant>0?fmt(item.montant):'<span style="color:var(--success-l)">0 FCFA</span>'}</td>
+              <td style="font-family:'DM Mono',monospace;font-weight:700;color:${col}">${item.montant>0?fmt(item.montant):'<span style="color:var(--success-l)">0 XOF</span>'}</td>
               <td style="font-family:'DM Mono',monospace;font-size:12px">${pct}%</td>
               <td><span style="font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(239,68,68,.12);color:var(--danger-l);font-weight:700">CHARGE</span></td>
               <td style="font-size:11px;color:var(--muted)">${item.note}</td>
@@ -2686,19 +2811,19 @@ select.form-input option{background:var(--bg2)}
       <div class="rev-grid">
         <div class="rev-card sal">
           <div class="rev-card-label">💼 Salaire (mois)</div>
-          <div class="rev-card-value rv-sal" id="dSalaire">0 FCFA</div>
+          <div class="rev-card-value rv-sal" id="dSalaire">0 XOF</div>
         </div>
         <div class="rev-card pri">
           <div class="rev-card-label">🏅 Primes (mois)</div>
-          <div class="rev-card-value rv-pri" id="dPrime">0 FCFA</div>
+          <div class="rev-card-value rv-pri" id="dPrime">0 XOF</div>
         </div>
         <div class="rev-card aut">
           <div class="rev-card-label">📥 Autres revenus</div>
-          <div class="rev-card-value rv-aut" id="dAutresIn">0 FCFA</div>
+          <div class="rev-card-value rv-aut" id="dAutresIn">0 XOF</div>
         </div>
         <div class="rev-card" style="border-top:3px solid var(--success-l);background:rgba(16,185,129,.04)">
           <div class="rev-card-label">✅ Total revenus mois</div>
-          <div class="rev-card-value rv-sal" id="dIn">0 FCFA</div>
+          <div class="rev-card-value rv-sal" id="dIn">0 XOF</div>
         </div>
       </div>
 
@@ -2707,17 +2832,17 @@ select.form-input option{background:var(--bg2)}
         <div class="stat-card card-danger">
           <div class="stat-icon danger"><i class="fas fa-arrow-trend-up"></i></div>
           <div class="stat-label">📤 Dépenses ce mois</div>
-          <div class="stat-value neg" id="dOut">0 FCFA</div>
+          <div class="stat-value neg" id="dOut">0 XOF</div>
         </div>
         <div class="stat-card card-save">
           <div class="stat-icon save"><i class="fas fa-piggy-bank"></i></div>
           <div class="stat-label">🏦 Épargne totale</div>
-          <div class="stat-value" style="color:var(--save)" id="dSave">0 FCFA</div>
+          <div class="stat-value" style="color:var(--save)" id="dSave">0 XOF</div>
         </div>
         <div class="stat-card">
           <div class="stat-icon primary"><i class="fas fa-scale-balanced"></i></div>
           <div class="stat-label">💰 Solde net ce mois</div>
-          <div class="stat-value" id="dSolde">0 FCFA</div>
+          <div class="stat-value" id="dSolde">0 XOF</div>
         </div>
       </div>
 
@@ -2759,36 +2884,51 @@ select.form-input option{background:var(--bg2)}
     <!-- ══ REVENUS ══ -->
     <div id="tab-revenus" class="tab-content">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px">
-        <h2 style="font-size:20px;font-weight:800">💼 Salaire & Revenus</h2>
-        <button class="btn-sm btn-success-sm" onclick="openTxModal('salaire')"><i class="fas fa-plus"></i> Ajouter</button>
-      </div>
-      <div class="rev-grid">
-        <div class="rev-card sal">
-          <div class="rev-card-label">💼 Salaire (mois)</div>
-          <div class="rev-card-value rv-sal" id="rSalTotal">0 FCFA</div>
-          <button class="btn-sm btn-success-sm" style="margin-top:12px;font-size:12px" onclick="openTxModal('salaire')"><i class="fas fa-plus"></i> Salaire</button>
-        </div>
-        <div class="rev-card pri">
-          <div class="rev-card-label">🏅 Primes (mois)</div>
-          <div class="rev-card-value rv-pri" id="rPriTotal">0 FCFA</div>
-          <button class="btn-sm" style="margin-top:12px;font-size:12px;background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;padding:9px 14px;border:none;border-radius:9px;cursor:pointer;font-weight:700" onclick="openTxModal('prime')"><i class="fas fa-plus"></i> Prime</button>
-        </div>
-        <div class="rev-card aut">
-          <div class="rev-card-label">📥 Autres revenus (mois)</div>
-          <div class="rev-card-value rv-aut" id="rAutTotal">0 FCFA</div>
-          <button class="btn-sm" style="margin-top:12px;font-size:12px;background:linear-gradient(135deg,#06b6d4,#6366f1);color:#fff;padding:9px 14px;border:none;border-radius:9px;cursor:pointer;font-weight:700" onclick="openTxModal('autres_in')"><i class="fas fa-plus"></i> Revenu</button>
-        </div>
+        <h2 style="font-size:20px;font-weight:800">💼 Salaire &amp; Revenus</h2>
       </div>
 
-      <!-- Sub-tabs -->
-      <div class="sub-tabs">
+      <!-- Sub-tabs navigation -->
+      <div class="sub-tabs" style="margin-bottom:20px">
         <button class="sub-tab active" id="rt-sal"   onclick="revSubTab('sal')">💼 Salaires</button>
         <button class="sub-tab"        id="rt-prime" onclick="revSubTab('prime')">🏅 Primes</button>
         <button class="sub-tab"        id="rt-aut"   onclick="revSubTab('aut')">📥 Autres</button>
       </div>
-      <div id="rp-sal"  class="panel" style="padding:0"><div id="rSalList"></div></div>
-      <div id="rp-prime"class="panel" style="padding:0;display:none"><div id="rPriList"></div></div>
-      <div id="rp-aut"  class="panel" style="padding:0;display:none"><div id="rAutList"></div></div>
+
+      <!-- Panneau Salaires -->
+      <div id="rp-sal">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+          <div class="rev-card sal" style="flex:1;min-width:200px">
+            <div class="rev-card-label">💼 SALAIRE (MOIS)</div>
+            <div class="rev-card-value rv-sal" id="rSalTotal">0 XOF</div>
+          </div>
+          <button class="btn-sm btn-success-sm" onclick="openTxModal('salaire')"><i class="fas fa-plus"></i> Salaire</button>
+        </div>
+        <div class="panel" style="padding:0"><div id="rSalList"></div></div>
+      </div>
+
+      <!-- Panneau Primes -->
+      <div id="rp-prime" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+          <div class="rev-card pri" style="flex:1;min-width:200px">
+            <div class="rev-card-label">🏅 PRIMES (MOIS)</div>
+            <div class="rev-card-value rv-pri" id="rPriTotal">0 XOF</div>
+          </div>
+          <button class="btn-sm" style="background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;padding:9px 16px;border:none;border-radius:9px;cursor:pointer;font-weight:700;font-size:13px" onclick="openTxModal('prime')"><i class="fas fa-plus"></i> Prime</button>
+        </div>
+        <div class="panel" style="padding:0"><div id="rPriList"></div></div>
+      </div>
+
+      <!-- Panneau Autres revenus -->
+      <div id="rp-aut" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+          <div class="rev-card aut" style="flex:1;min-width:200px">
+            <div class="rev-card-label">📥 AUTRES REVENUS (MOIS)</div>
+            <div class="rev-card-value rv-aut" id="rAutTotal">0 XOF</div>
+          </div>
+          <button class="btn-sm" style="background:linear-gradient(135deg,#06b6d4,#6366f1);color:#fff;padding:9px 16px;border:none;border-radius:9px;cursor:pointer;font-weight:700;font-size:13px" onclick="openTxModal('autres_in')"><i class="fas fa-plus"></i> Revenu</button>
+        </div>
+        <div class="panel" style="padding:0"><div id="rAutList"></div></div>
+      </div>
     </div>
 
     <!-- ══ DÉPENSES ══ -->
@@ -2796,7 +2936,7 @@ select.form-input option{background:var(--bg2)}
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px">
         <div>
           <h2 style="font-size:20px;font-weight:800">📤 Dépenses</h2>
-          <div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--danger-l);margin-top:4px">Total mois : <strong id="depTotal">0 FCFA</strong></div>
+          <div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--danger-l);margin-top:4px">Total mois : <strong id="depTotal">0 XOF</strong></div>
         </div>
         <button class="btn-sm" style="background:var(--grad-danger);color:#fff;padding:9px 16px;border:none;border-radius:9px;cursor:pointer;font-weight:700;font-size:13px" onclick="openTxModal('out')"><i class="fas fa-plus"></i> Ajouter dépense</button>
       </div>
@@ -2814,7 +2954,7 @@ select.form-input option{background:var(--bg2)}
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px">
         <div>
           <h2 style="font-size:20px;font-weight:800">🏦 Épargne</h2>
-          <div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--save);margin-top:4px">Total épargné : <strong id="saveTotal">0 FCFA</strong></div>
+          <div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--save);margin-top:4px">Total épargné : <strong id="saveTotal">0 XOF</strong></div>
         </div>
         <button class="btn-sm" style="background:linear-gradient(135deg,#a78bfa,#7c3aed);color:#fff;padding:9px 16px;border:none;border-radius:9px;cursor:pointer;font-weight:700;font-size:13px" onclick="openTxModal('save')"><i class="fas fa-plus"></i> Ajouter épargne</button>
       </div>
@@ -2870,7 +3010,7 @@ select.form-input option{background:var(--bg2)}
         </div>
         <div class="form-group">
           <label class="form-label">Total mensuel calculé</label>
-          <div class="input-total-display" id="salTotalCalc">0 FCFA</div>
+          <div class="input-total-display" id="salTotalCalc">0 XOF</div>
         </div>
         <button class="btn-sm btn-success-sm" style="width:100%;padding:14px;font-size:14px" onclick="saveSalary()"><i class="fas fa-save"></i> Enregistrer la configuration</button>
       </div>
@@ -3264,14 +3404,15 @@ window.switchTab = function(tab) {
   </div>
 </div>
 
-<!-- ════════════════ MODAL : LANGUE ════════════════ -->
+<!-- ════════════════ MODAL : LANGUE + DEVISE ════════════════ -->
 <div class="modal-overlay" id="langModal">
-  <div class="modal-box" style="max-width:420px">
-    <div class="modal-title">🌐 Paramètres de langue</div>
-    <p style="font-size:13px;color:var(--muted);margin-bottom:20px">Choisissez votre langue d'affichage · Choose your display language</p>
+  <div class="modal-box" style="max-width:460px">
+    <div class="modal-title">🌐 Langue &amp; Devise</div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px">
-      <div class="lang-card" data-lang="fr" onclick="applyLang('fr')">
+    <!-- LANGUE -->
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:10px">Langue · Language</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+      <div class="lang-card active" data-lang="fr" onclick="applyLang('fr')">
         <div class="lang-flag">🇫🇷</div>
         <div class="lang-name">Français</div>
         <div class="lang-native">Français</div>
@@ -3281,22 +3422,41 @@ window.switchTab = function(tab) {
         <div class="lang-name">Anglais</div>
         <div class="lang-native">English</div>
       </div>
-      <div class="lang-card" data-lang="ar" onclick="applyLang('ar')">
-        <div class="lang-flag">🇲🇦</div>
-        <div class="lang-name">Arabe</div>
-        <div class="lang-native">العربية</div>
-      </div>
-      <div class="lang-card" data-lang="ewe" onclick="applyLang('ewe')">
+    </div>
+
+    <!-- DEVISE -->
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:10px">Devise · Currency</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:20px">
+      <div class="lang-card currency-card active" data-cur="XOF" onclick="applyCurrency('XOF')" style="padding:12px 8px">
         <div class="lang-flag">🇹🇬</div>
-        <div class="lang-name">Ewe</div>
-        <div class="lang-native">Eʋegbe</div>
+        <div class="lang-name" style="font-size:12px">Franc CFA</div>
+        <div class="lang-native">XOF</div>
+      </div>
+      <div class="lang-card currency-card" data-cur="USD" onclick="applyCurrency('USD')" style="padding:12px 8px">
+        <div class="lang-flag">🇺🇸</div>
+        <div class="lang-name" style="font-size:12px">US Dollar</div>
+        <div class="lang-native">USD $</div>
+      </div>
+      <div class="lang-card currency-card" data-cur="EUR" onclick="applyCurrency('EUR')" style="padding:12px 8px">
+        <div class="lang-flag">🇪🇺</div>
+        <div class="lang-name" style="font-size:12px">Euro</div>
+        <div class="lang-native">EUR €</div>
+      </div>
+      <div class="lang-card currency-card" data-cur="GHS" onclick="applyCurrency('GHS')" style="padding:12px 8px">
+        <div class="lang-flag">🇬🇭</div>
+        <div class="lang-name" style="font-size:12px">Cedi</div>
+        <div class="lang-native">GHS ₵</div>
+      </div>
+      <div class="lang-card currency-card" data-cur="NGN" onclick="applyCurrency('NGN')" style="padding:12px 8px">
+        <div class="lang-flag">🇳🇬</div>
+        <div class="lang-name" style="font-size:12px">Naira</div>
+        <div class="lang-native">NGN ₦</div>
       </div>
     </div>
 
-    <div style="padding:12px 16px;background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.2);border-radius:10px;font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:18px">
-      💡 <strong style="color:var(--primary-l)">Note :</strong> Les données (transactions, catégories) restent en français pour assurer la compatibilité. Seule l'interface est traduite.
+    <div style="padding:10px 14px;background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.2);border-radius:10px;font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:16px">
+      💡 Les données sont stockées dans leur montant original. Le changement de devise est un affichage uniquement.
     </div>
-
     <div class="modal-foot">
       <button class="btn-save-modal" onclick="closeModal('langModal')"><i class="fas fa-check"></i> Fermer</button>
     </div>
@@ -3449,8 +3609,10 @@ window.switchTab = function(tab) {
 // Sub-tabs revenus
 window.revSubTab = tab => {
   ['sal','prime','aut'].forEach(t => {
-    document.getElementById('rt-'+t).classList.toggle('active', t===tab);
-    document.getElementById('rp-'+t).style.display = t===tab ? 'block':'none';
+    const btn = document.getElementById('rt-'+t);
+    const pane = document.getElementById('rp-'+t);
+    if (btn)  btn.classList.toggle('active', t===tab);
+    if (pane) pane.style.display = t===tab ? 'block':'none';
   });
 };
 // Vérification admin au chargement

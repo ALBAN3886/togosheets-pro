@@ -653,6 +653,7 @@ function renderDashboard() {
 
   setTxt('dSolde',    fmt(solde));
   setTxt('dIn',       fmt(totalIn));
+  setTxt('dInB',      fmt(totalIn));
   setTxt('dOut',      fmt(totalOut));
   setTxt('dSave',     fmt(totalSave));
   setTxt('dSalaire',  fmt(salM));
@@ -2495,8 +2496,9 @@ select.form-input option{background:var(--bg2)}
 .type-pill.active{background:var(--grad);border-color:transparent;color:#fff;box-shadow:0 4px 12px rgba(99,102,241,.3)}
 
 /* ── SUB-TABS ── */
-.sub-tabs{display:flex;gap:5px;margin-bottom:16px}
-.sub-tab{padding:8px 16px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:12px;font-weight:700;transition:all .15s}
+.sub-tabs{display:flex;gap:5px;margin-bottom:16px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px}
+.sub-tabs::-webkit-scrollbar{display:none}
+.sub-tab{padding:8px 16px;border-radius:100px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;font-size:12px;font-weight:700;transition:all .15s;white-space:nowrap;flex-shrink:0}
 .sub-tab.active{background:rgba(99,102,241,.15);border-color:var(--primary-l);color:var(--primary-l)}
 
 /* ── BUDGET ROWS ── */
@@ -2594,6 +2596,13 @@ select.form-input option{background:var(--bg2)}
 @media(max-width:768px){
   .bottom-nav{display:block}
 }
+
+/* ── MAIN MENU DRAWER ── */
+.main-menu-item{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;border-radius:12px;background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.12);cursor:pointer;color:var(--muted);font-size:11px;font-weight:700;text-align:center;transition:all .15s;font-family:'Syne',sans-serif;user-select:none}
+.main-menu-item i{font-size:20px;color:var(--primary-l)}
+.main-menu-item:hover{background:rgba(99,102,241,.15);border-color:var(--primary-l);color:var(--text)}
+.main-menu-item.active{background:var(--grad);border-color:transparent;color:#fff;box-shadow:0 4px 14px rgba(99,102,241,.3)}
+.main-menu-item.active i{color:#fff}
 
 /* ── SCROLLBAR ── */
 ::-webkit-scrollbar{width:5px;height:5px}
@@ -2774,7 +2783,7 @@ select.form-input option{background:var(--bg2)}
         <div class="user-avatar" id="userAvatar">U</div>
         <span id="userName">—</span>
       </div>
-      <button class="btn-header" onclick="openModal('langModal')" title="Langue / Language" style="font-size:17px">🌐</button>
+      <button class="btn-header" onclick="openModal('langModal');renderFxRates&&renderFxRates()" title="Langue / Devise" style="font-size:17px">🌐</button>
       <button class="btn-header" onclick="openModal('changePwdModal')" title="Changer mot de passe"><i class="fas fa-key"></i></button>
       <button class="btn-header" onclick="doLogout()" title="Déconnexion"><i class="fas fa-sign-out-alt"></i></button>
     </div>
@@ -2782,8 +2791,54 @@ select.form-input option{background:var(--bg2)}
 
   <div class="container">
 
-    <!-- TABS NAV -->
-    <div class="tabs-nav">
+    <!-- NAV PRINCIPALE → DRAWER -->
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
+      <button id="mainMenuBtn" onclick="toggleMainMenu()" style="display:flex;align-items:center;gap:8px;padding:10px 18px;background:var(--grad);border:none;border-radius:12px;color:#fff;font-weight:800;font-size:13px;cursor:pointer;box-shadow:0 4px 14px rgba(99,102,241,.3);transition:all .2s">
+        <i class="fas fa-grid-2" id="mainMenuIcon"></i>
+        <span id="mainMenuLabel">Menu</span>
+        <i class="fas fa-chevron-down" id="mainMenuChevron" style="font-size:11px;transition:transform .2s"></i>
+      </button>
+      <!-- Breadcrumb onglet actif -->
+      <div id="activeTabChip" style="display:flex;align-items:center;gap:7px;padding:8px 14px;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.25);border-radius:100px;font-size:13px;font-weight:700;color:var(--primary-l)">
+        <i class="fas fa-chart-pie"></i> <span id="activeTabName">Tableau de bord</span>
+      </div>
+    </div>
+
+    <!-- DRAWER MENU PRINCIPAL -->
+    <div id="mainMenuDrawer" style="display:none;margin-bottom:20px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;animation:fade .2s">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+        <div class="main-menu-item active" id="mm-dashboard" onclick="mainMenuSwitch('dashboard','Tableau de bord','fa-chart-pie')">
+          <i class="fas fa-chart-pie"></i><span>Tableau de bord</span>
+        </div>
+        <div class="main-menu-item" id="mm-revenus" onclick="mainMenuSwitch('revenus','Revenus','fa-arrow-down')">
+          <i class="fas fa-arrow-down"></i><span>Revenus</span>
+        </div>
+        <div class="main-menu-item" id="mm-depenses" onclick="mainMenuSwitch('depenses','Dépenses','fa-arrow-up')">
+          <i class="fas fa-arrow-up-from-bracket"></i><span>Dépenses</span>
+        </div>
+        <div class="main-menu-item" id="mm-epargne" onclick="mainMenuSwitch('epargne','Épargne','fa-piggy-bank')">
+          <i class="fas fa-piggy-bank"></i><span>Épargne</span>
+        </div>
+        <div class="main-menu-item" id="mm-budget" onclick="mainMenuSwitch('budget','Budget','fa-bullseye')">
+          <i class="fas fa-bullseye"></i><span>Budget</span>
+        </div>
+        <div class="main-menu-item" id="mm-salaire" onclick="mainMenuSwitch('salaire','Salaire','fa-briefcase')">
+          <i class="fas fa-briefcase"></i><span>Salaire</span>
+        </div>
+        <div class="main-menu-item" id="mm-historique" onclick="mainMenuSwitch('historique','Historique','fa-clock-rotate-left')">
+          <i class="fas fa-clock-rotate-left"></i><span>Historique</span>
+        </div>
+        <div class="main-menu-item" id="mm-notes" onclick="mainMenuSwitch('notes','Notes','fa-calendar-pen')">
+          <i class="fas fa-calendar-pen"></i><span>Notes</span>
+        </div>
+        <div class="main-menu-item" id="mm-plangestion" onclick="mainMenuSwitch('plangestion','Plan de Gestion','fa-map-signs')">
+          <i class="fas fa-map-signs"></i><span>Plan de Gestion</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABS NAV (desktop hidden, kept for switchTab compatibility) -->
+    <div class="tabs-nav" style="display:none">
       <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')"><i class="fas fa-chart-pie"></i><span>Tableau de bord</span></button>
       <button class="tab-btn" data-tab="revenus" onclick="switchTab('revenus')"><i class="fas fa-arrow-down-to-bracket"></i><span>Revenus</span></button>
       <button class="tab-btn" data-tab="depenses" onclick="switchTab('depenses')"><i class="fas fa-arrow-up-from-bracket"></i><span>Dépenses</span></button>
@@ -2798,87 +2853,111 @@ select.form-input option{background:var(--bg2)}
     <!-- ══ DASHBOARD ══ -->
     <div id="tab-dashboard" class="tab-content active">
 
-      <!-- Filtre mois + équilibrage -->
-      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:20px">
+      <!-- Filtre mois (toujours visible) -->
+      <div style="display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px">
         <div class="month-chip"><i class="fas fa-calendar-alt"></i> <span id="dMonthLabel">—</span></div>
-        <select class="filter-input" id="monthPicker" onchange="setMonthFilter(this.value)" style="min-width:170px">
+        <select class="filter-input" id="monthPicker" onchange="setMonthFilter(this.value)" style="flex:1;min-width:140px">
           <option value="">Mois courant</option>
         </select>
-        <div class="equilibre-box" id="dEquilibre" style="flex:1;min-width:220px">—</div>
       </div>
 
-      <!-- Revenus détail -->
-      <div class="rev-grid">
-        <div class="rev-card sal">
-          <div class="rev-card-label">💼 Salaire (mois)</div>
-          <div class="rev-card-value rv-sal" id="dSalaire">0 XOF</div>
-        </div>
-        <div class="rev-card pri">
-          <div class="rev-card-label">🏅 Primes (mois)</div>
-          <div class="rev-card-value rv-pri" id="dPrime">0 XOF</div>
-        </div>
-        <div class="rev-card aut">
-          <div class="rev-card-label">📥 Autres revenus</div>
-          <div class="rev-card-value rv-aut" id="dAutresIn">0 XOF</div>
-        </div>
-        <div class="rev-card" style="border-top:3px solid var(--success-l);background:rgba(16,185,129,.04)">
-          <div class="rev-card-label">✅ Total revenus mois</div>
-          <div class="rev-card-value rv-sal" id="dIn">0 XOF</div>
-        </div>
+      <!-- Équilibre (toujours visible) -->
+      <div class="equilibre-box" id="dEquilibre" style="margin-bottom:16px">—</div>
+
+      <!-- Sous-onglets Dashboard -->
+      <div class="sub-tabs" style="margin-bottom:16px;overflow-x:auto;white-space:nowrap;flex-wrap:nowrap">
+        <button class="sub-tab active" id="dt-resume"  onclick="dashSubTab('resume')" >📊 Résumé</button>
+        <button class="sub-tab"        id="dt-revenus" onclick="dashSubTab('revenus')">💼 Revenus</button>
+        <button class="sub-tab"        id="dt-graphes" onclick="dashSubTab('graphes')">📈 Graphiques</button>
+        <button class="sub-tab"        id="dt-recents" onclick="dashSubTab('recents')">🕐 Opérations</button>
       </div>
 
-      <!-- Stats clés -->
-      <div class="stats-grid" style="margin-bottom:20px">
-        <div class="stat-card card-danger">
-          <div class="stat-icon danger"><i class="fas fa-arrow-trend-up"></i></div>
-          <div class="stat-label">📤 Dépenses ce mois</div>
-          <div class="stat-value neg" id="dOut">0 XOF</div>
+      <!-- PANNEAU : Résumé -->
+      <div id="dp-resume">
+        <div class="stats-grid" style="margin-bottom:16px">
+          <div class="stat-card card-success">
+            <div class="stat-icon success"><i class="fas fa-arrow-down"></i></div>
+            <div class="stat-label">✅ Total revenus</div>
+            <div class="stat-value pos" id="dIn">0 XOF</div>
+          </div>
+          <div class="stat-card card-danger">
+            <div class="stat-icon danger"><i class="fas fa-arrow-trend-up"></i></div>
+            <div class="stat-label">📤 Dépenses ce mois</div>
+            <div class="stat-value neg" id="dOut">0 XOF</div>
+          </div>
+          <div class="stat-card card-save">
+            <div class="stat-icon save"><i class="fas fa-piggy-bank"></i></div>
+            <div class="stat-label">🏦 Épargne totale</div>
+            <div class="stat-value" style="color:var(--save)" id="dSave">0 XOF</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon primary"><i class="fas fa-scale-balanced"></i></div>
+            <div class="stat-label">💰 Solde net ce mois</div>
+            <div class="stat-value" id="dSolde">0 XOF</div>
+          </div>
         </div>
-        <div class="stat-card card-save">
-          <div class="stat-icon save"><i class="fas fa-piggy-bank"></i></div>
-          <div class="stat-label">🏦 Épargne totale</div>
-          <div class="stat-value" style="color:var(--save)" id="dSave">0 XOF</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-icon primary"><i class="fas fa-scale-balanced"></i></div>
-          <div class="stat-label">💰 Solde net ce mois</div>
-          <div class="stat-value" id="dSolde">0 XOF</div>
-        </div>
-      </div>
-
-      <!-- Barre budget -->
-      <div class="panel" style="margin-bottom:20px">
-        <div class="panel-head">
-          <div class="panel-title"><i class="fas fa-chart-bar"></i> Taux de dépense mensuel</div>
-          <span style="font-size:12px;font-family:'DM Mono',monospace;color:var(--muted)" id="dPctLabel">—</span>
-        </div>
-        <div class="bar-track"><div class="bar-fill" id="dBudgetBar" style="width:0%"></div></div>
-      </div>
-
-      <!-- Charts -->
-      <div class="grid-2">
+        <!-- Barre budget -->
         <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title"><i class="fas fa-chart-bar"></i> Taux de dépense mensuel</div>
+            <span style="font-size:12px;font-family:'DM Mono',monospace;color:var(--muted)" id="dPctLabel">—</span>
+          </div>
+          <div class="bar-track"><div class="bar-fill" id="dBudgetBar" style="width:0%"></div></div>
+        </div>
+      </div>
+
+      <!-- PANNEAU : Revenus détail -->
+      <div id="dp-revenus" style="display:none">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+          <div class="rev-card sal">
+            <div class="rev-card-label">💼 SALAIRE</div>
+            <div class="rev-card-value rv-sal" id="dSalaire">0 XOF</div>
+          </div>
+          <div class="rev-card pri">
+            <div class="rev-card-label">🏅 PRIMES</div>
+            <div class="rev-card-value rv-pri" id="dPrime">0 XOF</div>
+          </div>
+          <div class="rev-card aut">
+            <div class="rev-card-label">📥 AUTRES REVENUS</div>
+            <div class="rev-card-value rv-aut" id="dAutresIn">0 XOF</div>
+          </div>
+          <div class="rev-card" style="border-top:3px solid var(--success-l);background:rgba(16,185,129,.04)">
+            <div class="rev-card-label">✅ TOTAL REVENUS</div>
+            <div class="rev-card-value rv-sal" id="dInB">0 XOF</div>
+          </div>
+        </div>
+        <div style="text-align:center;margin-top:8px">
+          <button class="btn-sm btn-success-sm" onclick="switchTab('revenus')"><i class="fas fa-arrow-right"></i> Gérer mes revenus</button>
+        </div>
+      </div>
+
+      <!-- PANNEAU : Graphiques -->
+      <div id="dp-graphes" style="display:none">
+        <div class="panel" style="margin-bottom:16px">
           <div class="panel-head"><div class="panel-title"><i class="fas fa-chart-line"></i> Évolution 6 mois</div></div>
           <div class="chart-wrap"><canvas id="chartLine"></canvas></div>
         </div>
-        <div class="panel">
+        <div class="panel" style="margin-bottom:16px">
           <div class="panel-head"><div class="panel-title"><i class="fas fa-chart-pie"></i> Répartition globale</div></div>
           <div class="chart-wrap"><canvas id="chartDoughnut"></canvas></div>
         </div>
-      </div>
-      <div class="panel" style="margin-bottom:20px">
-        <div class="panel-head"><div class="panel-title"><i class="fas fa-tags"></i> Dépenses par catégorie (mois)</div></div>
-        <div class="chart-wrap" style="height:280px"><canvas id="chartBar"></canvas></div>
+        <div class="panel">
+          <div class="panel-head"><div class="panel-title"><i class="fas fa-tags"></i> Dépenses par catégorie</div></div>
+          <div class="chart-wrap" style="height:260px"><canvas id="chartBar"></canvas></div>
+        </div>
       </div>
 
-      <!-- Dernières transactions -->
-      <div class="panel">
-        <div class="panel-head">
-          <div class="panel-title"><i class="fas fa-list"></i> Dernières opérations</div>
-          <button class="btn-sm btn-grad-sm" onclick="openTxModal()"><i class="fas fa-plus"></i> Ajouter</button>
+      <!-- PANNEAU : Dernières opérations -->
+      <div id="dp-recents" style="display:none">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title"><i class="fas fa-list"></i> Dernières opérations</div>
+            <button class="btn-sm btn-grad-sm" onclick="openTxModal()"><i class="fas fa-plus"></i> Ajouter</button>
+          </div>
+          <div id="dashRecent"></div>
         </div>
-        <div id="dashRecent"></div>
       </div>
+
     </div>
 
     <!-- ══ REVENUS ══ -->
@@ -2933,19 +3012,21 @@ select.form-input option{background:var(--bg2)}
 
     <!-- ══ DÉPENSES ══ -->
     <div id="tab-depenses" class="tab-content">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:16px">
         <div>
           <h2 style="font-size:20px;font-weight:800">📤 Dépenses</h2>
           <div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--danger-l);margin-top:4px">Total mois : <strong id="depTotal">0 XOF</strong></div>
         </div>
-        <button class="btn-sm" style="background:var(--grad-danger);color:#fff;padding:9px 16px;border:none;border-radius:9px;cursor:pointer;font-weight:700;font-size:13px" onclick="openTxModal('out')"><i class="fas fa-plus"></i> Ajouter dépense</button>
+        <button class="btn-sm" style="background:var(--grad-danger);color:#fff;padding:9px 16px;border:none;border-radius:9px;cursor:pointer;font-weight:700;font-size:13px" onclick="openTxModal('out')"><i class="fas fa-plus"></i> Ajouter</button>
       </div>
-      <div class="grid-2">
-        <div class="panel" style="padding:0"><div id="depList"></div></div>
-        <div class="panel">
-          <div class="panel-title" style="margin-bottom:14px"><i class="fas fa-tags"></i> Par catégorie</div>
-          <div id="depByCat"></div>
-        </div>
+      <div class="sub-tabs" style="margin-bottom:16px">
+        <button class="sub-tab active" id="dep-tab-list" onclick="depSubTab('list')">📋 Liste</button>
+        <button class="sub-tab"        id="dep-tab-cat"  onclick="depSubTab('cat')">🏷️ Par catégorie</button>
+      </div>
+      <div id="dep-pane-list" class="panel" style="padding:0"><div id="depList"></div></div>
+      <div id="dep-pane-cat"  class="panel" style="display:none">
+        <div class="panel-title" style="margin-bottom:14px;padding:16px 20px 0"><i class="fas fa-tags"></i> Par catégorie ce mois</div>
+        <div id="depByCat" style="padding:0 20px 16px"></div>
       </div>
     </div>
 
@@ -3247,7 +3328,91 @@ select.form-input option{background:var(--bg2)}
 </div>
 
 <script>
-// ── Bottom nav logic ──
+// ══ MENU PRINCIPAL ══
+const ALL_MENU_TABS = ['dashboard','revenus','depenses','epargne','budget','salaire','historique','notes','plangestion'];
+
+window.toggleMainMenu = function() {
+  const d = document.getElementById('mainMenuDrawer');
+  const chevron = document.getElementById('mainMenuChevron');
+  const open = d.style.display === 'none' || d.style.display === '';
+  d.style.display = open ? 'block' : 'none';
+  if (chevron) chevron.style.transform = open ? 'rotate(180deg)' : '';
+};
+
+window.mainMenuSwitch = function(tab, label, icon) {
+  // Fermer le drawer
+  const d = document.getElementById('mainMenuDrawer');
+  const chevron = document.getElementById('mainMenuChevron');
+  if (d) d.style.display = 'none';
+  if (chevron) chevron.style.transform = '';
+  // Mettre à jour l'actif
+  ALL_MENU_TABS.forEach(t => {
+    const el = document.getElementById('mm-'+t);
+    if (el) el.classList.toggle('active', t === tab);
+  });
+  // Breadcrumb
+  const chip = document.getElementById('activeTabName');
+  const chipI = document.getElementById('activeTabChip')?.querySelector('i');
+  if (chip) chip.textContent = label;
+  if (chipI) { chipI.className = 'fas ' + icon; }
+  switchTab(tab);
+};
+
+// ══ TAUX DE CHANGE RÉELS ══
+let fxRates = { XOF:1, USD:0.00163, EUR:0.00152, GHS:0.020, NGN:2.50 }; // fallback
+let fxLoaded = false;
+
+async function loadFxRates() {
+  try {
+    const r = await fetch('https://open.er-api.com/v6/latest/XOF');
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    const j = await r.json();
+    if (j.result === 'success' && j.rates) {
+      fxRates = { XOF:1, USD: j.rates.USD, EUR: j.rates.EUR, GHS: j.rates.GHS, NGN: j.rates.NGN };
+      fxLoaded = true;
+      // Rafraîchir l'affichage si une devise non-XOF est active
+      if (activeCurrency !== 'XOF' && typeof renderAll === 'function') renderAll();
+      // Afficher les taux dans le modal
+      renderFxRates();
+    }
+  } catch(e) {
+    console.warn('FX rates fetch failed, using fallback:', e.message);
+  }
+}
+
+function convertFromXOF(amountXOF) {
+  if (activeCurrency === 'XOF') return amountXOF;
+  const rate = fxRates[activeCurrency] || 1;
+  return amountXOF * rate;
+}
+
+// Override fmt pour intégrer la conversion
+function fmt(n) {
+  const converted = convertFromXOF(n || 0);
+  const cur = CURRENCIES[activeCurrency] || CURRENCIES.XOF;
+  try {
+    return new Intl.NumberFormat(cur.locale,{style:'currency',currency:cur.code,maximumFractionDigits:cur.decimals}).format(converted);
+  } catch(e) {
+    return converted.toLocaleString(cur.locale) + ' ' + cur.symbol;
+  }
+}
+
+function renderFxRates() {
+  const el = document.getElementById('fxRatesDisplay');
+  if (!el) return;
+  const base = fxLoaded ? '(taux live)' : '(taux estimés)';
+  el.innerHTML = Object.entries(CURRENCIES).filter(([k])=>k!=='XOF').map(([k,c])=>{
+    const rate = fxRates[k] || '—';
+    const val  = typeof rate === 'number' ? rate.toFixed(k==='GHS'||k==='NGN'?4:6) : rate;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(148,163,184,.07)">
+      <span style="font-size:13px">${c.flag} ${c.name} (${k})</span>
+      <span style="font-family:'DM Mono',monospace;font-size:12px;color:var(--primary-l);font-weight:700">1 XOF = ${val} ${k}</span>
+    </div>`;
+  }).join('') + `<div style="font-size:10px;color:var(--muted);margin-top:8px;text-align:right">${base} · open.er-api.com</div>`;
+}
+
+// Charger les taux au démarrage
+loadFxRates();
 const BNAV_MAIN = ['dashboard','revenus','depenses','epargne'];
 const BNAV_DRAWER = ['budget','salaire','historique','notes','plangestion'];
 
@@ -3277,23 +3442,23 @@ window.closeBnavDrawer = function() {
   document.getElementById('bnavOverlay').classList.remove('open');
 };
 
-// Sync bottom nav when switchTab is called from desktop
+// Sync bottom nav + main menu when switchTab is called
 const _bnavOrig = window.switchTab;
 window.switchTab = function(tab) {
   _bnavOrig(tab);
-  // Sync bottom nav state
-  if (window.innerWidth <= 768) {
-    BNAV_MAIN.forEach(t => {
-      const b = document.getElementById('bnav-'+t);
-      if (b) b.classList.toggle('active', t === tab);
-    });
-    BNAV_DRAWER.forEach(t => {
-      const b = document.getElementById('bnd-'+t);
-      if (b) b.classList.toggle('active', t === tab);
-    });
-    const moreBtn = document.getElementById('bnav-more');
-    if (moreBtn) moreBtn.classList.toggle('active', BNAV_DRAWER.includes(tab));
-  }
+  // Sync bottom nav
+  BNAV_MAIN.forEach(t => { const b=document.getElementById('bnav-'+t); if(b) b.classList.toggle('active',t===tab); });
+  BNAV_DRAWER.forEach(t => { const b=document.getElementById('bnd-'+t); if(b) b.classList.toggle('active',t===tab); });
+  const moreBtn=document.getElementById('bnav-more');
+  if(moreBtn) moreBtn.classList.toggle('active',BNAV_DRAWER.includes(tab));
+  // Sync main menu chips
+  ALL_MENU_TABS.forEach(t => { const el=document.getElementById('mm-'+t); if(el) el.classList.toggle('active',t===tab); });
+  const _labels={dashboard:'Tableau de bord',revenus:'Revenus',depenses:'Dépenses',epargne:'Épargne',budget:'Budget',salaire:'Salaire',historique:'Historique',notes:'Notes',plangestion:'Plan de Gestion'};
+  const _icons={dashboard:'fa-chart-pie',revenus:'fa-arrow-down',depenses:'fa-arrow-up-from-bracket',epargne:'fa-piggy-bank',budget:'fa-bullseye',salaire:'fa-briefcase',historique:'fa-clock-rotate-left',notes:'fa-calendar-pen',plangestion:'fa-map-signs'};
+  const chip=document.getElementById('activeTabName');
+  const chipI=document.getElementById('activeTabChip')?.querySelector('i');
+  if(chip&&_labels[tab]) chip.textContent=_labels[tab];
+  if(chipI&&_icons[tab]) chipI.className='fas '+_icons[tab];
 };
 </script>
 
@@ -3454,9 +3619,13 @@ window.switchTab = function(tab) {
       </div>
     </div>
 
-    <div style="padding:10px 14px;background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.2);border-radius:10px;font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:16px">
-      💡 Les données sont stockées dans leur montant original. Le changement de devise est un affichage uniquement.
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:8px;margin-top:4px">Taux de change · Exchange Rates</div>
+    <div id="fxRatesDisplay" style="margin-bottom:16px;padding:10px 14px;background:rgba(99,102,241,.05);border:1px solid rgba(99,102,241,.15);border-radius:10px">
+      <div style="font-size:12px;color:var(--muted)">Chargement des taux…</div>
     </div>
+
+    <div style="padding:10px 14px;background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.2);border-radius:10px;font-size:11px;color:var(--muted);line-height:1.6;margin-bottom:16px">
+      💡 Les montants sont stockés en XOF. La conversion est appliquée à l'affichage selon le taux live.</div>
     <div class="modal-foot">
       <button class="btn-save-modal" onclick="closeModal('langModal')"><i class="fas fa-check"></i> Fermer</button>
     </div>
@@ -3611,6 +3780,27 @@ window.revSubTab = tab => {
   ['sal','prime','aut'].forEach(t => {
     const btn = document.getElementById('rt-'+t);
     const pane = document.getElementById('rp-'+t);
+    if (btn)  btn.classList.toggle('active', t===tab);
+    if (pane) pane.style.display = t===tab ? 'block':'none';
+  });
+};
+
+// Sub-tabs dashboard
+window.dashSubTab = tab => {
+  ['resume','revenus','graphes','recents'].forEach(t => {
+    const btn  = document.getElementById('dt-'+t);
+    const pane = document.getElementById('dp-'+t);
+    if (btn)  btn.classList.toggle('active', t===tab);
+    if (pane) pane.style.display = t===tab ? 'block':'none';
+  });
+  if (tab === 'graphes') { setTimeout(()=>{ if(typeof renderCharts==='function') renderCharts(); },50); }
+};
+
+// Sub-tabs dépenses
+window.depSubTab = tab => {
+  ['list','cat'].forEach(t => {
+    const btn  = document.getElementById('dep-tab-'+t);
+    const pane = document.getElementById('dep-pane-'+t);
     if (btn)  btn.classList.toggle('active', t===tab);
     if (pane) pane.style.display = t===tab ? 'block':'none';
   });

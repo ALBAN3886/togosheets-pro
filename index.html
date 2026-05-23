@@ -443,6 +443,7 @@ window.switchTab = (tab) => {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id==='tab-'+tab));
   if (tab === 'notes') { renderNotesCalendar(); renderNoteMonthList(); }
+  if (tab === 'plangestion') { renderPlanGestion && renderPlanGestion(); }
 };
 
 window.switchAuthTab = (tab) => {
@@ -478,6 +479,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', updateSalTotal);
   });
+  // Appliquer la langue sauvegardée
+  const savedLang = localStorage.getItem('aet_lang') || 'fr';
+  document.querySelectorAll('.lang-card').forEach(c => c.classList.toggle('active', c.dataset.lang === savedLang));
+  document.documentElement.lang = savedLang;
+  document.documentElement.dir = (savedLang === 'ar') ? 'rtl' : 'ltr';
+  document.body.style.direction = (savedLang === 'ar') ? 'rtl' : 'ltr';
   switchTab('dashboard');
 });
 
@@ -953,6 +960,349 @@ function pgCalculer(salaire, situation, logement) {
   };
 }
 
+// ══ SÉLECTION CARTE SALAIRE ══
+window.pgSelectSal = function(el) {
+  document.querySelectorAll('.pg-sal-card').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  const val = el.dataset.val;
+  const inp = document.getElementById('pgSalaire');
+  if (inp) inp.value = val;
+  const customWrap = document.getElementById('pgCustomWrap');
+  if (customWrap) customWrap.style.display = val === 'custom' ? 'block' : 'none';
+  renderPlanGestion();
+};
+
+// ══════════════════════════════════════════
+// ══ SYSTÈME DE LANGUES ══
+// ══════════════════════════════════════════
+const LANGS = {
+  fr: {
+    code:'fr', name:'Français', flag:'🇫🇷', dir:'ltr', font:'Syne',
+    // Navigation
+    nav_dashboard:'Tableau de bord', nav_revenus:'Revenus', nav_depenses:'Dépenses',
+    nav_epargne:'Épargne', nav_budget:'Budget', nav_salaire:'Salaire',
+    nav_historique:'Historique', nav_notes:'Notes', nav_plangestion:'Plan de Gestion',
+    // Header
+    app_title:'AET MonBudget', app_subtitle:'ALBAN ELOH TECHNOLOGY · Gestion financière · Franc CFA',
+    btn_logout:'Déconnexion', btn_save:'Enregistrer', btn_add:'Ajouter', btn_cancel:'Annuler',
+    btn_edit:'Modifier', btn_delete:'Supprimer', btn_export:'Exporter CSV',
+    // Auth
+    auth_login:'Connexion', auth_signup:'Créer un compte', auth_email:'Email',
+    auth_password:'Mot de passe', auth_name:'Nom complet', auth_confirm:'Confirmer',
+    auth_forgot:'Mot de passe oublié ?', auth_btn_login:'Se connecter', auth_btn_signup:'Créer mon compte',
+    // Dashboard
+    dash_salary:'Salaire (mois)', dash_bonus:'Primes (mois)', dash_other:'Autres revenus',
+    dash_total_in:'Total revenus mois', dash_expenses:'Dépenses ce mois', dash_savings:'Épargne totale',
+    dash_balance:'Solde net ce mois', dash_spend_rate:'Taux de dépense mensuel',
+    dash_evolution:'Évolution 6 mois', dash_repartition:'Répartition globale',
+    dash_by_cat:'Dépenses par catégorie (mois)', dash_last_ops:'Dernières opérations',
+    dash_no_data:'Aucune donnée pour ce mois', dash_no_ops:'Aucune opération',
+    dash_current_month:'Mois courant',
+    // Revenus
+    rev_title:'Salaire & Revenus', rev_salaires:'Salaires', rev_primes:'Primes', rev_autres:'Autres',
+    // Dépenses
+    dep_title:'Dépenses', dep_total:'Total mois', dep_add:'Ajouter dépense', dep_by_cat:'Par catégorie',
+    // Épargne
+    save_title:'Épargne', save_total:'Total épargné', save_add:'Ajouter épargne',
+    // Budget
+    bud_title:'Budget & Limites', bud_add_title:'Définir un plafond de dépense',
+    bud_cat:'Catégorie de dépense', bud_limit:'Limite mensuelle (FCFA)', bud_add_btn:'Ajouter ce budget',
+    // Salaire config
+    sal_title:'Configuration salariale', sal_net:'Salaire net (FCFA)', sal_prime:'Primes fixes (FCFA)',
+    sal_autres:'Autres revenus fixes (FCFA)', sal_payday:'Jour de paie (1-31)',
+    sal_poste:'Poste / Fonction', sal_total:'Total mensuel calculé', sal_save:'Enregistrer la configuration',
+    sal_repartition:'Répartition ce mois', sal_spent:'Dépensé', sal_remaining:'Restant',
+    // Plan Gestion
+    pg_title:'Plan de Gestion Budgétaire', pg_subtitle:'Épargne · Stabilité financière · Coût de la vie au Togo',
+    pg_situation:'Votre situation', pg_choose_salary:'Choisissez votre salaire mensuel',
+    pg_family:'Situation familiale', pg_housing:'Logement', pg_rented:'Loué(e)', pg_owner:'Propriétaire',
+    pg_fam_single:'Célibataire / Seul(e)', pg_fam_couple:'En couple (sans enfant)',
+    pg_fam_1:'Famille · 1 enfant', pg_fam_2:'Famille · 2 enfants', pg_fam_3:'Famille · 3 enfants et +',
+    pg_custom:'✏️ Autre', pg_custom_label:'montant libre', pg_custom_amount:'Montant personnalisé (FCFA)',
+    pg_health:'Santé financière estimée', pg_savings_plan:'Plan d\'épargne & stabilité financière',
+    pg_charges:'Répartition des charges mensuelles', pg_advice:'Conseils pratiques pour votre situation',
+    pg_detail:'Tableau détaillé mensuel', pg_budget_ref:'Budget de référence — Salaire :',
+    pg_monthly_plan:'Plan mensuel recommandé · adapté au coût de la vie au Togo',
+    // Table headers
+    th_date:'Date', th_desc:'Description', th_cat:'Catégorie', th_type:'Type', th_amount:'Montant',
+    // Historique
+    hist_title:'Historique complet', hist_all_types:'Tous les types', hist_all_months:'Tous les mois',
+    hist_search:'Rechercher…', hist_incomes:'Revenus', hist_expenses:'Dépenses',
+    // Notes
+    notes_title:'Bloc-notes & Calendrier', notes_of_month:'Notes de ce mois',
+    // Modal Tx
+    tx_new:'Nouvelle opération', tx_edit:'Modifier l\'opération',
+    tx_date:'Date', tx_amount:'Montant (FCFA)', tx_desc:'Description', tx_note:'Note (facultatif)',
+    tx_cat:'Catégorie',
+    // Paramètres langue
+    lang_settings:'Paramètres de langue', lang_choose:'Choisissez votre langue',
+    lang_saved:'Langue mise à jour ✓',
+    // Misc
+    loading:'Chargement…', no_operation:'Aucune opération', fcfa:'FCFA / mois',
+    expense:'DÉPENSE', savings:'ÉPARGNE', investment:'INVESTISSEMENT', various:'DIVERS',
+    total_expenses:'Total dépenses', total_distributed:'Total distribué',
+  },
+  en: {
+    code:'en', name:'English', flag:'🇬🇧', dir:'ltr', font:'Syne',
+    nav_dashboard:'Dashboard', nav_revenus:'Income', nav_depenses:'Expenses',
+    nav_epargne:'Savings', nav_budget:'Budget', nav_salaire:'Salary',
+    nav_historique:'History', nav_notes:'Notes', nav_plangestion:'Budget Plan',
+    app_title:'AET MonBudget', app_subtitle:'ALBAN ELOH TECHNOLOGY · Personal Finance · CFA Franc',
+    btn_logout:'Log out', btn_save:'Save', btn_add:'Add', btn_cancel:'Cancel',
+    btn_edit:'Edit', btn_delete:'Delete', btn_export:'Export CSV',
+    auth_login:'Sign In', auth_signup:'Create Account', auth_email:'Email',
+    auth_password:'Password', auth_name:'Full Name', auth_confirm:'Confirm',
+    auth_forgot:'Forgot password?', auth_btn_login:'Sign In', auth_btn_signup:'Create my account',
+    dash_salary:'Salary (month)', dash_bonus:'Bonuses (month)', dash_other:'Other income',
+    dash_total_in:'Total income (month)', dash_expenses:'Expenses this month', dash_savings:'Total savings',
+    dash_balance:'Net balance (month)', dash_spend_rate:'Monthly spending rate',
+    dash_evolution:'6-month trend', dash_repartition:'Global breakdown',
+    dash_by_cat:'Expenses by category (month)', dash_last_ops:'Recent transactions',
+    dash_no_data:'No data for this month', dash_no_ops:'No transactions',
+    dash_current_month:'Current month',
+    rev_title:'Salary & Income', rev_salaires:'Salaries', rev_primes:'Bonuses', rev_autres:'Other',
+    dep_title:'Expenses', dep_total:'Total (month)', dep_add:'Add expense', dep_by_cat:'By category',
+    save_title:'Savings', save_total:'Total saved', save_add:'Add savings',
+    bud_title:'Budget & Limits', bud_add_title:'Set a spending limit',
+    bud_cat:'Expense category', bud_limit:'Monthly limit (FCFA)', bud_add_btn:'Add this budget',
+    sal_title:'Salary configuration', sal_net:'Net salary (FCFA)', sal_prime:'Fixed bonuses (FCFA)',
+    sal_autres:'Other fixed income (FCFA)', sal_payday:'Payday (1-31)',
+    sal_poste:'Position / Job title', sal_total:'Calculated monthly total', sal_save:'Save configuration',
+    sal_repartition:'This month\'s breakdown', sal_spent:'Spent', sal_remaining:'Remaining',
+    pg_title:'Budget Management Plan', pg_subtitle:'Savings · Financial Stability · Cost of Living in Togo',
+    pg_situation:'Your situation', pg_choose_salary:'Choose your monthly salary',
+    pg_family:'Family situation', pg_housing:'Housing', pg_rented:'Renting', pg_owner:'Owner',
+    pg_fam_single:'Single', pg_fam_couple:'Couple (no children)',
+    pg_fam_1:'Family · 1 child', pg_fam_2:'Family · 2 children', pg_fam_3:'Family · 3+ children',
+    pg_custom:'✏️ Other', pg_custom_label:'custom amount', pg_custom_amount:'Custom amount (FCFA)',
+    pg_health:'Estimated financial health', pg_savings_plan:'Savings & financial stability plan',
+    pg_charges:'Monthly expense breakdown', pg_advice:'Practical advice for your situation',
+    pg_detail:'Detailed monthly table', pg_budget_ref:'Reference budget — Salary:',
+    pg_monthly_plan:'Recommended monthly plan · adapted to the cost of living in Togo',
+    th_date:'Date', th_desc:'Description', th_cat:'Category', th_type:'Type', th_amount:'Amount',
+    hist_title:'Full history', hist_all_types:'All types', hist_all_months:'All months',
+    hist_search:'Search…', hist_incomes:'Income', hist_expenses:'Expenses',
+    notes_title:'Notes & Calendar', notes_of_month:'Notes this month',
+    tx_new:'New transaction', tx_edit:'Edit transaction',
+    tx_date:'Date', tx_amount:'Amount (FCFA)', tx_desc:'Description', tx_note:'Note (optional)',
+    tx_cat:'Category',
+    lang_settings:'Language settings', lang_choose:'Choose your language',
+    lang_saved:'Language updated ✓',
+    loading:'Loading…', no_operation:'No transactions', fcfa:'FCFA / month',
+    expense:'EXPENSE', savings:'SAVINGS', investment:'INVESTMENT', various:'MISC',
+    total_expenses:'Total expenses', total_distributed:'Total distributed',
+  },
+  ar: {
+    code:'ar', name:'العربية', flag:'🇲🇦', dir:'rtl', font:'Syne',
+    nav_dashboard:'لوحة القيادة', nav_revenus:'الدخل', nav_depenses:'المصروفات',
+    nav_epargne:'المدخرات', nav_budget:'الميزانية', nav_salaire:'الراتب',
+    nav_historique:'السجل', nav_notes:'الملاحظات', nav_plangestion:'خطة الميزانية',
+    app_title:'AET MonBudget', app_subtitle:'ALBAN ELOH TECHNOLOGY · إدارة الأموال الشخصية · فرنك أفريقي',
+    btn_logout:'خروج', btn_save:'حفظ', btn_add:'إضافة', btn_cancel:'إلغاء',
+    btn_edit:'تعديل', btn_delete:'حذف', btn_export:'تصدير CSV',
+    auth_login:'تسجيل الدخول', auth_signup:'إنشاء حساب', auth_email:'البريد الإلكتروني',
+    auth_password:'كلمة المرور', auth_name:'الاسم الكامل', auth_confirm:'تأكيد',
+    auth_forgot:'نسيت كلمة المرور؟', auth_btn_login:'دخول', auth_btn_signup:'إنشاء حسابي',
+    dash_salary:'الراتب (الشهر)', dash_bonus:'المكافآت (الشهر)', dash_other:'دخل آخر',
+    dash_total_in:'إجمالي الدخل', dash_expenses:'مصروفات الشهر', dash_savings:'إجمالي المدخرات',
+    dash_balance:'الرصيد الصافي', dash_spend_rate:'معدل الإنفاق الشهري',
+    dash_evolution:'تطور 6 أشهر', dash_repartition:'التوزيع الإجمالي',
+    dash_by_cat:'المصروفات حسب الفئة', dash_last_ops:'آخر العمليات',
+    dash_no_data:'لا توجد بيانات لهذا الشهر', dash_no_ops:'لا توجد عمليات',
+    dash_current_month:'الشهر الحالي',
+    rev_title:'الراتب والدخل', rev_salaires:'الرواتب', rev_primes:'المكافآت', rev_autres:'أخرى',
+    dep_title:'المصروفات', dep_total:'إجمالي الشهر', dep_add:'إضافة مصروف', dep_by_cat:'حسب الفئة',
+    save_title:'المدخرات', save_total:'إجمالي المدخر', save_add:'إضافة مدخرات',
+    bud_title:'الميزانية والحدود', bud_add_title:'تحديد سقف الإنفاق',
+    bud_cat:'فئة المصروفات', bud_limit:'الحد الشهري (فرنك)', bud_add_btn:'إضافة هذه الميزانية',
+    sal_title:'إعدادات الراتب', sal_net:'صافي الراتب (فرنك)', sal_prime:'مكافآت ثابتة (فرنك)',
+    sal_autres:'دخل ثابت آخر (فرنك)', sal_payday:'يوم الدفع (1-31)',
+    sal_poste:'المنصب / الوظيفة', sal_total:'إجمالي الراتب المحسوب', sal_save:'حفظ الإعدادات',
+    sal_repartition:'توزيع الشهر', sal_spent:'المُنفق', sal_remaining:'المتبقي',
+    pg_title:'خطة إدارة الميزانية', pg_subtitle:'مدخرات · الاستقرار المالي · تكلفة المعيشة في توغو',
+    pg_situation:'وضعك الحالي', pg_choose_salary:'اختر راتبك الشهري',
+    pg_family:'الوضع العائلي', pg_housing:'السكن', pg_rented:'مستأجر', pg_owner:'مالك',
+    pg_fam_single:'أعزب / عزباء', pg_fam_couple:'زوجان (بلا أطفال)',
+    pg_fam_1:'عائلة · طفل واحد', pg_fam_2:'عائلة · طفلان', pg_fam_3:'عائلة · 3 أطفال فأكثر',
+    pg_custom:'✏️ أخرى', pg_custom_label:'مبلغ مخصص', pg_custom_amount:'المبلغ المخصص (فرنك)',
+    pg_health:'الصحة المالية المقدرة', pg_savings_plan:'خطة الادخار والاستقرار المالي',
+    pg_charges:'توزيع الأعباء الشهرية', pg_advice:'نصائح عملية لوضعك',
+    pg_detail:'جدول مفصل شهري', pg_budget_ref:'ميزانية مرجعية — الراتب:',
+    pg_monthly_plan:'خطة شهرية موصى بها · مكيّفة مع تكلفة المعيشة في توغو',
+    th_date:'التاريخ', th_desc:'الوصف', th_cat:'الفئة', th_type:'النوع', th_amount:'المبلغ',
+    hist_title:'السجل الكامل', hist_all_types:'كل الأنواع', hist_all_months:'كل الأشهر',
+    hist_search:'بحث…', hist_incomes:'الدخل', hist_expenses:'المصروفات',
+    notes_title:'الملاحظات والتقويم', notes_of_month:'ملاحظات هذا الشهر',
+    tx_new:'عملية جديدة', tx_edit:'تعديل العملية',
+    tx_date:'التاريخ', tx_amount:'المبلغ (فرنك)', tx_desc:'الوصف', tx_note:'ملاحظة (اختياري)',
+    tx_cat:'الفئة',
+    lang_settings:'إعدادات اللغة', lang_choose:'اختر لغتك',
+    lang_saved:'تم تحديث اللغة ✓',
+    loading:'جار التحميل…', no_operation:'لا توجد عمليات', fcfa:'فرنك / شهر',
+    expense:'مصروف', savings:'مدخرات', investment:'استثمار', various:'متنوع',
+    total_expenses:'إجمالي المصروفات', total_distributed:'الإجمالي الموزع',
+  },
+  ewe: {
+    code:'ewe', name:'Eʋegbe', flag:'🇹🇬', dir:'ltr', font:'Syne',
+    nav_dashboard:'Agbalẽ ŋutifafa', nav_revenus:'Ðɔxɔxɔ', nav_depenses:'Xɔxɔ',
+    nav_epargne:'Dabɔbɔ', nav_budget:'Ðɔkpɔkpɔ', nav_salaire:'Dzɔdzɔe',
+    nav_historique:'Nuzãzã', nav_notes:'Nuŋlɔŋlɔ', nav_plangestion:'Ðɔkpɔkpɔ Sesẽ',
+    app_title:'AET MonBudget', app_subtitle:'ALBAN ELOH TECHNOLOGY · Ðɔ kpɔkpɔ sesẽ · Franc CFA',
+    btn_logout:'Fle', btn_save:'Dzra', btn_add:'Tsɔ', btn_cancel:'Trɔ',
+    btn_edit:'Trɔ alo', btn_delete:'Ɖe eme', btn_export:'Export CSV',
+    auth_login:'Tsɔ ŋu', auth_signup:'Wɔ akonto', auth_email:'Email',
+    auth_password:'Ŋkɔ ƒukpɔi', auth_name:'Ŋkɔ nyuie', auth_confirm:'Kpɔ gake',
+    auth_forgot:'A wo ŋkɔ ƒukpɔi?', auth_btn_login:'Tsɔ ŋu', auth_btn_signup:'Wɔ akonto',
+    dash_salary:'Dzɔdzɔe (ƒoli)', dash_bonus:'Nufɔfɔ (ƒoli)', dash_other:'Ðɔ bubuwo',
+    dash_total_in:'Ðɔ blibo (ƒoli)', dash_expenses:'Xɔxɔ ƒoli sia me', dash_savings:'Dabɔ blibo',
+    dash_balance:'Ðɔ si le', dash_spend_rate:'Xɔxɔ tɔtrɔ',
+    dash_evolution:'Ɖoɖo ŋkeke 6', dash_repartition:'Kpɔkpɔ blibo',
+    dash_by_cat:'Xɔxɔ nu ƒe yeyewo (ƒoli)', dash_last_ops:'Nudzɔdzɔ mamleawo',
+    dash_no_data:'Nunya mele ƒoli sia me o', dash_no_ops:'Nudzɔdzɔ mele o',
+    dash_current_month:'Ƒoli si le',
+    rev_title:'Dzɔdzɔe kple Ðɔwo', rev_salaires:'Dzɔdzɔewo', rev_primes:'Nufɔfɔwo', rev_autres:'Bubuwo',
+    dep_title:'Xɔxɔ', dep_total:'Blibo (ƒoli)', dep_add:'Tsɔ xɔxɔ', dep_by_cat:'Nu yeyewo ŋu',
+    save_title:'Dabɔbɔ', save_total:'Dabɔ blibo', save_add:'Tsɔ dabɔ',
+    bud_title:'Ðɔkpɔ kple Sese', bud_add_title:'Sɔ xɔxɔ ŋgɔpɔ',
+    bud_cat:'Xɔxɔ nu yeye', bud_limit:'Ŋgɔpɔ (FCFA)', bud_add_btn:'Tsɔ ðɔkpɔ sia',
+    sal_title:'Dzɔdzɔe kpɔkpɔ', sal_net:'Dzɔdzɔe (FCFA)', sal_prime:'Nufɔfɔ (FCFA)',
+    sal_autres:'Ðɔ bubu (FCFA)', sal_payday:'Dzɔdzɔe ŋkeke',
+    sal_poste:'Dɔwɔwɔ', sal_total:'Blibo', sal_save:'Dzra',
+    sal_repartition:'Ƒoli sia ŋgɔpɔ', sal_spent:'Xɔxɔ', sal_remaining:'Si le',
+    pg_title:'Ðɔkpɔ Sesẽ', pg_subtitle:'Dabɔ · Ðɔ nyuie · Togo ŋu ŋɔnuti',
+    pg_situation:'Wò ɖoɖo', pg_choose_salary:'Tia wò dzɔdzɔe',
+    pg_family:'Fometo ɖoɖo', pg_housing:'Ʋuɖe', pg_rented:'Xɔ la', pg_owner:'Wò ʋuɖe le',
+    pg_fam_single:'Ame ɖeka', pg_fam_couple:'Ŋutawo (nusi mele o)',
+    pg_fam_1:'Fome · asi ɖeka', pg_fam_2:'Fome · asi eve', pg_fam_3:'Fome · asi etɔ̃ le egbɔ',
+    pg_custom:'✏️ Bubu', pg_custom_label:'ɖoɖo bubu', pg_custom_amount:'Ðɔ sɔsɔ (FCFA)',
+    pg_health:'Ðɔ nyui kpɔkpɔ', pg_savings_plan:'Dabɔ kple ðɔ nyuie sesẽ',
+    pg_charges:'Ƒoli xɔxɔ kpɔkpɔ', pg_advice:'Kɔnu wò ɖoɖo ŋu',
+    pg_detail:'Ŋutikpɔkpɔ blibo', pg_budget_ref:'Dzɔdzɔe ŋgɔ —',
+    pg_monthly_plan:'Ðɔkpɔ sesẽ · Togo ŋu ŋɔnuti',
+    th_date:'Ŋkeke', th_desc:'Nuŋlɔŋlɔ', th_cat:'Nu yeye', th_type:'Klasi', th_amount:'Ðɔ',
+    hist_title:'Nuzãzã blibo', hist_all_types:'Klasi kaka', hist_all_months:'Ƒoli kaka',
+    hist_search:'Bubu…', hist_incomes:'Ðɔxɔxɔ', hist_expenses:'Xɔxɔ',
+    notes_title:'Nuŋlɔŋlɔ kple Ŋkeke', notes_of_month:'Nuŋlɔ ƒoli sia me',
+    tx_new:'Nudzɔdzɔ yeye', tx_edit:'Trɔ nudzɔdzɔ',
+    tx_date:'Ŋkeke', tx_amount:'Ðɔ (FCFA)', tx_desc:'Nuŋlɔŋlɔ', tx_note:'Nuŋlɔ (mele vɛ o)',
+    tx_cat:'Nu yeye',
+    lang_settings:'Gbe kpɔkpɔ', lang_choose:'Tia wò gbe',
+    lang_saved:'Gbe trɔtrɔ wɔ nyuie ✓',
+    loading:'Le ɖa me…', no_operation:'Nudzɔdzɔ mele o', fcfa:'FCFA / ƒoli',
+    expense:'XƆXƆ', savings:'DABƆBƆ', investment:'WƆWƆ', various:'BUBUWO',
+    total_expenses:'Xɔxɔ blibo', total_distributed:'Blibo nyuie',
+  },
+};
+
+let currentLang = localStorage.getItem('aet_lang') || 'fr';
+
+function t(key) {
+  return (LANGS[currentLang] && LANGS[currentLang][key]) || (LANGS['fr'] && LANGS['fr'][key]) || key;
+}
+
+function applyLang(code) {
+  if (!LANGS[code]) return;
+  currentLang = code;
+  localStorage.setItem('aet_lang', code);
+  const lang = LANGS[code];
+  // Direction du texte
+  document.documentElement.lang  = code;
+  document.documentElement.dir   = lang.dir;
+  document.body.style.direction  = lang.dir;
+  // Marquer actif dans le sélecteur
+  document.querySelectorAll('.lang-card').forEach(c => c.classList.toggle('active', c.dataset.lang === code));
+  // Appliquer les traductions via data-i18n
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+      el.placeholder = t(key);
+    } else {
+      el.textContent = t(key);
+    }
+  });
+  // Mettre à jour le titre
+  document.title = t('app_title') + ' — ' + (code === 'fr' ? 'Gestion Financière' : code === 'en' ? 'Personal Finance' : code === 'ar' ? 'إدارة الأموال' : 'Ðɔ Kpɔkpɔ');
+  toast(t('lang_saved'), 'success');
+}
+
+window.applyLang = applyLang;
+
+// ══ DONNÉES BUDGET PRÉÉTABLIES ══
+const BUDGET_PRESETS = {
+  50000: {
+    salaire: 50000,
+    depenses: [
+      { cat:'🏠 Loyer / Contribution famille', montant: 10000 },
+      { cat:'🍽️ Nourriture',                  montant: 15000 },
+      { cat:'🚗 Transport',                    montant: 7000  },
+      { cat:'📱 Téléphone + Internet',         montant: 3000  },
+      { cat:'💡 Eau / Électricité',            montant: 2000  },
+    ],
+    epargne: 5000,
+    formation: 8000,
+  },
+  75000: {
+    salaire: 75000,
+    depenses: [
+      { cat:'🏠 Loyer',                montant: 20000 },
+      { cat:'🍽️ Nourriture',           montant: 20000 },
+      { cat:'🚗 Transport',             montant: 8000  },
+      { cat:'📱 Téléphone + Internet', montant: 4000  },
+      { cat:'💡 Eau / Électricité',    montant: 3000  },
+    ],
+    epargne: 8000,
+    formation: 12000,
+  },
+  100000: {
+    salaire: 100000,
+    depenses: [
+      { cat:'🏠 Loyer',                montant: 25000 },
+      { cat:'🍽️ Nourriture',           montant: 25000 },
+      { cat:'🚗 Transport',             montant: 10000 },
+      { cat:'📱 Téléphone + Internet', montant: 5000  },
+      { cat:'💡 Eau / Électricité',    montant: 5000  },
+    ],
+    epargne: 10000,
+    formation: 20000,
+  },
+  150000: {
+    salaire: 150000,
+    depenses: [
+      { cat:'🏠 Loyer',                montant: 35000 },
+      { cat:'🍽️ Nourriture',           montant: 35000 },
+      { cat:'🚗 Transport',             montant: 15000 },
+      { cat:'📱 Téléphone + Internet', montant: 10000 },
+      { cat:'💡 Eau / Électricité',    montant: 5000  },
+    ],
+    epargne: 20000,
+    formation: 30000,
+  },
+  200000: {
+    salaire: 200000,
+    depenses: [
+      { cat:'🏠 Loyer',                montant: 45000 },
+      { cat:'🍽️ Nourriture',           montant: 40000 },
+      { cat:'🚗 Transport',             montant: 20000 },
+      { cat:'📱 Téléphone + Internet', montant: 10000 },
+      { cat:'💡 Eau / Électricité',    montant: 10000 },
+    ],
+    epargne: 30000,
+    formation: 45000,
+  },
+  250000: {
+    salaire: 250000,
+    depenses: [
+      { cat:'🏠 Loyer',                montant: 60000 },
+      { cat:'🍽️ Nourriture',           montant: 45000 },
+      { cat:'🚗 Transport',             montant: 25000 },
+      { cat:'📱 Téléphone + Internet', montant: 10000 },
+      { cat:'💡 Eau / Électricité',    montant: 10000 },
+    ],
+    epargne: 40000,
+    formation: 60000,
+  },
+};
+
 window.renderPlanGestion = function() {
   const salSel    = document.getElementById('pgSalaire');
   const sitSel    = document.getElementById('pgSituation');
@@ -1256,56 +1606,114 @@ window.renderPlanGestion = function() {
   // ── TABLEAU DÉTAILLÉ ──
   const pgDetail = document.getElementById('pgDetailRows');
   if (pgDetail) {
-    pgDetail.innerHTML = `<div class="table-wrap"><table>
-      <thead><tr><th>Poste</th><th>Montant / mois</th><th>% salaire</th><th>Nature</th><th>Remarque</th></tr></thead>
-      <tbody>
-        ${c.items.map(item => {
-          const pct = Math.round(item.montant / salaire * 100);
-          const col = PG_COLORS[item.key] || '#6366f1';
-          return `<tr>
-            <td>${item.cat}</td>
-            <td style="font-family:'DM Mono',monospace;font-weight:700;color:${col}">${item.montant>0?fmt(item.montant):'<span style="color:var(--success-l)">0 FCFA</span>'}</td>
-            <td style="font-family:'DM Mono',monospace;font-size:12px">${pct}%</td>
-            <td><span style="font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(239,68,68,.12);color:var(--danger-l);font-weight:700">CHARGE</span></td>
-            <td style="font-size:11px;color:var(--muted)">${item.note}</td>
-          </tr>`;
-        }).join('')}
-        <tr style="background:rgba(239,68,68,.05);font-weight:800">
-          <td colspan="1">TOTAL CHARGES</td>
-          <td style="font-family:'DM Mono',monospace;color:var(--danger-l)">${fmt(c.totalCharges)}</td>
-          <td style="font-family:'DM Mono',monospace">${c.pctCharges}%</td>
-          <td>—</td><td style="font-size:11px;color:var(--muted)">—</td>
-        </tr>
-        <tr style="background:rgba(20,184,166,.05)">
-          <td>🛡️ Épargne urgence</td>
-          <td style="font-family:'DM Mono',monospace;font-weight:800;color:#14b8a6">${ep.urgence>0?fmt(ep.urgence):'—'}</td>
-          <td style="font-family:'DM Mono',monospace">${Math.round(ep.urgence/salaire*100)}%</td>
-          <td><span style="font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(20,184,166,.15);color:#14b8a6;font-weight:700">ÉPARGNE</span></td>
-          <td style="font-size:11px;color:var(--muted)">Fonds intouchable, 3–6 mois de charges</td>
-        </tr>
-        <tr style="background:rgba(34,211,238,.05)">
-          <td>🎯 Épargne projet</td>
-          <td style="font-family:'DM Mono',monospace;font-weight:800;color:#22d3ee">${ep.projet>0?fmt(ep.projet):'—'}</td>
-          <td style="font-family:'DM Mono',monospace">${Math.round(ep.projet/salaire*100)}%</td>
-          <td><span style="font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(34,211,238,.15);color:#22d3ee;font-weight:700">ÉPARGNE</span></td>
-          <td style="font-size:11px;color:var(--muted)">Rentrée, réparations, projets famille</td>
-        </tr>
-        <tr style="background:rgba(99,102,241,.05)">
-          <td>📈 Investissement</td>
-          <td style="font-family:'DM Mono',monospace;font-weight:800;color:var(--primary-l)">${ep.invest>0?fmt(ep.invest):'—'}</td>
-          <td style="font-family:'DM Mono',monospace">${Math.round(ep.invest/salaire*100)}%</td>
-          <td><span style="font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(99,102,241,.15);color:var(--primary-l);font-weight:700">ÉPARGNE</span></td>
-          <td style="font-size:11px;color:var(--muted)">Tontine, commerce, terrain, COOPEC</td>
-        </tr>
-        <tr style="background:rgba(99,102,241,.07);font-weight:800;border-top:2px solid rgba(99,102,241,.25)">
-          <td>TOTAL DISTRIBUÉ</td>
-          <td style="font-family:'DM Mono',monospace;color:${c.verif100?'var(--success-l)':'var(--danger-l)'}">${fmt(c.totalCharges + ep.total)}</td>
-          <td style="font-family:'DM Mono',monospace">${c.pctCharges + c.pctEpargne}%</td>
-          <td><span style="font-size:11px;color:${c.verif100?'var(--success-l)':'var(--danger-l)'}">≈ ${c.verif100?'✅ 100%':'⚠️ Écart'}</span></td>
-          <td style="font-size:11px;color:var(--muted)">Charges + Épargne = ${fmt(salaire)} salaire</td>
-        </tr>
-      </tbody>
-    </table></div>`;
+    const preset = BUDGET_PRESETS[salaire];
+    if (preset) {
+      // Afficher le tableau de budget préétabli
+      const totalDep = preset.depenses.reduce((s,d)=>s+d.montant,0);
+      const totalAll = totalDep + preset.epargne + preset.formation;
+      const restant  = preset.salaire - totalAll;
+      pgDetail.innerHTML = `
+        <div style="padding:14px 20px;background:rgba(99,102,241,.07);border-bottom:1px solid rgba(148,163,184,.08)">
+          <div style="font-size:12px;color:var(--primary-l);font-weight:700">💼 Budget de référence — Salaire : ${fmt(preset.salaire)}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:3px">Plan mensuel recommandé · adapté au coût de la vie au Togo</div>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Poste de dépense</th><th>Montant / mois</th><th>% salaire</th><th>Type</th></tr></thead>
+          <tbody>
+            ${preset.depenses.map(d=>{
+              const pct = Math.round(d.montant/preset.salaire*100);
+              return `<tr>
+                <td style="font-weight:600">${d.cat}</td>
+                <td style="font-family:'DM Mono',monospace;font-weight:800;color:var(--danger-l)">${fmt(d.montant)}</td>
+                <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--muted)">${pct}%</td>
+                <td><span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(239,68,68,.12);color:var(--danger-l);font-weight:700">DÉPENSE</span></td>
+              </tr>`;
+            }).join('')}
+            <tr style="background:rgba(239,68,68,.05);font-weight:800;border-top:2px solid rgba(239,68,68,.15)">
+              <td>📊 Total dépenses</td>
+              <td style="font-family:'DM Mono',monospace;color:var(--danger-l)">${fmt(totalDep)}</td>
+              <td style="font-family:'DM Mono',monospace">${Math.round(totalDep/preset.salaire*100)}%</td>
+              <td>—</td>
+            </tr>
+            <tr style="background:rgba(20,184,166,.05)">
+              <td style="font-weight:700">🏦 Épargne</td>
+              <td style="font-family:'DM Mono',monospace;font-weight:800;color:#14b8a6">${fmt(preset.epargne)}</td>
+              <td style="font-family:'DM Mono',monospace;color:#14b8a6">${Math.round(preset.epargne/preset.salaire*100)}%</td>
+              <td><span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(20,184,166,.15);color:#14b8a6;font-weight:700">ÉPARGNE</span></td>
+            </tr>
+            <tr style="background:rgba(99,102,241,.05)">
+              <td style="font-weight:700">📚 Formation / Projet / Business</td>
+              <td style="font-family:'DM Mono',monospace;font-weight:800;color:var(--primary-l)">${fmt(preset.formation)}</td>
+              <td style="font-family:'DM Mono',monospace;color:var(--primary-l)">${Math.round(preset.formation/preset.salaire*100)}%</td>
+              <td><span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(99,102,241,.15);color:var(--primary-l);font-weight:700">INVESTISSEMENT</span></td>
+            </tr>
+            ${restant>0?`<tr style="background:rgba(245,158,11,.05)">
+              <td style="font-weight:700">💫 Divers / Imprévus</td>
+              <td style="font-family:'DM Mono',monospace;font-weight:800;color:var(--warning)">${fmt(restant)}</td>
+              <td style="font-family:'DM Mono',monospace;color:var(--warning)">${Math.round(restant/preset.salaire*100)}%</td>
+              <td><span style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(245,158,11,.15);color:var(--warning);font-weight:700">DIVERS</span></td>
+            </tr>`:''}
+            <tr style="background:rgba(16,185,129,.07);font-weight:800;border-top:2px solid rgba(16,185,129,.25)">
+              <td>✅ TOTAL</td>
+              <td style="font-family:'DM Mono',monospace;color:var(--success-l)">${fmt(totalAll+(restant>0?restant:0))}</td>
+              <td style="font-family:'DM Mono',monospace">100%</td>
+              <td><span style="font-size:11px;color:var(--success-l)">= ${fmt(preset.salaire)}</span></td>
+            </tr>
+          </tbody>
+        </table></div>`;
+    } else {
+      // Tableau calculé automatiquement pour les autres montants
+      pgDetail.innerHTML = `<div class="table-wrap"><table>
+        <thead><tr><th>Poste</th><th>Montant / mois</th><th>% salaire</th><th>Nature</th><th>Remarque</th></tr></thead>
+        <tbody>
+          ${c.items.map(item => {
+            const pct = Math.round(item.montant / salaire * 100);
+            const col = PG_COLORS[item.key] || '#6366f1';
+            return `<tr>
+              <td>${item.cat}</td>
+              <td style="font-family:'DM Mono',monospace;font-weight:700;color:${col}">${item.montant>0?fmt(item.montant):'<span style="color:var(--success-l)">0 FCFA</span>'}</td>
+              <td style="font-family:'DM Mono',monospace;font-size:12px">${pct}%</td>
+              <td><span style="font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(239,68,68,.12);color:var(--danger-l);font-weight:700">CHARGE</span></td>
+              <td style="font-size:11px;color:var(--muted)">${item.note}</td>
+            </tr>`;
+          }).join('')}
+          <tr style="background:rgba(239,68,68,.05);font-weight:800">
+            <td colspan="1">TOTAL CHARGES</td>
+            <td style="font-family:'DM Mono',monospace;color:var(--danger-l)">${fmt(c.totalCharges)}</td>
+            <td style="font-family:'DM Mono',monospace">${c.pctCharges}%</td>
+            <td>—</td><td style="font-size:11px;color:var(--muted)">—</td>
+          </tr>
+          <tr style="background:rgba(20,184,166,.05)">
+            <td>🛡️ Épargne urgence</td>
+            <td style="font-family:'DM Mono',monospace;font-weight:800;color:#14b8a6">${ep.urgence>0?fmt(ep.urgence):'—'}</td>
+            <td style="font-family:'DM Mono',monospace">${Math.round(ep.urgence/salaire*100)}%</td>
+            <td><span style="font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(20,184,166,.15);color:#14b8a6;font-weight:700">ÉPARGNE</span></td>
+            <td style="font-size:11px;color:var(--muted)">Fonds intouchable, 3–6 mois de charges</td>
+          </tr>
+          <tr style="background:rgba(34,211,238,.05)">
+            <td>🎯 Épargne projet</td>
+            <td style="font-family:'DM Mono',monospace;font-weight:800;color:#22d3ee">${ep.projet>0?fmt(ep.projet):'—'}</td>
+            <td style="font-family:'DM Mono',monospace">${Math.round(ep.projet/salaire*100)}%</td>
+            <td><span style="font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(34,211,238,.15);color:#22d3ee;font-weight:700">ÉPARGNE</span></td>
+            <td style="font-size:11px;color:var(--muted)">Rentrée, réparations, projets famille</td>
+          </tr>
+          <tr style="background:rgba(99,102,241,.05)">
+            <td>📈 Investissement</td>
+            <td style="font-family:'DM Mono',monospace;font-weight:800;color:var(--primary-l)">${ep.invest>0?fmt(ep.invest):'—'}</td>
+            <td style="font-family:'DM Mono',monospace">${Math.round(ep.invest/salaire*100)}%</td>
+            <td><span style="font-size:10px;padding:2px 7px;border-radius:20px;background:rgba(99,102,241,.15);color:var(--primary-l);font-weight:700">ÉPARGNE</span></td>
+            <td style="font-size:11px;color:var(--muted)">Tontine, commerce, terrain, COOPEC</td>
+          </tr>
+          <tr style="background:rgba(99,102,241,.07);font-weight:800;border-top:2px solid rgba(99,102,241,.25)">
+            <td>TOTAL DISTRIBUÉ</td>
+            <td style="font-family:'DM Mono',monospace;color:${c.verif100?'var(--success-l)':'var(--danger-l)'}">${fmt(c.totalCharges + ep.total)}</td>
+            <td style="font-family:'DM Mono',monospace">${c.pctCharges + c.pctEpargne}%</td>
+            <td><span style="font-size:11px;color:${c.verif100?'var(--success-l)':'var(--danger-l)'}">≈ ${c.verif100?'✅ 100%':'⚠️ Écart'}</span></td>
+            <td style="font-size:11px;color:var(--muted)">Charges + Épargne = ${fmt(salaire)} salaire</td>
+          </tr>
+        </tbody>
+      </table></div>`;
+    }
   }
 };
 
@@ -1815,13 +2223,36 @@ body::before{content:'';position:fixed;inset:0;background:
 .container{max-width:1420px;margin:0 auto;padding:28px 24px}
 
 /* ── TABS ── */
-.tabs-nav{display:flex;gap:6px;margin-bottom:24px;background:var(--card);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:14px;padding:5px;overflow-x:auto}
-.tab-btn{flex:1;min-width:110px;padding:11px 14px;background:transparent;border:none;color:var(--muted);font-weight:700;font-size:13px;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .2s;white-space:nowrap}
-.tab-btn:hover{color:var(--text)}
-.tab-btn.active{background:var(--grad);color:#fff;box-shadow:0 4px 14px rgba(99,102,241,.3)}
+.tabs-nav{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:24px}
+@media(min-width:640px){.tabs-nav{grid-template-columns:repeat(5,1fr)}}
+@media(min-width:1024px){.tabs-nav{display:flex;flex-wrap:wrap;gap:6px;background:var(--card);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:14px;padding:5px}}
+.tab-btn{padding:10px 8px;background:var(--card);border:1px solid var(--border);color:var(--muted);font-weight:700;font-size:12px;border-radius:12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;transition:all .2s;white-space:nowrap}
+@media(min-width:1024px){.tab-btn{flex:1;min-width:90px;padding:11px 14px;flex-direction:row;border:none;border-radius:10px;font-size:13px}}
+.tab-btn i{font-size:16px}
+@media(min-width:1024px){.tab-btn i{font-size:14px}}
+.tab-btn:hover{color:var(--text);background:rgba(99,102,241,.08);border-color:rgba(99,102,241,.2)}
+@media(min-width:1024px){.tab-btn:hover{background:rgba(99,102,241,.08);border:none}}
+.tab-btn.active{background:var(--grad);color:#fff;border-color:transparent;box-shadow:0 4px 14px rgba(99,102,241,.3)}
+@media(min-width:1024px){.tab-btn.active{border:none}}
 .tab-content{display:none;animation:fade .3s}
 .tab-content.active{display:block}
 @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ── SALARY CARDS (Plan de Gestion) ── */
+.pg-sal-card{background:rgba(30,41,59,.6);border:1px solid var(--border);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .22s;user-select:none}
+.pg-sal-card:hover{border-color:rgba(99,102,241,.4);background:rgba(99,102,241,.07)}
+.pg-sal-card.active{background:var(--grad);border-color:transparent;box-shadow:0 6px 20px rgba(99,102,241,.35)}
+.pg-sal-card.active .pg-sal-amount,.pg-sal-card.active .pg-sal-label{color:#fff}
+.pg-sal-amount{font-size:17px;font-weight:800;font-family:'DM Mono',monospace;color:var(--text);line-height:1.2}
+.pg-sal-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:3px}
+
+/* ── LANGUAGE CARDS ── */
+.lang-card{background:rgba(30,41,59,.6);border:2px solid var(--border);border-radius:14px;padding:18px 14px;text-align:center;cursor:pointer;transition:all .22s;user-select:none}
+.lang-card:hover{border-color:rgba(99,102,241,.5);background:rgba(99,102,241,.07);transform:translateY(-2px)}
+.lang-card.active{background:linear-gradient(135deg,rgba(99,102,241,.2),rgba(139,92,246,.15));border-color:var(--primary-l);box-shadow:0 6px 20px rgba(99,102,241,.25)}
+.lang-flag{font-size:32px;margin-bottom:8px;line-height:1}
+.lang-name{font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px}
+.lang-native{font-size:12px;color:var(--muted);font-family:'DM Mono',monospace}
 
 /* ── STATS GRID ── */
 .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:24px}
@@ -2218,6 +2649,7 @@ select.form-input option{background:var(--bg2)}
         <div class="user-avatar" id="userAvatar">U</div>
         <span id="userName">—</span>
       </div>
+      <button class="btn-header" onclick="openModal('langModal')" title="Langue / Language" style="font-size:17px">🌐</button>
       <button class="btn-header" onclick="openModal('changePwdModal')" title="Changer mot de passe"><i class="fas fa-key"></i></button>
       <button class="btn-header" onclick="doLogout()" title="Déconnexion"><i class="fas fa-sign-out-alt"></i></button>
     </div>
@@ -2468,24 +2900,49 @@ select.form-input option{background:var(--bg2)}
       <!-- Sélecteurs -->
       <div class="panel" style="margin-bottom:20px;padding:20px">
         <div class="panel-title" style="margin-bottom:16px"><i class="fas fa-sliders"></i> Votre situation</div>
+
+        <!-- Cartes de salaire -->
+        <div style="margin-bottom:16px">
+          <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-bottom:10px">Choisissez votre salaire mensuel</div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px" id="pgSalCards">
+            <div class="pg-sal-card" data-val="50000" onclick="pgSelectSal(this)">
+              <div class="pg-sal-amount">50 000</div>
+              <div class="pg-sal-label">FCFA / mois</div>
+            </div>
+            <div class="pg-sal-card active" data-val="75000" onclick="pgSelectSal(this)">
+              <div class="pg-sal-amount">75 000</div>
+              <div class="pg-sal-label">FCFA / mois</div>
+            </div>
+            <div class="pg-sal-card" data-val="100000" onclick="pgSelectSal(this)">
+              <div class="pg-sal-amount">100 000</div>
+              <div class="pg-sal-label">FCFA / mois</div>
+            </div>
+            <div class="pg-sal-card" data-val="150000" onclick="pgSelectSal(this)">
+              <div class="pg-sal-amount">150 000</div>
+              <div class="pg-sal-label">FCFA / mois</div>
+            </div>
+            <div class="pg-sal-card" data-val="200000" onclick="pgSelectSal(this)">
+              <div class="pg-sal-amount">200 000</div>
+              <div class="pg-sal-label">FCFA / mois</div>
+            </div>
+            <div class="pg-sal-card" data-val="250000" onclick="pgSelectSal(this)">
+              <div class="pg-sal-amount">250 000</div>
+              <div class="pg-sal-label">FCFA / mois</div>
+            </div>
+            <div class="pg-sal-card pg-sal-custom" data-val="custom" onclick="pgSelectSal(this)">
+              <div class="pg-sal-amount" style="font-size:15px">✏️ Autre</div>
+              <div class="pg-sal-label">montant libre</div>
+            </div>
+          </div>
+          <input type="hidden" id="pgSalaire" value="50000"/>
+        </div>
+
+        <div class="form-group" id="pgCustomWrap" style="display:none;margin-bottom:12px">
+          <label class="form-label">Montant personnalisé (FCFA)</label>
+          <input type="number" class="form-input" id="pgCustomAmt" placeholder="ex: 120000" oninput="renderPlanGestion()"/>
+        </div>
+
         <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:flex-end">
-          <div class="form-group" style="flex:1;min-width:180px;margin-bottom:0">
-            <label class="form-label">Salaire mensuel</label>
-            <select class="form-input" id="pgSalaire" onchange="renderPlanGestion()">
-              <option value="50000">50 000 FCFA</option>
-              <option value="75000">75 000 FCFA</option>
-              <option value="100000">100 000 FCFA</option>
-              <option value="125000">125 000 FCFA</option>
-              <option value="150000" selected>150 000 FCFA</option>
-              <option value="175000">175 000 FCFA</option>
-              <option value="200000">200 000 FCFA</option>
-              <option value="custom">Montant libre…</option>
-            </select>
-          </div>
-          <div class="form-group" id="pgCustomWrap" style="display:none;flex:1;min-width:150px;margin-bottom:0">
-            <label class="form-label">Montant (FCFA)</label>
-            <input type="number" class="form-input" id="pgCustomAmt" placeholder="ex: 120000" oninput="renderPlanGestion()"/>
-          </div>
           <div class="form-group" style="flex:1;min-width:180px;margin-bottom:0">
             <label class="form-label">Situation familiale</label>
             <select class="form-input" id="pgSituation" onchange="renderPlanGestion()">
@@ -2803,6 +3260,45 @@ window.switchTab = function(tab) {
     <div class="modal-foot">
       <button class="btn-cancel" onclick="closeModal('changePwdModal')">Annuler</button>
       <button class="btn-save-modal" onclick="doChangePwd()"><i class="fas fa-key"></i> Mettre à jour</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ MODAL : LANGUE ════════════════ -->
+<div class="modal-overlay" id="langModal">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-title">🌐 Paramètres de langue</div>
+    <p style="font-size:13px;color:var(--muted);margin-bottom:20px">Choisissez votre langue d'affichage · Choose your display language</p>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px">
+      <div class="lang-card" data-lang="fr" onclick="applyLang('fr')">
+        <div class="lang-flag">🇫🇷</div>
+        <div class="lang-name">Français</div>
+        <div class="lang-native">Français</div>
+      </div>
+      <div class="lang-card" data-lang="en" onclick="applyLang('en')">
+        <div class="lang-flag">🇬🇧</div>
+        <div class="lang-name">Anglais</div>
+        <div class="lang-native">English</div>
+      </div>
+      <div class="lang-card" data-lang="ar" onclick="applyLang('ar')">
+        <div class="lang-flag">🇲🇦</div>
+        <div class="lang-name">Arabe</div>
+        <div class="lang-native">العربية</div>
+      </div>
+      <div class="lang-card" data-lang="ewe" onclick="applyLang('ewe')">
+        <div class="lang-flag">🇹🇬</div>
+        <div class="lang-name">Ewe</div>
+        <div class="lang-native">Eʋegbe</div>
+      </div>
+    </div>
+
+    <div style="padding:12px 16px;background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.2);border-radius:10px;font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:18px">
+      💡 <strong style="color:var(--primary-l)">Note :</strong> Les données (transactions, catégories) restent en français pour assurer la compatibilité. Seule l'interface est traduite.
+    </div>
+
+    <div class="modal-foot">
+      <button class="btn-save-modal" onclick="closeModal('langModal')"><i class="fas fa-check"></i> Fermer</button>
     </div>
   </div>
 </div>

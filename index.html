@@ -2641,6 +2641,57 @@ select.form-input option{background:var(--bg2)}
 </head>
 <body>
 
+<!-- ═══════════════ SPLASH SCREEN PUBLICITÉ ═══════════════ -->
+<div id="ad-splash" style="
+  position:fixed;top:0;left:0;width:100%;height:100%;
+  background:rgba(0,0,0,0.92);
+  z-index:99999;
+  display:flex;align-items:center;justify-content:center;
+">
+  <div style="
+    background:#1a1a2e;
+    border:1px solid #4f8ef7;
+    border-radius:16px;
+    padding:28px 24px;
+    max-width:320px;
+    width:90%;
+    text-align:center;
+    font-family:sans-serif;
+    color:#fff;
+    box-shadow:0 0 40px rgba(79,142,247,0.3);
+  ">
+    <div style="font-size:36px;margin-bottom:12px;">📢</div>
+    <h2 style="font-size:18px;margin:0 0 12px;color:#4f8ef7;">Information importante</h2>
+    <p style="font-size:14px;line-height:1.6;color:#ccc;margin:0 0 8px;">
+      Ce site est <strong style="color:#fff;">gratuit</strong> et financé par la publicité.
+    </p>
+    <p style="font-size:14px;line-height:1.6;color:#ccc;margin:0 0 20px;">
+      Des publicités peuvent apparaître lors de votre navigation. Vous pouvez les <strong style="color:#fff;">ignorer</strong> ou appuyer sur <strong style="color:#fff;">Retour</strong> pour fermer.
+    </p>
+    <p style="font-size:13px;color:#aaa;margin:0 0 20px;">
+      Merci pour votre compréhension 🙏
+    </p>
+    <p style="font-size:12px;color:#888;margin:0 0 20px;border-top:1px solid #333;padding-top:14px;">
+      De la part du<br>
+      <strong style="color:#4f8ef7;">Directeur Technique</strong><br>
+      <strong style="color:#fff;">ELOH KOKU ELIKPLIM</strong><br>
+      <span style="color:#aaa;">AET — ALBAN ELOH TECHNOLOGY</span>
+    </p>
+    <button onclick="document.getElementById('ad-splash').style.display='none'" style="
+      background:#4f8ef7;
+      color:#fff;
+      border:none;
+      border-radius:8px;
+      padding:12px 32px;
+      font-size:15px;
+      font-weight:bold;
+      cursor:pointer;
+      width:100%;
+    ">J'ai compris ✓</button>
+  </div>
+</div>
+<!-- ═══════════════ FIN SPLASH SCREEN ═══════════════ -->
+
 <div id="globalLoader"><div class="spin"></div></div>
 <div id="toastContainer"></div>
 

@@ -2885,6 +2885,9 @@ select.form-input option{background:var(--bg2)}
         <div class="main-menu-item" id="mm-plangestion" onclick="mainMenuSwitch('plangestion','Plan de Gestion','fa-map-signs')">
           <i class="fas fa-map-signs"></i><span>Plan de Gestion</span>
         </div>
+        <div class="main-menu-item" id="mm-bibliotheque" onclick="mainMenuSwitch('bibliotheque','Bibliothèque Financière','fa-book-open')">
+          <i class="fas fa-book-open"></i><span>Bibliothèque</span>
+        </div>
       </div>
     </div>
 
@@ -3332,6 +3335,138 @@ select.form-input option{background:var(--bg2)}
   </div><!-- /container -->
 </div><!-- /app -->
 
+<!-- ════ BIBLIOTHÈQUE FINANCIÈRE ════ -->
+<div id="tab-bibliotheque" class="tab-content" style="display:none;padding:0 16px 100px;">
+
+<style>
+.bib-header{text-align:center;padding:28px 0 20px;}
+.bib-header h2{font-size:24px;font-weight:900;background:linear-gradient(135deg,var(--primary-l),#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px;}
+.bib-header p{font-size:13px;color:var(--dim);}
+.bib-search{
+  position:relative;margin-bottom:20px;
+}
+.bib-search input{
+  width:100%;padding:12px 16px 12px 40px;
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(148,163,184,0.15);
+  border-radius:12px;color:var(--fg);font-size:14px;
+}
+.bib-search i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--dim);font-size:13px;}
+.bib-grid{display:flex;flex-direction:column;gap:16px;}
+.bib-card{
+  background:var(--card);
+  border:1px solid rgba(148,163,184,0.1);
+  border-radius:16px;
+  overflow:hidden;
+  cursor:pointer;
+  transition:transform 0.2s,box-shadow 0.2s;
+}
+.bib-card:active{transform:scale(0.98);}
+.bib-card-header{
+  padding:16px 18px;
+  display:flex;align-items:center;gap:14px;
+}
+.bib-icon{
+  width:46px;height:46px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:22px;flex-shrink:0;
+}
+.bib-card-title{font-size:15px;font-weight:800;color:var(--fg);margin-bottom:3px;}
+.bib-card-sub{font-size:11px;color:var(--dim);letter-spacing:0.5px;}
+.bib-card-preview{
+  padding:0 18px 16px;
+  font-size:13px;color:var(--dim);line-height:1.6;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+}
+.bib-tag{
+  display:inline-block;padding:3px 10px;border-radius:20px;
+  font-size:10px;font-weight:700;letter-spacing:0.5px;margin-left:auto;flex-shrink:0;
+}
+
+/* ARTICLE DETAIL */
+.bib-detail{display:none;padding:0 0 100px;}
+.bib-detail.active{display:block;}
+.bib-detail-back{
+  display:flex;align-items:center;gap:10px;
+  padding:16px 0 20px;cursor:pointer;
+  font-size:14px;color:var(--primary-l);font-weight:600;
+}
+.bib-detail-icon{font-size:48px;text-align:center;margin-bottom:12px;}
+.bib-detail-title{
+  font-family:'Syne',sans-serif;
+  font-size:22px;font-weight:900;color:var(--fg);
+  line-height:1.2;margin-bottom:16px;
+}
+.bib-detail-body{font-size:14px;color:var(--dim);line-height:1.8;}
+.bib-detail-body p{margin-bottom:14px;}
+.bib-step{
+  display:flex;gap:14px;align-items:flex-start;
+  padding:14px;margin-bottom:10px;
+  background:rgba(255,255,255,0.04);
+  border-radius:12px;border-left:3px solid var(--primary-l);
+}
+.bib-step-num{
+  width:28px;height:28px;border-radius:50%;
+  background:linear-gradient(135deg,var(--primary-l),#a855f7);
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:900;color:#fff;flex-shrink:0;
+}
+.bib-step-text{font-size:13px;color:var(--fg);line-height:1.6;}
+.bib-step-text strong{color:var(--primary-l);}
+.bib-quote{
+  padding:16px 18px;margin:16px 0;
+  background:rgba(79,142,247,0.08);
+  border-left:3px solid var(--primary-l);
+  border-radius:0 12px 12px 0;
+  font-size:14px;color:var(--fg);font-style:italic;line-height:1.6;
+}
+.bib-tip{
+  padding:14px 16px;margin:12px 0;
+  background:rgba(20,184,106,0.08);
+  border-radius:12px;border:1px solid rgba(20,184,106,0.2);
+  font-size:13px;color:var(--fg);line-height:1.6;
+}
+.bib-tip::before{content:'💡 ';font-style:normal;}
+.bib-warning{
+  padding:14px 16px;margin:12px 0;
+  background:rgba(245,158,11,0.08);
+  border-radius:12px;border:1px solid rgba(245,158,11,0.2);
+  font-size:13px;color:var(--fg);line-height:1.6;
+}
+.bib-warning::before{content:'⚠️ ';font-style:normal;}
+.bib-example{
+  padding:14px 16px;margin:12px 0;
+  background:rgba(168,85,247,0.08);
+  border-radius:12px;border:1px solid rgba(168,85,247,0.2);
+  font-size:13px;color:var(--fg);line-height:1.6;
+}
+.bib-example::before{content:'📌 Exemple : ';}
+.bib-section-title{
+  font-size:16px;font-weight:800;color:var(--fg);
+  margin:20px 0 10px;
+  display:flex;align-items:center;gap:8px;
+}
+</style>
+
+<!-- LISTE DES ARTICLES -->
+<div id="bib-list">
+  <div class="bib-header">
+    <h2>📚 Bibliothèque Financière</h2>
+    <p>10 guides pratiques pour maîtriser votre argent</p>
+  </div>
+  <div class="bib-search">
+    <i class="fas fa-search"></i>
+    <input type="text" placeholder="Rechercher un conseil..." oninput="bibSearch(this.value)" />
+  </div>
+  <div class="bib-grid" id="bibGrid"></div>
+</div>
+
+<!-- DÉTAIL ARTICLE -->
+<div id="bib-detail-view"></div>
+
+</div>
+<!-- ════ FIN BIBLIOTHÈQUE ════ -->
+
 <!-- ════ BOTTOM NAV MOBILE ════ -->
 <div class="bnav-overlay" id="bnavOverlay" onclick="closeBnavDrawer()"></div>
 
@@ -3380,7 +3515,7 @@ select.form-input option{background:var(--bg2)}
 
 <script>
 // ══ MENU PRINCIPAL ══
-const ALL_MENU_TABS = ['dashboard','revenus','depenses','epargne','budget','salaire','historique','notes','plangestion'];
+const ALL_MENU_TABS = ['dashboard','revenus','depenses','epargne','budget','salaire','historique','notes','plangestion','bibliotheque'];
 
 window.toggleMainMenu = function() {
   const d = document.getElementById('mainMenuDrawer');
@@ -3897,5 +4032,337 @@ window.depSubTab = tab => {
 <script>atOptions={'key':'8e2f3471a27e2caf6e5716b8f084c8ec','format':'iframe','height':90,'width':728,'params':{}};</script>
 <script src="https://www.highperformanceformat.com/8e2f3471a27e2caf6e5716b8f084c8ec/invoke.js"></script>
 
+<!-- ════ BIBLIOTHÈQUE FINANCIÈRE JS ════ -->
+<script>
+const BIB_ARTICLES = [
+  {
+    id:1, emoji:'🆘', color:'#e35d6a',
+    titre:'Comment construire un fonds d\'urgence avec un petit salaire',
+    sous:'Épargne de sécurité · 6 étapes',
+    resume:'Sans fonds d\'urgence, chaque imprévu devient une dette. Voilà comment construire le vôtre dès aujourd\'hui.',
+    tag:'ESSENTIEL',
+    contenu:`
+      <div class="bib-detail-icon">🆘</div>
+      <div class="bib-detail-title">Comment construire un fonds d'urgence avec un petit salaire ?</div>
+      <div class="bib-detail-body">
+        <div class="bib-quote">Fonds d'urgence ? Avec mon salaire ? Oui, même avec 100 000F. Voilà comment.</div>
+        <p>Un fonds d'urgence c'est de l'argent mis de côté <strong>uniquement pour les imprévus</strong> : panne, maladie, réparation, perte d'emploi temporaire. Pas pour les sorties, pas pour les envies. Uniquement pour les vraies urgences.</p>
+        <div class="bib-section-title">📋 Le plan en 6 étapes</div>
+        <div class="bib-step"><div class="bib-step-num">1</div><div class="bib-step-text"><strong>Fixe l'objectif :</strong> minimum 1 mois de dépenses, idéal 3 mois. Si tu dépenses 80 000F/mois, vise 240 000F au total.</div></div>
+        <div class="bib-step"><div class="bib-step-num">2</div><div class="bib-step-text"><strong>Commence avec 5 000F ce mois-ci</strong>, pas 50 000F. Pas quand tu auras plus. 2 000F, 5 000F maintenant. L'important c'est de commencer.</div></div>
+        <div class="bib-step"><div class="bib-step-num">3</div><div class="bib-step-text"><strong>Mets cet argent dans un compte séparé</strong> que tu n'utilises pas au quotidien. Hors de vue = hors de portée.</div></div>
+        <div class="bib-step"><div class="bib-step-num">4</div><div class="bib-step-text"><strong>Augmente le montant de 1 000F à 2 000F chaque mois.</strong> Doucement mais régulièrement. La régularité bat la quantité.</div></div>
+        <div class="bib-step"><div class="bib-step-num">5</div><div class="bib-step-text"><strong>Si tu touches au fonds pour une urgence</strong>, reconstitue-le en priorité le mois suivant. Le fonds doit toujours être rechargé.</div></div>
+        <div class="bib-step"><div class="bib-step-num">6</div><div class="bib-step-text"><strong>Atteins progressivement</strong> 1 mois, puis 2 mois, puis 3 mois de dépenses. Chaque palier est une victoire.</div></div>
+        <div class="bib-example">Tu gagnes 150 000F/mois. Tu dépenses 120 000F. Ton objectif fonds = 360 000F (3 mois). En mettant 10 000F/mois, tu y arrives en 3 ans. En mettant 15 000F/mois, en 2 ans.</div>
+        <div class="bib-tip">Sans fonds d'urgence, chaque imprévu devient une dette. Avec un fonds d'urgence, les imprévus sont gérés sans stress et sans emprunter. La différence entre ces deux réalités ? 5 000F par mois.</div>
+      </div>`
+  },
+  {
+    id:2, emoji:'📅', color:'#4f8ef7',
+    titre:'Comment gérer son salaire dès le jour de paie',
+    sous:'Gestion mensuelle · Méthode pratique',
+    resume:'Le jour de paie est le jour le plus important du mois. Ce que tu fais dans les premières 24h décide de tout.',
+    tag:'PRIORITÉ',
+    contenu:`
+      <div class="bib-detail-icon">📅</div>
+      <div class="bib-detail-title">Comment gérer son salaire dès le jour de paie</div>
+      <div class="bib-detail-body">
+        <div class="bib-quote">Le jour de paie est le jour le plus important du mois. Ce que tu fais dans les premières 24h décide de tout le reste.</div>
+        <p>La plupart des gens reçoivent leur salaire et commencent à dépenser. Résultat : dans 2 semaines il ne reste rien. La méthode ci-dessous t'évite ce piège.</p>
+        <div class="bib-section-title">🔢 La règle des 4 enveloppes</div>
+        <div class="bib-step"><div class="bib-step-num">1</div><div class="bib-step-text"><strong>Épargne d'abord (10-20%) :</strong> Dès réception, vire immédiatement ton épargne sur un compte séparé. Paye-toi toi-même avant de payer qui que ce soit.</div></div>
+        <div class="bib-step"><div class="bib-step-num">2</div><div class="bib-step-text"><strong>Charges fixes (30-40%) :</strong> Loyer, électricité, eau, abonnements, remboursements. Ce sont des engagements non négociables.</div></div>
+        <div class="bib-step"><div class="bib-step-num">3</div><div class="bib-step-text"><strong>Alimentation & transport (20-30%) :</strong> Budget courses, marché, carburant ou transport en commun pour le mois entier.</div></div>
+        <div class="bib-step"><div class="bib-step-num">4</div><div class="bib-step-text"><strong>Le reste = dépenses libres :</strong> Ce qui reste après les 3 premières enveloppes est ton budget libre. Pas plus.</div></div>
+        <div class="bib-example">Salaire 200 000F : Épargne 30 000F → Charges 70 000F → Alimentation 50 000F → Libre 50 000F. Ces 50 000F sont pour tout le reste du mois.</div>
+        <div class="bib-warning">Ne touche JAMAIS l'enveloppe épargne même si tu es à court. C'est la règle la plus importante.</div>
+        <div class="bib-tip">Fais tout ça le JOUR MÊME de la paie. Pas demain. Pas dans 3 jours. Le jour J. Chaque heure d'attente augmente le risque de dépenses impulsives.</div>
+      </div>`
+  },
+  {
+    id:3, emoji:'🐖', color:'#14b86a',
+    titre:'Épargne : combien mettre de côté chaque mois',
+    sous:'Épargne · Objectifs · Calcul',
+    resume:'Tout le monde sait qu\'il faut épargner. Mais combien exactement ? Voici la réponse honnête.',
+    tag:'FONDAMENTAL',
+    contenu:`
+      <div class="bib-detail-icon">🐖</div>
+      <div class="bib-detail-title">Épargne : combien mettre de côté chaque mois ?</div>
+      <div class="bib-detail-body">
+        <div class="bib-quote">Tout le monde sait qu'il faut épargner. Mais combien exactement ? La réponse dépend de toi. Voici comment le calculer.</div>
+        <div class="bib-section-title">📐 Les règles d'or</div>
+        <p><strong>Règle des 50/30/20 :</strong> 50% besoins essentiels, 30% envies personnelles, 20% épargne. C'est le minimum recommandé mondialement.</p>
+        <p><strong>Règle du 10% :</strong> Si 20% est trop difficile, commence par 10%. Même 5% est mieux que 0%.</p>
+        <div class="bib-section-title">🎯 Épargner selon ses objectifs</div>
+        <div class="bib-step"><div class="bib-step-num">1</div><div class="bib-step-text"><strong>Objectif court terme (1-2 ans) :</strong> Téléphone, voyage, vêtements. Épargne mensuelle = coût total ÷ nombre de mois.</div></div>
+        <div class="bib-step"><div class="bib-step-num">2</div><div class="bib-step-text"><strong>Objectif moyen terme (3-5 ans) :</strong> Voiture, création d'entreprise. Nécessite une épargne régulière et disciplinée.</div></div>
+        <div class="bib-step"><div class="bib-step-num">3</div><div class="bib-step-text"><strong>Objectif long terme (5+ ans) :</strong> Maison, retraite, éducation des enfants. Commence tôt, même avec peu.</div></div>
+        <div class="bib-example">Tu veux acheter une moto à 500 000F dans 2 ans (24 mois). Il te faut épargner 500 000 ÷ 24 = 20 833F/mois. Simple.</div>
+        <div class="bib-tip">L'épargne n'est pas ce qui reste après les dépenses. C'est ce qu'on retire en premier. Automatise-la le jour de la paie.</div>
+        <div class="bib-warning">Épargner sans objectif précis ne dure jamais longtemps. Donne un nom à chaque épargne : "moto", "urgence", "maison".</div>
+      </div>`
+  },
+  {
+    id:4, emoji:'⛓️', color:'#f59e0b',
+    titre:'Comment sortir des dettes progressivement',
+    sous:'Dettes · Remboursement · Stratégie',
+    resume:'Les dettes sont légales mais dangereuses. Voici les deux méthodes éprouvées pour en sortir.',
+    tag:'URGENT',
+    contenu:`
+      <div class="bib-detail-icon">⛓️</div>
+      <div class="bib-detail-title">Comment sortir des dettes progressivement</div>
+      <div class="bib-detail-body">
+        <div class="bib-quote">Une dette non gérée grandit toute seule. Une dette bien gérée disparaît. La différence c'est la méthode.</div>
+        <p>Les dettes ne disparaissent pas seules. Chaque mois d'inaction les fait grossir. Voici les deux stratégies les plus efficaces au monde.</p>
+        <div class="bib-section-title">❄️ Méthode Boule de Neige</div>
+        <div class="bib-step"><div class="bib-step-num">1</div><div class="bib-step-text">Liste toutes tes dettes du montant le plus petit au plus grand.</div></div>
+        <div class="bib-step"><div class="bib-step-num">2</div><div class="bib-step-text">Rembourse le minimum sur toutes sauf la plus petite.</div></div>
+        <div class="bib-step"><div class="bib-step-num">3</div><div class="bib-step-text">Mets tout le surplus sur la plus petite dette jusqu'à l'éliminer.</div></div>
+        <div class="bib-step"><div class="bib-step-num">4</div><div class="bib-step-text">Utilise ce que tu remboursais pour attaquer la suivante. L'élan grandit.</div></div>
+        <div class="bib-section-title">🔥 Méthode Avalanche (économise plus)</div>
+        <div class="bib-step"><div class="bib-step-num">1</div><div class="bib-step-text">Liste tes dettes du taux d'intérêt le plus élevé au plus bas.</div></div>
+        <div class="bib-step"><div class="bib-step-num">2</div><div class="bib-step-text">Rembourse en priorité celle avec le taux le plus élevé.</div></div>
+        <div class="bib-step"><div class="bib-step-num">3</div><div class="bib-step-text">Tu paies moins d'intérêts au total. Mathématiquement optimal.</div></div>
+        <div class="bib-example">Dettes : 50 000F à 20%, 200 000F à 10%, 500 000F à 5%. Avalanche = attaque le 50 000F d'abord. Boule de neige = pareil dans ce cas. Les deux convergent ici.</div>
+        <div class="bib-warning">N'emprunte jamais pour rembourser une dette. Tu multiplies les problèmes.</div>
+        <div class="bib-tip">Pendant le remboursement, arrête d'emprunter. Coupe les sources de nouvelles dettes. Sinon tu remplis un seau percé.</div>
+      </div>`
+  },
+  {
+    id:5, emoji:'✂️', color:'#a855f7',
+    titre:'Réduire ses dépenses sans se priver',
+    sous:'Budgétisation · Astuces · Économies',
+    resume:'Réduire ses dépenses ce n\'est pas se priver. C\'est choisir où va ton argent avec intelligence.',
+    tag:'PRATIQUE',
+    contenu:`
+      <div class="bib-detail-icon">✂️</div>
+      <div class="bib-detail-title">Réduire ses dépenses sans se priver</div>
+      <div class="bib-detail-body">
+        <div class="bib-quote">Réduire ses dépenses ce n'est pas souffrir. C'est décider que ton futur vaut plus que tes envies d'aujourd'hui.</div>
+        <div class="bib-section-title">🔍 Étape 1 : Identifier les fuites</div>
+        <p>Pendant 1 semaine, note chaque dépense même 100F. Tu seras surpris. La plupart des fuites sont dans les petites dépenses répétées : recharges téléphone, grignotages, achats impulsifs.</p>
+        <div class="bib-section-title">✂️ Les 7 coupes intelligentes</div>
+        <div class="bib-step"><div class="bib-step-num">1</div><div class="bib-step-text"><strong>Courses alimentaires :</strong> Fais une liste avant d'aller au marché. Achète ce qui est sur la liste uniquement. Économie moyenne : 20-30%.</div></div>
+        <div class="bib-step"><div class="bib-step-num">2</div><div class="bib-step-text"><strong>Téléphone :</strong> Passe aux forfaits mensuels plutôt qu'aux recharges. Tu dépenses souvent 30-40% de moins.</div></div>
+        <div class="bib-step"><div class="bib-step-num">3</div><div class="bib-step-text"><strong>Restaurants & maquis :</strong> Réduis de 50%. Mange chez toi 4 jours sur 5. Cuisine en grande quantité le weekend.</div></div>
+        <div class="bib-step"><div class="bib-step-num">4</div><div class="bib-step-text"><strong>Achats impulsifs :</strong> Règle des 48h. Pour tout achat non planifié au-dessus de 5 000F, attends 48h. L'envie passe souvent.</div></div>
+        <div class="bib-step"><div class="bib-step-num">5</div><div class="bib-step-text"><strong>Transport :</strong> Combine tes déplacements. Planifie pour faire plusieurs choses en un trajet.</div></div>
+        <div class="bib-step"><div class="bib-step-num">6</div><div class="bib-step-text"><strong>Énergie :</strong> Éteins les appareils en veille. Utilise l'électricité aux heures creuses si possible.</div></div>
+        <div class="bib-step"><div class="bib-step-num">7</div><div class="bib-step-text"><strong>Abonnements inutilisés :</strong> Liste tout ce que tu paies mensuellement. Coupe ce que tu n'utilises pas vraiment.</div></div>
+        <div class="bib-example">Famille qui dépense 15 000F/semaine en restaurant. En cuisinant 4 jours sur 5 : économie de 9 000F/semaine = 36 000F/mois = 432 000F/an.</div>
+        <div class="bib-tip">Ne te prive pas de tout. Garde 1-2 plaisirs dans ton budget. La privation totale mène toujours à la rechute.</div>
+      </div>`
+  },
+  {
+    id:6, emoji:'🎯', color:'#14b86a',
+    titre:'Se fixer des objectifs financiers réalistes',
+    sous:'Planification · Objectifs SMART · Vision',
+    resume:'Un objectif vague reste un rêve. Un objectif précis devient un plan. Voici comment transformer tes rêves en chiffres.',
+    tag:'STRATÉGIE',
+    contenu:`
+      <div class="bib-detail-icon">🎯</div>
+      <div class="bib-detail-title">Se fixer des objectifs financiers réalistes</div>
+      <div class="bib-detail-body">
+        <div class="bib-quote">"Je veux épargner plus" n'est pas un objectif. "Je veux économiser 300 000F d'ici décembre" est un objectif.</div>
+        <div class="bib-section-title">📐 La méthode SMART</div>
+        <div class="bib-step"><div class="bib-step-num">S</div><div class="bib-step-text"><strong>Spécifique :</strong> Pas "économiser de l'argent" mais "économiser 500 000F pour une moto Honda".</div></div>
+        <div class="bib-step"><div class="bib-step-num">M</div><div class="bib-step-text"><strong>Mesurable :</strong> Un chiffre précis. 500 000F, pas "beaucoup". Tu dois pouvoir mesurer ta progression.</div></div>
+        <div class="bib-step"><div class="bib-step-num">A</div><div class="bib-step-text"><strong>Atteignable :</strong> Avec ton salaire actuel, est-ce possible ? Recalcule si nécessaire. Un objectif impossible démotive.</div></div>
+        <div class="bib-step"><div class="bib-step-num">R</div><div class="bib-step-text"><strong>Réaliste :</strong> Vouloir 10 millions en 6 mois avec 150 000F de salaire n'est pas réaliste. Sois honnête avec toi-même.</div></div>
+        <div class="bib-step"><div class="bib-step-num">T</div><div class="bib-step-text"><strong>Temporel :</strong> Une date limite. "D'ici le 31 décembre 2026". Sans date, il n'y a pas d'urgence.</div></div>
+        <div class="bib-section-title">🏆 Les 3 niveaux d'objectifs</div>
+        <p><strong>Court terme (0-12 mois) :</strong> Fonds d'urgence, téléphone, voyage. Motivation quotidienne.</p>
+        <p><strong>Moyen terme (1-5 ans) :</strong> Voiture, entreprise, formation. Vision sur plusieurs années.</p>
+        <p><strong>Long terme (5+ ans) :</strong> Maison, retraite, héritage pour les enfants. Héritage et liberté.</p>
+        <div class="bib-example">Objectif SMART : "Épargner 600 000F pour acheter une moto en décembre 2026, en mettant 50 000F/mois à partir de janvier 2026." Parfait.</div>
+        <div class="bib-tip">Écris tes objectifs. Un objectif écrit a 42% plus de chances d'être atteint qu'un objectif juste pensé. Utilise la section Notes de cette app.</div>
+      </div>`
+  },
+  {
+    id:7, emoji:'📱', color:'#4f8ef7',
+    titre:'Mobile money : comment l\'utiliser intelligemment',
+    sous:'Flooz · T-Money · Digital · Togo',
+    resume:'Flooz et T-Money sont des outils puissants. Bien utilisés, ils t\'épargnent du temps et de l\'argent. Mal utilisés, ils te font dépenser plus.',
+    tag:'TOGO',
+    contenu:`
+      <div class="bib-detail-icon">📱</div>
+      <div class="bib-detail-title">Mobile money : comment l'utiliser intelligemment au Togo</div>
+      <div class="bib-detail-body">
+        <div class="bib-quote">Flooz et T-Money ont révolutionné les finances au Togo. Mais comme tout outil, ça peut te servir ou te desservir selon comment tu l'utilises.</div>
+        <div class="bib-section-title">✅ Les bons usages</div>
+        <div class="bib-step"><div class="bib-step-num">1</div><div class="bib-step-text"><strong>Paiement de factures :</strong> CEET, TdE, TOGOCOM directement depuis le téléphone. Économise du temps et des déplacements.</div></div>
+        <div class="bib-step"><div class="bib-step-num">2</div><div class="bib-step-text"><strong>Épargne sur mobile :</strong> T-Epargne, Flooz Epargne. Ton argent est hors de ta main mais accessible. Idéal pour le fonds d'urgence.</div></div>
+        <div class="bib-step"><div class="bib-step-num">3</div><div class="bib-step-text"><strong>Envoi d'argent :</strong> Plus rapide et moins cher que les agences de transfert pour les petits montants.</div></div>
+        <div class="bib-step"><div class="bib-step-num">4</div><div class="bib-step-text"><strong>Paiement marchands :</strong> Évite de sortir du cash. Moins d'argent liquide en poche = moins de petites dépenses impulsives.</div></div>
+        <div class="bib-section-title">❌ Les pièges à éviter</div>
+        <div class="bib-step"><div class="bib-step-num">!</div><div class="bib-step-text"><strong>Solde mobile money ≠ argent à dépenser.</strong> Voir un solde élevé pousse à dépenser. Transfère vers épargne rapidement.</div></div>
+        <div class="bib-step"><div class="bib-step-num">!</div><div class="bib-step-text"><strong>Les frais cachés :</strong> Chaque transaction coûte. Regroupe tes envois plutôt que de faire 5 petits transferts.</div></div>
+        <div class="bib-step"><div class="bib-step-num">!</div><div class="bib-step-text"><strong>Partage de code PIN :</strong> Ne partage jamais ton PIN. Même à un proche. En cas de litige, tu perds tout.</div></div>
+        <div class="bib-example">Au lieu de 5 recharges de 1 000F (5 x frais), fais 1 recharge de 5 000F (1 seul frais). Tu économises 4 frais de transaction par semaine.</div>
+        <div class="bib-tip">Active les notifications de transactions. Chaque mouvement d'argent doit être suivi. C'est la base du contrôle financier.</div>
+      </div>`
+  },
+  {
+    id:8, emoji:'👨‍👩‍👧', color:'#ec4899',
+    titre:'Gérer les finances en famille au Togo',
+    sous:'Famille · Budget familial · Transparence',
+    resume:'L\'argent est la première cause de conflits dans les familles. Voici comment gérer à deux sans tension.',
+    tag:'FAMILLE',
+    contenu:`
+      <div class="bib-detail-icon">👨‍👩‍👧</div>
+      <div class="bib-detail-title">Gérer les finances en famille au Togo</div>
+      <div class="bib-detail-body">
+        <div class="bib-quote">L'argent est la première cause de conflits dans les familles africaines. Non pas parce qu'il y en a peu, mais parce qu'il n'y a pas de plan commun.</div>
+        <div class="bib-section-title">💬 Étape 1 : La conversation honnête</div>
+        <p>Avant tout budget, parlez-vous. Revenus de chacun, dettes, charges, objectifs. Beaucoup de familles n'ont jamais eu cette conversation. C'est la base.</p>
+        <div class="bib-section-title">📊 Les 3 modèles de gestion</div>
+        <div class="bib-step"><div class="bib-step-num">A</div><div class="bib-step-text"><strong>Pot commun total :</strong> Tous les revenus mis ensemble, toutes les dépenses communes. Nécessite confiance et transparence totale.</div></div>
+        <div class="bib-step"><div class="bib-step-num">B</div><div class="bib-step-text"><strong>Contribution proportionnelle :</strong> Chacun contribue un % de son salaire au budget commun. Le reste est personnel. Plus équitable si les salaires sont différents.</div></div>
+        <div class="bib-step"><div class="bib-step-num">C</div><div class="bib-step-text"><strong>Charges partagées fixement :</strong> Liste des charges communes, chacun prend certaines. Simple mais rigide.</div></div>
+        <div class="bib-section-title">🔑 Les règles d'or</div>
+        <div class="bib-step"><div class="bib-step-num">1</div><div class="bib-step-text"><strong>Réunion finances mensuelle :</strong> 30 minutes par mois pour revoir le budget, les dépenses, les objectifs. Ensemble.</div></div>
+        <div class="bib-step"><div class="bib-step-num">2</div><div class="bib-step-text"><strong>Budget personnel pour chacun :</strong> Même mariés, chacun a droit à un budget personnel sans rendre de compte. Ça évite les tensions.</div></div>
+        <div class="bib-step"><div class="bib-step-num">3</div><div class="bib-step-text"><strong>Grands achats = décision commune :</strong> Tout achat au-dessus d'un seuil défini ensemble nécessite accord des deux.</div></div>
+        <div class="bib-warning">Les secrets financiers détruisent les couples. Dette cachée, compte secret, dépenses cachées. La transparence vaut mieux que la honte.</div>
+        <div class="bib-tip">Incluez les enfants à partir de 10 ans dans les discussions d'argent adaptées à leur âge. L'éducation financière commence à la maison.</div>
+      </div>`
+  },
+  {
+    id:9, emoji:'🚀', color:'#14b86a',
+    titre:'Investir avec un petit capital au Togo',
+    sous:'Investissement · Togo · Débutant',
+    resume:'Investir ce n\'est pas réservé aux riches. Avec 50 000F tu peux déjà commencer. Voici comment.',
+    tag:'INVESTIR',
+    contenu:`
+      <div class="bib-detail-icon">🚀</div>
+      <div class="bib-detail-title">Investir avec un petit capital au Togo</div>
+      <div class="bib-detail-body">
+        <div class="bib-quote">Investir ce n'est pas réservé aux millionnaires. Avec 50 000F bien placés, tu commences à faire travailler ton argent pour toi.</div>
+        <div class="bib-section-title">🔑 Règle N°1 avant d'investir</div>
+        <p>N'investis que l'argent dont tu n'as pas besoin. Ton fonds d'urgence doit exister d'abord. Tes dettes à taux élevé doivent être réglées. L'investissement vient après.</p>
+        <div class="bib-section-title">💼 Options accessibles au Togo</div>
+        <div class="bib-step"><div class="bib-step-num">1</div><div class="bib-step-text"><strong>Tontines :</strong> Système traditionnel africain. Simple, accessible, forcé. Choisir un groupe de confiance. Risque : défaillance d'un membre.</div></div>
+        <div class="bib-step"><div class="bib-step-num">2</div><div class="bib-step-text"><strong>Microfinance (FUCEC, WAGES, etc.) :</strong> Comptes d'épargne rémunérés, parfois crédit pour projet. Accessible dès 10 000F.</div></div>
+        <div class="bib-step"><div class="bib-step-num">3</div><div class="bib-step-text"><strong>Commerce informel :</strong> Achat-revente, agriculture périurbaine, élevage. Retours élevés mais temps et risques élevés aussi.</div></div>
+        <div class="bib-step"><div class="bib-step-num">4</div><div class="bib-step-text"><strong>Formation professionnelle :</strong> Le meilleur investissement. Une compétence nouvelle peut doubler ton revenu. Retour garanti.</div></div>
+        <div class="bib-step"><div class="bib-step-num">5</div><div class="bib-step-text"><strong>Bons du Trésor UEMOA :</strong> Placements sécurisés émis par l'État. Accessible via certaines banques. Rendement 5-8%/an.</div></div>
+        <div class="bib-step"><div class="bib-step-num">6</div><div class="bib-step-text"><strong>Immobilier progressif :</strong> Acheter un terrain en périphérie de Lomé. Valeur multipliée par 3-5 en 10 ans historiquement.</div></div>
+        <div class="bib-example">50 000F investis dans une formation en développement web → nouveau revenu de 100 000F/mois → retour sur investissement en 1 mois. Meilleur investissement possible.</div>
+        <div class="bib-warning">Méfie-toi des promesses de rendements de 30-50%/mois. C'est quasi toujours une arnaque. La règle : si c'est trop beau, c'est faux.</div>
+      </div>`
+  },
+  {
+    id:10, emoji:'❌', color:'#e35d6a',
+    titre:'Les 10 erreurs financières à éviter absolument',
+    sous:'Erreurs courantes · Pièges · Prévention',
+    resume:'Ces erreurs sont commises par 90% des gens. Les connaître c\'est déjà les éviter à moitié.',
+    tag:'CRITIQUE',
+    contenu:`
+      <div class="bib-detail-icon">❌</div>
+      <div class="bib-detail-title">Les 10 erreurs financières à éviter absolument</div>
+      <div class="bib-detail-body">
+        <div class="bib-quote">Ces 10 erreurs sont commises par la grande majorité des gens. Les reconnaître dans sa vie, c'est déjà commencer à les corriger.</div>
+        <div class="bib-step"><div class="bib-step-num">1</div><div class="bib-step-text"><strong>Vivre sans budget :</strong> Dépenser sans savoir ce qu'on a c'est conduire les yeux fermés. Même un budget approximatif vaut mieux que rien.</div></div>
+        <div class="bib-step"><div class="bib-step-num">2</div><div class="bib-step-text"><strong>Pas de fonds d'urgence :</strong> Le premier imprévu devient une dette ou une catastrophe. Ce fonds est non négociable.</div></div>
+        <div class="bib-step"><div class="bib-step-num">3</div><div class="bib-step-text"><strong>Emprunter pour des biens de consommation :</strong> Crédit pour téléphone, vêtements, fête. Ces biens perdent de la valeur. Tu rembourses plus que ce que l'objet vaut.</div></div>
+        <div class="bib-step"><div class="bib-step-num">4</div><div class="bib-step-text"><strong>Ignorer les petites dépenses :</strong> 500F par-ci, 1 000F par-là. En 30 jours ça devient 30 000-50 000F envolés sans explication.</div></div>
+        <div class="bib-step"><div class="bib-step-num">5</div><div class="bib-step-text"><strong>Comparer sa vie aux autres :</strong> Acheter une voiture parce que le voisin en a une. C'est la ruine assurée. Chacun a ses revenus et ses dettes cachées.</div></div>
+        <div class="bib-step"><div class="bib-step-num">6</div><div class="bib-step-text"><strong>Reporter l'épargne à "quand j'aurai plus" :</strong> Ce jour n'arrive jamais. Les dépenses augmentent avec le revenu. Épargne maintenant avec ce que tu as.</div></div>
+        <div class="bib-step"><div class="bib-step-num">7</div><div class="bib-step-text"><strong>Pas de plan de retraite :</strong> Au Togo, la retraite de l'État est insuffisante. Commencer à y penser à 30 ans n'est pas trop tôt.</div></div>
+        <div class="bib-step"><div class="bib-step-num">8</div><div class="bib-step-text"><strong>Prêter sans filet :</strong> Prêter de l'argent à un proche sans accord écrit ni date de remboursement. Règle : ne prête que ce que tu peux perdre.</div></div>
+        <div class="bib-step"><div class="bib-step-num">9</div><div class="bib-step-text"><strong>Investir sans comprendre :</strong> Placer de l'argent dans quelque chose qu'on ne comprend pas. Si tu ne peux pas expliquer l'investissement simplement, n'y mets pas ton argent.</div></div>
+        <div class="bib-step"><div class="bib-step-num">10</div><div class="bib-step-text"><strong>Ne pas se former :</strong> L'éducation financière n'est pas enseignée à l'école. C'est à toi de l'apprendre seul. Lire, écouter, appliquer. Continuellement.</div></div>
+        <div class="bib-tip">Identifier une seule de ces erreurs dans ta vie et la corriger ce mois-ci. Une seule. La progression financière se fait erreur par erreur corrigée.</div>
+      </div>`
+  }
+];
+
+function bibSearch(q){
+  const list = document.getElementById('bibGrid');
+  if(!list) return;
+  const filtered = q.trim()==='' ? BIB_ARTICLES : BIB_ARTICLES.filter(a=>
+    a.titre.toLowerCase().includes(q.toLowerCase()) ||
+    a.sous.toLowerCase().includes(q.toLowerCase()) ||
+    a.resume.toLowerCase().includes(q.toLowerCase())
+  );
+  renderBibList(filtered);
+}
+
+function renderBibList(articles){
+  const grid = document.getElementById('bibGrid');
+  if(!grid) return;
+  grid.innerHTML = articles.map(a=>`
+    <div class="bib-card" onclick="openBibArticle(${a.id})">
+      <div class="bib-card-header">
+        <div class="bib-icon" style="background:${a.color}22;border:1px solid ${a.color}44;">${a.emoji}</div>
+        <div style="flex:1">
+          <div class="bib-card-title">${a.titre}</div>
+          <div class="bib-card-sub">${a.sous}</div>
+        </div>
+        <div class="bib-tag" style="background:${a.color}22;color:${a.color};">${a.tag}</div>
+      </div>
+      <div class="bib-card-preview">${a.resume}</div>
+    </div>
+  `).join('');
+}
+
+function openBibArticle(id){
+  const article = BIB_ARTICLES.find(a=>a.id===id);
+  if(!article) return;
+  const listEl = document.getElementById('bib-list');
+  const detailEl = document.getElementById('bib-detail-view');
+  listEl.style.display='none';
+  detailEl.innerHTML=`
+    <div class="bib-detail active">
+      <div class="bib-detail-back" onclick="closeBibArticle()">
+        <i class="fas fa-arrow-left"></i> Retour à la bibliothèque
+      </div>
+      <div style="padding:0 2px;">
+        <div class="bib-tag" style="background:${article.color}22;color:${article.color};margin-bottom:12px;display:inline-block;">${article.tag}</div>
+        ${article.contenu}
+      </div>
+    </div>`;
+  detailEl.style.display='block';
+  // Scroll to top
+  const tabEl = document.getElementById('tab-bibliotheque');
+  if(tabEl) tabEl.scrollTop=0;
+}
+
+function closeBibArticle(){
+  document.getElementById('bib-list').style.display='block';
+  document.getElementById('bib-detail-view').style.display='none';
+  document.getElementById('bib-detail-view').innerHTML='';
+}
+
+// Init bibliothèque au chargement
+document.addEventListener('DOMContentLoaded', ()=>{
+  setTimeout(()=>renderBibList(BIB_ARTICLES), 500);
+});
+
+// Patch switchTab pour bibliotheque
+const _origSwitchTab = window.switchTab;
+window.switchTab = function(tab){
+  // Gère l'affichage de tab-bibliotheque
+  const bibTab = document.getElementById('tab-bibliotheque');
+  if(bibTab){
+    bibTab.style.display = tab==='bibliotheque' ? 'block' : 'none';
+  }
+  if(tab==='bibliotheque'){
+    // Cache les autres tabs
+    document.querySelectorAll('.tab-content').forEach(c=>{
+      c.classList.remove('active');
+      c.style.display='none';
+    });
+    if(bibTab) {
+      bibTab.style.display='block';
+      renderBibList(BIB_ARTICLES);
+    }
+  } else {
+    if(_origSwitchTab) _origSwitchTab(tab);
+  }
+};
+</script>
+-e 
 </body>
 </html>

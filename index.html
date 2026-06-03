@@ -2784,86 +2784,22 @@ select.form-input option{background:var(--bg2)}
 <!-- ════════════════ APP ════════════════ -->
 <div id="app" style="display:none">
 
-  <!-- HEADER -->
-  <div class="header">
-    <div class="header-left">
-      <div class="header-logo"><i class="fas fa-chart-line"></i></div>
-      <div class="header-title">AET MonBudget</div>
-    </div>
-    <div class="header-right">
-      <div class="user-chip">
-        <div class="user-avatar" id="userAvatar">U</div>
-        <span id="userName">—</span>
+  <!-- HEADER APP -->
+  <div style="position:sticky;top:0;z-index:800;background:rgba(15,23,42,.95);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:34px;height:34px;border-radius:10px;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:16px">📊</div>
+      <div>
+        <div style="font-size:14px;font-weight:800;color:var(--text)">AET MonBudget</div>
+        <div style="font-size:10px;color:var(--muted)" id="headerSub">Gestion financière</div>
       </div>
-      <button class="btn-header" onclick="openModal('langModal');renderFxRates&&renderFxRates()" title="Langue / Devise" style="font-size:17px">🌐</button>
-      <button class="btn-header" onclick="openModal('changePwdModal')" title="Changer mot de passe"><i class="fas fa-key"></i></button>
-      <button class="btn-header" onclick="doLogout()" title="Déconnexion"><i class="fas fa-sign-out-alt"></i></button>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button onclick="openModal('langModal');renderFxRates&&renderFxRates()" style="width:34px;height:34px;border-radius:50%;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.2);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center">🌐</button>
+      <div id="userAvatar" onclick="bnavSwitch('profil')" style="width:34px;height:34px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff;cursor:pointer;box-shadow:0 2px 10px rgba(99,102,241,.4)">U</div>
     </div>
   </div>
 
   <div class="container">
-
-    <!-- NAV PRINCIPALE → DRAWER -->
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap">
-      <button id="mainMenuBtn" onclick="toggleMainMenu()" style="display:flex;align-items:center;gap:8px;padding:10px 18px;background:var(--grad);border:none;border-radius:12px;color:#fff;font-weight:800;font-size:13px;cursor:pointer;box-shadow:0 4px 14px rgba(99,102,241,.3);transition:all .2s">
-        <i class="fas fa-grid-2" id="mainMenuIcon"></i>
-        <span id="mainMenuLabel">Menu</span>
-        <i class="fas fa-chevron-down" id="mainMenuChevron" style="font-size:11px;transition:transform .2s"></i>
-      </button>
-      <!-- Breadcrumb onglet actif -->
-      <div id="activeTabChip" style="display:flex;align-items:center;gap:7px;padding:8px 14px;background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.25);border-radius:100px;font-size:13px;font-weight:700;color:var(--primary-l)">
-        <i class="fas fa-chart-pie"></i> <span id="activeTabName">Tableau de bord</span>
-      </div>
-    </div>
-
-    <!-- DRAWER MENU PRINCIPAL -->
-    <div id="mainMenuDrawer" style="display:none;margin-bottom:20px;background:var(--card);border:1px solid var(--border);border-radius:16px;padding:14px;animation:fade .2s">
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
-        <div class="main-menu-item active" id="mm-dashboard" onclick="mainMenuSwitch('dashboard','Tableau de bord','fa-chart-pie')">
-          <i class="fas fa-chart-pie"></i><span>Tableau de bord</span>
-        </div>
-        <div class="main-menu-item" id="mm-revenus" onclick="mainMenuSwitch('revenus','Revenus','fa-arrow-down')">
-          <i class="fas fa-arrow-down"></i><span>Revenus</span>
-        </div>
-        <div class="main-menu-item" id="mm-depenses" onclick="mainMenuSwitch('depenses','Dépenses','fa-arrow-up')">
-          <i class="fas fa-arrow-up-from-bracket"></i><span>Dépenses</span>
-        </div>
-        <div class="main-menu-item" id="mm-epargne" onclick="mainMenuSwitch('epargne','Épargne','fa-piggy-bank')">
-          <i class="fas fa-piggy-bank"></i><span>Épargne</span>
-        </div>
-        <div class="main-menu-item" id="mm-budget" onclick="mainMenuSwitch('budget','Budget','fa-bullseye')">
-          <i class="fas fa-bullseye"></i><span>Budget</span>
-        </div>
-        <div class="main-menu-item" id="mm-salaire" onclick="mainMenuSwitch('salaire','Salaire','fa-briefcase')">
-          <i class="fas fa-briefcase"></i><span>Salaire</span>
-        </div>
-        <div class="main-menu-item" id="mm-historique" onclick="mainMenuSwitch('historique','Historique','fa-clock-rotate-left')">
-          <i class="fas fa-clock-rotate-left"></i><span>Historique</span>
-        </div>
-        <div class="main-menu-item" id="mm-notes" onclick="mainMenuSwitch('notes','Notes','fa-calendar-pen')">
-          <i class="fas fa-calendar-pen"></i><span>Notes</span>
-        </div>
-        <div class="main-menu-item" id="mm-plangestion" onclick="mainMenuSwitch('plangestion','Plan de Gestion','fa-map-signs')">
-          <i class="fas fa-map-signs"></i><span>Plan de Gestion</span>
-        </div>
-        <div class="main-menu-item" id="mm-bibliotheque" onclick="mainMenuSwitch('bibliotheque','Bibliothèque Financière','fa-book-open')">
-          <i class="fas fa-book-open"></i><span>Bibliothèque</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- TABS NAV (desktop hidden, kept for switchTab compatibility) -->
-    <div class="tabs-nav" style="display:none">
-      <button class="tab-btn active" data-tab="dashboard" onclick="switchTab('dashboard')"><i class="fas fa-chart-pie"></i><span>Tableau de bord</span></button>
-      <button class="tab-btn" data-tab="revenus" onclick="switchTab('revenus')"><i class="fas fa-arrow-down-to-bracket"></i><span>Revenus</span></button>
-      <button class="tab-btn" data-tab="depenses" onclick="switchTab('depenses')"><i class="fas fa-arrow-up-from-bracket"></i><span>Dépenses</span></button>
-      <button class="tab-btn" data-tab="epargne" onclick="switchTab('epargne')"><i class="fas fa-piggy-bank"></i><span>Épargne</span></button>
-      <button class="tab-btn" data-tab="budget" onclick="switchTab('budget')"><i class="fas fa-bullseye"></i><span>Budget</span></button>
-      <button class="tab-btn" data-tab="salaire" onclick="switchTab('salaire')"><i class="fas fa-briefcase"></i><span>Salaire</span></button>
-      <button class="tab-btn" data-tab="historique" onclick="switchTab('historique')"><i class="fas fa-clock-rotate-left"></i><span>Historique</span></button>
-      <button class="tab-btn" data-tab="notes" onclick="switchTab('notes')"><i class="fas fa-calendar-pen"></i><span>Notes</span></button>
-      <button class="tab-btn" data-tab="plangestion" onclick="switchTab('plangestion')"><i class="fas fa-map-signs"></i><span>Plan de Gestion</span></button>
-    </div>
 
     <!-- ══ DASHBOARD ══ -->
     <div id="tab-dashboard" class="tab-content active">
@@ -3428,82 +3364,249 @@ select.form-input option{background:var(--bg2)}
 </div>
 <!-- ════ FIN BIBLIOTHÈQUE ════ -->
 
-<!-- ════ BOTTOM NAV MOBILE ════ -->
-<div class="bnav-overlay" id="bnavOverlay" onclick="closeBnavDrawer()"></div>
-
-<nav class="bottom-nav" id="bottomNav">
-  <div class="bottom-nav-grid">
-    <button class="bnav-btn active" id="bnav-dashboard" onclick="bnavSwitch('dashboard')">
-      <i class="fas fa-chart-pie"></i>Tableau
-    </button>
-    <button class="bnav-btn" id="bnav-revenus" onclick="bnavSwitch('revenus')">
-      <i class="fas fa-arrow-down"></i>Revenus
-    </button>
-    <button class="bnav-btn" id="bnav-depenses" onclick="bnavSwitch('depenses')">
-      <i class="fas fa-arrow-up"></i>Dépenses
-    </button>
-    <button class="bnav-btn" id="bnav-epargne" onclick="bnavSwitch('epargne')">
-      <i class="fas fa-piggy-bank"></i>Épargne
-    </button>
-    <button class="bnav-btn" id="bnav-more" onclick="openBnavDrawer()">
-      <i class="fas fa-grid-2"></i>Plus
-    </button>
+<!-- ════ TAB PROFIL ════ -->
+<div id="tab-profil" class="tab-content" style="display:none;padding:16px 16px 100px">
+  <div style="text-align:center;padding:28px 16px 20px">
+    <div id="profilAvatarBig" style="width:76px;height:76px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;color:#fff;margin:0 auto 12px;box-shadow:0 8px 28px rgba(99,102,241,.4)">U</div>
+    <div style="font-size:19px;font-weight:800;margin-bottom:4px" id="profilName">—</div>
+    <div style="font-size:12px;color:var(--muted);font-family:'DM Mono',monospace" id="profilEmail">—</div>
+    <div style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:4px 12px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);border-radius:100px;font-size:11px;color:#10b981;font-weight:700"><span class="online-dot"></span> Connecté</div>
   </div>
-</nav>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;text-align:center;border-top:3px solid #10b981">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Revenus mois</div>
+      <div style="font-size:15px;font-weight:800;color:#10b981;font-family:'DM Mono',monospace" id="profilRevMois">—</div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;text-align:center;border-top:3px solid #ef4444">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Dépenses mois</div>
+      <div style="font-size:15px;font-weight:800;color:#ef4444;font-family:'DM Mono',monospace" id="profilDepMois">—</div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;text-align:center;border-top:3px solid #a78bfa">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Épargne totale</div>
+      <div style="font-size:15px;font-weight:800;color:#a78bfa;font-family:'DM Mono',monospace" id="profilEpargne">—</div>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;text-align:center;border-top:3px solid #6366f1">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Opérations</div>
+      <div style="font-size:15px;font-weight:800;color:#6366f1;font-family:'DM Mono',monospace" id="profilNbTx">—</div>
+    </div>
+  </div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:16px">
+    <div onclick="openModal('changePwdModal')" style="display:flex;align-items:center;gap:14px;padding:16px 18px;border-bottom:1px solid var(--border);cursor:pointer">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(99,102,241,.1);display:flex;align-items:center;justify-content:center;color:#6366f1"><i class="fas fa-key"></i></div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:700">Changer mot de passe</div><div style="font-size:11px;color:var(--muted)">Sécuriser votre compte</div></div>
+      <i class="fas fa-chevron-right" style="color:var(--muted);font-size:11px"></i>
+    </div>
+    <div onclick="openModal('langModal');renderFxRates&&renderFxRates()" style="display:flex;align-items:center;gap:14px;padding:16px 18px;border-bottom:1px solid var(--border);cursor:pointer">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(245,158,11,.1);display:flex;align-items:center;justify-content:center;font-size:18px">🌐</div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:700">Langue & Devise</div><div style="font-size:11px;color:var(--muted)">Français · XOF</div></div>
+      <i class="fas fa-chevron-right" style="color:var(--muted);font-size:11px"></i>
+    </div>
+    <div onclick="bnavSwitch('parametres')" style="display:flex;align-items:center;gap:14px;padding:16px 18px;border-bottom:1px solid var(--border);cursor:pointer">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(20,184,166,.1);display:flex;align-items:center;justify-content:center;color:#14b8a6"><i class="fas fa-gear"></i></div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:700">Paramètres</div><div style="font-size:11px;color:var(--muted)">Salaire, budget, outils</div></div>
+      <i class="fas fa-chevron-right" style="color:var(--muted);font-size:11px"></i>
+    </div>
+    <div onclick="doLogout()" style="display:flex;align-items:center;gap:14px;padding:16px 18px;cursor:pointer">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(239,68,68,.1);display:flex;align-items:center;justify-content:center;color:#ef4444"><i class="fas fa-sign-out-alt"></i></div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:700;color:#ef4444">Se déconnecter</div></div>
+      <i class="fas fa-chevron-right" style="color:var(--muted);font-size:11px"></i>
+    </div>
+  </div>
+  <div style="text-align:center;font-size:11px;color:var(--dim);padding-bottom:10px">AET MonBudget · Alban Eloh Technology 🇹🇬</div>
+</div>
 
-<!-- Drawer "Plus" -->
-<div class="bnav-more-drawer" id="bnavDrawer">
-  <div class="bnav-drawer-handle"></div>
-  <div style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;padding:0 4px">Navigation</div>
-  <div class="bnav-drawer-grid">
-    <div class="bnav-drawer-item" id="bnd-budget" onclick="bnavSwitch('budget');closeBnavDrawer()">
-      <i class="fas fa-bullseye"></i>Budget
+<!-- ════ TAB PARAMÈTRES ════ -->
+<div id="tab-parametres" class="tab-content" style="display:none;padding:16px 16px 100px">
+  <div style="font-size:17px;font-weight:800;margin-bottom:18px;display:flex;align-items:center;gap:8px"><i class="fas fa-gear" style="color:var(--primary-l)"></i> Paramètres</div>
+  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:8px;padding-left:2px">💼 Finances</div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:18px">
+    <div onclick="bnavSwitch('salaire')" style="display:flex;align-items:center;gap:14px;padding:15px 18px;border-bottom:1px solid var(--border);cursor:pointer">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(99,102,241,.1);display:flex;align-items:center;justify-content:center;color:#6366f1"><i class="fas fa-briefcase"></i></div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:700">Mon salaire</div><div style="font-size:11px;color:var(--muted)" id="paramSalDisplay">Non configuré</div></div>
+      <i class="fas fa-chevron-right" style="color:var(--muted);font-size:11px"></i>
     </div>
-    <div class="bnav-drawer-item" id="bnd-salaire" onclick="bnavSwitch('salaire');closeBnavDrawer()">
-      <i class="fas fa-briefcase"></i>Salaire
+    <div onclick="bnavSwitch('budget')" style="display:flex;align-items:center;gap:14px;padding:15px 18px;cursor:pointer">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(245,158,11,.1);display:flex;align-items:center;justify-content:center;color:#f59e0b"><i class="fas fa-bullseye"></i></div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:700">Budgets par catégorie</div><div style="font-size:11px;color:var(--muted)">Plafonds de dépenses</div></div>
+      <i class="fas fa-chevron-right" style="color:var(--muted);font-size:11px"></i>
     </div>
-    <div class="bnav-drawer-item" id="bnd-historique" onclick="bnavSwitch('historique');closeBnavDrawer()">
-      <i class="fas fa-clock-rotate-left"></i>Historique
+  </div>
+  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:8px;padding-left:2px">🗂️ Outils</div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:18px">
+    <div onclick="bnavSwitch('plangestion')" style="display:flex;align-items:center;gap:14px;padding:15px 18px;border-bottom:1px solid var(--border);cursor:pointer">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(20,184,166,.1);display:flex;align-items:center;justify-content:center;color:#14b8a6"><i class="fas fa-map-signs"></i></div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:700">Plan de gestion</div><div style="font-size:11px;color:var(--muted)">Épargne stratégique</div></div>
+      <i class="fas fa-chevron-right" style="color:var(--muted);font-size:11px"></i>
     </div>
-    <div class="bnav-drawer-item" id="bnd-notes" onclick="bnavSwitch('notes');closeBnavDrawer()">
-      <i class="fas fa-calendar-pen"></i>Notes
+    <div onclick="bnavSwitch('notes')" style="display:flex;align-items:center;gap:14px;padding:15px 18px;border-bottom:1px solid var(--border);cursor:pointer">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(167,139,250,.1);display:flex;align-items:center;justify-content:center;color:#a78bfa"><i class="fas fa-calendar-pen"></i></div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:700">Notes & Agenda</div></div>
+      <i class="fas fa-chevron-right" style="color:var(--muted);font-size:11px"></i>
     </div>
-    <div class="bnav-drawer-item" id="bnd-plangestion" onclick="bnavSwitch('plangestion');closeBnavDrawer()">
-      <i class="fas fa-map-signs"></i>Plan Gestion
+    <div onclick="bnavSwitch('historique')" style="display:flex;align-items:center;gap:14px;padding:15px 18px;border-bottom:1px solid var(--border);cursor:pointer">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(239,68,68,.1);display:flex;align-items:center;justify-content:center;color:#ef4444"><i class="fas fa-clock-rotate-left"></i></div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:700">Historique</div></div>
+      <i class="fas fa-chevron-right" style="color:var(--muted);font-size:11px"></i>
+    </div>
+    <div onclick="bnavSwitch('bibliotheque')" style="display:flex;align-items:center;gap:14px;padding:15px 18px;cursor:pointer">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(236,72,153,.1);display:flex;align-items:center;justify-content:center;color:#ec4899"><i class="fas fa-book-open"></i></div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:700">Bibliothèque financière</div></div>
+      <i class="fas fa-chevron-right" style="color:var(--muted);font-size:11px"></i>
+    </div>
+  </div>
+  <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:8px;padding-left:2px">🔐 Compte</div>
+  <div style="background:var(--card);border:1px solid var(--border);border-radius:16px;overflow:hidden;margin-bottom:18px">
+    <div onclick="openModal('changePwdModal')" style="display:flex;align-items:center;gap:14px;padding:15px 18px;border-bottom:1px solid var(--border);cursor:pointer">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(99,102,241,.1);display:flex;align-items:center;justify-content:center;color:#6366f1"><i class="fas fa-key"></i></div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:700">Changer mot de passe</div></div>
+      <i class="fas fa-chevron-right" style="color:var(--muted);font-size:11px"></i>
+    </div>
+    <div onclick="openModal('langModal');renderFxRates&&renderFxRates()" style="display:flex;align-items:center;gap:14px;padding:15px 18px;cursor:pointer">
+      <div style="width:36px;height:36px;border-radius:10px;background:rgba(245,158,11,.1);display:flex;align-items:center;justify-content:center;font-size:17px">🌐</div>
+      <div style="flex:1"><div style="font-size:14px;font-weight:700">Langue & Devise</div></div>
+      <i class="fas fa-chevron-right" style="color:var(--muted);font-size:11px"></i>
+    </div>
+  </div>
+  <div style="text-align:center;font-size:11px;color:var(--dim);padding-bottom:10px">v1.0 · AET MonBudget · © 2025 Alban Eloh Technology</div>
+</div>
+
+<!-- ════ TAB MENU ════ -->
+<div id="tab-menu" class="tab-content" style="display:none;padding:16px 16px 100px">
+  <div style="font-size:17px;font-weight:800;margin-bottom:18px;display:flex;align-items:center;gap:8px"><i class="fas fa-grid-2" style="color:var(--primary-l)"></i> Menu</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+    <div onclick="bnavSwitch('revenus')" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;cursor:pointer;border-top:3px solid #10b981">
+      <i class="fas fa-arrow-down" style="font-size:22px;color:#10b981;margin-bottom:10px;display:block"></i>
+      <div style="font-size:13px;font-weight:800">Revenus</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px">Salaire & primes</div>
+    </div>
+    <div onclick="bnavSwitch('depenses')" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;cursor:pointer;border-top:3px solid #ef4444">
+      <i class="fas fa-arrow-up" style="font-size:22px;color:#ef4444;margin-bottom:10px;display:block"></i>
+      <div style="font-size:13px;font-weight:800">Dépenses</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px">Charges & achats</div>
+    </div>
+    <div onclick="bnavSwitch('epargne')" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;cursor:pointer;border-top:3px solid #a78bfa">
+      <i class="fas fa-piggy-bank" style="font-size:22px;color:#a78bfa;margin-bottom:10px;display:block"></i>
+      <div style="font-size:13px;font-weight:800">Épargne</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px">Fonds & objectifs</div>
+    </div>
+    <div onclick="bnavSwitch('budget')" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;cursor:pointer;border-top:3px solid #f59e0b">
+      <i class="fas fa-bullseye" style="font-size:22px;color:#f59e0b;margin-bottom:10px;display:block"></i>
+      <div style="font-size:13px;font-weight:800">Budget</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px">Plafonds mensuels</div>
+    </div>
+    <div onclick="bnavSwitch('historique')" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;cursor:pointer;border-top:3px solid #6366f1">
+      <i class="fas fa-clock-rotate-left" style="font-size:22px;color:#6366f1;margin-bottom:10px;display:block"></i>
+      <div style="font-size:13px;font-weight:800">Historique</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px">Toutes opérations</div>
+    </div>
+    <div onclick="bnavSwitch('notes')" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;cursor:pointer;border-top:3px solid #22d3ee">
+      <i class="fas fa-calendar-pen" style="font-size:22px;color:#22d3ee;margin-bottom:10px;display:block"></i>
+      <div style="font-size:13px;font-weight:800">Notes</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px">Agenda & rappels</div>
+    </div>
+    <div onclick="bnavSwitch('plangestion')" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;cursor:pointer;border-top:3px solid #14b8a6">
+      <i class="fas fa-map-signs" style="font-size:22px;color:#14b8a6;margin-bottom:10px;display:block"></i>
+      <div style="font-size:13px;font-weight:800">Plan Gestion</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px">Épargne stratégique</div>
+    </div>
+    <div onclick="bnavSwitch('bibliotheque')" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;cursor:pointer;border-top:3px solid #ec4899">
+      <i class="fas fa-book-open" style="font-size:22px;color:#ec4899;margin-bottom:10px;display:block"></i>
+      <div style="font-size:13px;font-weight:800">Bibliothèque</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px">Conseils financiers</div>
+    </div>
+    <div onclick="bnavSwitch('salaire')" style="background:var(--card);border:1px solid var(--border);border-radius:16px;padding:18px;cursor:pointer;border-top:3px solid #8b5cf6;grid-column:span 2">
+      <i class="fas fa-briefcase" style="font-size:22px;color:#8b5cf6;margin-bottom:10px;display:block"></i>
+      <div style="font-size:13px;font-weight:800">Configuration Salaire</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px">Configurer mon salaire & revenus fixes</div>
     </div>
   </div>
 </div>
 
+<!-- ════ NOUVELLE BOTTOM NAV ════ -->
+<nav style="display:block;position:fixed;bottom:0;left:0;right:0;z-index:900;background:rgba(15,23,42,.97);backdrop-filter:blur(24px);border-top:1px solid var(--border);padding:8px 0 max(10px,env(safe-area-inset-bottom))">
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);max-width:480px;margin:0 auto">
+    <button id="bnav-dashboard" onclick="bnavSwitch('dashboard')" style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 2px;background:transparent;border:none;color:var(--primary-l);font-size:9px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;letter-spacing:.3px">
+      <i class="fas fa-house" style="font-size:20px"></i>Accueil
+    </button>
+    <button id="bnav-menu" onclick="bnavSwitch('menu')" style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 2px;background:transparent;border:none;color:var(--muted);font-size:9px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;letter-spacing:.3px">
+      <i class="fas fa-grid-2" style="font-size:20px"></i>Menu
+    </button>
+    <button id="bnav-profil" onclick="bnavSwitch('profil')" style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 2px;background:transparent;border:none;color:var(--muted);font-size:9px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;letter-spacing:.3px">
+      <i class="fas fa-user-circle" style="font-size:20px"></i>Profil
+    </button>
+    <button id="bnav-parametres" onclick="bnavSwitch('parametres')" style="display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 2px;background:transparent;border:none;color:var(--muted);font-size:9px;font-weight:700;cursor:pointer;font-family:'Syne',sans-serif;letter-spacing:.3px">
+      <i class="fas fa-gear" style="font-size:20px"></i>Paramètres
+    </button>
+  </div>
+</nav>
+
 <script>
-// ══ MENU PRINCIPAL ══
-const ALL_MENU_TABS = ['dashboard','revenus','depenses','epargne','budget','salaire','historique','notes','plangestion','bibliotheque'];
+// ══ NAVIGATION APP MOBILE ══
+const BNAV_IDS = ['dashboard','menu','profil','parametres'];
 
-window.toggleMainMenu = function() {
-  const d = document.getElementById('mainMenuDrawer');
-  const chevron = document.getElementById('mainMenuChevron');
-  const open = d.style.display === 'none' || d.style.display === '';
-  d.style.display = open ? 'block' : 'none';
-  if (chevron) chevron.style.transform = open ? 'rotate(180deg)' : '';
-};
+window.bnavSwitch = function(tab) {
+  // Cacher tous les tab-content
+  document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+  const bib = document.getElementById('tab-bibliotheque');
+  if (bib) bib.style.display = 'none';
 
-window.mainMenuSwitch = function(tab, label, icon) {
-  // Fermer le drawer
-  const d = document.getElementById('mainMenuDrawer');
-  const chevron = document.getElementById('mainMenuChevron');
-  if (d) d.style.display = 'none';
-  if (chevron) chevron.style.transform = '';
-  // Mettre à jour l'actif
-  ALL_MENU_TABS.forEach(t => {
-    const el = document.getElementById('mm-'+t);
-    if (el) el.classList.toggle('active', t === tab);
+  // Afficher le bon tab
+  if (tab === 'bibliotheque') {
+    if (bib) { bib.style.display = 'block'; }
+  } else {
+    const el = document.getElementById('tab-' + tab);
+    if (el) el.style.display = 'block';
+  }
+
+  // Sync couleur boutons nav
+  BNAV_IDS.forEach(t => {
+    const b = document.getElementById('bnav-' + t);
+    if (!b) return;
+    const active = (t === tab) || (t === 'dashboard' && tab === 'dashboard');
+    b.style.color = active ? 'var(--primary-l)' : 'var(--muted)';
   });
-  // Breadcrumb
-  const chip = document.getElementById('activeTabName');
-  const chipI = document.getElementById('activeTabChip')?.querySelector('i');
-  if (chip) chip.textContent = label;
-  if (chipI) { chipI.className = 'fas ' + icon; }
-  switchTab(tab);
+
+  // Sous-titre header
+  const sub = document.getElementById('headerSub');
+  const labels = {dashboard:'Tableau de bord',revenus:'Revenus',depenses:'Dépenses',epargne:'Épargne',budget:'Budget',salaire:'Salaire',historique:'Historique',notes:'Notes',plangestion:'Plan de Gestion',bibliotheque:'Bibliothèque',profil:'Mon Profil',parametres:'Paramètres',menu:'Menu'};
+  if (sub) sub.textContent = labels[tab] || 'AET MonBudget';
+
+  // Mises à jour spécifiques
+  if (tab === 'profil') _updateProfil();
+  if (tab === 'parametres') _updateParam();
+
+  window.scrollTo(0, 0);
 };
+
+// Alias compatibilité
+window.switchTab = window.bnavSwitch;
+window.toggleMainMenu = function(){};
+window.mainMenuSwitch = function(tab){ bnavSwitch(tab); };
+window.openBnavDrawer = function(){};
+window.closeBnavDrawer = function(){};
+
+function _updateProfil() {
+  if (!currentUser) return;
+  const name = currentUser.displayName || currentUser.email?.split('@')[0] || '?';
+  const av = name.charAt(0).toUpperCase();
+  ['profilAvatarBig','userAvatar'].forEach(id => { const e=document.getElementById(id); if(e) e.textContent=av; });
+  const el = id => document.getElementById(id);
+  if (el('profilName')) el('profilName').textContent = name;
+  if (el('profilEmail')) el('profilEmail').textContent = currentUser.email || '';
+  const cm = currentMonth();
+  const txM = transactions.filter(t => monthOf(t.date) === cm);
+  if (el('profilRevMois')) el('profilRevMois').textContent = fmt(txM.filter(t=>t.flow==='in').reduce((s,t)=>s+t.amount,0));
+  if (el('profilDepMois')) el('profilDepMois').textContent = fmt(txM.filter(t=>t.flow==='out').reduce((s,t)=>s+t.amount,0));
+  if (el('profilEpargne')) el('profilEpargne').textContent = fmt(transactions.filter(t=>t.flow==='save').reduce((s,t)=>s+t.amount,0));
+  if (el('profilNbTx')) el('profilNbTx').textContent = transactions.length;
+}
+
+function _updateParam() {
+  const el = document.getElementById('paramSalDisplay');
+  if (el && salaryConfig && salaryConfig.net > 0) {
+    el.textContent = fmt(salaryConfig.net + (salaryConfig.prime_fixe||0) + (salaryConfig.autres_fixes||0)) + ' / mois';
+  }
+}
 
 // ══ TAUX DE CHANGE RÉELS ══
 let fxRates = { XOF:1, USD:0.00163, EUR:0.00152, GHS:0.020, NGN:2.50 }; // fallback

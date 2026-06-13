@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+<script>
+window.onerror = function(msg, url, line, col, error) {
+  alert('🔴 ERREUR JS DÉTECTÉE\n\nMessage: ' + msg + '\nLigne: ' + line + ':' + col + '\n\n' + (error && error.stack ? error.stack.split('\n').slice(0,3).join('\n') : ''));
+  return false;
+};
+window.addEventListener('unhandledrejection', function(e) {
+  alert('🔴 PROMESSE REJETÉE\n\n' + (e.reason && e.reason.message ? e.reason.message : e.reason));
+});
+</script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>AET MonBudget — Gestion Financière Personnelle</title>

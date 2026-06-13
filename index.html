@@ -5726,7 +5726,7 @@ document.addEventListener('DOMContentLoaded', () => {
   <div class="pin-dots" id="pinDots">
     <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
   </div>
-  <div class="pin-pad">
+  <div class="pin-pad" id="pinPad">
     <button class="pin-key" onclick="pinPress(1)">1</button>
     <button class="pin-key" onclick="pinPress(2)">2</button>
     <button class="pin-key" onclick="pinPress(3)">3</button>
@@ -6265,23 +6265,31 @@ async function loadSessions() {
 // ──────── PIN LOCK ────────
 window.checkPinAtStart = () => {
   loadSettingsFromLocal();
-  if (userSettings.pinEnabled && userSettings.pin && userSettings.pin.length === 4) {
+  const hasCred = !!localStorage.getItem('aet_fp_credential');
+  const fpOnly = userSettings.fingerprint && hasCred && !userSettings.pinEnabled;
+  const pinOk  = userSettings.pinEnabled && userSettings.pin && userSettings.pin.length === 4;
+
+  if (pinOk || fpOnly) {
     pinMode = 'unlock';
     pinInput = '';
     document.getElementById('pinTitle').textContent = 'Verrouillage';
-    document.getElementById('pinSub').textContent = 'Entrez votre code PIN à 4 chiffres';
+    document.getElementById('pinSub').textContent = pinOk ? 'Entrez votre code PIN à 4 chiffres' : 'Déverrouillez avec votre empreinte';
     document.getElementById('pinError').textContent = '';
     updatePinDots();
     document.getElementById('pinOverlay').classList.add('show');
+
     const fpBtn = document.getElementById('pinFpBtn');
     if (fpBtn) {
-      const hasCred = !!localStorage.getItem('aet_fp_credential');
       fpBtn.style.display = (userSettings.fingerprint && hasCred) ? 'block' : 'none';
       if (userSettings.fingerprint && hasCred) {
-        // Proposer l'empreinte immédiatement
         setTimeout(()=>useFingerprintUnlock(), 400);
       }
     }
+    // Mode empreinte seule : cacher le pavé numérique (pas de PIN configuré)
+    const pad = document.getElementById('pinPad');
+    if (pad) pad.style.display = pinOk ? '' : 'none';
+    const dots = document.getElementById('pinDots');
+    if (dots) dots.style.display = pinOk ? '' : 'none';
   }
 };
 window.pinPress = (n) => {

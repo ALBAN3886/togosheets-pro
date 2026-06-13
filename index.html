@@ -5949,9 +5949,11 @@ window.saveProfileEdit = async () => {
     const ua = document.getElementById('userAvatar'); if (ua) ua.textContent = (newProfile.avatar||newProfile.displayName.charAt(0)).toUpperCase();
     renderProfileTab();
     closeAetModal('profileEditModal');
+    alert('✅ PROFIL ENREGISTRÉ AVEC SUCCÈS');
     showSuccess('Profil mis à jour !','Vos informations ont été enregistrées et l\'ancienne version a été archivée.');
   } catch(e) {
     console.error(e);
+    alert('ERREUR PROFIL : ' + e.code + ' — ' + e.message);
     toast('Erreur : ' + e.message, 'error');
   }
   loader(false);
@@ -6606,7 +6608,7 @@ window.saveTontine = async () => {
     }
     closeAetModal('tontineModal');
     showSuccess('Tontine enregistrée !','Votre tontine est maintenant suivie.');
-  } catch(e) { toast('Erreur : '+e.message,'error'); }
+  } catch(e) { alert('ERREUR TONTINE : ' + e.code + ' — ' + e.message); toast('Erreur : '+e.message,'error'); }
   loader(false);
 };
 window.deleteTontine = async (id) => {

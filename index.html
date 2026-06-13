@@ -107,6 +107,8 @@ const CURRENCIES = {
   NGN: { code:'NGN', symbol:'₦',   name:'Naira (Nigeria)',locale:'en-NG',decimals:0, flag:'🇳🇬' },
 };
 let activeCurrency = localStorage.getItem('aet_currency') || 'XOF';
+window.activeCurrency = activeCurrency;
+window.CURRENCIES = CURRENCIES;
 function fmt(n) {
   const cur = CURRENCIES[activeCurrency] || CURRENCIES.XOF;
   try {
@@ -398,6 +400,7 @@ window.applyLang = function(lang) {
 window.applyCurrency = function(code) {
   if (!CURRENCIES[code]) return;
   activeCurrency = code;
+  window.activeCurrency = code;
   localStorage.setItem('aet_currency', code);
   document.querySelectorAll('.currency-card').forEach(c => c.classList.toggle('active', c.dataset.cur === code));
   if (typeof renderAll === 'function') renderAll();
@@ -686,6 +689,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const savedCur  = localStorage.getItem('aet_currency') || 'XOF';
   activeLang = savedLang;
   activeCurrency = savedCur;
+  window.activeCurrency = savedCur;
   document.querySelectorAll('.lang-card').forEach(c => c.classList.toggle('active', c.dataset.lang === savedLang));
   document.querySelectorAll('.currency-card').forEach(c => c.classList.toggle('active', c.dataset.cur === savedCur));
   document.documentElement.lang = savedLang;
@@ -4166,7 +4170,7 @@ async function loadFxRates() {
       fxRates = { XOF:1, USD: j.rates.USD, EUR: j.rates.EUR, GHS: j.rates.GHS, NGN: j.rates.NGN };
       fxLoaded = true;
       // Rafraîchir l'affichage si une devise non-XOF est active
-      if (activeCurrency !== 'XOF' && typeof renderAll === 'function') renderAll();
+      if ((window.activeCurrency||'XOF') !== 'XOF' && typeof renderAll === 'function') renderAll();
       // Afficher les taux dans le modal
       renderFxRates();
     }
@@ -4176,15 +4180,18 @@ async function loadFxRates() {
 }
 
 function convertFromXOF(amountXOF) {
-  if (activeCurrency === 'XOF') return amountXOF;
-  const rate = fxRates[activeCurrency] || 1;
+  const ac = window.activeCurrency || 'XOF';
+  if (ac === 'XOF') return amountXOF;
+  const rate = fxRates[ac] || 1;
   return amountXOF * rate;
 }
 
 // Override fmt pour intégrer la conversion
 function fmt(n) {
   const converted = convertFromXOF(n || 0);
-  const cur = CURRENCIES[activeCurrency] || CURRENCIES.XOF;
+  const ac = window.activeCurrency || 'XOF';
+  const CUR = window.CURRENCIES || {};
+  const cur = CUR[ac] || CUR.XOF || {locale:'fr-FR',code:'XOF',decimals:0,symbol:'F'};
   try {
     return new Intl.NumberFormat(cur.locale,{style:'currency',currency:cur.code,maximumFractionDigits:cur.decimals}).format(converted);
   } catch(e) {
@@ -4196,7 +4203,7 @@ function renderFxRates() {
   const el = document.getElementById('fxRatesDisplay');
   if (!el) return;
   const base = fxLoaded ? '(taux live)' : '(taux estimés)';
-  el.innerHTML = Object.entries(CURRENCIES).filter(([k])=>k!=='XOF').map(([k,c])=>{
+  el.innerHTML = Object.entries(window.CURRENCIES||{}).filter(([k])=>k!=='XOF').map(([k,c])=>{
     const rate = fxRates[k] || '—';
     const val  = typeof rate === 'number' ? rate.toFixed(k==='GHS'||k==='NGN'?4:6) : rate;
     return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(148,163,184,.07)">
@@ -6682,11 +6689,11 @@ function renderFAQ() {
   // Activate toggling
   setTimeout(() => {
     document.querySelectorAll('[id^="faq-"]').forEach(d => {
-      const origDisplay = d.style.display;
-      d.classList.toggle = (function(orig){ return function(c){
-        if (c==='open') { this.style.display = this.style.display==='none' || !this.style.display ? 'block' : 'none'; return; }
-        return orig.apply(this, arguments);
-      };})(d.classList.toggle.bind(d.classList));
+      const orig = d.classList.toggle.bind(d.classList);
+      d.classList.toggle = function(c){
+        if (c==='open') { d.style.display = (d.style.display==='none' || !d.style.display) ? 'block' : 'none'; return; }
+        return orig(c);
+      };
     });
   }, 100);
 }

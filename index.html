@@ -3061,6 +3061,33 @@ select.form-input option{background:var(--bg2)}
           <div id="catLegendResume" style="display:flex;flex-direction:column;gap:6px;margin-top:10px;font-size:12px;"></div>
         </div>
 
+        <!-- ═══ RACCOURCIS RAPIDES ═══ -->
+        <div style="margin-bottom:16px">
+          <div style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Accès rapide</div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
+            <div onclick="bnavSwitchExt('tontines')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;background:var(--card);border:1px solid var(--border);border-radius:14px;cursor:pointer;transition:all .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+              <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#ef4444);display:flex;align-items:center;justify-content:center;font-size:18px">💰</div>
+              <span style="font-size:10px;font-weight:700;color:var(--text);text-align:center;line-height:1.2">Tontines</span>
+            </div>
+            <div onclick="dashSubTab('graphes')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;background:var(--card);border:1px solid var(--border);border-radius:14px;cursor:pointer;transition:all .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+              <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:18px">📊</div>
+              <span style="font-size:10px;font-weight:700;color:var(--text);text-align:center;line-height:1.2">Analyse</span>
+            </div>
+            <div onclick="bnavSwitchExt('objectifs')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;background:var(--card);border:1px solid var(--border);border-radius:14px;cursor:pointer;transition:all .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+              <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:18px">🎯</div>
+              <span style="font-size:10px;font-weight:700;color:var(--text);text-align:center;line-height:1.2">Objectifs</span>
+            </div>
+            <div onclick="mainMenuSwitch('budget','Budget','fa-bullseye')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;background:var(--card);border:1px solid var(--border);border-radius:14px;cursor:pointer;transition:all .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+              <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#06b6d4,#0891b2);display:flex;align-items:center;justify-content:center;font-size:18px">📋</div>
+              <span style="font-size:10px;font-weight:700;color:var(--text);text-align:center;line-height:1.2">Budgets</span>
+            </div>
+            <div onclick="openSettings()" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;background:var(--card);border:1px solid var(--border);border-radius:14px;cursor:pointer;transition:all .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+              <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#64748b,#475569);display:flex;align-items:center;justify-content:center;font-size:18px">⚙️</div>
+              <span style="font-size:10px;font-weight:700;color:var(--text);text-align:center;line-height:1.2">Paramètres</span>
+            </div>
+          </div>
+        </div>
+
         <!-- Teaser Conseils -->
         <div class="home-conseil-teaser" onclick="mainMenuSwitch('conseils','Conseils Financiers','fa-graduation-cap')">
           <div class="home-conseil-teaser-title"><i class="fas fa-graduation-cap"></i> Conseil du moment</div>
@@ -5310,17 +5337,18 @@ document.addEventListener('DOMContentLoaded', () => {
       <div id="faqList"></div>
       <h4 style="font-size:13px;font-weight:800;color:var(--text);margin:18px 0 10px">📞 Contact</h4>
       <div style="background:var(--bg);border-radius:11px;padding:14px;display:flex;flex-direction:column;gap:10px">
-        <div><i class="fas fa-envelope" style="color:var(--primary);width:22px"></i> <a href="mailto:support@aetmonbudget.com" style="color:var(--primary);font-weight:600">support@aetmonbudget.com</a></div>
-        <div><i class="fab fa-whatsapp" style="color:#25d366;width:22px"></i> <a href="https://wa.me/22890123456" style="color:var(--text);font-weight:600">+228 90 12 34 56</a></div>
-        <div><i class="fas fa-globe" style="color:var(--primary);width:22px"></i> <a href="#" style="color:var(--text);font-weight:600">aetmonbudget.com</a></div>
+        <div><i class="fas fa-envelope" style="color:var(--primary);width:22px"></i> <a href="mailto:aettechnology5@gmail.com" style="color:var(--primary);font-weight:600">aettechnology5@gmail.com</a></div>
+        <div><i class="fab fa-whatsapp" style="color:#25d366;width:22px"></i> <a href="https://wa.me/22893003941" style="color:var(--text);font-weight:600">+228 93 00 39 41</a></div>
+        <div><i class="fas fa-globe" style="color:var(--primary);width:22px"></i> <a href="https://alban3886.github.io" target="_blank" style="color:var(--text);font-weight:600">alban3886.github.io</a></div>
       </div>
       <h4 style="font-size:13px;font-weight:800;color:var(--text);margin:18px 0 10px">💡 Suggestion / Bug</h4>
       <div class="aet-form-row">
         <textarea id="feedbackTxt" rows="4" placeholder="Décrivez votre suggestion ou problème..." style="resize:vertical"></textarea>
       </div>
-      <button class="aet-btn-primary" onclick="sendFeedback()">
-        <i class="fas fa-paper-plane"></i> Envoyer
-      </button>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="aet-btn-primary" onclick="sendFeedback()" style="flex:1"><i class="fas fa-paper-plane"></i> Envoyer</button>
+        <button onclick="sendFeedbackWhatsApp()" style="flex:1;background:#25d366;color:#fff;border:none;border-radius:12px;padding:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px"><i class="fab fa-whatsapp"></i> Via WhatsApp</button>
+      </div>
     </div>
   </div>
 </div>
@@ -5337,12 +5365,12 @@ document.addEventListener('DOMContentLoaded', () => {
         <i class="fas fa-chart-column"></i>
       </div>
       <h2 style="font-size:22px;font-weight:800;color:var(--text)">AET MonBudget</h2>
-      <div style="font-size:13px;color:var(--muted);margin:4px 0 16px">Version 2.0 · Build 2024.05</div>
+      <div style="font-size:13px;color:var(--muted);margin:4px 0 16px">Version 2.0 · Build 2025.06</div>
       <p style="font-size:13.5px;color:var(--text);line-height:1.6;margin-bottom:16px">
         <strong>Gérez mieux votre argent,<br/>atteignez vos objectifs.</strong>
       </p>
       <p style="font-size:12.5px;color:var(--muted);line-height:1.7;margin-bottom:18px">
-        AET MonBudget est une application complète de gestion financière personnelle conçue pour les utilisateurs en Afrique de l'Ouest. Suivi des revenus et dépenses, budgets, objectifs d'épargne, tontines et analyses avancées.
+        AET MonBudget est une application complète de gestion financière personnelle conçue pour les utilisateurs du monde entier. Suivi des revenus et dépenses, budgets, objectifs d'épargne, tontines et analyses avancées.
       </p>
       <div style="background:var(--bg);border-radius:11px;padding:14px;text-align:left;font-size:12.5px;color:var(--text);line-height:1.7">
         <div><strong>Développé par :</strong> Équipe AET</div>
@@ -5718,7 +5746,7 @@ window.showProfileHistory = async () => {
   section.style.display = 'block';
   list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:14px">Chargement...</div>';
   try {
-    const q = _query(_col(_db,'profileHistory'), _where('userId','==',_auth.currentUser.uid), _orderBy('changedAt','desc'), _lim(50));
+    const q = _query(_col(_db,'profileHistory'), _where('userId','==',_auth.currentUser.uid), _lim(50));
     const snap = await _getDocs(q);
     if (snap.empty) {
       list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:18px;font-size:13px">Aucune modification archivée.<br/>L\'historique apparaîtra ici après votre première modification.</div>';
@@ -5894,7 +5922,7 @@ async function loadSessions() {
   if (!_auth.currentUser) return;
   el.innerHTML = 'Chargement...';
   try {
-    const q = _query(_col(_db,'sessions'), _where('userId','==',_auth.currentUser.uid), _orderBy('loginAt','desc'), _lim(5));
+    const q = _query(_col(_db,'sessions'), _where('userId','==',_auth.currentUser.uid), _lim(5));
     const snap = await _getDocs(q);
     if (snap.empty) { el.innerHTML = 'Aucune session enregistrée'; return; }
     let html = '';
@@ -6300,6 +6328,11 @@ window.sendFeedback = async () => {
     showSuccess('Message envoyé !','Merci, nous reviendrons vers vous rapidement.');
   } catch(e) { toast('Erreur : '+e.message,'error'); }
   loader(false);
+};
+window.sendFeedbackWhatsApp = () => {
+  const txt = document.getElementById('feedbackTxt').value.trim();
+  const msg = txt ? encodeURIComponent('Bonjour AET MonBudget, voici ma suggestion/bug :\n\n' + txt) : encodeURIComponent('Bonjour AET MonBudget,');
+  window.open('https://wa.me/22899812072?text=' + msg, '_blank');
 };
 function renderFAQ() {
   const FAQ = [

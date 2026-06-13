@@ -981,6 +981,7 @@ function renderResumeDonut(mTx) {
   }
 }
 
+function buildChart(id, type, data, options) {
   const ctx = document.getElementById(id);
   if (!ctx) return;
   if (charts[id]) charts[id].destroy();

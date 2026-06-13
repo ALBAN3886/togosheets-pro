@@ -2624,45 +2624,62 @@ select.form-input option{background:var(--bg2)}
 .bottom-nav{
   display:none;
   position:fixed;bottom:0;left:0;right:0;z-index:900;
-  background:var(--card);backdrop-filter:blur(20px);
+  background:#ffffff;
   border-top:1px solid var(--border);
-  padding:6px 0 max(6px,env(safe-area-inset-bottom));
+  padding:8px 0 max(8px,env(safe-area-inset-bottom));
+  box-shadow:0 -4px 20px rgba(30,41,59,.05);
 }
 .bottom-nav-grid{
   display:grid;
   grid-template-columns:repeat(5,1fr);
   gap:2px;
+  position:relative;
 }
 .bnav-btn{
-  display:flex;flex-direction:column;align-items:center;gap:3px;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
   padding:6px 2px;background:transparent;border:none;color:var(--muted);
-  font-size:9px;font-weight:700;cursor:pointer;transition:all .2s;
-  border-radius:10px;letter-spacing:.3px;line-height:1.2;
-  font-family:'Syne',sans-serif;
+  font-size:10px;font-weight:600;cursor:pointer;transition:all .2s;
+  border-radius:10px;letter-spacing:.2px;line-height:1.2;
+  font-family:'Poppins',sans-serif;
 }
-.bnav-btn i{font-size:16px;transition:all .2s}
-.bnav-btn.active{color:var(--primary-l)}
+.bnav-btn i{font-size:18px;transition:all .2s}
+.bnav-btn.active{color:var(--primary)}
 .bnav-btn.active i{transform:translateY(-2px)}
+.bnav-fab-spacer{pointer-events:none;}
+
+/* Bouton central "+" flottant */
+.bnav-fab{
+  position:absolute;left:50%;top:-26px;transform:translateX(-50%);
+  width:56px;height:56px;border-radius:50%;
+  background:linear-gradient(135deg,#2563eb,#3b82f6);
+  border:5px solid var(--bg);
+  color:#fff;font-size:22px;
+  display:flex;align-items:center;justify-content:center;
+  box-shadow:0 6px 18px rgba(37,99,235,.4);
+  cursor:pointer;transition:transform .15s;
+}
+.bnav-fab:active{transform:translateX(-50%) scale(.92);}
 
 /* Bouton "Plus" et drawer */
 .bnav-more-drawer{
   display:none;position:fixed;bottom:0;left:0;right:0;z-index:901;
-  background:var(--card);border-top:1px solid var(--border);
+  background:#ffffff;border-top:1px solid var(--border);
   border-radius:18px 18px 0 0;padding:16px 12px max(16px,env(safe-area-inset-bottom));
   transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);
+  box-shadow:0 -8px 30px rgba(30,41,59,.08);
 }
 .bnav-more-drawer.open{transform:translateY(0)}
-.bnav-drawer-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+.bnav-drawer-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
 .bnav-drawer-item{
   display:flex;flex-direction:column;align-items:center;gap:6px;
-  padding:14px 8px;border-radius:12px;background:rgba(99,102,241,.07);
-  border:1px solid rgba(99,102,241,.15);cursor:pointer;
-  color:var(--muted);font-size:10px;font-weight:700;text-align:center;
-  font-family:'Syne',sans-serif;transition:all .15s;
+  padding:14px 8px;border-radius:12px;background:rgba(37,99,235,.05);
+  border:1px solid rgba(37,99,235,.12);cursor:pointer;
+  color:var(--muted);font-size:11px;font-weight:600;text-align:center;
+  font-family:'Poppins',sans-serif;transition:all .15s;
 }
-.bnav-drawer-item i{font-size:20px;color:var(--primary-l)}
-.bnav-drawer-item.active{background:rgba(99,102,241,.15);color:var(--primary-l)}
-.bnav-overlay{display:none;position:fixed;inset:0;z-index:899;background:rgba(0,0,0,.4)}
+.bnav-drawer-item i{font-size:20px;color:var(--primary)}
+.bnav-drawer-item.active{background:rgba(37,99,235,.12);color:var(--primary)}
+.bnav-overlay{display:none;position:fixed;inset:0;z-index:899;background:rgba(15,23,42,.4)}
 .bnav-overlay.open{display:block}
 .bnav-drawer-handle{width:36px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 6px}
 
@@ -3802,42 +3819,52 @@ select.form-input option{background:var(--bg2)}
 <nav class="bottom-nav" id="bottomNav">
   <div class="bottom-nav-grid">
     <button class="bnav-btn active" id="bnav-dashboard" onclick="bnavSwitch('dashboard')">
-      <i class="fas fa-chart-pie"></i>Tableau
+      <i class="fas fa-house"></i><span>Accueil</span>
     </button>
-    <button class="bnav-btn" id="bnav-revenus" onclick="bnavSwitch('revenus')">
-      <i class="fas fa-arrow-down"></i>Revenus
+    <button class="bnav-btn" id="bnav-historique" onclick="bnavSwitch('historique')">
+      <i class="fas fa-receipt"></i><span>Transactions</span>
     </button>
-    <button class="bnav-btn" id="bnav-depenses" onclick="bnavSwitch('depenses')">
-      <i class="fas fa-arrow-up"></i>Dépenses
-    </button>
+    <button class="bnav-btn bnav-fab-spacer" tabindex="-1" aria-hidden="true"></button>
     <button class="bnav-btn" id="bnav-epargne" onclick="bnavSwitch('epargne')">
-      <i class="fas fa-piggy-bank"></i>Épargne
+      <i class="fas fa-bullseye"></i><span>Objectifs</span>
     </button>
     <button class="bnav-btn" id="bnav-more" onclick="openBnavDrawer()">
-      <i class="fas fa-grid-2"></i>Plus
+      <i class="fas fa-user"></i><span>Profil</span>
     </button>
   </div>
+  <button class="bnav-fab" id="bnavFab" onclick="openTxModal()">
+    <i class="fas fa-plus"></i>
+  </button>
 </nav>
 
 <!-- Drawer "Plus" -->
 <div class="bnav-more-drawer" id="bnavDrawer">
   <div class="bnav-drawer-handle"></div>
-  <div style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;padding:0 4px">Navigation</div>
+  <div style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;padding:0 4px">Menu</div>
   <div class="bnav-drawer-grid">
+    <div class="bnav-drawer-item" id="bnd-revenus" onclick="bnavSwitch('revenus');closeBnavDrawer()">
+      <i class="fas fa-arrow-down"></i>Revenus
+    </div>
+    <div class="bnav-drawer-item" id="bnd-depenses" onclick="bnavSwitch('depenses');closeBnavDrawer()">
+      <i class="fas fa-arrow-up"></i>Dépenses
+    </div>
     <div class="bnav-drawer-item" id="bnd-budget" onclick="bnavSwitch('budget');closeBnavDrawer()">
-      <i class="fas fa-bullseye"></i>Budget
+      <i class="fas fa-chart-pie"></i>Budget
     </div>
     <div class="bnav-drawer-item" id="bnd-salaire" onclick="bnavSwitch('salaire');closeBnavDrawer()">
       <i class="fas fa-briefcase"></i>Salaire
-    </div>
-    <div class="bnav-drawer-item" id="bnd-historique" onclick="bnavSwitch('historique');closeBnavDrawer()">
-      <i class="fas fa-clock-rotate-left"></i>Historique
     </div>
     <div class="bnav-drawer-item" id="bnd-notes" onclick="bnavSwitch('notes');closeBnavDrawer()">
       <i class="fas fa-calendar-pen"></i>Notes
     </div>
     <div class="bnav-drawer-item" id="bnd-plangestion" onclick="bnavSwitch('plangestion');closeBnavDrawer()">
       <i class="fas fa-map-signs"></i>Plan Gestion
+    </div>
+    <div class="bnav-drawer-item" id="bnd-bibliotheque" onclick="switchTab('bibliotheque');closeBnavDrawer()">
+      <i class="fas fa-book-open"></i>Bibliothèque
+    </div>
+    <div class="bnav-drawer-item" onclick="doLogout();closeBnavDrawer()" style="background:rgba(239,68,68,.05);border-color:rgba(239,68,68,.15);">
+      <i class="fas fa-right-from-bracket" style="color:var(--danger-l);"></i>Déconnexion
     </div>
   </div>
 </div>
@@ -3928,8 +3955,8 @@ function renderFxRates() {
 
 // Charger les taux au démarrage
 loadFxRates();
-const BNAV_MAIN = ['dashboard','revenus','depenses','epargne'];
-const BNAV_DRAWER = ['budget','salaire','historique','notes','plangestion'];
+const BNAV_MAIN = ['dashboard','historique','epargne'];
+const BNAV_DRAWER = ['revenus','depenses','budget','salaire','notes','plangestion'];
 
 window.bnavSwitch = function(tab) {
   // Onglets principaux

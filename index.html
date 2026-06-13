@@ -128,6 +128,8 @@ onAuthStateChanged(auth, user => {
     currentUser = user;
     $('#authScreen').style.display = 'none';
     $('#app').style.display = 'block';
+    const bn = document.getElementById('bottomNav');
+    if (bn) bn.style.display = '';
     const name = user.displayName || user.email.split('@')[0];
     $('#userName').textContent = name;
     $('#userAvatar').textContent = name.charAt(0).toUpperCase();
@@ -157,11 +159,55 @@ onAuthStateChanged(auth, user => {
     if (unsubNotes){ unsubNotes(); unsubNotes= null; }
     transactions = []; salaryConfig = { net:0, prime_fixe:0, autres_fixes:0, poste:'', payday:25 }; budgets = [];
     $('#app').style.display = 'none';
-    $('#authScreen').style.display = 'flex';
+    const bn2 = document.getElementById('bottomNav');
+    if (bn2) bn2.style.display = 'none';
+    // Afficher auth seulement si l'onboarding est terminé ou déjà vu
+    const _obDone = localStorage.getItem('aet_ob_done');
+    const _ob = document.getElementById('onboardingScreen');
+    const _as = document.getElementById('authScreen');
+    if (_obDone || !_ob) {
+      if (_as) _as.style.display = 'flex';
+    }
     // Vérifier si c'est le mode admin
     checkAdminMode();
   }
 });
+
+// ──────── ONBOARDING ────────
+let _obSlide = 0;
+function obShowSlide(n) {
+  _obSlide = n;
+  const slides = document.getElementById('obSlides');
+  if (slides) slides.style.transform = 'translateX(-'+(_obSlide*33.333)+'%)';
+  for (let i=0;i<3;i++) {
+    const d = document.getElementById('ob-dot-'+i);
+    if (d) { d.classList.toggle('active', i===_obSlide); }
+  }
+  const btn = document.getElementById('obNextBtn');
+  if (btn) btn.textContent = _obSlide===2 ? 'Commencer' : 'Suivant';
+  const alreadyLink = document.getElementById('obAlreadyLink');
+  if (alreadyLink) alreadyLink.style.display = _obSlide===2 ? 'block' : 'none';
+}
+window.obNext = function() {
+  if (_obSlide < 2) { obShowSlide(_obSlide+1); }
+  else { skipOnboarding(); }
+};
+window.skipOnboarding = function() {
+  const ob = document.getElementById('onboardingScreen');
+  if (ob) { ob.style.opacity='0'; ob.style.transition='opacity .4s'; setTimeout(()=>ob.style.display='none',400); }
+  const as = document.getElementById('authScreen');
+  if (as) { as.style.display='flex'; as.style.opacity='0'; as.style.transition='opacity .4s'; setTimeout(()=>as.style.opacity='1',50); }
+  localStorage.setItem('aet_ob_done','1');
+};
+// ──────── TOGGLE PASSWORD EYE ────────
+window.togglePwdEye = function(inputId, btn) {
+  const inp = document.getElementById(inputId);
+  if (!inp) return;
+  const isPass = inp.type === 'password';
+  inp.type = isPass ? 'text' : 'password';
+  const icon = btn.querySelector('i');
+  if (icon) icon.className = isPass ? 'fas fa-eye-slash' : 'fas fa-eye';
+};
 
 window.doLogin = async () => {
   const email = $('#loginEmail').value.trim();
@@ -582,9 +628,17 @@ window.switchTab = (tab) => {
 };
 
 window.switchAuthTab = (tab) => {
+  // Nouveau design
+  const login = document.getElementById('authBody-login');
+  const signup = document.getElementById('authBody-signup');
+  if (login) login.style.display = tab === 'login' ? 'flex' : 'none';
+  if (signup) signup.style.display = tab === 'signup' ? 'flex' : 'none';
+  // Compatibilité ancienne version
   ['login','signup'].forEach(t => {
-    document.getElementById('authForm-'+t).style.display = t===tab ? 'block':'none';
-    document.querySelector(`[data-auth="${t}"]`).classList.toggle('active', t===tab);
+    const el = document.getElementById('authForm-'+t);
+    if (el) el.style.display = t===tab ? 'block':'none';
+    const btn = document.querySelector('[data-auth="'+t+'"]');
+    if (btn) btn.classList.toggle('active', t===tab);
   });
 };
 
@@ -2384,28 +2438,60 @@ body::before{content:'';position:fixed;inset:0;background:
 .toast-error  {border-left:3px solid var(--danger);}  .toast-error i{color:var(--danger-l)}
 .toast-info   {border-left:3px solid var(--primary);}  .toast-info i{color:var(--primary-l)}
 
-/* ── AUTH ── */
-.auth-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-.auth-box{width:100%;max-width:440px;background:var(--card);backdrop-filter:blur(24px);border:1px solid var(--border);border-radius:24px;padding:44px 38px;box-shadow:var(--shadow);animation:fadeUp .5s ease}
+/* ── ONBOARDING ── */
+#onboardingScreen{position:fixed;inset:0;z-index:9998;background:#fff;display:none;flex-direction:column;overflow:hidden}
+.ob-slides{display:flex;width:300%;transition:transform .45s cubic-bezier(.4,0,.2,1)}
+.ob-slide{width:33.333%;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:0}
+.ob-hero{width:100%;height:52vh;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.ob-emoji{font-size:90px;animation:obFloat 3s ease-in-out infinite}
+@keyframes obFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+.ob-content{padding:32px 28px 0;text-align:center;flex:1}
+.ob-title{font-size:26px;font-weight:800;color:#1e293b;line-height:1.2;margin-bottom:12px}
+.ob-desc{font-size:15px;color:#64748b;line-height:1.65}
+.ob-bottom{padding:24px 28px 40px;display:flex;flex-direction:column;gap:14px}
+.ob-dots{display:flex;gap:7px;justify-content:center}
+.ob-dot{width:8px;height:8px;border-radius:4px;background:#e2e8f0;transition:all .3s}
+.ob-dot.active{width:24px;background:#2563eb}
+.ob-btn-next{width:100%;padding:16px;background:#2563eb;color:#fff;border:none;border-radius:14px;font-weight:800;font-size:16px;cursor:pointer;box-shadow:0 8px 24px rgba(37,99,235,.35);transition:all .2s}
+.ob-btn-next:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(37,99,235,.45)}
+.ob-btn-skip{background:none;border:none;color:#94a3b8;font-size:13px;font-weight:600;cursor:pointer;padding:4px}
+/* ── AUTH REDESIGN ── */
 @keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:none}}
-.logo{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:6px}
-.logo-icon{width:50px;height:50px;border-radius:14px;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 8px 24px rgba(99,102,241,.4)}
-.logo-text{font-size:26px;font-weight:800;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.auth-subtitle{text-align:center;color:var(--muted);font-size:13px;margin-bottom:28px}
-.auth-tabs-bar{display:flex;background:rgba(37,99,235,.05);border-radius:10px;padding:4px;margin-bottom:22px}
-.auth-tab-btn{flex:1;padding:9px;text-align:center;border-radius:7px;cursor:pointer;font-weight:600;font-size:13px;color:var(--muted);transition:all .2s}
-.auth-tab-btn.active{background:var(--grad);color:#fff;box-shadow:0 4px 12px rgba(99,102,241,.3)}
+.auth-screen{min-height:100vh;display:flex;flex-direction:column;background:#f8fafc}
+.auth-header{padding:20px 24px 0;display:flex;align-items:center;gap:10px}
+.auth-logo-wrap{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 6px 20px rgba(37,99,235,.35)}
+.auth-logo-name{font-size:18px;font-weight:800;color:#1e293b}
+.auth-logo-name span{color:#2563eb}
+.auth-body{flex:1;display:flex;flex-direction:column;justify-content:center;padding:24px 24px 16px;max-width:480px;margin:0 auto;width:100%}
+.auth-title{font-size:26px;font-weight:800;color:#1e293b;margin-bottom:4px}
+.auth-sub{font-size:14px;color:#64748b;margin-bottom:28px}
+.auth-box{background:#fff;border-radius:20px;padding:28px 24px;box-shadow:0 4px 24px rgba(0,0,0,.07);animation:fadeUp .4s ease}
 .form-group{margin-bottom:16px}
-.form-label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:7px;text-transform:uppercase;letter-spacing:.5px}
-.form-input{width:100%;padding:13px 15px;background:rgba(37,99,235,.05);border:1px solid var(--border);border-radius:11px;color:var(--text);font-size:14px;font-family:'DM Mono',monospace;transition:all .2s;outline:none}
-.form-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,.15)}
-.form-input::placeholder{color:var(--dim)}
-.form-err{color:var(--danger-l);font-size:12px;margin-top:6px;min-height:16px;font-family:'DM Mono',monospace}
-.btn-full{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:13px;border:none;border-radius:11px;font-weight:700;font-size:14px;cursor:pointer;transition:all .25s}
-.btn-grad{background:var(--grad);color:#fff;box-shadow:0 6px 20px rgba(99,102,241,.3)}
-.btn-grad:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(99,102,241,.45)}
-.auth-link{text-align:center;margin-top:14px;font-size:12px;color:var(--muted)}
-.auth-link a{color:var(--primary-l);text-decoration:none;font-weight:600;cursor:pointer}
+.form-label{display:block;font-size:12px;font-weight:700;color:#475569;margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
+.form-input-wrap{position:relative}
+.form-input{width:100%;padding:14px 16px;background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:12px;color:#1e293b;font-size:14px;font-family:'Poppins',sans-serif;transition:all .2s;outline:none;box-sizing:border-box}
+.form-input:focus{border-color:#2563eb;background:#fff;box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.form-input::placeholder{color:#94a3b8}
+.form-input-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:16px;pointer-events:none}
+.form-input.has-icon{padding-left:42px}
+.form-input-eye{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:#94a3b8;font-size:16px;cursor:pointer;background:none;border:none;padding:0}
+.form-err{color:#ef4444;font-size:12px;margin-top:6px;min-height:16px}
+.btn-full{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:15px;border:none;border-radius:13px;font-weight:700;font-size:15px;cursor:pointer;transition:all .25s;font-family:'Poppins',sans-serif}
+.btn-grad{background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;box-shadow:0 6px 20px rgba(37,99,235,.35)}
+.btn-grad:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(37,99,235,.5)}
+.auth-divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:#94a3b8;font-size:12px}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:#e2e8f0}
+.auth-social-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:4px}
+.auth-social-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:1.5px solid #e2e8f0;border-radius:12px;background:#fff;color:#334155;font-size:13px;font-weight:700;cursor:pointer;transition:all .2s;font-family:'Poppins',sans-serif}
+.auth-social-btn:hover{border-color:#2563eb;background:#eff6ff}
+.auth-switch{text-align:center;margin-top:18px;font-size:13px;color:#64748b}
+.auth-switch a{color:#2563eb;font-weight:700;cursor:pointer;text-decoration:none}
+.auth-forgot{text-align:right;font-size:12px;margin-top:-8px;margin-bottom:14px}
+.auth-forgot a{color:#2563eb;font-weight:600;cursor:pointer}
+.auth-tabs-bar{display:flex;background:#f1f5f9;border-radius:12px;padding:4px;margin-bottom:22px}
+.auth-tab-btn{flex:1;padding:10px;text-align:center;border-radius:9px;cursor:pointer;font-weight:700;font-size:13px;color:#64748b;transition:all .2s}
+.auth-tab-btn.active{background:#fff;color:#2563eb;box-shadow:0 2px 8px rgba(0,0,0,.1)}
+.logo{display:none}.logo-icon{display:none}.logo-text{display:none}.auth-subtitle{display:none}
 
 /* ── HEADER ── */
 .header{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
@@ -2794,70 +2880,196 @@ select.form-input option{background:var(--bg2)}
       setTimeout(() => { if (prog) prog.style.width='100%'; }, 50);
     }, 80);
   });
-  // Cacher le splash après 2.4s
+  // Cacher le splash après 2.4s → onboarding ou auth
   window.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       const splash = document.getElementById('aetSplash');
       if (splash) {
         splash.style.transition = 'opacity .5s ease';
         splash.style.opacity = '0';
-        setTimeout(() => { splash.style.display = 'none'; }, 500);
+        setTimeout(() => {
+          splash.style.display = 'none';
+          // Afficher onboarding si première visite
+          const done = localStorage.getItem('aet_ob_done');
+          const ob = document.getElementById('onboardingScreen');
+          const as = document.getElementById('authScreen');
+          if (!done && ob) {
+            ob.style.display = 'flex';
+            ob.style.flexDirection = 'column';
+          } else if (as) {
+            as.style.display = 'flex';
+          }
+        }, 500);
       }
     }, 2400);
   });
 })();
 </script>
 
+<!-- ════════════════ ONBOARDING ════════════════ -->
+<div id="onboardingScreen">
+  <div id="obSlides" class="ob-slides">
+    <!-- Slide 1 -->
+    <div class="ob-slide">
+      <div class="ob-hero" style="background:linear-gradient(160deg,#eff6ff 0%,#dbeafe 100%)">
+        <div class="ob-emoji">💰</div>
+        <div style="position:absolute;top:20px;right:20px">
+          <button class="ob-btn-skip" onclick="skipOnboarding()">Passer</button>
+        </div>
+      </div>
+      <div class="ob-content">
+        <div class="ob-title">Bienvenue sur<br/><span style="color:#2563eb">AET MonBudget</span></div>
+        <div class="ob-desc">L'application qui vous aide à gérer votre argent simplement et efficacement.</div>
+      </div>
+    </div>
+    <!-- Slide 2 -->
+    <div class="ob-slide">
+      <div class="ob-hero" style="background:linear-gradient(160deg,#f0fdf4 0%,#dcfce7 100%)">
+        <div class="ob-emoji" style="animation-delay:.3s">📊</div>
+        <div style="position:absolute;top:20px;right:20px">
+          <button class="ob-btn-skip" onclick="skipOnboarding()">Passer</button>
+        </div>
+      </div>
+      <div class="ob-content">
+        <div class="ob-title">Suivez vos <span style="color:#10b981">finances</span> en temps réel</div>
+        <div class="ob-desc">Revenus, dépenses, épargne et budgets — tout en un seul endroit, sécurisé et synchronisé.</div>
+      </div>
+    </div>
+    <!-- Slide 3 -->
+    <div class="ob-slide">
+      <div class="ob-hero" style="background:linear-gradient(160deg,#fdf4ff 0%,#ede9fe 100%);height:38vh">
+        <div class="ob-emoji" style="animation-delay:.6s">🎯</div>
+        <div style="position:absolute;top:20px;right:20px">
+          <button class="ob-btn-skip" onclick="skipOnboarding()">Passer</button>
+        </div>
+      </div>
+      <div class="ob-content" style="padding-top:20px">
+        <div class="ob-title" style="font-size:22px;margin-bottom:16px">Tout ce dont vous avez <span style="color:#7c3aed">besoin</span></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;text-align:left">
+          <div style="display:flex;align-items:center;gap:8px;padding:10px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
+            <div style="width:32px;height:32px;border-radius:8px;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-size:16px">📊</div>
+            <div style="font-size:12px;font-weight:700;color:#334155">Tableau de bord</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:10px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
+            <div style="width:32px;height:32px;border-radius:8px;background:#dcfce7;display:flex;align-items:center;justify-content:center;font-size:16px">💳</div>
+            <div style="font-size:12px;font-weight:700;color:#334155">Transactions</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:10px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
+            <div style="width:32px;height:32px;border-radius:8px;background:#fef3c7;display:flex;align-items:center;justify-content:center;font-size:16px">📋</div>
+            <div style="font-size:12px;font-weight:700;color:#334155">Budgets</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:10px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
+            <div style="width:32px;height:32px;border-radius:8px;background:#ede9fe;display:flex;align-items:center;justify-content:center;font-size:16px">🎯</div>
+            <div style="font-size:12px;font-weight:700;color:#334155">Objectifs</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:10px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
+            <div style="width:32px;height:32px;border-radius:8px;background:#fee2e2;display:flex;align-items:center;justify-content:center;font-size:16px">💰</div>
+            <div style="font-size:12px;font-weight:700;color:#334155">Tontines</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px;padding:10px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0">
+            <div style="width:32px;height:32px;border-radius:8px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:16px">📈</div>
+            <div style="font-size:12px;font-weight:700;color:#334155">Rapports</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="ob-bottom">
+    <div class="ob-dots">
+      <div class="ob-dot active" id="ob-dot-0"></div>
+      <div class="ob-dot" id="ob-dot-1"></div>
+      <div class="ob-dot" id="ob-dot-2"></div>
+    </div>
+    <button class="ob-btn-next" id="obNextBtn" onclick="obNext()">Suivant</button>
+    <div id="obAlreadyLink" style="display:none;text-align:center;font-size:13px;color:#64748b">
+      J'ai déjà un compte — <a onclick="skipOnboarding()" style="color:#2563eb;font-weight:700;cursor:pointer">Se connecter</a>
+    </div>
+  </div>
+</div>
+
 <!-- ════════════════ AUTH ════════════════ -->
-<div id="authScreen" class="auth-screen">
-  <div class="auth-box">
-    <div class="logo">
-      <div class="logo-icon"><i class="fas fa-chart-line"></i></div>
-      <div class="logo-text">AET MonBudget</div>
-    </div>
-    <p class="auth-subtitle">ALBAN ELOH TECHNOLOGY · Gestion financière · Franc CFA</p>
+<div id="authScreen" class="auth-screen" style="display:none">
+  <!-- Header -->
+  <div class="auth-header">
+    <div class="auth-logo-wrap"><i class="fas fa-chart-column" style="color:#fff;font-size:20px"></i></div>
+    <div class="auth-logo-name">AET <span>MonBudget</span></div>
+  </div>
 
-    <div class="auth-tabs-bar">
-      <div class="auth-tab-btn active" data-auth="login" onclick="switchAuthTab('login')">Connexion</div>
-      <div class="auth-tab-btn" data-auth="signup" onclick="switchAuthTab('signup')">Créer un compte</div>
-    </div>
-
-    <!-- LOGIN -->
-    <div id="authForm-login">
+  <!-- Corps LOGIN -->
+  <div class="auth-body" id="authBody-login">
+    <div class="auth-title">Connexion</div>
+    <div class="auth-sub">Accédez à votre espace financier</div>
+    <div class="auth-box">
       <div class="form-group">
-        <label class="form-label">Email</label>
-        <input type="email" id="loginEmail" class="form-input" placeholder="votre@email.com" onkeydown="if(event.key==='Enter')doLogin()"/>
+        <label class="form-label">Email ou téléphone</label>
+        <div class="form-input-wrap">
+          <i class="fas fa-envelope form-input-icon"></i>
+          <input type="email" id="loginEmail" class="form-input has-icon" placeholder="votre@email.com" onkeydown="if(event.key==='Enter')doLogin()"/>
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">Mot de passe</label>
-        <input type="password" id="loginPwd" class="form-input" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/>
+        <div class="form-input-wrap">
+          <i class="fas fa-lock form-input-icon"></i>
+          <input type="password" id="loginPwd" class="form-input has-icon" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/>
+          <button class="form-input-eye" onclick="togglePwdEye('loginPwd',this)" type="button"><i class="fas fa-eye"></i></button>
+        </div>
       </div>
+      <div class="auth-forgot"><a onclick="doForgotPwd()">Mot de passe oublié ?</a></div>
       <div class="form-err" id="loginErr"></div>
-      <button class="btn-full btn-grad" onclick="doLogin()"><i class="fas fa-sign-in-alt"></i> Se connecter</button>
-      <div class="auth-link"><a onclick="doForgotPwd()">Mot de passe oublié ?</a></div>
+      <button class="btn-full btn-grad" onclick="doLogin()">Se connecter</button>
+      <div class="auth-divider">ou continuer avec</div>
+      <div class="auth-social-row">
+        <button class="auth-social-btn" onclick="toast('Connexion Google bientôt disponible','info')">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" height="18" alt="G"/> Google
+        </button>
+        <button class="auth-social-btn" onclick="toast('Connexion Facebook bientôt disponible','info')" style="color:#1877f2">
+          <i class="fab fa-facebook" style="font-size:18px;color:#1877f2"></i> Facebook
+        </button>
+      </div>
     </div>
+    <div class="auth-switch">Pas encore de compte ? <a onclick="switchAuthTab('signup')">S'inscrire</a></div>
+  </div>
 
-    <!-- SIGNUP -->
-    <div id="authForm-signup" style="display:none">
+  <!-- Corps SIGNUP -->
+  <div class="auth-body" id="authBody-signup" style="display:none">
+    <div class="auth-title">Créer un compte</div>
+    <div class="auth-sub">Rejoignez AET MonBudget gratuitement</div>
+    <div class="auth-box">
       <div class="form-group">
         <label class="form-label">Nom complet</label>
-        <input type="text" id="signupName" class="form-input" placeholder="Votre nom complet"/>
+        <div class="form-input-wrap">
+          <i class="fas fa-user form-input-icon"></i>
+          <input type="text" id="signupName" class="form-input has-icon" placeholder="Votre nom complet"/>
+        </div>
       </div>
       <div class="form-group">
         <label class="form-label">Email</label>
-        <input type="email" id="signupEmail" class="form-input" placeholder="votre@email.com"/>
+        <div class="form-input-wrap">
+          <i class="fas fa-envelope form-input-icon"></i>
+          <input type="email" id="signupEmail" class="form-input has-icon" placeholder="votre@email.com"/>
+        </div>
       </div>
       <div class="form-group">
-        <label class="form-label">Mot de passe (min. 6 caractères)</label>
-        <input type="password" id="signupPwd" class="form-input" placeholder="••••••••"/>
+        <label class="form-label">Mot de passe</label>
+        <div class="form-input-wrap">
+          <i class="fas fa-lock form-input-icon"></i>
+          <input type="password" id="signupPwd" class="form-input has-icon" placeholder="Minimum 6 caractères"/>
+          <button class="form-input-eye" onclick="togglePwdEye('signupPwd',this)" type="button"><i class="fas fa-eye"></i></button>
+        </div>
       </div>
       <div class="form-group">
-        <label class="form-label">Confirmer</label>
-        <input type="password" id="signupPwd2" class="form-input" placeholder="••••••••"/>
+        <label class="form-label">Confirmer le mot de passe</label>
+        <div class="form-input-wrap">
+          <i class="fas fa-lock form-input-icon"></i>
+          <input type="password" id="signupPwd2" class="form-input has-icon" placeholder="••••••••"/>
+          <button class="form-input-eye" onclick="togglePwdEye('signupPwd2',this)" type="button"><i class="fas fa-eye"></i></button>
+        </div>
       </div>
       <div class="form-err" id="signupErr"></div>
-      <button class="btn-full btn-grad" onclick="doSignup()"><i class="fas fa-user-plus"></i> Créer mon compte</button>
+      <button class="btn-full btn-grad" onclick="doSignup()">Créer mon compte</button>
     </div>
+    <div class="auth-switch">Déjà un compte ? <a onclick="switchAuthTab('login')">Se connecter</a></div>
   </div>
 </div>
 
@@ -3843,7 +4055,7 @@ select.form-input option{background:var(--bg2)}
 <!-- ════ BOTTOM NAV MOBILE ════ -->
 <div class="bnav-overlay" id="bnavOverlay" onclick="closeBnavDrawer()"></div>
 
-<nav class="bottom-nav" id="bottomNav">
+<nav class="bottom-nav" id="bottomNav" style="display:none">
   <div class="bottom-nav-grid">
     <button class="bnav-btn active" id="bnav-dashboard" onclick="bnavSwitch('dashboard')">
       <i class="fas fa-house"></i><span>Accueil</span>
@@ -5508,6 +5720,12 @@ document.addEventListener('DOMContentLoaded', () => {
     <button class="pin-key action" onclick="pinBackspace()"><i class="fas fa-delete-left"></i></button>
   </div>
   <div class="pin-error" id="pinError"></div>
+  <div id="pinFpBtn" style="display:none;margin-top:18px;text-align:center;color:rgba(255,255,255,.8);cursor:pointer;font-size:13px;" onclick="useFingerprintUnlock()">
+    <div style="width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 8px;">
+      <i class="fas fa-fingerprint"></i>
+    </div>
+    Utiliser l'empreinte digitale
+  </div>
 </div>
 
 <!-- ════ SUCCESS OVERLAY ════ -->
@@ -5803,11 +6021,93 @@ window.openSettings = () => {
   openAetModal('settingsModal');
 };
 window.toggleSet = (el, key) => {
+  if (key === 'fingerprint') {
+    if (!el.classList.contains('on')) {
+      // Activation : enregistrer l'empreinte
+      registerFingerprint().then(ok => {
+        if (ok) {
+          el.classList.add('on');
+          userSettings.fingerprint = true;
+          saveSettingsLocal();
+          toast('Empreinte digitale activée ✓','success');
+        } else {
+          toast('Empreinte non configurée : annulé ou non supporté','error');
+        }
+      });
+    } else {
+      el.classList.remove('on');
+      userSettings.fingerprint = false;
+      localStorage.removeItem('aet_fp_credential');
+      saveSettingsLocal();
+      toast('Empreinte digitale désactivée','info');
+    }
+    return;
+  }
   el.classList.toggle('on');
   userSettings[key] = el.classList.contains('on');
   saveSettingsLocal();
   toast(`${key} : ${userSettings[key]?'activé':'désactivé'}`,'info');
 };
+
+// ──────── EMPREINTE DIGITALE (WebAuthn) ────────
+async function registerFingerprint() {
+  if (!window.PublicKeyCredential) {
+    toast('Empreinte non supportée sur cet appareil/navigateur','error');
+    return false;
+  }
+  try {
+    const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+    if (!available) { toast('Aucun capteur d\'empreinte détecté','error'); return false; }
+
+    const challenge = new Uint8Array(32);
+    crypto.getRandomValues(challenge);
+    const userId = new Uint8Array(16);
+    crypto.getRandomValues(userId);
+
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        challenge,
+        rp: { name: 'AET MonBudget' },
+        user: { id: userId, name: (currentUser?.email)||'user', displayName: (currentUser?.displayName)||'Utilisateur' },
+        pubKeyCredParams: [{ alg:-7, type:'public-key' }, { alg:-257, type:'public-key' }],
+        authenticatorSelection: { authenticatorAttachment:'platform', userVerification:'required' },
+        timeout: 60000,
+      }
+    });
+    if (!cred) return false;
+    localStorage.setItem('aet_fp_credential', cred.id);
+    return true;
+  } catch(e) {
+    console.error('FP register error:', e);
+    return false;
+  }
+}
+
+window.useFingerprintUnlock = async () => {
+  if (!window.PublicKeyCredential) { toast('Non supporté sur cet appareil','error'); return; }
+  const credId = localStorage.getItem('aet_fp_credential');
+  if (!credId) { toast('Empreinte non configurée','error'); return; }
+  try {
+    const challenge = new Uint8Array(32);
+    crypto.getRandomValues(challenge);
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge,
+        allowCredentials: [{ id: Uint8Array.from(atob(credId.replace(/-/g,'+').replace(/_/g,'/')), c=>c.charCodeAt(0)), type:'public-key' }],
+        userVerification:'required',
+        timeout: 60000,
+      }
+    }).catch(()=>navigator.credentials.get({ publicKey:{ challenge, userVerification:'required', timeout:60000 } }));
+    if (assertion) {
+      document.getElementById('pinOverlay').classList.remove('show');
+      toast('Déverrouillé par empreinte ✓','success');
+    }
+  } catch(e) {
+    console.error('FP unlock error:', e);
+    toast('Empreinte non reconnue','error');
+  }
+};
+
 window.setSetting = (key, val) => {
   userSettings[key] = val;
   saveSettingsLocal();
@@ -5950,6 +6250,15 @@ window.checkPinAtStart = () => {
     document.getElementById('pinError').textContent = '';
     updatePinDots();
     document.getElementById('pinOverlay').classList.add('show');
+    const fpBtn = document.getElementById('pinFpBtn');
+    if (fpBtn) {
+      const hasCred = !!localStorage.getItem('aet_fp_credential');
+      fpBtn.style.display = (userSettings.fingerprint && hasCred) ? 'block' : 'none';
+      if (userSettings.fingerprint && hasCred) {
+        // Proposer l'empreinte immédiatement
+        setTimeout(()=>useFingerprintUnlock(), 400);
+      }
+    }
   }
 };
 window.pinPress = (n) => {

@@ -4857,5 +4857,1553 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+<!-- ════════════════════════════════════════════════════════════════
+     EXTENSION AET MonBudget — Profil, Objectifs, Tontines, Paramètres
+     ════════════════════════════════════════════════════════════════ -->
+
+<style>
+/* ─────────── PROFIL ─────────── */
+.profile-header{display:flex;flex-direction:column;align-items:center;padding:24px 16px 8px;text-align:center}
+.profile-avatar-big{width:96px;height:96px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:42px;box-shadow:0 8px 24px rgba(37,99,235,.35);position:relative;overflow:hidden;cursor:pointer}
+.profile-avatar-big img{width:100%;height:100%;object-fit:cover}
+.profile-avatar-big .edit-pencil{position:absolute;bottom:0;right:0;background:#fff;color:var(--primary);width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.15);font-size:12px}
+.profile-name{font-size:20px;font-weight:800;margin-top:14px;color:var(--text)}
+.profile-phone{font-size:13px;color:var(--muted);margin-top:4px;font-family:'DM Mono',monospace}
+.profile-menu{background:var(--card);border-radius:14px;margin:18px 0;box-shadow:var(--shadow);overflow:hidden}
+.profile-menu-item{display:flex;align-items:center;gap:14px;padding:16px 18px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .15s}
+.profile-menu-item:last-child{border-bottom:none}
+.profile-menu-item:hover{background:rgba(37,99,235,.04)}
+.profile-menu-icon{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0}
+.pmi-info{background:rgba(37,99,235,.12);color:var(--primary)}
+.pmi-params{background:rgba(20,184,166,.12);color:#14b8a6}
+.pmi-secu{background:rgba(245,158,11,.15);color:var(--warning)}
+.pmi-sync{background:rgba(99,102,241,.12);color:#6366f1}
+.pmi-help{background:rgba(239,68,68,.12);color:var(--danger)}
+.pmi-about{background:rgba(100,116,139,.12);color:var(--muted)}
+.profile-menu-label{flex:1;font-weight:600;font-size:14.5px;color:var(--text)}
+.profile-menu-chev{color:var(--dim);font-size:12px}
+.btn-logout-profile{width:100%;padding:14px;background:rgba(239,68,68,.08);color:var(--danger);border:1px solid rgba(239,68,68,.2);border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin:8px 0 100px}
+.btn-logout-profile:hover{background:rgba(239,68,68,.14)}
+
+/* ─────────── OBJECTIFS MOCKUP ─────────── */
+.goal-tabs{display:flex;gap:8px;margin:0 0 18px}
+.goal-tab{flex:1;padding:11px 14px;background:var(--card);border:1px solid var(--border);border-radius:11px;font-weight:700;font-size:13.5px;color:var(--muted);cursor:pointer;text-align:center;transition:all .2s;box-shadow:var(--shadow)}
+.goal-tab.active{background:var(--card);color:var(--primary);border-color:var(--primary);box-shadow:0 4px 12px rgba(37,99,235,.18)}
+.goal-card{background:var(--card);border-radius:14px;padding:16px;box-shadow:var(--shadow);margin-bottom:14px;display:flex;flex-direction:column;gap:12px}
+.goal-card-top{display:flex;align-items:center;gap:14px}
+.goal-thumb{width:62px;height:62px;border-radius:12px;background:linear-gradient(135deg,#dbeafe,#bfdbfe);display:flex;align-items:center;justify-content:center;font-size:30px;flex-shrink:0;overflow:hidden}
+.goal-thumb img{width:100%;height:100%;object-fit:cover}
+.goal-info{flex:1;min-width:0}
+.goal-info h4{font-size:15.5px;font-weight:800;color:var(--text);margin:0 0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.goal-info .goal-target{font-size:12px;color:var(--muted)}
+.goal-pct{font-size:18px;font-weight:800;color:var(--primary)}
+.goal-progress{background:#e5edf7;height:8px;border-radius:99px;overflow:hidden}
+.goal-progress-bar{height:100%;background:var(--grad);border-radius:99px;transition:width .6s}
+.goal-amounts{display:flex;justify-content:space-between;font-size:12px;font-family:'DM Mono',monospace}
+.goal-amounts .saved{color:var(--primary);font-weight:700}
+.goal-amounts .target{color:var(--muted)}
+.goal-actions{display:flex;gap:8px;margin-top:6px}
+.goal-actions button{flex:1;padding:8px 10px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px}
+.btn-goal-add{background:rgba(37,99,235,.1);color:var(--primary)}
+.btn-goal-edit{background:rgba(100,116,139,.1);color:var(--muted)}
+.btn-goal-del{background:rgba(239,68,68,.08);color:var(--danger)}
+
+/* ─────────── TONTINES ─────────── */
+.tontine-card{background:var(--card);border-radius:14px;padding:16px;box-shadow:var(--shadow);margin-bottom:14px}
+.tont-top{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+.tont-avatars{display:flex}
+.tont-avatar{width:42px;height:42px;border-radius:50%;border:2px solid var(--card);margin-left:-12px;background:var(--grad);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px}
+.tont-avatar:first-child{margin-left:0}
+.tont-info{flex:1;min-width:0}
+.tont-info h4{font-size:15.5px;font-weight:800;color:var(--text);margin:0 0 4px}
+.tont-info .tont-meta{font-size:12px;color:var(--muted)}
+.tont-amount{font-size:15px;font-weight:800;color:var(--primary)}
+.tont-detail{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;padding:10px;background:rgba(37,99,235,.04);border-radius:10px;margin-bottom:10px}
+.tont-detail-item{text-align:center}
+.tont-detail-item .label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.tont-detail-item .val{font-size:13px;font-weight:800;color:var(--text);font-family:'DM Mono',monospace;margin-top:2px}
+.tont-next{display:flex;align-items:center;gap:10px;padding:9px 12px;background:rgba(16,185,129,.08);border-radius:9px;font-size:12px;color:var(--success-l);font-weight:600}
+.tont-actions{display:flex;gap:8px;margin-top:10px}
+.tont-actions button{flex:1;padding:9px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}
+
+/* ─────────── MODAL GENERIC ─────────── */
+.aet-modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.55);backdrop-filter:blur(4px);z-index:9500;display:none;align-items:flex-end;justify-content:center;padding:0}
+.aet-modal-overlay.show{display:flex;animation:fadeIn .2s}
+.aet-modal{background:var(--card);width:100%;max-width:500px;max-height:90vh;overflow-y:auto;border-radius:22px 22px 0 0;animation:slideUp .3s cubic-bezier(.2,.9,.3,1.2)}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.aet-modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card);z-index:2}
+.aet-modal-head h3{font-size:17px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:9px}
+.aet-modal-close{background:rgba(100,116,139,.1);width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;color:var(--muted);font-size:14px}
+.aet-modal-body{padding:18px 20px}
+.aet-form-row{margin-bottom:14px}
+.aet-form-row label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
+.aet-form-row input,.aet-form-row select,.aet-form-row textarea{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:11px;font-size:14px;font-family:inherit;background:var(--bg);color:var(--text);outline:none;transition:border .2s}
+.aet-form-row input:focus,.aet-form-row select:focus,.aet-form-row textarea:focus{border-color:var(--primary)}
+.aet-btn-primary{width:100%;padding:14px;background:var(--grad);color:#fff;border:none;border-radius:12px;font-weight:700;font-size:14.5px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 6px 18px rgba(37,99,235,.3);margin-top:6px}
+.aet-btn-primary:disabled{opacity:.6;cursor:not-allowed}
+.aet-btn-secondary{width:100%;padding:12px;background:rgba(100,116,139,.1);color:var(--muted);border:1px solid var(--border);border-radius:12px;font-weight:700;font-size:13.5px;cursor:pointer;margin-top:8px}
+
+/* Settings switches */
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)}
+.set-row:last-child{border-bottom:none}
+.set-row .set-info{flex:1}
+.set-row .set-label{font-size:14.5px;font-weight:600;color:var(--text)}
+.set-row .set-desc{font-size:12px;color:var(--muted);margin-top:2px}
+.set-switch{position:relative;width:48px;height:26px;background:#cbd5e1;border-radius:99px;cursor:pointer;transition:.25s;flex-shrink:0}
+.set-switch::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.25s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.set-switch.on{background:var(--success)}
+.set-switch.on::after{left:25px}
+.set-select{padding:8px 12px;border:1px solid var(--border);border-radius:9px;font-size:13px;background:var(--card);color:var(--text);font-weight:600;cursor:pointer}
+
+/* PIN keypad */
+.pin-overlay{position:fixed;inset:0;background:linear-gradient(160deg,#1e3a8a,#2563eb 50%,#1d4ed8);z-index:9800;display:none;flex-direction:column;align-items:center;justify-content:center;padding:30px;color:#fff}
+.pin-overlay.show{display:flex}
+.pin-title{font-size:22px;font-weight:800;margin-bottom:8px}
+.pin-sub{font-size:13px;opacity:.85;margin-bottom:30px}
+.pin-dots{display:flex;gap:14px;margin-bottom:36px}
+.pin-dot{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.4);transition:.2s}
+.pin-dot.filled{background:#fff;border-color:#fff;transform:scale(1.15)}
+.pin-pad{display:grid;grid-template-columns:repeat(3,72px);gap:14px}
+.pin-key{width:72px;height:72px;border-radius:50%;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.08);color:#fff;font-size:24px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.15s;backdrop-filter:blur(6px)}
+.pin-key:hover,.pin-key:active{background:rgba(255,255,255,.18);transform:scale(.95)}
+.pin-key.action{background:transparent;border:none;font-size:18px}
+.pin-error{color:#fecaca;font-size:13px;margin-top:14px;min-height:18px;font-weight:600}
+
+/* Success animation overlay */
+.success-overlay{position:fixed;inset:0;background:rgba(15,23,42,.65);backdrop-filter:blur(6px);z-index:9700;display:none;align-items:center;justify-content:center}
+.success-overlay.show{display:flex;animation:fadeIn .25s}
+.success-card{background:var(--card);border-radius:22px;padding:40px 30px 26px;max-width:340px;width:90%;text-align:center;position:relative;overflow:hidden}
+.success-check{width:90px;height:90px;border-radius:50%;background:var(--grad-success);margin:0 auto 18px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:42px;box-shadow:0 10px 28px rgba(16,185,129,.4);animation:popIn .5s cubic-bezier(.2,.9,.3,1.3)}
+@keyframes popIn{0%{transform:scale(0)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+.success-card h3{font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px}
+.success-card p{font-size:13.5px;color:var(--muted);margin-bottom:18px;line-height:1.5}
+.success-card button{width:100%;padding:13px;background:var(--grad);color:#fff;border:none;border-radius:11px;font-weight:700;font-size:14px;cursor:pointer}
+.confetti{position:absolute;width:10px;height:10px;border-radius:2px;pointer-events:none}
+@keyframes confettiFall{
+  0%{transform:translateY(-100px) rotate(0deg);opacity:1}
+  100%{transform:translateY(120vh) rotate(720deg);opacity:0}
+}
+
+/* Avatar choice grid */
+.avatar-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:8px}
+.avatar-choice{aspect-ratio:1;border-radius:12px;background:var(--bg);border:2px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;transition:.15s}
+.avatar-choice:hover{transform:scale(1.08)}
+.avatar-choice.selected{border-color:var(--primary);background:rgba(37,99,235,.1);box-shadow:0 0 0 3px rgba(37,99,235,.15)}
+
+/* History list */
+.history-list{max-height:340px;overflow-y:auto}
+.history-item{padding:12px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px;background:var(--bg)}
+.history-item .h-date{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace}
+.history-item .h-changes{font-size:13px;color:var(--text);margin-top:4px;line-height:1.5}
+.history-item .h-changes strong{color:var(--primary)}
+</style>
+
+<!-- ════ TAB PROFIL ════ -->
+<div id="tab-profil" class="tab-content" style="padding:0 16px">
+  <div class="profile-header">
+    <div class="profile-avatar-big" id="profileAvatarBig" onclick="openProfileEdit()">
+      <span id="profileAvatarText">K</span>
+      <div class="edit-pencil"><i class="fas fa-pencil"></i></div>
+    </div>
+    <div class="profile-name" id="profileNameBig">Utilisateur</div>
+    <div class="profile-phone" id="profilePhoneBig">—</div>
+  </div>
+
+  <div class="profile-menu">
+    <div class="profile-menu-item" onclick="openProfileEdit()">
+      <div class="profile-menu-icon pmi-info"><i class="fas fa-user"></i></div>
+      <div class="profile-menu-label">Informations personnelles</div>
+      <i class="fas fa-chevron-right profile-menu-chev"></i>
+    </div>
+    <div class="profile-menu-item" onclick="openSettings()">
+      <div class="profile-menu-icon pmi-params"><i class="fas fa-gear"></i></div>
+      <div class="profile-menu-label">Paramètres</div>
+      <i class="fas fa-chevron-right profile-menu-chev"></i>
+    </div>
+    <div class="profile-menu-item" onclick="openSecurity()">
+      <div class="profile-menu-icon pmi-secu"><i class="fas fa-lock"></i></div>
+      <div class="profile-menu-label">Sécurité</div>
+      <i class="fas fa-chevron-right profile-menu-chev"></i>
+    </div>
+    <div class="profile-menu-item" onclick="openBackup()">
+      <div class="profile-menu-icon pmi-sync"><i class="fas fa-cloud"></i></div>
+      <div class="profile-menu-label">Sauvegarde et synchronisation</div>
+      <i class="fas fa-chevron-right profile-menu-chev"></i>
+    </div>
+    <div class="profile-menu-item" onclick="openHelp()">
+      <div class="profile-menu-icon pmi-help"><i class="fas fa-circle-question"></i></div>
+      <div class="profile-menu-label">Aide et support</div>
+      <i class="fas fa-chevron-right profile-menu-chev"></i>
+    </div>
+    <div class="profile-menu-item" onclick="openAbout()">
+      <div class="profile-menu-icon pmi-about"><i class="fas fa-circle-info"></i></div>
+      <div class="profile-menu-label">À propos</div>
+      <i class="fas fa-chevron-right profile-menu-chev"></i>
+    </div>
+  </div>
+
+  <button class="btn-logout-profile" onclick="doLogout()">
+    <i class="fas fa-right-from-bracket"></i> Déconnexion
+  </button>
+</div>
+
+<!-- ════ TAB OBJECTIFS (mockup) ════ -->
+<div id="tab-objectifs" class="tab-content" style="padding:0 16px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 16px">
+    <h2 style="font-size:22px;font-weight:800;color:var(--text)">Objectifs</h2>
+    <button onclick="openGoalModal()" style="background:var(--grad);color:#fff;border:none;width:42px;height:42px;border-radius:50%;cursor:pointer;font-size:16px;box-shadow:0 6px 18px rgba(37,99,235,.4)">
+      <i class="fas fa-plus"></i>
+    </button>
+  </div>
+  <div class="goal-tabs">
+    <div class="goal-tab active" id="goalTabActive" onclick="switchGoalTab('active')">Actifs</div>
+    <div class="goal-tab" id="goalTabDone" onclick="switchGoalTab('done')">Terminés</div>
+  </div>
+  <div id="goalsList"></div>
+</div>
+
+<!-- ════ TAB TONTINES ════ -->
+<div id="tab-tontines" class="tab-content" style="padding:0 16px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 16px">
+    <h2 style="font-size:22px;font-weight:800;color:var(--text)">Tontines</h2>
+    <button onclick="openTontineModal()" style="background:var(--grad);color:#fff;border:none;width:42px;height:42px;border-radius:50%;cursor:pointer;font-size:16px;box-shadow:0 6px 18px rgba(37,99,235,.4)">
+      <i class="fas fa-plus"></i>
+    </button>
+  </div>
+  <div id="tontinesList"></div>
+  <button onclick="openTontineModal()" style="width:100%;padding:14px;background:var(--grad);color:#fff;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;margin:8px 0 100px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 6px 18px rgba(37,99,235,.3)">
+    <i class="fas fa-plus"></i> Créer une tontine
+  </button>
+</div>
+
+<!-- ════ MODAL : Informations personnelles ════ -->
+<div class="aet-modal-overlay" id="profileEditModal" onclick="if(event.target===this)closeAetModal('profileEditModal')">
+  <div class="aet-modal">
+    <div class="aet-modal-head">
+      <h3><i class="fas fa-user" style="color:var(--primary)"></i> Informations personnelles</h3>
+      <button class="aet-modal-close" onclick="closeAetModal('profileEditModal')"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="aet-modal-body">
+      <div style="display:flex;justify-content:center;margin-bottom:14px">
+        <div class="profile-avatar-big" style="width:80px;height:80px;font-size:34px;cursor:default" id="profileEditAvatar">
+          <span id="profileEditAvatarText">U</span>
+        </div>
+      </div>
+      <div class="aet-form-row">
+        <label>Avatar (emoji)</label>
+        <div class="avatar-grid" id="avatarGrid"></div>
+      </div>
+      <div class="aet-form-row">
+        <label>Nom complet</label>
+        <input type="text" id="editName" placeholder="ex: Kossi Agbeko" />
+      </div>
+      <div class="aet-form-row">
+        <label>Numéro de téléphone</label>
+        <input type="tel" id="editPhone" placeholder="+228 90 12 34 56" />
+      </div>
+      <div class="aet-form-row">
+        <label>Email (lecture seule)</label>
+        <input type="email" id="editEmail" disabled style="opacity:.7" />
+      </div>
+      <div class="aet-form-row">
+        <label>Profession / Poste</label>
+        <input type="text" id="editJob" placeholder="ex: Comptable" />
+      </div>
+      <div class="aet-form-row">
+        <label>Ville</label>
+        <input type="text" id="editCity" placeholder="ex: Lomé" />
+      </div>
+      <div class="aet-form-row">
+        <label>Date de naissance</label>
+        <input type="date" id="editBirth" />
+      </div>
+      <button class="aet-btn-primary" onclick="saveProfileEdit()">
+        <i class="fas fa-floppy-disk"></i> Enregistrer les modifications
+      </button>
+      <button class="aet-btn-secondary" onclick="showProfileHistory()">
+        <i class="fas fa-clock-rotate-left"></i> Voir l'historique des modifications
+      </button>
+      <div id="profileHistorySection" style="display:none;margin-top:18px">
+        <h4 style="font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">📜 Historique des changements</h4>
+        <div id="profileHistoryList" class="history-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL : Paramètres ════ -->
+<div class="aet-modal-overlay" id="settingsModal" onclick="if(event.target===this)closeAetModal('settingsModal')">
+  <div class="aet-modal">
+    <div class="aet-modal-head">
+      <h3><i class="fas fa-gear" style="color:#14b8a6"></i> Paramètres</h3>
+      <button class="aet-modal-close" onclick="closeAetModal('settingsModal')"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="aet-modal-body">
+      <h4 style="font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Général</h4>
+      <div class="set-row">
+        <div class="set-info"><div class="set-label">Langue</div><div class="set-desc">Langue d'affichage de l'application</div></div>
+        <select class="set-select" id="setLang" onchange="setSetting('lang',this.value)">
+          <option value="fr">🇫🇷 Français</option>
+          <option value="en">🇬🇧 English</option>
+          <option value="ee">🇹🇬 Ewe</option>
+        </select>
+      </div>
+      <div class="set-row">
+        <div class="set-info"><div class="set-label">Devise</div><div class="set-desc">Devise principale d'affichage</div></div>
+        <select class="set-select" id="setCurr" onchange="setSettingCurrency(this.value)">
+          <option value="XOF">🇹🇬 FCFA</option>
+          <option value="USD">🇺🇸 USD</option>
+          <option value="EUR">🇪🇺 EUR</option>
+          <option value="GHS">🇬🇭 GHS</option>
+          <option value="NGN">🇳🇬 NGN</option>
+        </select>
+      </div>
+      <div class="set-row">
+        <div class="set-info"><div class="set-label">Thème</div><div class="set-desc">Clair, Sombre ou Système</div></div>
+        <select class="set-select" id="setTheme" onchange="setTheme(this.value)">
+          <option value="light">☀️ Clair</option>
+          <option value="dark">🌙 Sombre</option>
+          <option value="auto">🌗 Système</option>
+        </select>
+      </div>
+
+      <h4 style="font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.6px;margin:18px 0 6px">Notifications</h4>
+      <div class="set-row">
+        <div class="set-info"><div class="set-label">Notifications</div><div class="set-desc">Recevoir des alertes et rappels</div></div>
+        <div class="set-switch" id="swNotif" onclick="toggleSet(this,'notif')"></div>
+      </div>
+      <div class="set-row">
+        <div class="set-info"><div class="set-label">Rappels budgets</div><div class="set-desc">Alerte à 80% du budget</div></div>
+        <div class="set-switch" id="swBudgetAlert" onclick="toggleSet(this,'budgetAlert')"></div>
+      </div>
+
+      <h4 style="font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.6px;margin:18px 0 6px">Sécurité</h4>
+      <div class="set-row">
+        <div class="set-info"><div class="set-label">Verrouillage par code PIN</div><div class="set-desc">Code à 4 chiffres au démarrage</div></div>
+        <div class="set-switch" id="swPin" onclick="togglePinSetting()"></div>
+      </div>
+      <div class="set-row">
+        <div class="set-info"><div class="set-label">Empreinte digitale</div><div class="set-desc">Si disponible sur l'appareil</div></div>
+        <div class="set-switch" id="swFp" onclick="toggleSet(this,'fingerprint')"></div>
+      </div>
+
+      <h4 style="font-size:11px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.6px;margin:18px 0 6px">Données</h4>
+      <div class="set-row">
+        <div class="set-info"><div class="set-label">Sauvegarde automatique</div><div class="set-desc">Synchroniser dans le cloud</div></div>
+        <div class="set-switch on" id="swAutoSync" onclick="toggleSet(this,'autoSync')"></div>
+      </div>
+      <div class="set-row">
+        <div class="set-info"><div class="set-label">Format de date</div><div class="set-desc">JJ/MM/AAAA ou MM/JJ/AAAA</div></div>
+        <select class="set-select" id="setDateFmt" onchange="setSetting('dateFmt',this.value)">
+          <option value="dmy">JJ/MM/AAAA</option>
+          <option value="mdy">MM/JJ/AAAA</option>
+        </select>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL : Sécurité ════ -->
+<div class="aet-modal-overlay" id="securityModal" onclick="if(event.target===this)closeAetModal('securityModal')">
+  <div class="aet-modal">
+    <div class="aet-modal-head">
+      <h3><i class="fas fa-shield-halved" style="color:var(--warning)"></i> Sécurité</h3>
+      <button class="aet-modal-close" onclick="closeAetModal('securityModal')"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="aet-modal-body">
+      <h4 style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">🔑 Changer mot de passe</h4>
+      <div class="aet-form-row">
+        <label>Mot de passe actuel</label>
+        <input type="password" id="curPwd" placeholder="••••••••" />
+      </div>
+      <div class="aet-form-row">
+        <label>Nouveau mot de passe</label>
+        <input type="password" id="newPwd" placeholder="Minimum 6 caractères" />
+      </div>
+      <div class="aet-form-row">
+        <label>Confirmer nouveau mot de passe</label>
+        <input type="password" id="newPwd2" placeholder="••••••••" />
+      </div>
+      <button class="aet-btn-primary" onclick="changePassword()">
+        <i class="fas fa-key"></i> Changer le mot de passe
+      </button>
+
+      <h4 style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:24px 0 10px">🔢 Code PIN à 4 chiffres</h4>
+      <div class="aet-form-row">
+        <label>Nouveau code PIN (4 chiffres)</label>
+        <input type="number" id="newPin" maxlength="4" placeholder="0000" />
+      </div>
+      <button class="aet-btn-primary" onclick="setPin()">
+        <i class="fas fa-lock"></i> Définir / Modifier le code PIN
+      </button>
+      <button class="aet-btn-secondary" onclick="removePin()">
+        <i class="fas fa-trash"></i> Supprimer le code PIN
+      </button>
+
+      <h4 style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:24px 0 10px">📱 Sessions actives</h4>
+      <div id="sessionsList" style="font-size:13px;color:var(--muted)">Chargement...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL : Sauvegarde & Sync ════ -->
+<div class="aet-modal-overlay" id="backupModal" onclick="if(event.target===this)closeAetModal('backupModal')">
+  <div class="aet-modal">
+    <div class="aet-modal-head">
+      <h3><i class="fas fa-cloud" style="color:#6366f1"></i> Sauvegarde et synchronisation</h3>
+      <button class="aet-modal-close" onclick="closeAetModal('backupModal')"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="aet-modal-body">
+      <div style="background:linear-gradient(135deg,#dbeafe,#bfdbfe);border-radius:14px;padding:18px;margin-bottom:18px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:44px;height:44px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:18px"><i class="fas fa-cloud-check"></i></div>
+          <div>
+            <div style="font-weight:800;color:var(--text);font-size:14px">Sync Firebase active</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px" id="lastSyncTime">Dernière synchronisation : il y a quelques secondes</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div style="background:var(--bg);border-radius:11px;padding:12px;text-align:center">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Transactions</div>
+          <div style="font-size:22px;font-weight:800;color:var(--primary);margin-top:4px" id="syncTxCount">0</div>
+        </div>
+        <div style="background:var(--bg);border-radius:11px;padding:12px;text-align:center">
+          <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px">Objectifs</div>
+          <div style="font-size:22px;font-weight:800;color:var(--save);margin-top:4px" id="syncGoalCount">0</div>
+        </div>
+      </div>
+
+      <h4 style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:20px 0 10px">📤 Exporter mes données</h4>
+      <button class="aet-btn-primary" onclick="exportAllJSON()" style="margin-top:0">
+        <i class="fas fa-download"></i> Télécharger sauvegarde complète (JSON)
+      </button>
+      <button class="aet-btn-secondary" onclick="exportTxCSV()">
+        <i class="fas fa-file-csv"></i> Exporter transactions (CSV)
+      </button>
+
+      <h4 style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:20px 0 10px">📥 Restaurer</h4>
+      <input type="file" id="importFile" accept=".json" style="display:none" onchange="importJSON(this)" />
+      <button class="aet-btn-secondary" onclick="document.getElementById('importFile').click()">
+        <i class="fas fa-upload"></i> Importer un fichier de sauvegarde
+      </button>
+
+      <h4 style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:20px 0 10px">⚠️ Zone dangereuse</h4>
+      <button class="aet-btn-secondary" style="background:rgba(239,68,68,.08);color:var(--danger);border-color:rgba(239,68,68,.2)" onclick="confirmDeleteAll()">
+        <i class="fas fa-trash"></i> Supprimer toutes mes données
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL : Aide ════ -->
+<div class="aet-modal-overlay" id="helpModal" onclick="if(event.target===this)closeAetModal('helpModal')">
+  <div class="aet-modal">
+    <div class="aet-modal-head">
+      <h3><i class="fas fa-circle-question" style="color:var(--danger)"></i> Aide et support</h3>
+      <button class="aet-modal-close" onclick="closeAetModal('helpModal')"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="aet-modal-body">
+      <h4 style="font-size:13px;font-weight:800;color:var(--text);margin-bottom:10px">❓ Foire aux questions</h4>
+      <div id="faqList"></div>
+      <h4 style="font-size:13px;font-weight:800;color:var(--text);margin:18px 0 10px">📞 Contact</h4>
+      <div style="background:var(--bg);border-radius:11px;padding:14px;display:flex;flex-direction:column;gap:10px">
+        <div><i class="fas fa-envelope" style="color:var(--primary);width:22px"></i> <a href="mailto:support@aetmonbudget.com" style="color:var(--primary);font-weight:600">support@aetmonbudget.com</a></div>
+        <div><i class="fab fa-whatsapp" style="color:#25d366;width:22px"></i> <a href="https://wa.me/22890123456" style="color:var(--text);font-weight:600">+228 90 12 34 56</a></div>
+        <div><i class="fas fa-globe" style="color:var(--primary);width:22px"></i> <a href="#" style="color:var(--text);font-weight:600">aetmonbudget.com</a></div>
+      </div>
+      <h4 style="font-size:13px;font-weight:800;color:var(--text);margin:18px 0 10px">💡 Suggestion / Bug</h4>
+      <div class="aet-form-row">
+        <textarea id="feedbackTxt" rows="4" placeholder="Décrivez votre suggestion ou problème..." style="resize:vertical"></textarea>
+      </div>
+      <button class="aet-btn-primary" onclick="sendFeedback()">
+        <i class="fas fa-paper-plane"></i> Envoyer
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL : À propos ════ -->
+<div class="aet-modal-overlay" id="aboutModal" onclick="if(event.target===this)closeAetModal('aboutModal')">
+  <div class="aet-modal">
+    <div class="aet-modal-head">
+      <h3><i class="fas fa-circle-info" style="color:var(--muted)"></i> À propos</h3>
+      <button class="aet-modal-close" onclick="closeAetModal('aboutModal')"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="aet-modal-body" style="text-align:center">
+      <div style="width:80px;height:80px;border-radius:18px;background:var(--grad);display:flex;align-items:center;justify-content:center;color:#fff;font-size:34px;margin:6px auto 14px;box-shadow:0 10px 28px rgba(37,99,235,.35)">
+        <i class="fas fa-chart-column"></i>
+      </div>
+      <h2 style="font-size:22px;font-weight:800;color:var(--text)">AET MonBudget</h2>
+      <div style="font-size:13px;color:var(--muted);margin:4px 0 16px">Version 2.0 · Build 2024.05</div>
+      <p style="font-size:13.5px;color:var(--text);line-height:1.6;margin-bottom:16px">
+        <strong>Gérez mieux votre argent,<br/>atteignez vos objectifs.</strong>
+      </p>
+      <p style="font-size:12.5px;color:var(--muted);line-height:1.7;margin-bottom:18px">
+        AET MonBudget est une application complète de gestion financière personnelle conçue pour les utilisateurs en Afrique de l'Ouest. Suivi des revenus et dépenses, budgets, objectifs d'épargne, tontines et analyses avancées.
+      </p>
+      <div style="background:var(--bg);border-radius:11px;padding:14px;text-align:left;font-size:12.5px;color:var(--text);line-height:1.7">
+        <div><strong>Développé par :</strong> Équipe AET</div>
+        <div><strong>Pays :</strong> 🇹🇬 Togo</div>
+        <div><strong>Licence :</strong> Privée</div>
+        <div><strong>Confidentialité :</strong> 100% sécurisé Firebase</div>
+      </div>
+      <div style="margin-top:18px;display:flex;gap:8px;justify-content:center">
+        <a href="#" style="font-size:12px;color:var(--primary);font-weight:700">Politique de confidentialité</a>
+        <span style="color:var(--muted)">·</span>
+        <a href="#" style="font-size:12px;color:var(--primary);font-weight:700">Conditions d'utilisation</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL : Goal ════ -->
+<div class="aet-modal-overlay" id="goalModal" onclick="if(event.target===this)closeAetModal('goalModal')">
+  <div class="aet-modal">
+    <div class="aet-modal-head">
+      <h3><i class="fas fa-bullseye" style="color:var(--primary)"></i> <span id="goalModalTitle">Nouvel objectif</span></h3>
+      <button class="aet-modal-close" onclick="closeAetModal('goalModal')"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="aet-modal-body">
+      <div class="aet-form-row">
+        <label>Icône / Emoji</label>
+        <div class="avatar-grid" id="goalIconGrid"></div>
+      </div>
+      <div class="aet-form-row">
+        <label>Nom de l'objectif</label>
+        <input type="text" id="goalName" placeholder="ex: Achat terrain" />
+      </div>
+      <div class="aet-form-row">
+        <label>Montant cible (FCFA)</label>
+        <input type="number" id="goalTarget" placeholder="5 000 000" />
+      </div>
+      <div class="aet-form-row">
+        <label>Montant déjà épargné</label>
+        <input type="number" id="goalSaved" placeholder="0" value="0" />
+      </div>
+      <div class="aet-form-row">
+        <label>Date limite (optionnel)</label>
+        <input type="date" id="goalDeadline" />
+      </div>
+      <div class="aet-form-row">
+        <label>Description</label>
+        <textarea id="goalDesc" rows="2" placeholder="Détails de l'objectif..."></textarea>
+      </div>
+      <button class="aet-btn-primary" onclick="saveGoal()">
+        <i class="fas fa-floppy-disk"></i> Enregistrer l'objectif
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MODAL : Tontine ════ -->
+<div class="aet-modal-overlay" id="tontineModal" onclick="if(event.target===this)closeAetModal('tontineModal')">
+  <div class="aet-modal">
+    <div class="aet-modal-head">
+      <h3><i class="fas fa-users" style="color:var(--primary)"></i> <span id="tontineModalTitle">Nouvelle tontine</span></h3>
+      <button class="aet-modal-close" onclick="closeAetModal('tontineModal')"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="aet-modal-body">
+      <div class="aet-form-row">
+        <label>Nom de la tontine</label>
+        <input type="text" id="tontName" placeholder="ex: Tontine famille" />
+      </div>
+      <div class="aet-form-row">
+        <label>Type</label>
+        <select id="tontType">
+          <option value="famille">👨‍👩‍👧 Famille</option>
+          <option value="amis">👥 Amis</option>
+          <option value="travail">💼 Travail</option>
+          <option value="quartier">🏘️ Quartier</option>
+          <option value="autre">🤝 Autre</option>
+        </select>
+      </div>
+      <div class="aet-form-row">
+        <label>Nombre de participants</label>
+        <input type="number" id="tontMembers" placeholder="10" min="2" />
+      </div>
+      <div class="aet-form-row">
+        <label>Montant de la cotisation (FCFA)</label>
+        <input type="number" id="tontAmount" placeholder="50 000" />
+      </div>
+      <div class="aet-form-row">
+        <label>Fréquence</label>
+        <select id="tontFreq">
+          <option value="weekly">📅 Hebdomadaire</option>
+          <option value="biweekly">📅 Tous les 15 jours</option>
+          <option value="monthly" selected>📅 Mensuelle</option>
+        </select>
+      </div>
+      <div class="aet-form-row">
+        <label>Date de début</label>
+        <input type="date" id="tontStart" />
+      </div>
+      <div class="aet-form-row">
+        <label>Position de tirage (sur N)</label>
+        <input type="number" id="tontPosition" placeholder="ex: 3" min="1" />
+      </div>
+      <div class="aet-form-row">
+        <label>Description</label>
+        <textarea id="tontDesc" rows="2" placeholder="Détails sur la tontine..."></textarea>
+      </div>
+      <button class="aet-btn-primary" onclick="saveTontine()">
+        <i class="fas fa-floppy-disk"></i> Créer la tontine
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ PIN LOCK OVERLAY ════ -->
+<div class="pin-overlay" id="pinOverlay">
+  <div style="width:64px;height:64px;border-radius:18px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:18px">
+    <i class="fas fa-lock"></i>
+  </div>
+  <div class="pin-title" id="pinTitle">Verrouillage</div>
+  <div class="pin-sub" id="pinSub">Entrez votre code PIN à 4 chiffres</div>
+  <div class="pin-dots" id="pinDots">
+    <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+  </div>
+  <div class="pin-pad">
+    <button class="pin-key" onclick="pinPress(1)">1</button>
+    <button class="pin-key" onclick="pinPress(2)">2</button>
+    <button class="pin-key" onclick="pinPress(3)">3</button>
+    <button class="pin-key" onclick="pinPress(4)">4</button>
+    <button class="pin-key" onclick="pinPress(5)">5</button>
+    <button class="pin-key" onclick="pinPress(6)">6</button>
+    <button class="pin-key" onclick="pinPress(7)">7</button>
+    <button class="pin-key" onclick="pinPress(8)">8</button>
+    <button class="pin-key" onclick="pinPress(9)">9</button>
+    <button class="pin-key action" onclick="pinClear()"><i class="fas fa-trash-can"></i></button>
+    <button class="pin-key" onclick="pinPress(0)">0</button>
+    <button class="pin-key action" onclick="pinBackspace()"><i class="fas fa-delete-left"></i></button>
+  </div>
+  <div class="pin-error" id="pinError"></div>
+</div>
+
+<!-- ════ SUCCESS OVERLAY ════ -->
+<div class="success-overlay" id="successOverlay" onclick="closeSuccessOverlay()">
+  <div class="success-card" id="successCard">
+    <div class="success-check"><i class="fas fa-check"></i></div>
+    <h3 id="successTitle">Opération réussie !</h3>
+    <p id="successMsg">Votre opération a été effectuée correctement.</p>
+    <button onclick="closeSuccessOverlay()">OK</button>
+  </div>
+</div>
+
+<script type="module">
+// ════════════════════════════════════════════════════════════════
+//                    EXTENSION SCRIPT (module)
+// ════════════════════════════════════════════════════════════════
+
+// Re-import Firebase functions in this scope using the already-initialized app
+import { collection as _col, doc as _doc, addDoc as _addDoc, setDoc as _setDoc, getDoc as _getDoc,
+         getDocs as _getDocs, deleteDoc as _delDoc, updateDoc as _upDoc, query as _query,
+         where as _where, orderBy as _orderBy, onSnapshot as _onSnap, serverTimestamp as _ts, limit as _lim }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth as _getAuth, updateProfile as _upProfile,
+         EmailAuthProvider as _EAP, reauthenticateWithCredential as _reauth,
+         updatePassword as _upPwd }
+  from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getApp as _getApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore as _getDb } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const _app = _getApp();
+const _auth = _getAuth(_app);
+const _db = _getDb(_app);
+
+// ──────── ÉTAT EXTENSION ────────
+let userProfile = { displayName:'', phone:'', job:'', city:'', birth:'', avatar:'👤', email:'' };
+let userSettings = { lang:'fr', dateFmt:'dmy', theme:'light', notif:true, budgetAlert:true, pinEnabled:false, pin:'', fingerprint:false, autoSync:true };
+let userGoals = [];
+let userTontines = [];
+let goalEditId = null;
+let tontineEditId = null;
+let goalTab = 'active';
+let pinInput = '';
+let pinMode = 'unlock'; // unlock | setup
+let pinTarget = '';
+let unsubGoals = null, unsubTontines = null, unsubProfile = null;
+
+const AVATARS = ['👤','👨','👩','🧑','👨‍💼','👩‍💼','🧔','👱','👴','👵','🧕','👲','👳','🦸','🦹','🧙','🧚','🧞','😎','🤵'];
+const GOAL_ICONS = ['🏞️','✈️','💻','🏠','🚗','🎓','💍','📱','📷','🎮','👔','🏥','🎁','🛒','💼','🏗️','🪑','🌴','📚','🎵'];
+
+// ──────── INIT ────────
+window.addEventListener('DOMContentLoaded', () => {
+  // Avatar grid
+  renderAvatarGrid();
+  renderGoalIconGrid();
+  // FAQ
+  renderFAQ();
+  // Settings load
+  loadSettingsFromLocal();
+  applySettingsUI();
+  applyTheme(userSettings.theme);
+  // PIN check at startup
+  setTimeout(checkPinAtStart, 800);
+  // Patch bottom nav for new tabs
+  patchBottomNav();
+});
+
+function renderAvatarGrid() {
+  const g = document.getElementById('avatarGrid');
+  if (!g) return;
+  g.innerHTML = AVATARS.map(a => `<div class="avatar-choice" data-av="${a}" onclick="pickAvatar('${a}')">${a}</div>`).join('');
+}
+function renderGoalIconGrid() {
+  const g = document.getElementById('goalIconGrid');
+  if (!g) return;
+  g.innerHTML = GOAL_ICONS.map(a => `<div class="avatar-choice" data-icon="${a}" onclick="pickGoalIcon('${a}')">${a}</div>`).join('');
+}
+window.pickAvatar = (a) => {
+  document.querySelectorAll('#avatarGrid .avatar-choice').forEach(e => e.classList.toggle('selected', e.dataset.av===a));
+  document.getElementById('profileEditAvatarText').textContent = a;
+};
+window.pickGoalIcon = (a) => {
+  document.querySelectorAll('#goalIconGrid .avatar-choice').forEach(e => e.classList.toggle('selected', e.dataset.icon===a));
+};
+
+// ──────── PATCH BOTTOM NAV ────────
+function patchBottomNav() {
+  const grid = document.querySelector('.bottom-nav-grid');
+  if (!grid) return;
+  // Replace nav: Accueil / Transactions / [+ FAB] / Objectifs / Profil
+  const btns = grid.querySelectorAll('.bnav-btn');
+  // 4th button -> Objectifs (custom tab)
+  if (btns[3]) {
+    btns[3].id = 'bnav-objectifs';
+    btns[3].onclick = () => bnavSwitchExt('objectifs');
+    btns[3].innerHTML = '<i class="fas fa-bullseye"></i><span>Objectifs</span>';
+  }
+  // 5th button -> Profil
+  if (btns[4]) {
+    btns[4].id = 'bnav-profil';
+    btns[4].onclick = () => bnavSwitchExt('profil');
+    btns[4].innerHTML = '<i class="fas fa-user"></i><span>Profil</span>';
+  }
+  // Add Tontines to drawer
+  const drawer = document.querySelector('.bnav-drawer-grid');
+  if (drawer && !document.getElementById('bnd-tontines')) {
+    const tn = document.createElement('div');
+    tn.className = 'bnav-drawer-item';
+    tn.id = 'bnd-tontines';
+    tn.innerHTML = '<i class="fas fa-users"></i>Tontines';
+    tn.onclick = () => { bnavSwitchExt('tontines'); closeBnavDrawer(); };
+    drawer.insertBefore(tn, drawer.firstChild);
+  }
+  if (window.BNAV_DRAWER && !window.BNAV_DRAWER.includes('tontines')) window.BNAV_DRAWER.push('tontines');
+}
+
+window.bnavSwitchExt = function(tab) {
+  // Switch tab content
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  const target = document.getElementById('tab-'+tab);
+  if (target) target.classList.add('active');
+  // Sync nav
+  document.querySelectorAll('.bnav-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('bnav-'+tab);
+  if (btn) btn.classList.add('active');
+  // Render
+  if (tab==='profil') renderProfileTab();
+  if (tab==='objectifs') renderGoalsTab();
+  if (tab==='tontines') renderTontinesTab();
+  window.scrollTo({top:0,behavior:'smooth'});
+};
+
+// Hook into original bnavSwitch to also reset our tabs
+const _bnavOrig2 = window.bnavSwitch;
+window.bnavSwitch = function(tab) {
+  // If our tab, route to ours
+  if (['profil','objectifs','tontines'].includes(tab)) { bnavSwitchExt(tab); return; }
+  if (_bnavOrig2) _bnavOrig2(tab);
+  // Remove active from our buttons when in standard tabs
+  ['profil','objectifs','tontines'].forEach(t => { const b=document.getElementById('bnav-'+t); if(b) b.classList.remove('active'); });
+};
+
+// ──────── PROFIL ────────
+function renderProfileTab() {
+  loadProfile();
+  const name = userProfile.displayName || (_auth.currentUser?.displayName) || (_auth.currentUser?.email?.split('@')[0]) || 'Utilisateur';
+  const phone = userProfile.phone || '—';
+  document.getElementById('profileNameBig').textContent = name;
+  document.getElementById('profilePhoneBig').textContent = phone;
+  const at = document.getElementById('profileAvatarText');
+  at.textContent = userProfile.avatar || name.charAt(0).toUpperCase();
+}
+
+async function loadProfile() {
+  if (!_auth.currentUser) return;
+  try {
+    const snap = await _getDoc(_doc(_db,'profiles',_auth.currentUser.uid));
+    if (snap.exists()) {
+      userProfile = { ...userProfile, ...snap.data() };
+    }
+    userProfile.email = _auth.currentUser.email;
+    if (!userProfile.displayName) userProfile.displayName = _auth.currentUser.displayName || _auth.currentUser.email.split('@')[0];
+  } catch(e) { console.warn('loadProfile', e); }
+}
+
+window.openProfileEdit = async () => {
+  await loadProfile();
+  document.getElementById('editName').value  = userProfile.displayName || '';
+  document.getElementById('editPhone').value = userProfile.phone || '';
+  document.getElementById('editEmail').value = userProfile.email || '';
+  document.getElementById('editJob').value   = userProfile.job || '';
+  document.getElementById('editCity').value  = userProfile.city || '';
+  document.getElementById('editBirth').value = userProfile.birth || '';
+  document.getElementById('profileEditAvatarText').textContent = userProfile.avatar || '👤';
+  document.querySelectorAll('#avatarGrid .avatar-choice').forEach(e => e.classList.toggle('selected', e.dataset.av===(userProfile.avatar||'👤')));
+  document.getElementById('profileHistorySection').style.display='none';
+  openAetModal('profileEditModal');
+};
+
+window.saveProfileEdit = async () => {
+  if (!_auth.currentUser) return;
+  const newProfile = {
+    displayName: document.getElementById('editName').value.trim(),
+    phone:       document.getElementById('editPhone').value.trim(),
+    job:         document.getElementById('editJob').value.trim(),
+    city:        document.getElementById('editCity').value.trim(),
+    birth:       document.getElementById('editBirth').value,
+    avatar:      document.querySelector('#avatarGrid .avatar-choice.selected')?.dataset.av || userProfile.avatar || '👤',
+    email:       _auth.currentUser.email,
+    updatedAt:   _ts(),
+  };
+  if (!newProfile.displayName) { toast('Le nom est requis','error'); return; }
+
+  loader(true);
+  try {
+    // Save snapshot of OLD profile in history (NEVER overwrites old data)
+    const oldSnap = await _getDoc(_doc(_db,'profiles',_auth.currentUser.uid));
+    const oldData = oldSnap.exists() ? oldSnap.data() : {};
+    const changes = {};
+    ['displayName','phone','job','city','birth','avatar'].forEach(k => {
+      if ((oldData[k]||'') !== (newProfile[k]||'')) {
+        changes[k] = { from: oldData[k]||'', to: newProfile[k]||'' };
+      }
+    });
+    if (Object.keys(changes).length > 0) {
+      await _addDoc(_col(_db,'profileHistory'), {
+        userId: _auth.currentUser.uid,
+        changes,
+        snapshot: oldData,
+        changedAt: _ts(),
+      });
+    }
+    // Update current
+    await _setDoc(_doc(_db,'profiles',_auth.currentUser.uid), newProfile, { merge:true });
+    // Also update Firebase Auth displayName
+    if (newProfile.displayName && newProfile.displayName !== _auth.currentUser.displayName) {
+      await _upProfile(_auth.currentUser, { displayName: newProfile.displayName });
+    }
+    userProfile = { ...userProfile, ...newProfile };
+    // Update top bar name
+    const un = document.getElementById('userName'); if (un) un.textContent = newProfile.displayName;
+    const ua = document.getElementById('userAvatar'); if (ua) ua.textContent = (newProfile.avatar||newProfile.displayName.charAt(0)).toUpperCase();
+    renderProfileTab();
+    closeAetModal('profileEditModal');
+    showSuccess('Profil mis à jour !','Vos informations ont été enregistrées et l\'ancienne version a été archivée.');
+  } catch(e) {
+    console.error(e);
+    toast('Erreur : ' + e.message, 'error');
+  }
+  loader(false);
+};
+
+window.showProfileHistory = async () => {
+  if (!_auth.currentUser) return;
+  const section = document.getElementById('profileHistorySection');
+  const list = document.getElementById('profileHistoryList');
+  section.style.display = 'block';
+  list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:14px">Chargement...</div>';
+  try {
+    const q = _query(_col(_db,'profileHistory'), _where('userId','==',_auth.currentUser.uid), _orderBy('changedAt','desc'), _lim(50));
+    const snap = await _getDocs(q);
+    if (snap.empty) {
+      list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:18px;font-size:13px">Aucune modification archivée.<br/>L\'historique apparaîtra ici après votre première modification.</div>';
+      return;
+    }
+    const FIELD_LABELS = { displayName:'Nom', phone:'Téléphone', job:'Profession', city:'Ville', birth:'Date de naissance', avatar:'Avatar' };
+    let html = '';
+    snap.forEach(d => {
+      const data = d.data();
+      const date = data.changedAt?.toDate ? data.changedAt.toDate().toLocaleString('fr-FR') : '—';
+      const changes = data.changes || {};
+      const list = Object.keys(changes).map(k =>
+        `<div>• <strong>${FIELD_LABELS[k]||k}</strong> : <span style="color:var(--danger)">${changes[k].from || '—'}</span> → <span style="color:var(--success-l)">${changes[k].to || '—'}</span></div>`
+      ).join('');
+      html += `<div class="history-item">
+        <div class="h-date"><i class="far fa-clock"></i> ${date}</div>
+        <div class="h-changes">${list}</div>
+      </div>`;
+    });
+    list.innerHTML = html;
+  } catch(e) {
+    console.error(e);
+    list.innerHTML = `<div style="color:var(--danger);padding:14px">Erreur : ${e.message}</div>`;
+  }
+};
+
+// ──────── SETTINGS ────────
+function loadSettingsFromLocal() {
+  try {
+    const s = localStorage.getItem('aet_settings');
+    if (s) userSettings = { ...userSettings, ...JSON.parse(s) };
+  } catch(e) {}
+}
+function saveSettingsLocal() {
+  localStorage.setItem('aet_settings', JSON.stringify(userSettings));
+}
+function applySettingsUI() {
+  document.getElementById('setLang').value = userSettings.lang;
+  document.getElementById('setCurr').value = (window.activeCurrency || localStorage.getItem('aet_currency') || 'XOF');
+  document.getElementById('setTheme').value = userSettings.theme;
+  document.getElementById('setDateFmt').value = userSettings.dateFmt;
+  setSwitch('swNotif', userSettings.notif);
+  setSwitch('swBudgetAlert', userSettings.budgetAlert);
+  setSwitch('swPin', userSettings.pinEnabled);
+  setSwitch('swFp', userSettings.fingerprint);
+  setSwitch('swAutoSync', userSettings.autoSync);
+}
+function setSwitch(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('on', !!val);
+}
+window.openSettings = () => {
+  applySettingsUI();
+  openAetModal('settingsModal');
+};
+window.toggleSet = (el, key) => {
+  el.classList.toggle('on');
+  userSettings[key] = el.classList.contains('on');
+  saveSettingsLocal();
+  toast(`${key} : ${userSettings[key]?'activé':'désactivé'}`,'info');
+};
+window.setSetting = (key, val) => {
+  userSettings[key] = val;
+  saveSettingsLocal();
+  toast('Paramètre enregistré','success');
+};
+window.setSettingCurrency = (val) => {
+  localStorage.setItem('aet_currency', val);
+  window.activeCurrency = val;
+  toast('Devise changée. Rechargement...','info');
+  setTimeout(()=>location.reload(), 600);
+};
+window.setTheme = (mode) => {
+  userSettings.theme = mode;
+  saveSettingsLocal();
+  applyTheme(mode);
+  toast('Thème : ' + mode,'success');
+};
+function applyTheme(mode) {
+  const root = document.documentElement;
+  const wantsDark = (mode==='dark') || (mode==='auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  if (wantsDark) {
+    root.style.setProperty('--bg','#0f172a');
+    root.style.setProperty('--bg2','#1e293b');
+    root.style.setProperty('--bg3','#334155');
+    root.style.setProperty('--card','#1e293b');
+    root.style.setProperty('--border','rgba(255,255,255,.08)');
+    root.style.setProperty('--text','#e2e8f0');
+    root.style.setProperty('--muted','#94a3b8');
+    root.style.setProperty('--dim','#64748b');
+  } else {
+    root.style.setProperty('--bg','#f1f5fb');
+    root.style.setProperty('--bg2','#ffffff');
+    root.style.setProperty('--bg3','#e2e8f0');
+    root.style.setProperty('--card','#ffffff');
+    root.style.setProperty('--border','rgba(15,23,42,.08)');
+    root.style.setProperty('--text','#1e293b');
+    root.style.setProperty('--muted','#64748b');
+    root.style.setProperty('--dim','#94a3b8');
+  }
+}
+window.togglePinSetting = () => {
+  const el = document.getElementById('swPin');
+  if (userSettings.pinEnabled) {
+    // disable
+    if (confirm('Désactiver le code PIN ?')) {
+      userSettings.pinEnabled = false;
+      userSettings.pin = '';
+      saveSettingsLocal();
+      el.classList.remove('on');
+      toast('Code PIN désactivé','info');
+    }
+  } else {
+    // Need to set up first via Sécurité modal
+    closeAetModal('settingsModal');
+    setTimeout(()=>{ openSecurity(); toast('Configurez un code PIN ci-dessous','info'); }, 250);
+  }
+};
+
+// ──────── SÉCURITÉ ────────
+window.openSecurity = async () => {
+  document.getElementById('curPwd').value = '';
+  document.getElementById('newPwd').value = '';
+  document.getElementById('newPwd2').value = '';
+  document.getElementById('newPin').value = '';
+  openAetModal('securityModal');
+  loadSessions();
+};
+
+window.changePassword = async () => {
+  const cur = document.getElementById('curPwd').value;
+  const np = document.getElementById('newPwd').value;
+  const np2 = document.getElementById('newPwd2').value;
+  if (!cur || !np) { toast('Champs requis','error'); return; }
+  if (np !== np2) { toast('Les mots de passe ne correspondent pas','error'); return; }
+  if (np.length < 6) { toast('Minimum 6 caractères','error'); return; }
+  loader(true);
+  try {
+    const cred = _EAP.credential(_auth.currentUser.email, cur);
+    await _reauth(_auth.currentUser, cred);
+    await _upPwd(_auth.currentUser, np);
+    showSuccess('Mot de passe changé !','Votre nouveau mot de passe est actif.');
+    document.getElementById('curPwd').value='';
+    document.getElementById('newPwd').value='';
+    document.getElementById('newPwd2').value='';
+  } catch(e) {
+    toast('Erreur : '+(e.code==='auth/wrong-password'?'Mot de passe actuel incorrect':e.message),'error');
+  }
+  loader(false);
+};
+
+window.setPin = () => {
+  const p = document.getElementById('newPin').value;
+  if (!/^\d{4}$/.test(p)) { toast('Le code PIN doit être 4 chiffres','error'); return; }
+  userSettings.pin = p;
+  userSettings.pinEnabled = true;
+  saveSettingsLocal();
+  setSwitch('swPin', true);
+  document.getElementById('newPin').value = '';
+  showSuccess('Code PIN défini !','Il vous sera demandé au prochain démarrage.');
+};
+window.removePin = () => {
+  if (!confirm('Supprimer le code PIN ?')) return;
+  userSettings.pin = '';
+  userSettings.pinEnabled = false;
+  saveSettingsLocal();
+  setSwitch('swPin', false);
+  toast('Code PIN supprimé','info');
+};
+
+async function loadSessions() {
+  const el = document.getElementById('sessionsList');
+  if (!_auth.currentUser) return;
+  el.innerHTML = 'Chargement...';
+  try {
+    const q = _query(_col(_db,'sessions'), _where('userId','==',_auth.currentUser.uid), _orderBy('loginAt','desc'), _lim(5));
+    const snap = await _getDocs(q);
+    if (snap.empty) { el.innerHTML = 'Aucune session enregistrée'; return; }
+    let html = '';
+    snap.forEach(d => {
+      const data = d.data();
+      const date = data.loginAt?.toDate ? data.loginAt.toDate().toLocaleString('fr-FR') : '—';
+      const ua = (data.userAgent||'').substring(0,60);
+      html += `<div style="padding:10px;border:1px solid var(--border);border-radius:9px;margin-bottom:6px;font-size:12px">
+        <div style="font-weight:700;color:var(--text)"><i class="fas fa-circle" style="color:var(--success);font-size:8px"></i> ${date}</div>
+        <div style="color:var(--muted);margin-top:2px">${ua}...</div>
+      </div>`;
+    });
+    el.innerHTML = html;
+  } catch(e) { el.innerHTML = 'Erreur : '+e.message; }
+}
+
+// ──────── PIN LOCK ────────
+window.checkPinAtStart = () => {
+  loadSettingsFromLocal();
+  if (userSettings.pinEnabled && userSettings.pin && userSettings.pin.length === 4) {
+    pinMode = 'unlock';
+    pinInput = '';
+    document.getElementById('pinTitle').textContent = 'Verrouillage';
+    document.getElementById('pinSub').textContent = 'Entrez votre code PIN à 4 chiffres';
+    document.getElementById('pinError').textContent = '';
+    updatePinDots();
+    document.getElementById('pinOverlay').classList.add('show');
+  }
+};
+window.pinPress = (n) => {
+  if (pinInput.length >= 4) return;
+  pinInput += String(n);
+  updatePinDots();
+  if (pinInput.length === 4) {
+    setTimeout(() => {
+      if (pinMode === 'unlock') {
+        if (pinInput === userSettings.pin) {
+          document.getElementById('pinOverlay').classList.remove('show');
+          toast('Déverrouillé ✓','success');
+        } else {
+          document.getElementById('pinError').textContent = '❌ Code incorrect';
+          pinInput = '';
+          updatePinDots();
+        }
+      }
+    }, 150);
+  }
+};
+window.pinBackspace = () => { pinInput = pinInput.slice(0,-1); updatePinDots(); };
+window.pinClear = () => { pinInput = ''; updatePinDots(); document.getElementById('pinError').textContent=''; };
+function updatePinDots() {
+  document.querySelectorAll('#pinDots .pin-dot').forEach((d,i) => d.classList.toggle('filled', i < pinInput.length));
+}
+
+// ──────── BACKUP / SYNC ────────
+window.openBackup = () => {
+  document.getElementById('syncTxCount').textContent = (window.transactions||[]).length;
+  document.getElementById('syncGoalCount').textContent = userGoals.length;
+  document.getElementById('lastSyncTime').textContent = 'Dernière synchronisation : ' + new Date().toLocaleTimeString('fr-FR');
+  openAetModal('backupModal');
+};
+window.exportAllJSON = () => {
+  const data = {
+    exportedAt: new Date().toISOString(),
+    user: _auth.currentUser?.email,
+    profile: userProfile,
+    settings: userSettings,
+    transactions: window.transactions || [],
+    goals: userGoals,
+    tontines: userTontines,
+    salaryConfig: window.salaryConfig,
+    budgets: window.budgets || [],
+  };
+  const blob = new Blob([JSON.stringify(data,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'aet-monbudget-backup-'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  toast('Sauvegarde téléchargée','success');
+};
+window.exportTxCSV = () => {
+  const txs = window.transactions || [];
+  if (!txs.length) { toast('Aucune transaction','warning'); return; }
+  const headers = ['Date','Type','Catégorie','Description','Montant'];
+  const rows = txs.map(t => [t.date, t.type, t.category, (t.note||'').replace(/[,;\n]/g,' '), t.amount]);
+  const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'transactions-'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click();
+  toast('Export CSV téléchargé','success');
+};
+window.importJSON = (input) => {
+  const f = input.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = async (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!confirm(`Restaurer ${data.transactions?.length||0} transactions, ${data.goals?.length||0} objectifs, ${data.tontines?.length||0} tontines ?`)) return;
+      loader(true);
+      // Restore goals
+      for (const g of (data.goals||[])) {
+        const {id,...payload} = g;
+        await _addDoc(_col(_db,'goals'), { ...payload, userId:_auth.currentUser.uid, restoredAt:_ts() });
+      }
+      for (const t of (data.tontines||[])) {
+        const {id,...payload} = t;
+        await _addDoc(_col(_db,'tontines'), { ...payload, userId:_auth.currentUser.uid, restoredAt:_ts() });
+      }
+      // Restore profile (keep old via history)
+      if (data.profile) {
+        await _setDoc(_doc(_db,'profiles',_auth.currentUser.uid), data.profile, { merge:true });
+      }
+      loader(false);
+      showSuccess('Import terminé !','Vos données ont été restaurées.');
+    } catch(err) {
+      loader(false);
+      toast('Erreur import : '+err.message,'error');
+    }
+  };
+  r.readAsText(f);
+};
+window.confirmDeleteAll = () => {
+  if (!confirm('⚠️ ATTENTION : Supprimer TOUTES vos données (transactions, objectifs, tontines) ?\n\nCette action est irréversible.')) return;
+  if (!confirm('Êtes-vous absolument certain ? Tapez OK pour confirmer.')) return;
+  toast('Pour des raisons de sécurité, contactez le support pour la suppression complète.','warning');
+};
+
+// ──────── OBJECTIFS ────────
+window.switchGoalTab = (tab) => {
+  goalTab = tab;
+  document.getElementById('goalTabActive').classList.toggle('active', tab==='active');
+  document.getElementById('goalTabDone').classList.toggle('active', tab==='done');
+  renderGoalsList();
+};
+function renderGoalsTab() {
+  if (!_auth.currentUser) return;
+  if (unsubGoals) { unsubGoals(); unsubGoals=null; }
+  const q = _query(_col(_db,'goals'), _where('userId','==',_auth.currentUser.uid));
+  unsubGoals = _onSnap(q, snap => {
+    userGoals = [];
+    snap.forEach(d => userGoals.push({ id:d.id, ...d.data() }));
+    userGoals.sort((a,b) => (b.createdAt?.seconds||0) - (a.createdAt?.seconds||0));
+    renderGoalsList();
+  }, err => console.warn('goals subs', err));
+}
+function renderGoalsList() {
+  const el = document.getElementById('goalsList');
+  if (!el) return;
+  const items = userGoals.filter(g => {
+    const pct = g.target>0 ? (g.saved||0)/g.target*100 : 0;
+    return goalTab==='active' ? pct < 100 : pct >= 100;
+  });
+  if (!items.length) {
+    el.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--muted)">
+      <i class="fas fa-bullseye" style="font-size:42px;opacity:.3;margin-bottom:14px;display:block"></i>
+      <p style="margin-bottom:14px">Aucun objectif ${goalTab==='active'?'actif':'terminé'}</p>
+      ${goalTab==='active' ? '<button class="aet-btn-primary" style="display:inline-flex;width:auto;padding:10px 22px" onclick="openGoalModal()"><i class=\"fas fa-plus\"></i> Créer mon premier objectif</button>' : ''}
+    </div>`;
+    return;
+  }
+  el.innerHTML = items.map(g => {
+    const pct = g.target>0 ? Math.min(100, Math.round((g.saved||0)/g.target*100)) : 0;
+    return `<div class="goal-card">
+      <div class="goal-card-top">
+        <div class="goal-thumb">${g.icon||'🎯'}</div>
+        <div class="goal-info">
+          <h4>${escapeHtml(g.name)}</h4>
+          <div class="goal-target">Objectif : ${formatMoneyXOF(g.target)}</div>
+        </div>
+        <div class="goal-pct">${pct}%</div>
+      </div>
+      <div class="goal-progress"><div class="goal-progress-bar" style="width:${pct}%"></div></div>
+      <div class="goal-amounts">
+        <span class="saved">${formatMoneyXOF(g.saved||0)}</span>
+        <span class="target">${formatMoneyXOF(g.target)}</span>
+      </div>
+      ${g.deadline ? `<div style="font-size:11px;color:var(--muted)"><i class="far fa-calendar"></i> Échéance : ${new Date(g.deadline).toLocaleDateString('fr-FR')}</div>` : ''}
+      <div class="goal-actions">
+        <button class="btn-goal-add" onclick="addToGoal('${g.id}')"><i class="fas fa-plus"></i> Ajouter</button>
+        <button class="btn-goal-edit" onclick="editGoal('${g.id}')"><i class="fas fa-pencil"></i> Modifier</button>
+        <button class="btn-goal-del" onclick="deleteGoal('${g.id}')"><i class="fas fa-trash"></i></button>
+      </div>
+    </div>`;
+  }).join('');
+}
+window.openGoalModal = () => {
+  goalEditId = null;
+  document.getElementById('goalModalTitle').textContent = 'Nouvel objectif';
+  document.getElementById('goalName').value = '';
+  document.getElementById('goalTarget').value = '';
+  document.getElementById('goalSaved').value = '0';
+  document.getElementById('goalDeadline').value = '';
+  document.getElementById('goalDesc').value = '';
+  document.querySelectorAll('#goalIconGrid .avatar-choice').forEach(e => e.classList.remove('selected'));
+  document.querySelector('#goalIconGrid .avatar-choice')?.classList.add('selected');
+  openAetModal('goalModal');
+};
+window.editGoal = (id) => {
+  const g = userGoals.find(x => x.id===id);
+  if (!g) return;
+  goalEditId = id;
+  document.getElementById('goalModalTitle').textContent = 'Modifier l\'objectif';
+  document.getElementById('goalName').value = g.name || '';
+  document.getElementById('goalTarget').value = g.target || '';
+  document.getElementById('goalSaved').value = g.saved || 0;
+  document.getElementById('goalDeadline').value = g.deadline || '';
+  document.getElementById('goalDesc').value = g.description || '';
+  document.querySelectorAll('#goalIconGrid .avatar-choice').forEach(e => e.classList.toggle('selected', e.dataset.icon===(g.icon||'🎯')));
+  openAetModal('goalModal');
+};
+window.saveGoal = async () => {
+  if (!_auth.currentUser) return;
+  const name = document.getElementById('goalName').value.trim();
+  const target = +document.getElementById('goalTarget').value;
+  const saved = +document.getElementById('goalSaved').value || 0;
+  const deadline = document.getElementById('goalDeadline').value;
+  const desc = document.getElementById('goalDesc').value.trim();
+  const icon = document.querySelector('#goalIconGrid .avatar-choice.selected')?.dataset.icon || '🎯';
+  if (!name) { toast('Nom requis','error'); return; }
+  if (!target || target<=0) { toast('Montant cible invalide','error'); return; }
+  loader(true);
+  try {
+    const payload = { userId:_auth.currentUser.uid, name, target, saved, deadline, description:desc, icon, updatedAt:_ts() };
+    if (goalEditId) {
+      await _upDoc(_doc(_db,'goals',goalEditId), payload);
+    } else {
+      payload.createdAt = _ts();
+      await _addDoc(_col(_db,'goals'), payload);
+    }
+    closeAetModal('goalModal');
+    showSuccess('Objectif enregistré !','Votre objectif est maintenant suivi.');
+  } catch(e) { toast('Erreur : '+e.message,'error'); }
+  loader(false);
+};
+window.addToGoal = async (id) => {
+  const g = userGoals.find(x=>x.id===id);
+  if (!g) return;
+  const amt = +prompt(`Ajouter combien à "${g.name}" ?\n\nDéjà épargné : ${formatMoneyXOF(g.saved||0)} / ${formatMoneyXOF(g.target)}`,'10000');
+  if (!amt || amt<=0) return;
+  loader(true);
+  try {
+    await _upDoc(_doc(_db,'goals',id), { saved:(g.saved||0)+amt, updatedAt:_ts() });
+    showSuccess('Épargne ajoutée !', formatMoneyXOF(amt)+' ajouté à "'+g.name+'"');
+  } catch(e) { toast('Erreur : '+e.message,'error'); }
+  loader(false);
+};
+window.deleteGoal = async (id) => {
+  const g = userGoals.find(x=>x.id===id);
+  if (!g) return;
+  if (!confirm(`Supprimer l'objectif "${g.name}" ?`)) return;
+  loader(true);
+  try {
+    await _delDoc(_doc(_db,'goals',id));
+    toast('Objectif supprimé','info');
+  } catch(e) { toast('Erreur : '+e.message,'error'); }
+  loader(false);
+};
+
+// ──────── TONTINES ────────
+function renderTontinesTab() {
+  if (!_auth.currentUser) return;
+  if (unsubTontines) { unsubTontines(); unsubTontines=null; }
+  const q = _query(_col(_db,'tontines'), _where('userId','==',_auth.currentUser.uid));
+  unsubTontines = _onSnap(q, snap => {
+    userTontines = [];
+    snap.forEach(d => userTontines.push({ id:d.id, ...d.data() }));
+    userTontines.sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
+    renderTontinesList();
+  }, err => console.warn('tontines subs', err));
+}
+function renderTontinesList() {
+  const el = document.getElementById('tontinesList');
+  if (!el) return;
+  if (!userTontines.length) {
+    el.innerHTML = `<div style="text-align:center;padding:50px 20px;color:var(--muted)">
+      <i class="fas fa-users" style="font-size:48px;opacity:.3;margin-bottom:14px;display:block"></i>
+      <p style="font-size:14px;margin-bottom:6px">Aucune tontine pour l'instant</p>
+      <p style="font-size:12px">Créez votre première tontine ci-dessous</p>
+    </div>`;
+    return;
+  }
+  const TYPE_ICONS = { famille:'👨‍👩‍👧', amis:'👥', travail:'💼', quartier:'🏘️', autre:'🤝' };
+  const FREQ_LABELS = { weekly:'Hebdo', biweekly:'Bi-mensuel', monthly:'Mensuel' };
+  el.innerHTML = userTontines.map(t => {
+    const total = (t.amount||0) * (t.members||1);
+    const pos = t.position || 1;
+    return `<div class="tontine-card">
+      <div class="tont-top">
+        <div class="tont-avatars">
+          ${[...Array(Math.min(3, t.members||1))].map((_,i) => `<div class="tont-avatar">${TYPE_ICONS[t.type]||'👤'}</div>`).join('')}
+        </div>
+        <div class="tont-info">
+          <h4>${escapeHtml(t.name)}</h4>
+          <div class="tont-meta">${t.members||1} membres · ${FREQ_LABELS[t.frequency]||'Mensuel'}</div>
+        </div>
+        <div class="tont-amount">${formatMoneyXOF(t.amount)}</div>
+      </div>
+      <div class="tont-detail">
+        <div class="tont-detail-item"><div class="label">Cotisation</div><div class="val">${formatMoneyXOF(t.amount)}</div></div>
+        <div class="tont-detail-item"><div class="label">Total pot</div><div class="val">${formatMoneyXOF(total)}</div></div>
+        <div class="tont-detail-item"><div class="label">Ma position</div><div class="val">${pos}/${t.members||1}</div></div>
+      </div>
+      <div class="tont-next">
+        <i class="fas fa-calendar-check"></i>
+        Prochain tirage : ${t.start ? new Date(t.start).toLocaleDateString('fr-FR') : '—'}
+      </div>
+      <div class="tont-actions">
+        <button style="background:rgba(37,99,235,.1);color:var(--primary)" onclick="editTontine('${t.id}')"><i class="fas fa-pencil"></i> Modifier</button>
+        <button style="background:rgba(239,68,68,.08);color:var(--danger)" onclick="deleteTontine('${t.id}')"><i class="fas fa-trash"></i> Supprimer</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+window.openTontineModal = () => {
+  tontineEditId = null;
+  document.getElementById('tontineModalTitle').textContent = 'Nouvelle tontine';
+  document.getElementById('tontName').value = '';
+  document.getElementById('tontType').value = 'famille';
+  document.getElementById('tontMembers').value = '';
+  document.getElementById('tontAmount').value = '';
+  document.getElementById('tontFreq').value = 'monthly';
+  document.getElementById('tontStart').value = new Date().toISOString().slice(0,10);
+  document.getElementById('tontPosition').value = '';
+  document.getElementById('tontDesc').value = '';
+  openAetModal('tontineModal');
+};
+window.editTontine = (id) => {
+  const t = userTontines.find(x=>x.id===id);
+  if (!t) return;
+  tontineEditId = id;
+  document.getElementById('tontineModalTitle').textContent = 'Modifier la tontine';
+  document.getElementById('tontName').value = t.name||'';
+  document.getElementById('tontType').value = t.type||'famille';
+  document.getElementById('tontMembers').value = t.members||'';
+  document.getElementById('tontAmount').value = t.amount||'';
+  document.getElementById('tontFreq').value = t.frequency||'monthly';
+  document.getElementById('tontStart').value = t.start||'';
+  document.getElementById('tontPosition').value = t.position||'';
+  document.getElementById('tontDesc').value = t.description||'';
+  openAetModal('tontineModal');
+};
+window.saveTontine = async () => {
+  if (!_auth.currentUser) return;
+  const name = document.getElementById('tontName').value.trim();
+  const members = +document.getElementById('tontMembers').value;
+  const amount = +document.getElementById('tontAmount').value;
+  if (!name) { toast('Nom requis','error'); return; }
+  if (!members || members<2) { toast('Au moins 2 membres','error'); return; }
+  if (!amount || amount<=0) { toast('Cotisation invalide','error'); return; }
+  const payload = {
+    userId: _auth.currentUser.uid,
+    name,
+    type: document.getElementById('tontType').value,
+    members,
+    amount,
+    frequency: document.getElementById('tontFreq').value,
+    start: document.getElementById('tontStart').value,
+    position: +document.getElementById('tontPosition').value || 1,
+    description: document.getElementById('tontDesc').value.trim(),
+    updatedAt: _ts(),
+  };
+  loader(true);
+  try {
+    if (tontineEditId) {
+      await _upDoc(_doc(_db,'tontines',tontineEditId), payload);
+    } else {
+      payload.createdAt = _ts();
+      await _addDoc(_col(_db,'tontines'), payload);
+    }
+    closeAetModal('tontineModal');
+    showSuccess('Tontine enregistrée !','Votre tontine est maintenant suivie.');
+  } catch(e) { toast('Erreur : '+e.message,'error'); }
+  loader(false);
+};
+window.deleteTontine = async (id) => {
+  const t = userTontines.find(x=>x.id===id);
+  if (!t) return;
+  if (!confirm(`Supprimer la tontine "${t.name}" ?`)) return;
+  loader(true);
+  try {
+    await _delDoc(_doc(_db,'tontines',id));
+    toast('Tontine supprimée','info');
+  } catch(e) { toast('Erreur : '+e.message,'error'); }
+  loader(false);
+};
+
+// ──────── AIDE & ABOUT ────────
+window.openHelp = () => { openAetModal('helpModal'); };
+window.openAbout = () => { openAetModal('aboutModal'); };
+window.sendFeedback = async () => {
+  const txt = document.getElementById('feedbackTxt').value.trim();
+  if (!txt) { toast('Message vide','error'); return; }
+  loader(true);
+  try {
+    await _addDoc(_col(_db,'feedback'), {
+      userId: _auth.currentUser?.uid, email: _auth.currentUser?.email,
+      message: txt, sentAt: _ts(),
+    });
+    document.getElementById('feedbackTxt').value='';
+    showSuccess('Message envoyé !','Merci, nous reviendrons vers vous rapidement.');
+  } catch(e) { toast('Erreur : '+e.message,'error'); }
+  loader(false);
+};
+function renderFAQ() {
+  const FAQ = [
+    { q:'Comment ajouter une transaction ?', a:'Cliquez sur le bouton "+" bleu au centre de la barre du bas, puis remplissez le formulaire.' },
+    { q:'Mes données sont-elles sécurisées ?', a:'Oui, toutes les données sont chiffrées et stockées sur Firebase (Google Cloud). Personne ne peut y accéder sans votre mot de passe.' },
+    { q:'Comment créer un budget ?', a:'Allez dans l\'onglet Budget depuis le menu, définissez une catégorie et un plafond mensuel.' },
+    { q:'Comment fonctionnent les tontines ?', a:'Créez une tontine en indiquant le montant, le nombre de membres et votre position de tirage. L\'application calcule automatiquement le total du pot.' },
+    { q:'Puis-je récupérer mes données ?', a:'Oui ! Allez dans Profil > Sauvegarde > Télécharger sauvegarde complète pour exporter en JSON.' },
+    { q:'Comment changer mon mot de passe ?', a:'Profil > Sécurité > Changer le mot de passe. Vous devrez entrer votre mot de passe actuel.' },
+  ];
+  const el = document.getElementById('faqList');
+  if (!el) return;
+  el.innerHTML = FAQ.map((f,i) => `
+    <div style="border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden">
+      <div onclick="document.getElementById('faq-${i}').classList.toggle('open');this.querySelector('i').classList.toggle('fa-chevron-down');this.querySelector('i').classList.toggle('fa-chevron-up')" style="padding:12px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:var(--bg)">
+        <span style="font-weight:600;font-size:13.5px;color:var(--text)">${f.q}</span>
+        <i class="fas fa-chevron-down" style="color:var(--muted);font-size:11px"></i>
+      </div>
+      <div id="faq-${i}" style="display:none;padding:0 14px 12px;font-size:13px;color:var(--muted);line-height:1.6"><br/>${f.a}</div>
+    </div>
+  `).join('');
+  // Activate toggling
+  setTimeout(() => {
+    document.querySelectorAll('[id^="faq-"]').forEach(d => {
+      const origDisplay = d.style.display;
+      d.classList.toggle = (function(orig){ return function(c){
+        if (c==='open') { this.style.display = this.style.display==='none' || !this.style.display ? 'block' : 'none'; return; }
+        return orig.apply(this, arguments);
+      };})(d.classList.toggle.bind(d.classList));
+    });
+  }, 100);
+}
+
+// ──────── MODAL HELPERS ────────
+window.openAetModal = (id) => {
+  document.getElementById(id).classList.add('show');
+  document.body.style.overflow = 'hidden';
+};
+window.closeAetModal = (id) => {
+  document.getElementById(id).classList.remove('show');
+  document.body.style.overflow = '';
+};
+
+// ──────── SUCCESS OVERLAY + CONFETTI ────────
+window.showSuccess = (title, msg) => {
+  document.getElementById('successTitle').textContent = title || 'Succès !';
+  document.getElementById('successMsg').textContent = msg || 'Opération réussie';
+  const ov = document.getElementById('successOverlay');
+  ov.classList.add('show');
+  spawnConfetti();
+};
+window.closeSuccessOverlay = () => {
+  document.getElementById('successOverlay').classList.remove('show');
+  document.querySelectorAll('.confetti').forEach(c => c.remove());
+};
+function spawnConfetti() {
+  const colors = ['#2563eb','#10b981','#ef4444','#f59e0b','#8b5cf6','#ec4899'];
+  for (let i=0; i<40; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.background = colors[i%colors.length];
+    c.style.left = Math.random()*100+'vw';
+    c.style.top = '-20px';
+    c.style.animation = `confettiFall ${2+Math.random()*1.5}s linear ${Math.random()*0.5}s forwards`;
+    c.style.transform = `rotate(${Math.random()*360}deg)`;
+    document.body.appendChild(c);
+    setTimeout(()=>c.remove(), 4500);
+  }
+}
+
+// ──────── UTILITIES ────────
+function escapeHtml(s) {
+  if (s==null) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function formatMoneyXOF(n) {
+  if (window.fmt) return window.fmt(n);
+  return (n||0).toLocaleString('fr-FR') + ' FCFA';
+}
+
+// Hook into auth state to load data
+let _profileWatcherSet = false;
+const _checkUserAndLoad = () => {
+  if (_auth.currentUser && !_profileWatcherSet) {
+    _profileWatcherSet = true;
+    loadProfile().then(() => {
+      // Update top user display with avatar
+      const ua = document.getElementById('userAvatar');
+      if (ua && userProfile.avatar) ua.textContent = userProfile.avatar;
+    });
+    renderGoalsTab();
+    renderTontinesTab();
+  } else if (!_auth.currentUser) {
+    _profileWatcherSet = false;
+    if (unsubGoals) { unsubGoals(); unsubGoals=null; }
+    if (unsubTontines) { unsubTontines(); unsubTontines=null; }
+  }
+};
+// Poll for auth state
+setInterval(_checkUserAndLoad, 1500);
+
+</script>
+
+
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>

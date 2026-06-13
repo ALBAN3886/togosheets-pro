@@ -131,6 +131,10 @@ function toast(msg, type='success') {
 }
 function loader(show) { $('#globalLoader').style.display = show ? 'flex' : 'none'; }
 
+// Exposer globalement pour les onclick HTML hors module
+window.toast = toast;
+window.loader = loader;
+
 // ══ AUTH ══
 onAuthStateChanged(auth, user => {
   if (user) {
@@ -1014,6 +1018,7 @@ function toggleBalanceVisibility() {
     icon.className = 'fas fa-eye';
   }
 }
+window.toggleBalanceVisibility = toggleBalanceVisibility;
 
 // ─── DONUT RÉSUMÉ : dépenses par catégorie ───
 function renderResumeDonut(mTx) {

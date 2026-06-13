@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>AET MonBudget — Gestion Financière Personnelle</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
@@ -678,6 +678,21 @@ function renderDashboard() {
   setTxt('dMonthLabel', formatMonth(m));
   document.getElementById('dSolde').className = 'stat-value ' + (solde >= 0 ? 'pos':'neg');
 
+  // Hero balance card
+  setTxt('dInHero',  fmt(totalIn));
+  setTxt('dOutHero', fmt(totalOut));
+  window._heroSolde = solde;
+  if (!balanceHidden) setTxt('dSoldeHero', fmt(solde) + ' XOF');
+
+  // Greeting name
+  const greetEl = document.getElementById('dGreetName');
+  if (greetEl && currentUser) {
+    greetEl.textContent = currentUser.displayName || (currentUser.email ? currentUser.email.split('@')[0] : 'Utilisateur');
+  }
+
+  // Donut résumé dépenses par catégorie
+  renderResumeDonut(mTx);
+
   const bar = $('#dBudgetBar');
   if (bar) { bar.style.width = pctDep+'%'; bar.className='bar-fill'+(pctDep>80?' bar-danger':''); }
 
@@ -908,7 +923,7 @@ function renderCharts() {
   const totSave= transactions.filter(t=>t.flow==='save').reduce((s,t)=>s+t.amount,0);
   buildChart('chartDoughnut','doughnut',{
     labels:['Revenus','Dépenses','Épargne'],
-    datasets:[{data:[totIn,totOut,totSave],backgroundColor:['#10b981','#ef4444','#a78bfa'],borderColor:'rgba(15,23,42,.5)',borderWidth:3,hoverOffset:8}]
+    datasets:[{data:[totIn,totOut,totSave],backgroundColor:['#10b981','#ef4444','#a78bfa'],borderColor:'rgba(37,99,235,.05)',borderWidth:3,hoverOffset:8}]
   },{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{color:'#94a3b8',padding:12,font:{size:12}}},tooltip:{callbacks:{label:c=>` ${c.label}: ${fmt(c.parsed)}`}}},cutout:'65%'});
 
   // Dépenses par catégorie (mois en cours)
@@ -922,7 +937,50 @@ function renderCharts() {
   }, barOpts());
 }
 
-function buildChart(id, type, data, options) {
+// ─── SOLDE MASQUABLE ───
+let balanceHidden = false;
+function toggleBalanceVisibility() {
+  balanceHidden = !balanceHidden;
+  const el = document.getElementById('dSoldeHero');
+  const icon = document.getElementById('balEyeIcon');
+  if (balanceHidden) {
+    el.textContent = '•••••• XOF';
+    icon.className = 'fas fa-eye-slash';
+  } else {
+    el.textContent = fmt(window._heroSolde||0) + ' XOF';
+    icon.className = 'fas fa-eye';
+  }
+}
+
+// ─── DONUT RÉSUMÉ : dépenses par catégorie ───
+function renderResumeDonut(mTx) {
+  const cats = {};
+  mTx.filter(t=>t.flow==='out').forEach(t=>{ cats[t.category||'Autre']=(cats[t.category||'Autre']||0)+t.amount; });
+  const sc = Object.entries(cats).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const colors = ['#2563eb','#ef4444','#10b981','#f59e0b','#8b5cf6','#06b6d4'];
+  const total = sc.reduce((s,c)=>s+c[1],0);
+
+  buildChart('chartDoughnutResume','doughnut',{
+    labels: sc.map(c=>c[0]),
+    datasets:[{data:sc.map(c=>c[1]), backgroundColor: sc.map((_,i)=>colors[i%colors.length]), borderColor:'#fff', borderWidth:3, hoverOffset:6}]
+  },{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},cutout:'68%'});
+
+  const legend = document.getElementById('catLegendResume');
+  if (legend) {
+    if (sc.length===0) {
+      legend.innerHTML = '<div style="color:var(--muted);text-align:center;padding:8px 0;">Aucune dépense ce mois</div>';
+    } else {
+      legend.innerHTML = sc.map((c,i)=>{
+        const pct = total>0 ? Math.round(c[1]/total*100) : 0;
+        return `<div style="display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:8px;"><span style="width:10px;height:10px;border-radius:50%;background:${colors[i%colors.length]};display:inline-block;"></span><span style="color:var(--text);font-weight:600;">${c[0]}</span></div>
+          <div style="color:var(--muted);font-weight:700;">${pct}%</div>
+        </div>`;
+      }).join('');
+    }
+  }
+}
+
   const ctx = document.getElementById(id);
   if (!ctx) return;
   if (charts[id]) charts[id].destroy();
@@ -2292,25 +2350,24 @@ window.deleteCurrentNote = async () => {
 
 <style>
 :root {
-  --primary:#6366f1; --primary-d:#4f46e5; --primary-l:#818cf8;
-  --success:#10b981; --success-l:#34d399;
-  --danger:#ef4444;  --danger-l:#f87171;
+  --primary:#2563eb; --primary-d:#1d4ed8; --primary-l:#3b82f6;
+  --success:#10b981; --success-l:#059669;
+  --danger:#ef4444;  --danger-l:#dc2626;
   --warning:#f59e0b;
-  --save:#a78bfa;
-  --bg:#0f172a; --bg2:#1e293b; --bg3:#334155;
-  --card:rgba(30,41,59,.75); --border:rgba(148,163,184,.13);
-  --text:#f1f5f9; --muted:#94a3b8; --dim:#64748b;
-  --grad:linear-gradient(135deg,#6366f1,#8b5cf6,#ec4899);
+  --save:#8b5cf6;
+  --bg:#f1f5fb; --bg2:#ffffff; --bg3:#e2e8f0;
+  --card:#ffffff; --border:rgba(15,23,42,.08);
+  --text:#1e293b; --muted:#64748b; --dim:#94a3b8;
+  --grad:linear-gradient(135deg,#2563eb,#3b82f6);
   --grad-success:linear-gradient(135deg,#10b981,#059669);
   --grad-danger:linear-gradient(135deg,#ef4444,#dc2626);
-  --shadow:0 10px 40px rgba(0,0,0,.35);
+  --shadow:0 4px 24px rgba(30,41,59,.06);
 }
-*{margin:0;padding:0;box-sizing:border-box;font-family:'Syne',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Poppins','Syne',sans-serif}
 body{background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
 body::before{content:'';position:fixed;inset:0;background:
-  radial-gradient(circle at 20% 10%,rgba(99,102,241,.13) 0%,transparent 50%),
-  radial-gradient(circle at 80% 80%,rgba(236,72,153,.1) 0%,transparent 50%),
-  radial-gradient(circle at 50% 50%,rgba(139,92,246,.07) 0%,transparent 60%);
+  radial-gradient(circle at 20% 10%,rgba(37,99,235,.04) 0%,transparent 50%),
+  radial-gradient(circle at 80% 80%,rgba(59,130,246,.04) 0%,transparent 50%);
   z-index:-1;pointer-events:none}
 
 /* ── LOADER ── */
@@ -2334,12 +2391,12 @@ body::before{content:'';position:fixed;inset:0;background:
 .logo-icon{width:50px;height:50px;border-radius:14px;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 8px 24px rgba(99,102,241,.4)}
 .logo-text{font-size:26px;font-weight:800;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .auth-subtitle{text-align:center;color:var(--muted);font-size:13px;margin-bottom:28px}
-.auth-tabs-bar{display:flex;background:rgba(15,23,42,.6);border-radius:10px;padding:4px;margin-bottom:22px}
+.auth-tabs-bar{display:flex;background:rgba(37,99,235,.05);border-radius:10px;padding:4px;margin-bottom:22px}
 .auth-tab-btn{flex:1;padding:9px;text-align:center;border-radius:7px;cursor:pointer;font-weight:600;font-size:13px;color:var(--muted);transition:all .2s}
 .auth-tab-btn.active{background:var(--grad);color:#fff;box-shadow:0 4px 12px rgba(99,102,241,.3)}
 .form-group{margin-bottom:16px}
 .form-label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:7px;text-transform:uppercase;letter-spacing:.5px}
-.form-input{width:100%;padding:13px 15px;background:rgba(15,23,42,.6);border:1px solid var(--border);border-radius:11px;color:var(--text);font-size:14px;font-family:'DM Mono',monospace;transition:all .2s;outline:none}
+.form-input{width:100%;padding:13px 15px;background:rgba(37,99,235,.05);border:1px solid var(--border);border-radius:11px;color:var(--text);font-size:14px;font-family:'DM Mono',monospace;transition:all .2s;outline:none}
 .form-input:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,.15)}
 .form-input::placeholder{color:var(--dim)}
 .form-err{color:var(--danger-l);font-size:12px;margin-top:6px;min-height:16px;font-family:'DM Mono',monospace}
@@ -2350,14 +2407,14 @@ body::before{content:'';position:fixed;inset:0;background:
 .auth-link a{color:var(--primary-l);text-decoration:none;font-weight:600;cursor:pointer}
 
 /* ── HEADER ── */
-.header{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
+.header{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.85);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
 .header-left{display:flex;align-items:center;gap:12px}
 .header-logo{width:40px;height:40px;border-radius:10px;background:var(--grad);display:flex;align-items:center;justify-content:center;font-size:17px;color:#fff}
 .header-title{font-size:17px;font-weight:800;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .header-right{display:flex;align-items:center;gap:10px}
-.user-chip{display:flex;align-items:center;gap:8px;padding:7px 13px;background:rgba(30,41,59,.6);border:1px solid var(--border);border-radius:100px;font-size:12px;font-family:'DM Mono',monospace}
+.user-chip{display:flex;align-items:center;gap:8px;padding:7px 13px;background:rgba(37,99,235,.06);border:1px solid var(--border);border-radius:100px;font-size:12px;font-family:'DM Mono',monospace}
 .user-avatar{width:28px;height:28px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#fff}
-.btn-header{width:38px;height:38px;border-radius:9px;background:rgba(30,41,59,.6);border:1px solid var(--border);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.btn-header{width:38px;height:38px;border-radius:9px;background:rgba(37,99,235,.06);border:1px solid var(--border);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
 .btn-header:hover{background:rgba(239,68,68,.12);color:var(--danger-l);border-color:rgba(239,68,68,.3)}
 
 /* ── LAYOUT ── */
@@ -2380,7 +2437,7 @@ body::before{content:'';position:fixed;inset:0;background:
 @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
 /* ── SALARY CARDS (Plan de Gestion) ── */
-.pg-sal-card{background:rgba(30,41,59,.6);border:1px solid var(--border);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .22s;user-select:none}
+.pg-sal-card{background:rgba(37,99,235,.06);border:1px solid var(--border);border-radius:12px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .22s;user-select:none}
 .pg-sal-card:hover{border-color:rgba(99,102,241,.4);background:rgba(99,102,241,.07)}
 .pg-sal-card.active{background:var(--grad);border-color:transparent;box-shadow:0 6px 20px rgba(99,102,241,.35)}
 .pg-sal-card.active .pg-sal-amount,.pg-sal-card.active .pg-sal-label{color:#fff}
@@ -2388,7 +2445,7 @@ body::before{content:'';position:fixed;inset:0;background:
 .pg-sal-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:3px}
 
 /* ── LANGUAGE CARDS ── */
-.lang-card{background:rgba(30,41,59,.6);border:2px solid var(--border);border-radius:14px;padding:18px 14px;text-align:center;cursor:pointer;transition:all .22s;user-select:none}
+.lang-card{background:rgba(37,99,235,.06);border:2px solid var(--border);border-radius:14px;padding:18px 14px;text-align:center;cursor:pointer;transition:all .22s;user-select:none}
 .lang-card:hover{border-color:rgba(99,102,241,.5);background:rgba(99,102,241,.07);transform:translateY(-2px)}
 .lang-card.active{background:linear-gradient(135deg,rgba(99,102,241,.2),rgba(139,92,246,.15));border-color:var(--primary-l);box-shadow:0 6px 20px rgba(99,102,241,.25)}
 .lang-flag{font-size:32px;margin-bottom:8px;line-height:1}
@@ -2437,22 +2494,22 @@ body::before{content:'';position:fixed;inset:0;background:
 @media(max-width:900px){.grid-2{grid-template-columns:1fr}}
 
 /* ── EQUILIBRE ── */
-.equilibre-box{padding:14px 18px;border-radius:10px;background:rgba(15,23,42,.4);border:1px solid var(--border);font-size:13px;font-family:'DM Mono',monospace}
+.equilibre-box{padding:14px 18px;border-radius:10px;background:rgba(37,99,235,.05);border:1px solid var(--border);font-size:13px;font-family:'DM Mono',monospace}
 .eq-pos{color:var(--success-l)}
 .eq-neg{color:var(--danger-l)}
 
 /* ── BARRE BUDGET ── */
-.bar-track{background:rgba(15,23,42,.5);border-radius:99px;height:10px;overflow:hidden}
+.bar-track{background:rgba(37,99,235,.05);border-radius:99px;height:10px;overflow:hidden}
 .bar-fill{height:100%;border-radius:99px;background:var(--grad-success);transition:width .6s ease}
 .bar-fill.bar-danger{background:var(--grad-danger)}
-.mini-bar-track{background:rgba(15,23,42,.5);border-radius:99px;height:6px;overflow:hidden;margin-top:7px}
+.mini-bar-track{background:rgba(37,99,235,.05);border-radius:99px;height:6px;overflow:hidden;margin-top:7px}
 .mini-bar-fill{height:100%;border-radius:99px;background:var(--grad-success);transition:width .5s ease}
 .bar-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:7px}
 
 /* ── TABLE ── */
 .table-wrap{overflow-x:auto;border-radius:12px;border:1px solid var(--border)}
 table{width:100%;border-collapse:collapse;font-size:13px}
-thead{background:rgba(15,23,42,.6)}
+thead{background:rgba(37,99,235,.05)}
 th{text-align:left;padding:12px 14px;font-weight:600;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)}
 td{padding:13px 14px;border-bottom:1px solid rgba(148,163,184,.07);vertical-align:middle}
 tbody tr:hover td{background:rgba(99,102,241,.04)}
@@ -2492,7 +2549,7 @@ tbody tr:last-child td{border-bottom:none}
 select.form-input{cursor:pointer}
 select.form-input optgroup{background:var(--bg2);color:var(--primary-l);font-weight:700}
 select.form-input option{background:var(--bg2)}
-.input-total-display{background:rgba(15,23,42,.5);border:1px dashed var(--border);border-radius:10px;padding:13px;font-family:'DM Mono',monospace;font-size:18px;font-weight:800;color:var(--success-l);text-align:center;margin-bottom:4px}
+.input-total-display{background:rgba(37,99,235,.05);border:1px dashed var(--border);border-radius:10px;padding:13px;font-family:'DM Mono',monospace;font-size:18px;font-weight:800;color:var(--success-l);text-align:center;margin-bottom:4px}
 
 /* ── MODAL ── */
 .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(5px);z-index:500;display:none;align-items:center;justify-content:center;padding:16px}
@@ -2507,7 +2564,7 @@ select.form-input option{background:var(--bg2)}
 
 /* ── TYPE PILLS ── */
 .type-pills{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:4px}
-.type-pill{padding:8px 14px;border:1px solid var(--border);border-radius:100px;background:rgba(15,23,42,.5);color:var(--muted);cursor:pointer;font-size:12px;font-weight:700;transition:all .15s;white-space:nowrap}
+.type-pill{padding:8px 14px;border:1px solid var(--border);border-radius:100px;background:rgba(37,99,235,.05);color:var(--muted);cursor:pointer;font-size:12px;font-weight:700;transition:all .15s;white-space:nowrap}
 .type-pill.active{background:var(--grad);border-color:transparent;color:#fff;box-shadow:0 4px 12px rgba(99,102,241,.3)}
 
 /* ── SUB-TABS ── */
@@ -2536,7 +2593,7 @@ select.form-input option{background:var(--bg2)}
 
 /* ── FILTER BAR ── */
 .filter-bar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:18px}
-.filter-input{padding:9px 13px;background:rgba(15,23,42,.6);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;font-family:'DM Mono',monospace;outline:none}
+.filter-input{padding:9px 13px;background:rgba(37,99,235,.05);border:1px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;font-family:'DM Mono',monospace;outline:none}
 .filter-input:focus{border-color:var(--primary)}
 
 /* ── EMPTY STATE ── */
@@ -2627,7 +2684,7 @@ select.form-input option{background:var(--bg2)}
 /* ── NOTES CALENDRIER ── */
 .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:14px}
 .cal-day-hdr{text-align:center;font-size:10px;font-weight:700;color:var(--muted);padding:6px 0;text-transform:uppercase;letter-spacing:.5px}
-.cal-day{min-height:52px;border-radius:10px;border:1px solid transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;padding:6px 4px;gap:3px;transition:all .15s;position:relative;background:rgba(15,23,42,.3)}
+.cal-day{min-height:52px;border-radius:10px;border:1px solid transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;padding:6px 4px;gap:3px;transition:all .15s;position:relative;background:rgba(37,99,235,.04)}
 .cal-day:hover{border-color:var(--primary);background:rgba(99,102,241,.08)}
 .cal-day.empty{cursor:default;background:transparent;border:none}
 .cal-day.today{border-color:var(--primary-l);background:rgba(99,102,241,.12)}
@@ -2898,6 +2955,33 @@ select.form-input option{background:var(--bg2)}
 
       <!-- PANNEAU : Résumé -->
       <div id="dp-resume">
+
+        <!-- Bonjour + Carte solde (hero) -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <div>
+            <div style="font-size:13px;color:var(--muted);font-weight:500;">Bonjour 👋</div>
+            <div id="dGreetName" style="font-size:18px;font-weight:800;color:var(--text);">Utilisateur</div>
+          </div>
+        </div>
+
+        <div class="balance-hero" id="balanceHero">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-size:12px;color:rgba(255,255,255,.8);font-weight:600;letter-spacing:.5px;text-transform:uppercase;">Solde actuel</div>
+            <i class="fas fa-eye" id="balEyeIcon" onclick="toggleBalanceVisibility()" style="cursor:pointer;color:rgba(255,255,255,.85);font-size:15px;"></i>
+          </div>
+          <div id="dSoldeHero" style="font-size:30px;font-weight:900;font-family:'DM Mono',monospace;color:#fff;margin:6px 0 16px;">0 XOF</div>
+          <div style="display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,.18);padding-top:12px;">
+            <div>
+              <div style="font-size:10px;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Revenus ce mois</div>
+              <div id="dInHero" style="font-size:14px;font-weight:800;color:#fff;font-family:'DM Mono',monospace;">0 XOF</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:10px;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px;">Dépenses ce mois</div>
+              <div id="dOutHero" style="font-size:14px;font-weight:800;color:#fff;font-family:'DM Mono',monospace;">0 XOF</div>
+            </div>
+          </div>
+        </div>
+
         <!-- Quick stats grid 2x2 -->
         <div class="home-section-grid" style="margin-bottom:12px">
           <div class="home-quick-card qc-income" onclick="mainMenuSwitch('revenus','Revenus','fa-arrow-down')">
@@ -2945,6 +3029,18 @@ select.form-input option{background:var(--bg2)}
             <span style="font-size:12px;font-family:'DM Mono',monospace;color:var(--muted)" id="dPctLabel">—</span>
           </div>
           <div class="bar-track"><div class="bar-fill" id="dBudgetBar" style="width:0%"></div></div>
+        </div>
+
+        <!-- Dépenses par catégorie (donut résumé) -->
+        <div class="panel" style="margin-bottom:14px">
+          <div class="panel-head">
+            <div class="panel-title"><i class="fas fa-chart-pie"></i> Dépenses par catégorie</div>
+            <span class="link-voir-tout" onclick="dashSubTab('graphes')">Voir tout</span>
+          </div>
+          <div style="height:200px;position:relative">
+            <canvas id="chartDoughnutResume"></canvas>
+          </div>
+          <div id="catLegendResume" style="display:flex;flex-direction:column;gap:6px;margin-top:10px;font-size:12px;"></div>
         </div>
 
         <!-- Teaser Conseils -->
@@ -3482,6 +3578,18 @@ select.form-input option{background:var(--bg2)}
 .home-section-grid {
   display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;
 }
+.balance-hero{
+  background:linear-gradient(135deg,#2563eb,#3b82f6 60%,#60a5fa);
+  border-radius:20px;padding:20px 22px;margin-bottom:16px;
+  box-shadow:0 10px 30px rgba(37,99,235,.25);
+  position:relative;overflow:hidden;
+}
+.balance-hero::after{
+  content:'';position:absolute;top:-40px;right:-40px;width:140px;height:140px;
+  border-radius:50%;background:rgba(255,255,255,.08);
+}
+.link-voir-tout{font-size:12px;color:var(--primary);font-weight:700;cursor:pointer;}
+.link-voir-tout:hover{text-decoration:underline;}
 .home-quick-card {
   background:var(--card);backdrop-filter:blur(20px);
   border:1px solid var(--border);border-radius:16px;

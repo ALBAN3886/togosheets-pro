@@ -135,13 +135,26 @@ onAuthStateChanged(auth, user => {
     const name = user.displayName || user.email.split('@')[0];
     $('#userName').textContent = name;
     $('#userAvatar').textContent = name.charAt(0).toUpperCase();
-    // Charger photo de profil sauvegardée
+    // Charger photo de profil — localStorage d'abord, puis Firestore
+    const applyPhoto = (src) => {
+      if (!src) return;
+      const ua = document.getElementById('userAvatar');
+      if (ua) ua.innerHTML = `<img src="${src}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
+      const big = document.getElementById('profileAvatarBig');
+      if (big) big.innerHTML = `<img src="${src}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
+    };
     const savedPhoto = localStorage.getItem('aet_profile_photo_' + user.uid);
     if (savedPhoto) {
-      const ua = document.getElementById('userAvatar');
-      if (ua) ua.innerHTML = `<img src="${savedPhoto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
-      const big = document.getElementById('profileAvatarBig');
-      if (big) big.innerHTML = `<img src="${savedPhoto}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
+      applyPhoto(savedPhoto);
+    } else {
+      // Chercher dans Firestore (synchronisé entre site et APK)
+      getDoc(doc(db, 'users', user.uid)).then(snap => {
+        const p = snap.exists() ? snap.data().photoBase64 : null;
+        if (p) {
+          localStorage.setItem('aet_profile_photo_' + user.uid, p);
+          applyPhoto(p);
+        }
+      }).catch(()=>{});
     }
     const _ed=document.getElementById('userEmailDisp'); if(_ed) _ed.textContent=user.email;
     // ── Enregistrer la session de connexion ──
@@ -6182,30 +6195,42 @@ window.handlePhotoUpload = (input) => {
   if (!file) return;
   if (file.size > 2 * 1024 * 1024) { toast('Photo trop lourde (max 2 Mo)', 'error'); return; }
   const reader = new FileReader();
-  reader.onload = (e) => {
+  reader.onload = async (e) => {
     const base64 = e.target.result;
+    const uid = _auth.currentUser?.uid;
+    // Afficher dans le modal
     const img = document.getElementById('profileEditAvatarImg');
     const txt = document.getElementById('profileEditAvatarText');
     if (img) { img.src = base64; img.style.display = 'block'; }
     if (txt) txt.style.display = 'none';
-    localStorage.setItem('aet_profile_photo_' + _auth.currentUser?.uid, base64);
+    // Sauvegarder dans localStorage (accès rapide)
+    if (uid) localStorage.setItem('aet_profile_photo_' + uid, base64);
+    // Sauvegarder dans Firestore (synchronisé entre site et APK)
+    try {
+      if (uid) await _upDoc(_doc(_db, 'users', uid), { photoBase64: base64 });
+    } catch(err) { console.warn('Firestore photo save:', err); }
+    // Mettre à jour l'avatar affiché
     const ua = document.getElementById('userAvatar');
-    if (ua) { ua.innerHTML = `<img src="${base64}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`; }
+    if (ua) ua.innerHTML = `<img src="${base64}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
     const big = document.getElementById('profileAvatarBig');
-    if (big) { big.innerHTML = `<img src="${base64}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`; }
+    if (big) big.innerHTML = `<img src="${base64}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
     toast('Photo de profil mise à jour !', 'success');
   };
   reader.readAsDataURL(file);
 };
 
-window.removeProfilePhoto = () => {
-  localStorage.removeItem('aet_profile_photo_' + _auth.currentUser?.uid);
+window.removeProfilePhoto = async () => {
+  const uid = _auth.currentUser?.uid;
+  if (uid) localStorage.removeItem('aet_profile_photo_' + uid);
+  try {
+    if (uid) await _upDoc(_doc(_db, 'users', uid), { photoBase64: '' });
+  } catch(err) { console.warn('Firestore photo remove:', err); }
   const img = document.getElementById('profileEditAvatarImg');
   const txt = document.getElementById('profileEditAvatarText');
   if (img) { img.src = ''; img.style.display = 'none'; }
   if (txt) txt.style.display = '';
-  const ua = document.getElementById('userAvatar');
   const name = _auth.currentUser?.displayName || _auth.currentUser?.email || 'U';
+  const ua = document.getElementById('userAvatar');
   if (ua) ua.textContent = name.charAt(0).toUpperCase();
   const big = document.getElementById('profileAvatarBig');
   if (big) big.innerHTML = `<span id="profileAvatarText">${name.charAt(0).toUpperCase()}</span>`;
@@ -6712,24 +6737,30 @@ function renderFAQ() {
   if (!el) return;
   el.innerHTML = FAQ.map((f,i) => `
     <div style="border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden">
-      <div onclick="document.getElementById('faq-${i}').classList.toggle('open');this.querySelector('i').classList.toggle('fa-chevron-down');this.querySelector('i').classList.toggle('fa-chevron-up')" style="padding:12px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:var(--bg)">
+      <div onclick="toggleFaq(${i})" style="padding:12px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:var(--bg)">
         <span style="font-weight:600;font-size:13.5px;color:var(--text)">${f.q}</span>
-        <i class="fas fa-chevron-down" style="color:var(--muted);font-size:11px"></i>
+        <i id="faq-icon-${i}" class="fas fa-chevron-down" style="color:var(--muted);font-size:11px;transition:transform .2s"></i>
       </div>
-      <div id="faq-${i}" style="display:none;padding:0 14px 12px;font-size:13px;color:var(--muted);line-height:1.6"><br/>${f.a}</div>
+      <div id="faq-${i}" style="max-height:0;overflow:hidden;transition:max-height .3s ease;padding:0 14px;font-size:13px;color:var(--muted);line-height:1.6">${f.a}</div>
     </div>
   `).join('');
-  // Activate toggling
-  setTimeout(() => {
-    document.querySelectorAll('[id^="faq-"]').forEach(d => {
-      const origDisplay = d.style.display;
-      d.classList.toggle = (function(orig){ return function(c){
-        if (c==='open') { this.style.display = this.style.display==='none' || !this.style.display ? 'block' : 'none'; return; }
-        return orig.apply(this, arguments);
-      };})(d.classList.toggle.bind(d.classList));
-    });
-  }, 100);
 }
+
+window.toggleFaq = (i) => {
+  const body = document.getElementById('faq-' + i);
+  const icon = document.getElementById('faq-icon-' + i);
+  if (!body) return;
+  const isOpen = body.style.maxHeight && body.style.maxHeight !== '0px';
+  // Fermer tous
+  document.querySelectorAll('[id^="faq-"]:not([id*="icon"])').forEach(d => { d.style.maxHeight = '0'; d.style.padding = '0 14px'; });
+  document.querySelectorAll('[id^="faq-icon-"]').forEach(ic => { ic.style.transform = ''; });
+  // Ouvrir celui cliqué si fermé
+  if (!isOpen) {
+    body.style.maxHeight = '200px';
+    body.style.padding = '0 14px 12px';
+    if (icon) icon.style.transform = 'rotate(180deg)';
+  }
+};
 
 // ──────── MODAL HELPERS ────────
 window.openAetModal = (id) => {

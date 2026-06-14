@@ -5807,7 +5807,8 @@ import { collection as _col, doc as _doc, addDoc as _addDoc, setDoc as _setDoc, 
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getAuth as _getAuth, updateProfile as _upProfile,
          EmailAuthProvider as _EAP, reauthenticateWithCredential as _reauth,
-         updatePassword as _upPwd }
+         updatePassword as _upPwd, GoogleAuthProvider as _GProvider,
+         FacebookAuthProvider as _FProvider, linkWithRedirect as _linkRedirect }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getApp as _getApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore as _getDb } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -5959,7 +5960,7 @@ window.openProfileEdit = async () => {
   document.querySelectorAll('#avatarGrid .avatar-choice').forEach(e => e.classList.toggle('selected', e.dataset.av===(userProfile.avatar||'👤')));
   document.getElementById('profileHistorySection').style.display='none';
   // Charger la photo de profil si elle existe
-  const savedPhoto = localStorage.getItem('aet_profile_photo_' + auth.currentUser?.uid);
+  const savedPhoto = localStorage.getItem('aet_profile_photo_' + _auth.currentUser?.uid);
   const img = document.getElementById('profileEditAvatarImg');
   const txt = document.getElementById('profileEditAvatarText');
   if (savedPhoto && img) {
@@ -6161,7 +6162,7 @@ window.openSecurity = async () => {
   openAetModal('securityModal');
   loadSessions();
   // Afficher les providers liés
-  const user = auth.currentUser;
+  const user = _auth.currentUser;
   if (user) {
     const providers = user.providerData.map(p => p.providerId);
     const el = document.getElementById('linkedProvidersInfo');
@@ -6183,17 +6184,13 @@ window.handlePhotoUpload = (input) => {
   const reader = new FileReader();
   reader.onload = (e) => {
     const base64 = e.target.result;
-    // Afficher dans le modal
     const img = document.getElementById('profileEditAvatarImg');
     const txt = document.getElementById('profileEditAvatarText');
     if (img) { img.src = base64; img.style.display = 'block'; }
     if (txt) txt.style.display = 'none';
-    // Sauvegarder dans localStorage + Firestore
-    localStorage.setItem('aet_profile_photo_' + auth.currentUser?.uid, base64);
-    // Mettre à jour l'avatar dans la barre du haut
+    localStorage.setItem('aet_profile_photo_' + _auth.currentUser?.uid, base64);
     const ua = document.getElementById('userAvatar');
     if (ua) { ua.innerHTML = `<img src="${base64}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`; }
-    // Mettre à jour le grand avatar profil
     const big = document.getElementById('profileAvatarBig');
     if (big) { big.innerHTML = `<img src="${base64}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`; }
     toast('Photo de profil mise à jour !', 'success');
@@ -6202,13 +6199,13 @@ window.handlePhotoUpload = (input) => {
 };
 
 window.removeProfilePhoto = () => {
-  localStorage.removeItem('aet_profile_photo_' + auth.currentUser?.uid);
+  localStorage.removeItem('aet_profile_photo_' + _auth.currentUser?.uid);
   const img = document.getElementById('profileEditAvatarImg');
   const txt = document.getElementById('profileEditAvatarText');
   if (img) { img.src = ''; img.style.display = 'none'; }
   if (txt) txt.style.display = '';
   const ua = document.getElementById('userAvatar');
-  const name = auth.currentUser?.displayName || auth.currentUser?.email || 'U';
+  const name = _auth.currentUser?.displayName || _auth.currentUser?.email || 'U';
   if (ua) ua.textContent = name.charAt(0).toUpperCase();
   const big = document.getElementById('profileAvatarBig');
   if (big) big.innerHTML = `<span id="profileAvatarText">${name.charAt(0).toUpperCase()}</span>`;
@@ -6217,10 +6214,11 @@ window.removeProfilePhoto = () => {
 
 // ══ LIER GOOGLE ══
 window.linkGoogle = async () => {
-  const provider = new GoogleAuthProvider();
+  if (!_auth.currentUser) { toast('Connectez-vous d\'abord', 'error'); return; }
+  const provider = new _GProvider();
   loader(true);
   try {
-    await linkWithRedirect(auth.currentUser, provider);
+    await _linkRedirect(_auth.currentUser, provider);
   } catch(e) {
     loader(false);
     if (e.code === 'auth/provider-already-linked') toast('Google déjà lié à ce compte', 'info');
@@ -6230,11 +6228,12 @@ window.linkGoogle = async () => {
 
 // ══ LIER FACEBOOK ══
 window.linkFacebook = async () => {
-  const provider = new FacebookAuthProvider();
+  if (!_auth.currentUser) { toast('Connectez-vous d\'abord', 'error'); return; }
+  const provider = new _FProvider();
   provider.addScope('public_profile');
   loader(true);
   try {
-    await linkWithRedirect(auth.currentUser, provider);
+    await _linkRedirect(_auth.currentUser, provider);
   } catch(e) {
     loader(false);
     if (e.code === 'auth/provider-already-linked') toast('Facebook déjà lié à ce compte', 'info');

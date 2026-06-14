@@ -13,7 +13,8 @@
 <script type="module">
 import { initializeApp }                                         from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword,
-         GoogleAuthProvider, FacebookAuthProvider, signInWithPopup,
+         GoogleAuthProvider, FacebookAuthProvider,
+         signInWithPopup, signInWithRedirect, getRedirectResult,
          createUserWithEmailAndPassword, signOut, updateProfile,
          sendPasswordResetEmail, EmailAuthProvider,
          reauthenticateWithCredential, updatePassword }          from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -247,18 +248,39 @@ window.doSignup = async () => {
 
 window.doLogout = async () => { await signOut(auth); toast('Déconnecté','info'); };
 
+// ══ DÉTECTION MOBILE ══
+const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+// ══ RÉSULTAT REDIRECT (au chargement de la page) ══
+getRedirectResult(auth).then(result => {
+  if (result && result.user) {
+    // Connexion réussie via redirect — onAuthStateChanged prend le relais
+    loader(false);
+  }
+}).catch(e => {
+  loader(false);
+  if (e.code && e.code !== 'auth/no-auth-event') {
+    toast('Erreur connexion sociale : ' + (e.code || e.message), 'error');
+  }
+});
+
 // ══ CONNEXION GOOGLE ══
 window.doGoogleLogin = async () => {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
-  loader(true);
   try {
-    await signInWithPopup(auth, provider);
+    if (isMobile) {
+      loader(true);
+      await signInWithRedirect(auth, provider);
+    } else {
+      loader(true);
+      await signInWithPopup(auth, provider);
+    }
   } catch(e) {
     loader(false);
     let msg = 'Erreur connexion Google';
     if (e.code === 'auth/popup-closed-by-user')      msg = 'Connexion annulée';
-    else if (e.code === 'auth/popup-blocked')        msg = 'Popup bloquée — autorisez les popups';
+    else if (e.code === 'auth/popup-blocked')        msg = 'Popup bloquée';
     else if (e.code === 'auth/account-exists-with-different-credential') msg = 'Email déjà utilisé avec un autre moyen';
     toast(msg, 'error');
   }
@@ -268,14 +290,19 @@ window.doGoogleLogin = async () => {
 window.doFacebookLogin = async () => {
   const provider = new FacebookAuthProvider();
   provider.addScope('email');
-  loader(true);
   try {
-    await signInWithPopup(auth, provider);
+    if (isMobile) {
+      loader(true);
+      await signInWithRedirect(auth, provider);
+    } else {
+      loader(true);
+      await signInWithPopup(auth, provider);
+    }
   } catch(e) {
     loader(false);
     let msg = 'Erreur connexion Facebook';
     if (e.code === 'auth/popup-closed-by-user')      msg = 'Connexion annulée';
-    else if (e.code === 'auth/popup-blocked')        msg = 'Popup bloquée — autorisez les popups';
+    else if (e.code === 'auth/popup-blocked')        msg = 'Popup bloquée';
     else if (e.code === 'auth/account-exists-with-different-credential') msg = 'Email déjà utilisé avec un autre moyen';
     else if (e.code === 'auth/operation-not-allowed') msg = 'Facebook non activé dans Firebase';
     toast(msg, 'error');

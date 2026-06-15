@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+<script>
+window.onerror = function(msg, url, line, col, error) {
+  alert('🔴 ERREUR JS DÉTECTÉE\n\nMessage: ' + msg + '\nLigne: ' + line + ':' + col + '\n\n' + (error && error.stack ? error.stack.split('\n').slice(0,3).join('\n') : ''));
+  return false;
+};
+window.addEventListener('unhandledrejection', function(e) {
+  alert('🔴 PROMESSE REJETÉE\n\n' + (e.reason && e.reason.message ? e.reason.message : e.reason));
+});
+</script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>AET MonBudget — Gestion Financière Personnelle</title>
@@ -13,8 +22,6 @@
 <script type="module">
 import { initializeApp }                                         from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword,
-         GoogleAuthProvider, FacebookAuthProvider,
-         signInWithRedirect, getRedirectResult, linkWithRedirect,
          createUserWithEmailAndPassword, signOut, updateProfile,
          sendPasswordResetEmail, EmailAuthProvider,
          reauthenticateWithCredential, updatePassword }          from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -100,6 +107,8 @@ const CURRENCIES = {
   NGN: { code:'NGN', symbol:'₦',   name:'Naira (Nigeria)',locale:'en-NG',decimals:0, flag:'🇳🇬' },
 };
 let activeCurrency = localStorage.getItem('aet_currency') || 'XOF';
+window.activeCurrency = activeCurrency;
+window.CURRENCIES = CURRENCIES;
 function fmt(n) {
   const cur = CURRENCIES[activeCurrency] || CURRENCIES.XOF;
   try {
@@ -124,6 +133,10 @@ function toast(msg, type='success') {
 }
 function loader(show) { $('#globalLoader').style.display = show ? 'flex' : 'none'; }
 
+// Exposer globalement pour les onclick HTML hors module
+window.toast = toast;
+window.loader = loader;
+
 // ══ AUTH ══
 onAuthStateChanged(auth, user => {
   if (user) {
@@ -134,28 +147,7 @@ onAuthStateChanged(auth, user => {
     if (bn) bn.style.display = '';
     const name = user.displayName || user.email.split('@')[0];
     $('#userName').textContent = name;
-    $('#userAvatar').textContent = name.charAt(0).toUpperCase();
-    // Charger photo de profil — localStorage d'abord, puis Firestore
-    const applyPhoto = (src) => {
-      if (!src) return;
-      const ua = document.getElementById('userAvatar');
-      if (ua) ua.innerHTML = `<img src="${src}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
-      const big = document.getElementById('profileAvatarBig');
-      if (big) big.innerHTML = `<img src="${src}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
-    };
-    const savedPhoto = localStorage.getItem('aet_profile_photo_' + user.uid);
-    if (savedPhoto) {
-      applyPhoto(savedPhoto);
-    } else {
-      // Chercher dans Firestore (synchronisé entre site et APK)
-      getDoc(doc(db, 'users', user.uid)).then(snap => {
-        const p = snap.exists() ? snap.data().photoBase64 : null;
-        if (p) {
-          localStorage.setItem('aet_profile_photo_' + user.uid, p);
-          applyPhoto(p);
-        }
-      }).catch(()=>{});
-    }
+    const _uat = document.getElementById('userAvatarText'); if(_uat) _uat.textContent = name.charAt(0).toUpperCase();
     const _ed=document.getElementById('userEmailDisp'); if(_ed) _ed.textContent=user.email;
     // ── Enregistrer la session de connexion ──
     addDoc(collection(db,'sessions'), {
@@ -268,42 +260,6 @@ window.doSignup = async () => {
 };
 
 window.doLogout = async () => { await signOut(auth); toast('Déconnecté','info'); };
-
-// ══ RÉSULTAT REDIRECT — géré silencieusement au chargement ══
-getRedirectResult(auth).then(result => {
-  // Si retour après redirect Google/Facebook, onAuthStateChanged prend le relais
-}).catch(e => {
-  // On ignore les erreurs normales (pas de redirect en cours)
-  if (e.code === 'auth/operation-not-allowed') {
-    toast('Fournisseur non activé dans Firebase', 'error');
-  }
-});
-
-// ══ CONNEXION GOOGLE ══
-window.doGoogleLogin = async () => {
-  loader(true);
-  try {
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
-    await signInWithRedirect(auth, provider);
-  } catch(e) {
-    loader(false);
-    toast('Erreur Google : ' + (e.code || e.message), 'error');
-  }
-};
-
-// ══ CONNEXION FACEBOOK ══
-window.doFacebookLogin = async () => {
-  loader(true);
-  try {
-    const provider = new FacebookAuthProvider();
-    provider.addScope('email');
-    await signInWithRedirect(auth, provider);
-  } catch(e) {
-    loader(false);
-    toast('Erreur Facebook : ' + (e.code || e.message), 'error');
-  }
-};
 
 window.doForgotPwd = async () => {
   const email = $('#loginEmail').value.trim();
@@ -444,6 +400,7 @@ window.applyLang = function(lang) {
 window.applyCurrency = function(code) {
   if (!CURRENCIES[code]) return;
   activeCurrency = code;
+  window.activeCurrency = code;
   localStorage.setItem('aet_currency', code);
   document.querySelectorAll('.currency-card').forEach(c => c.classList.toggle('active', c.dataset.cur === code));
   if (typeof renderAll === 'function') renderAll();
@@ -732,6 +689,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const savedCur  = localStorage.getItem('aet_currency') || 'XOF';
   activeLang = savedLang;
   activeCurrency = savedCur;
+  window.activeCurrency = savedCur;
   document.querySelectorAll('.lang-card').forEach(c => c.classList.toggle('active', c.dataset.lang === savedLang));
   document.querySelectorAll('.currency-card').forEach(c => c.classList.toggle('active', c.dataset.cur === savedCur));
   document.documentElement.lang = savedLang;
@@ -1064,6 +1022,7 @@ function toggleBalanceVisibility() {
     icon.className = 'fas fa-eye';
   }
 }
+window.toggleBalanceVisibility = toggleBalanceVisibility;
 
 // ─── DONUT RÉSUMÉ : dépenses par catégorie ───
 function renderResumeDonut(mTx) {
@@ -2559,7 +2518,7 @@ body::before{content:'';position:fixed;inset:0;background:
 .header-title{font-size:17px;font-weight:800;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
 .header-right{display:flex;align-items:center;gap:10px}
 .user-chip{display:flex;align-items:center;gap:8px;padding:7px 13px;background:rgba(37,99,235,.06);border:1px solid var(--border);border-radius:100px;font-size:12px;font-family:'DM Mono',monospace}
-.user-avatar{width:28px;height:28px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#fff}
+.user-avatar{width:28px;height:28px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:#fff;position:relative;overflow:hidden}
 .btn-header{width:38px;height:38px;border-radius:9px;background:rgba(37,99,235,.06);border:1px solid var(--border);color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
 .btn-header:hover{background:rgba(239,68,68,.12);color:var(--danger-l);border-color:rgba(239,68,68,.3)}
 
@@ -3079,10 +3038,10 @@ select.form-input option{background:var(--bg2)}
       <button class="btn-full btn-grad" onclick="doLogin()">Se connecter</button>
       <div class="auth-divider">ou continuer avec</div>
       <div class="auth-social-row">
-        <button class="auth-social-btn" onclick="doGoogleLogin()">
+        <button class="auth-social-btn" onclick="toast('Connexion Google bientôt disponible','info')">
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" height="18" alt="G"/> Google
         </button>
-        <button class="auth-social-btn" onclick="doFacebookLogin()" style="color:#1877f2">
+        <button class="auth-social-btn" onclick="toast('Connexion Facebook bientôt disponible','info')" style="color:#1877f2">
           <i class="fab fa-facebook" style="font-size:18px;color:#1877f2"></i> Facebook
         </button>
       </div>
@@ -3143,7 +3102,7 @@ select.form-input option{background:var(--bg2)}
     </div>
     <div class="header-right">
       <div class="user-chip">
-        <div class="user-avatar" id="userAvatar">U</div>
+        <div class="user-avatar" id="userAvatar"><span id="userAvatarText">U</span><img id="userAvatarImg" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;border-radius:50%;" /></div>
         <span id="userName">—</span>
       </div>
       <button class="btn-header" onclick="openModal('langModal');renderFxRates&&renderFxRates()" title="Langue / Devise" style="font-size:17px">🌐</button>
@@ -4211,7 +4170,7 @@ async function loadFxRates() {
       fxRates = { XOF:1, USD: j.rates.USD, EUR: j.rates.EUR, GHS: j.rates.GHS, NGN: j.rates.NGN };
       fxLoaded = true;
       // Rafraîchir l'affichage si une devise non-XOF est active
-      if (activeCurrency !== 'XOF' && typeof renderAll === 'function') renderAll();
+      if ((window.activeCurrency||'XOF') !== 'XOF' && typeof renderAll === 'function') renderAll();
       // Afficher les taux dans le modal
       renderFxRates();
     }
@@ -4221,15 +4180,18 @@ async function loadFxRates() {
 }
 
 function convertFromXOF(amountXOF) {
-  if (activeCurrency === 'XOF') return amountXOF;
-  const rate = fxRates[activeCurrency] || 1;
+  const ac = window.activeCurrency || 'XOF';
+  if (ac === 'XOF') return amountXOF;
+  const rate = fxRates[ac] || 1;
   return amountXOF * rate;
 }
 
 // Override fmt pour intégrer la conversion
 function fmt(n) {
   const converted = convertFromXOF(n || 0);
-  const cur = CURRENCIES[activeCurrency] || CURRENCIES.XOF;
+  const ac = window.activeCurrency || 'XOF';
+  const CUR = window.CURRENCIES || {};
+  const cur = CUR[ac] || CUR.XOF || {locale:'fr-FR',code:'XOF',decimals:0,symbol:'F'};
   try {
     return new Intl.NumberFormat(cur.locale,{style:'currency',currency:cur.code,maximumFractionDigits:cur.decimals}).format(converted);
   } catch(e) {
@@ -4241,7 +4203,7 @@ function renderFxRates() {
   const el = document.getElementById('fxRatesDisplay');
   if (!el) return;
   const base = fxLoaded ? '(taux live)' : '(taux estimés)';
-  el.innerHTML = Object.entries(CURRENCIES).filter(([k])=>k!=='XOF').map(([k,c])=>{
+  el.innerHTML = Object.entries(window.CURRENCIES||{}).filter(([k])=>k!=='XOF').map(([k,c])=>{
     const rate = fxRates[k] || '—';
     const val  = typeof rate === 'number' ? rate.toFixed(k==='GHS'||k==='NGN'?4:6) : rate;
     return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(148,163,184,.07)">
@@ -5233,7 +5195,7 @@ document.addEventListener('DOMContentLoaded', () => {
 .aet-modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card);z-index:2}
 .aet-modal-head h3{font-size:17px;font-weight:800;color:var(--text);display:flex;align-items:center;gap:9px}
 .aet-modal-close{background:rgba(100,116,139,.1);width:32px;height:32px;border-radius:50%;border:none;cursor:pointer;color:var(--muted);font-size:14px}
-.aet-modal-body{padding:18px 20px}
+.aet-modal-body{padding:18px 20px 130px}
 .aet-form-row{margin-bottom:14px}
 .aet-form-row label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px}
 .aet-form-row input,.aet-form-row select,.aet-form-row textarea{width:100%;padding:12px 14px;border:1px solid var(--border);border-radius:11px;font-size:14px;font-family:inherit;background:var(--bg);color:var(--text);outline:none;transition:border .2s}
@@ -5302,6 +5264,7 @@ document.addEventListener('DOMContentLoaded', () => {
   <div class="profile-header">
     <div class="profile-avatar-big" id="profileAvatarBig" onclick="openProfileEdit()">
       <span id="profileAvatarText">K</span>
+      <img id="profileAvatarImg" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;border-radius:50%;" />
       <div class="edit-pencil"><i class="fas fa-pencil"></i></div>
     </div>
     <div class="profile-name" id="profileNameBig">Utilisateur</div>
@@ -5383,17 +5346,19 @@ document.addEventListener('DOMContentLoaded', () => {
       <button class="aet-modal-close" onclick="closeAetModal('profileEditModal')"><i class="fas fa-xmark"></i></button>
     </div>
     <div class="aet-modal-body">
-      <div style="display:flex;justify-content:center;margin-bottom:14px">
-        <div class="profile-avatar-big" style="width:80px;height:80px;font-size:34px;cursor:pointer;position:relative" id="profileEditAvatar" onclick="document.getElementById('photoFileInput').click()">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:14px">
+        <div class="profile-avatar-big" style="width:88px;height:88px;font-size:36px;cursor:pointer" id="profileEditAvatar" onclick="document.getElementById('profilePhotoInput').click()">
           <span id="profileEditAvatarText">U</span>
-          <img id="profileEditAvatarImg" src="" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:50%;position:absolute;top:0;left:0"/>
-          <div class="edit-pencil"><i class="fas fa-camera"></i></div>
+          <img id="profileEditAvatarImg" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;border-radius:50%;" />
+          <div style="position:absolute;bottom:0;right:0;width:28px;height:28px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;border:2px solid var(--card);">
+            <i class="fas fa-camera"></i>
+          </div>
         </div>
-        <input type="file" id="photoFileInput" accept="image/*" style="display:none" onchange="handlePhotoUpload(this)"/>
-      </div>
-      <div style="text-align:center;margin-bottom:10px">
-        <button onclick="document.getElementById('photoFileInput').click()" style="background:rgba(37,99,235,.1);color:var(--primary);border:none;padding:7px 16px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer"><i class="fas fa-camera"></i> Changer la photo</button>
-        <button onclick="removeProfilePhoto()" style="background:rgba(239,68,68,.08);color:var(--danger);border:none;padding:7px 16px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;margin-left:6px"><i class="fas fa-trash"></i> Supprimer</button>
+        <input type="file" id="profilePhotoInput" accept="image/*" style="display:none" onchange="onProfilePhotoSelected(event)"/>
+        <div style="display:flex;gap:10px;">
+          <span style="font-size:12px;color:var(--primary);font-weight:700;cursor:pointer;" onclick="document.getElementById('profilePhotoInput').click()">📷 Changer la photo</span>
+          <span id="removePhotoBtn" style="display:none;font-size:12px;color:var(--danger-l);font-weight:700;cursor:pointer;" onclick="removeProfilePhoto()">🗑️ Retirer</span>
+        </div>
       </div>
       <div class="aet-form-row">
         <label>Avatar (emoji)</label>
@@ -5546,16 +5511,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <i class="fas fa-trash"></i> Supprimer le code PIN
       </button>
 
-      <h4 style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:24px 0 10px">🔗 Comptes liés</h4>
-      <div style="font-size:13px;color:var(--muted);margin-bottom:10px">Liez votre compte à Google ou Facebook pour vous connecter plus facilement.</div>
-      <div id="linkedProvidersInfo" style="margin-bottom:12px;font-size:13px"></div>
-      <button onclick="linkGoogle()" style="width:100%;padding:12px;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px;color:#334155">
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" height="18"/> Lier avec Google
-      </button>
-      <button onclick="linkFacebook()" style="width:100%;padding:12px;background:#fff;border:1.5px solid #e2e8f0;border-radius:12px;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:8px;color:#1877f2">
-        <i class="fab fa-facebook" style="font-size:18px;color:#1877f2"></i> Lier avec Facebook
-      </button>
-
       <h4 style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:24px 0 10px">📱 Sessions actives</h4>
       <div id="sessionsList" style="font-size:13px;color:var(--muted)">Chargement...</div>
     </div>
@@ -5627,7 +5582,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <div style="background:var(--bg);border-radius:11px;padding:14px;display:flex;flex-direction:column;gap:10px">
         <div><i class="fas fa-envelope" style="color:var(--primary);width:22px"></i> <a href="mailto:aettechnology5@gmail.com" style="color:var(--primary);font-weight:600">aettechnology5@gmail.com</a></div>
         <div><i class="fab fa-whatsapp" style="color:#25d366;width:22px"></i> <a href="https://wa.me/22893003941" style="color:var(--text);font-weight:600">+228 93 00 39 41</a></div>
-        <div><i class="fas fa-globe" style="color:var(--primary);width:22px"></i> <a href="https://alban3886.github.io" target="_blank" style="color:var(--text);font-weight:600">alban3886.github.io</a></div>
+        <div><i class="fas fa-globe" style="color:var(--primary);width:22px"></i> <a href="https://alban3886.github.io/togosheets-pro/" target="_blank" style="color:var(--text);font-weight:600">alban3886.github.io/togosheets-pro</a></div>
       </div>
       <h4 style="font-size:13px;font-weight:800;color:var(--text);margin:18px 0 10px">💡 Suggestion / Bug</h4>
       <div class="aet-form-row">
@@ -5781,7 +5736,7 @@ document.addEventListener('DOMContentLoaded', () => {
   <div class="pin-dots" id="pinDots">
     <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
   </div>
-  <div class="pin-pad">
+  <div class="pin-pad" id="pinPad">
     <button class="pin-key" onclick="pinPress(1)">1</button>
     <button class="pin-key" onclick="pinPress(2)">2</button>
     <button class="pin-key" onclick="pinPress(3)">3</button>
@@ -5796,6 +5751,12 @@ document.addEventListener('DOMContentLoaded', () => {
     <button class="pin-key action" onclick="pinBackspace()"><i class="fas fa-delete-left"></i></button>
   </div>
   <div class="pin-error" id="pinError"></div>
+  <div id="pinFpBtn" style="display:none;margin-top:18px;text-align:center;color:rgba(255,255,255,.8);cursor:pointer;font-size:13px;" onclick="useFingerprintUnlock()">
+    <div style="width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 8px;">
+      <i class="fas fa-fingerprint"></i>
+    </div>
+    Utiliser l'empreinte digitale
+  </div>
 </div>
 
 <!-- ════ SUCCESS OVERLAY ════ -->
@@ -5820,8 +5781,7 @@ import { collection as _col, doc as _doc, addDoc as _addDoc, setDoc as _setDoc, 
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { getAuth as _getAuth, updateProfile as _upProfile,
          EmailAuthProvider as _EAP, reauthenticateWithCredential as _reauth,
-         updatePassword as _upPwd, GoogleAuthProvider as _GProvider,
-         FacebookAuthProvider as _FProvider, linkWithRedirect as _linkRedirect }
+         updatePassword as _upPwd }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getApp as _getApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getFirestore as _getDb } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -5940,14 +5900,70 @@ window.bnavSwitch = function(tab) {
 
 // ──────── PROFIL ────────
 function renderProfileTab() {
-  loadProfile();
-  const name = userProfile.displayName || (_auth.currentUser?.displayName) || (_auth.currentUser?.email?.split('@')[0]) || 'Utilisateur';
-  const phone = userProfile.phone || '—';
-  document.getElementById('profileNameBig').textContent = name;
-  document.getElementById('profilePhoneBig').textContent = phone;
-  const at = document.getElementById('profileAvatarText');
-  at.textContent = userProfile.avatar || name.charAt(0).toUpperCase();
+  loadProfile().then(()=>{
+    const name = userProfile.displayName || (_auth.currentUser?.displayName) || (_auth.currentUser?.email?.split('@')[0]) || 'Utilisateur';
+    const phone = userProfile.phone || '—';
+    document.getElementById('profileNameBig').textContent = name;
+    document.getElementById('profilePhoneBig').textContent = phone;
+    applyAvatarDisplay('profileAvatarText','profileAvatarImg', name);
+  });
 }
+
+// Affiche soit la photo (si présente) soit l'emoji/initiale
+function applyAvatarDisplay(textId, imgId, fallbackName) {
+  const at = document.getElementById(textId);
+  const im = document.getElementById(imgId);
+  if (userProfile.photoData) {
+    if (im) { im.src = userProfile.photoData; im.style.display='block'; }
+    if (at) at.style.display='none';
+  } else {
+    if (im) im.style.display='none';
+    if (at) { at.style.display=''; at.textContent = userProfile.avatar || (fallbackName||'U').charAt(0).toUpperCase(); }
+  }
+}
+
+// Sélection d'une nouvelle photo de profil
+window.onProfilePhotoSelected = function(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { toast('Veuillez choisir une image','error'); return; }
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const img = new Image();
+    img.onload = function() {
+      // Redimensionner à max 256x256 pour limiter la taille
+      const canvas = document.createElement('canvas');
+      const size = 256;
+      canvas.width = size; canvas.height = size;
+      const ctx = canvas.getContext('2d');
+      // Crop carré centré
+      const minSide = Math.min(img.width, img.height);
+      const sx = (img.width - minSide)/2, sy = (img.height - minSide)/2;
+      ctx.drawImage(img, sx, sy, minSide, minSide, 0, 0, size, size);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+      // Aperçu immédiat dans le modal
+      const previewImg = document.getElementById('profileEditAvatarImg');
+      const previewText = document.getElementById('profileEditAvatarText');
+      if (previewImg) { previewImg.src = dataUrl; previewImg.style.display='block'; }
+      if (previewText) previewText.style.display='none';
+      const removeBtn = document.getElementById('removePhotoBtn');
+      if (removeBtn) removeBtn.style.display='inline';
+      window._pendingPhotoData = dataUrl;
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+};
+
+window.removeProfilePhoto = function() {
+  window._pendingPhotoData = null;
+  window._removePhoto = true;
+  const previewImg = document.getElementById('profileEditAvatarImg');
+  const previewText = document.getElementById('profileEditAvatarText');
+  if (previewImg) { previewImg.style.display='none'; previewImg.src=''; }
+  if (previewText) previewText.style.display='';
+  document.getElementById('removePhotoBtn').style.display='none';
+};
 
 async function loadProfile() {
   if (!_auth.currentUser) return;
@@ -5972,17 +5988,11 @@ window.openProfileEdit = async () => {
   document.getElementById('profileEditAvatarText').textContent = userProfile.avatar || '👤';
   document.querySelectorAll('#avatarGrid .avatar-choice').forEach(e => e.classList.toggle('selected', e.dataset.av===(userProfile.avatar||'👤')));
   document.getElementById('profileHistorySection').style.display='none';
-  // Charger la photo de profil si elle existe
-  const savedPhoto = localStorage.getItem('aet_profile_photo_' + _auth.currentUser?.uid);
-  const img = document.getElementById('profileEditAvatarImg');
-  const txt = document.getElementById('profileEditAvatarText');
-  if (savedPhoto && img) {
-    img.src = savedPhoto; img.style.display = 'block';
-    if (txt) txt.style.display = 'none';
-  } else if (img) {
-    img.style.display = 'none';
-    if (txt) txt.style.display = '';
-  }
+  // Photo de profil
+  window._pendingPhotoData = undefined;
+  window._removePhoto = false;
+  applyAvatarDisplay('profileEditAvatarText','profileEditAvatarImg', userProfile.displayName||'U');
+  document.getElementById('removePhotoBtn').style.display = userProfile.photoData ? 'inline' : 'none';
   openAetModal('profileEditModal');
 };
 
@@ -5998,6 +6008,14 @@ window.saveProfileEdit = async () => {
     email:       _auth.currentUser.email,
     updatedAt:   _ts(),
   };
+  // Photo de profil
+  if (window._pendingPhotoData) {
+    newProfile.photoData = window._pendingPhotoData;
+  } else if (window._removePhoto) {
+    newProfile.photoData = null;
+  } else {
+    newProfile.photoData = userProfile.photoData || null;
+  }
   if (!newProfile.displayName) { toast('Le nom est requis','error'); return; }
 
   loader(true);
@@ -6028,12 +6046,14 @@ window.saveProfileEdit = async () => {
     userProfile = { ...userProfile, ...newProfile };
     // Update top bar name
     const un = document.getElementById('userName'); if (un) un.textContent = newProfile.displayName;
-    const ua = document.getElementById('userAvatar'); if (ua) ua.textContent = (newProfile.avatar||newProfile.displayName.charAt(0)).toUpperCase();
+    applyAvatarDisplay('userAvatarText','userAvatarImg', newProfile.displayName);
     renderProfileTab();
     closeAetModal('profileEditModal');
+    alert('✅ PROFIL ENREGISTRÉ AVEC SUCCÈS');
     showSuccess('Profil mis à jour !','Vos informations ont été enregistrées et l\'ancienne version a été archivée.');
   } catch(e) {
     console.error(e);
+    alert('ERREUR PROFIL : ' + e.code + ' — ' + e.message);
     toast('Erreur : ' + e.message, 'error');
   }
   loader(false);
@@ -6103,11 +6123,93 @@ window.openSettings = () => {
   openAetModal('settingsModal');
 };
 window.toggleSet = (el, key) => {
+  if (key === 'fingerprint') {
+    if (!el.classList.contains('on')) {
+      // Activation : enregistrer l'empreinte
+      registerFingerprint().then(ok => {
+        if (ok) {
+          el.classList.add('on');
+          userSettings.fingerprint = true;
+          saveSettingsLocal();
+          toast('Empreinte digitale activée ✓','success');
+        } else {
+          toast('Empreinte non configurée : annulé ou non supporté','error');
+        }
+      });
+    } else {
+      el.classList.remove('on');
+      userSettings.fingerprint = false;
+      localStorage.removeItem('aet_fp_credential');
+      saveSettingsLocal();
+      toast('Empreinte digitale désactivée','info');
+    }
+    return;
+  }
   el.classList.toggle('on');
   userSettings[key] = el.classList.contains('on');
   saveSettingsLocal();
   toast(`${key} : ${userSettings[key]?'activé':'désactivé'}`,'info');
 };
+
+// ──────── EMPREINTE DIGITALE (WebAuthn) ────────
+async function registerFingerprint() {
+  if (!window.PublicKeyCredential) {
+    toast('Empreinte non supportée sur cet appareil/navigateur','error');
+    return false;
+  }
+  try {
+    const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+    if (!available) { toast('Aucun capteur d\'empreinte détecté','error'); return false; }
+
+    const challenge = new Uint8Array(32);
+    crypto.getRandomValues(challenge);
+    const userId = new Uint8Array(16);
+    crypto.getRandomValues(userId);
+
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        challenge,
+        rp: { name: 'AET MonBudget' },
+        user: { id: userId, name: (currentUser?.email)||'user', displayName: (currentUser?.displayName)||'Utilisateur' },
+        pubKeyCredParams: [{ alg:-7, type:'public-key' }, { alg:-257, type:'public-key' }],
+        authenticatorSelection: { authenticatorAttachment:'platform', userVerification:'required' },
+        timeout: 60000,
+      }
+    });
+    if (!cred) return false;
+    localStorage.setItem('aet_fp_credential', cred.id);
+    return true;
+  } catch(e) {
+    console.error('FP register error:', e);
+    return false;
+  }
+}
+
+window.useFingerprintUnlock = async () => {
+  if (!window.PublicKeyCredential) { toast('Non supporté sur cet appareil','error'); return; }
+  const credId = localStorage.getItem('aet_fp_credential');
+  if (!credId) { toast('Empreinte non configurée','error'); return; }
+  try {
+    const challenge = new Uint8Array(32);
+    crypto.getRandomValues(challenge);
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge,
+        allowCredentials: [{ id: Uint8Array.from(atob(credId.replace(/-/g,'+').replace(/_/g,'/')), c=>c.charCodeAt(0)), type:'public-key' }],
+        userVerification:'required',
+        timeout: 60000,
+      }
+    }).catch(()=>navigator.credentials.get({ publicKey:{ challenge, userVerification:'required', timeout:60000 } }));
+    if (assertion) {
+      document.getElementById('pinOverlay').classList.remove('show');
+      toast('Déverrouillé par empreinte ✓','success');
+    }
+  } catch(e) {
+    console.error('FP unlock error:', e);
+    toast('Empreinte non reconnue','error');
+  }
+};
+
 window.setSetting = (key, val) => {
   userSettings[key] = val;
   saveSettingsLocal();
@@ -6174,96 +6276,6 @@ window.openSecurity = async () => {
   document.getElementById('newPin').value = '';
   openAetModal('securityModal');
   loadSessions();
-  // Afficher les providers liés
-  const user = _auth.currentUser;
-  if (user) {
-    const providers = user.providerData.map(p => p.providerId);
-    const el = document.getElementById('linkedProvidersInfo');
-    if (el) {
-      el.innerHTML = providers.map(p => {
-        if (p === 'google.com') return '<span style="display:inline-flex;align-items:center;gap:6px;background:#f0fdf4;color:#16a34a;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;margin-right:6px"><i class="fas fa-check-circle"></i> Google lié</span>';
-        if (p === 'facebook.com') return '<span style="display:inline-flex;align-items:center;gap:6px;background:#eff6ff;color:#1877f2;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;margin-right:6px"><i class="fas fa-check-circle"></i> Facebook lié</span>';
-        return '';
-      }).join('') || '<span style="color:var(--muted)">Aucun compte social lié</span>';
-    }
-  }
-};
-
-// ══ PHOTO DE PROFIL ══
-window.handlePhotoUpload = (input) => {
-  const file = input.files[0];
-  if (!file) return;
-  if (file.size > 2 * 1024 * 1024) { toast('Photo trop lourde (max 2 Mo)', 'error'); return; }
-  const reader = new FileReader();
-  reader.onload = async (e) => {
-    const base64 = e.target.result;
-    const uid = _auth.currentUser?.uid;
-    // Afficher dans le modal
-    const img = document.getElementById('profileEditAvatarImg');
-    const txt = document.getElementById('profileEditAvatarText');
-    if (img) { img.src = base64; img.style.display = 'block'; }
-    if (txt) txt.style.display = 'none';
-    // Sauvegarder dans localStorage (accès rapide)
-    if (uid) localStorage.setItem('aet_profile_photo_' + uid, base64);
-    // Sauvegarder dans Firestore (synchronisé entre site et APK)
-    try {
-      if (uid) await _upDoc(_doc(_db, 'users', uid), { photoBase64: base64 });
-    } catch(err) { console.warn('Firestore photo save:', err); }
-    // Mettre à jour l'avatar affiché
-    const ua = document.getElementById('userAvatar');
-    if (ua) ua.innerHTML = `<img src="${base64}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
-    const big = document.getElementById('profileAvatarBig');
-    if (big) big.innerHTML = `<img src="${base64}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;
-    toast('Photo de profil mise à jour !', 'success');
-  };
-  reader.readAsDataURL(file);
-};
-
-window.removeProfilePhoto = async () => {
-  const uid = _auth.currentUser?.uid;
-  if (uid) localStorage.removeItem('aet_profile_photo_' + uid);
-  try {
-    if (uid) await _upDoc(_doc(_db, 'users', uid), { photoBase64: '' });
-  } catch(err) { console.warn('Firestore photo remove:', err); }
-  const img = document.getElementById('profileEditAvatarImg');
-  const txt = document.getElementById('profileEditAvatarText');
-  if (img) { img.src = ''; img.style.display = 'none'; }
-  if (txt) txt.style.display = '';
-  const name = _auth.currentUser?.displayName || _auth.currentUser?.email || 'U';
-  const ua = document.getElementById('userAvatar');
-  if (ua) ua.textContent = name.charAt(0).toUpperCase();
-  const big = document.getElementById('profileAvatarBig');
-  if (big) big.innerHTML = `<span id="profileAvatarText">${name.charAt(0).toUpperCase()}</span>`;
-  toast('Photo supprimée', 'info');
-};
-
-// ══ LIER GOOGLE ══
-window.linkGoogle = async () => {
-  if (!_auth.currentUser) { toast('Connectez-vous d\'abord', 'error'); return; }
-  const provider = new _GProvider();
-  loader(true);
-  try {
-    await _linkRedirect(_auth.currentUser, provider);
-  } catch(e) {
-    loader(false);
-    if (e.code === 'auth/provider-already-linked') toast('Google déjà lié à ce compte', 'info');
-    else toast('Erreur : ' + (e.code || e.message), 'error');
-  }
-};
-
-// ══ LIER FACEBOOK ══
-window.linkFacebook = async () => {
-  if (!_auth.currentUser) { toast('Connectez-vous d\'abord', 'error'); return; }
-  const provider = new _FProvider();
-  provider.addScope('public_profile');
-  loader(true);
-  try {
-    await _linkRedirect(_auth.currentUser, provider);
-  } catch(e) {
-    loader(false);
-    if (e.code === 'auth/provider-already-linked') toast('Facebook déjà lié à ce compte', 'info');
-    else toast('Erreur : ' + (e.code || e.message), 'error');
-  }
 };
 
 window.changePassword = async () => {
@@ -6332,14 +6344,31 @@ async function loadSessions() {
 // ──────── PIN LOCK ────────
 window.checkPinAtStart = () => {
   loadSettingsFromLocal();
-  if (userSettings.pinEnabled && userSettings.pin && userSettings.pin.length === 4) {
+  const hasCred = !!localStorage.getItem('aet_fp_credential');
+  const fpOnly = userSettings.fingerprint && hasCred && !userSettings.pinEnabled;
+  const pinOk  = userSettings.pinEnabled && userSettings.pin && userSettings.pin.length === 4;
+
+  if (pinOk || fpOnly) {
     pinMode = 'unlock';
     pinInput = '';
     document.getElementById('pinTitle').textContent = 'Verrouillage';
-    document.getElementById('pinSub').textContent = 'Entrez votre code PIN à 4 chiffres';
+    document.getElementById('pinSub').textContent = pinOk ? 'Entrez votre code PIN à 4 chiffres' : 'Déverrouillez avec votre empreinte';
     document.getElementById('pinError').textContent = '';
     updatePinDots();
     document.getElementById('pinOverlay').classList.add('show');
+
+    const fpBtn = document.getElementById('pinFpBtn');
+    if (fpBtn) {
+      fpBtn.style.display = (userSettings.fingerprint && hasCred) ? 'block' : 'none';
+      if (userSettings.fingerprint && hasCred) {
+        setTimeout(()=>useFingerprintUnlock(), 400);
+      }
+    }
+    // Mode empreinte seule : cacher le pavé numérique (pas de PIN configuré)
+    const pad = document.getElementById('pinPad');
+    if (pad) pad.style.display = pinOk ? '' : 'none';
+    const dots = document.getElementById('pinDots');
+    if (dots) dots.style.display = pinOk ? '' : 'none';
   }
 };
 window.pinPress = (n) => {
@@ -6687,7 +6716,7 @@ window.saveTontine = async () => {
     }
     closeAetModal('tontineModal');
     showSuccess('Tontine enregistrée !','Votre tontine est maintenant suivie.');
-  } catch(e) { toast('Erreur : '+e.message,'error'); }
+  } catch(e) { alert('ERREUR TONTINE : ' + e.code + ' — ' + e.message); toast('Erreur : '+e.message,'error'); }
   loader(false);
 };
 window.deleteTontine = async (id) => {
@@ -6737,30 +6766,24 @@ function renderFAQ() {
   if (!el) return;
   el.innerHTML = FAQ.map((f,i) => `
     <div style="border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden">
-      <div onclick="toggleFaq(${i})" style="padding:12px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:var(--bg)">
+      <div onclick="document.getElementById('faq-${i}').classList.toggle('open');this.querySelector('i').classList.toggle('fa-chevron-down');this.querySelector('i').classList.toggle('fa-chevron-up')" style="padding:12px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;background:var(--bg)">
         <span style="font-weight:600;font-size:13.5px;color:var(--text)">${f.q}</span>
-        <i id="faq-icon-${i}" class="fas fa-chevron-down" style="color:var(--muted);font-size:11px;transition:transform .2s"></i>
+        <i class="fas fa-chevron-down" style="color:var(--muted);font-size:11px"></i>
       </div>
-      <div id="faq-${i}" style="max-height:0;overflow:hidden;transition:max-height .3s ease;padding:0 14px;font-size:13px;color:var(--muted);line-height:1.6">${f.a}</div>
+      <div id="faq-${i}" style="display:none;padding:0 14px 12px;font-size:13px;color:var(--muted);line-height:1.6"><br/>${f.a}</div>
     </div>
   `).join('');
+  // Activate toggling
+  setTimeout(() => {
+    document.querySelectorAll('[id^="faq-"]').forEach(d => {
+      const orig = d.classList.toggle.bind(d.classList);
+      d.classList.toggle = function(c){
+        if (c==='open') { d.style.display = (d.style.display==='none' || !d.style.display) ? 'block' : 'none'; return; }
+        return orig(c);
+      };
+    });
+  }, 100);
 }
-
-window.toggleFaq = (i) => {
-  const body = document.getElementById('faq-' + i);
-  const icon = document.getElementById('faq-icon-' + i);
-  if (!body) return;
-  const isOpen = body.style.maxHeight && body.style.maxHeight !== '0px';
-  // Fermer tous
-  document.querySelectorAll('[id^="faq-"]:not([id*="icon"])').forEach(d => { d.style.maxHeight = '0'; d.style.padding = '0 14px'; });
-  document.querySelectorAll('[id^="faq-icon-"]').forEach(ic => { ic.style.transform = ''; });
-  // Ouvrir celui cliqué si fermé
-  if (!isOpen) {
-    body.style.maxHeight = '200px';
-    body.style.padding = '0 14px 12px';
-    if (icon) icon.style.transform = 'rotate(180deg)';
-  }
-};
 
 // ──────── MODAL HELPERS ────────
 window.openAetModal = (id) => {
@@ -6815,9 +6838,8 @@ const _checkUserAndLoad = () => {
   if (_auth.currentUser && !_profileWatcherSet) {
     _profileWatcherSet = true;
     loadProfile().then(() => {
-      // Update top user display with avatar
-      const ua = document.getElementById('userAvatar');
-      if (ua && userProfile.avatar) ua.textContent = userProfile.avatar;
+      // Update top user display with avatar/photo
+      applyAvatarDisplay('userAvatarText','userAvatarImg', userProfile.displayName);
     });
     renderGoalsTab();
     renderTontinesTab();

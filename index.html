@@ -1,18 +1,18 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<script>
-window.onerror = function(msg, url, line, col, error) {
-  alert('🔴 ERREUR JS DÉTECTÉE\n\nMessage: ' + msg + '\nLigne: ' + line + ':' + col + '\n\n' + (error && error.stack ? error.stack.split('\n').slice(0,3).join('\n') : ''));
-  return false;
-};
-window.addEventListener('unhandledrejection', function(e) {
-  alert('🔴 PROMESSE REJETÉE\n\n' + (e.reason && e.reason.message ? e.reason.message : e.reason));
-});
-</script>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
 <title>AET MonBudget — Gestion Financière Personnelle</title>
+<meta name="description" content="Application de gestion financière personnelle — Alban Eloh Technology"/>
+<meta name="theme-color" content="#2563eb"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="icon" href="icon-192.png" type="image/png"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="AET MonBudget"/>
+<meta name="mobile-web-app-capable" content="yes"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
@@ -141,6 +141,7 @@ window.loader = loader;
 onAuthStateChanged(auth, user => {
   if (user) {
     currentUser = user;
+    window.currentUser = user;
     $('#authScreen').style.display = 'none';
     $('#app').style.display = 'block';
     const bn = document.getElementById('bottomNav');
@@ -168,6 +169,7 @@ onAuthStateChanged(auth, user => {
     toast(`Bienvenue ${name} ! 👋`, 'success');
   } else {
     currentUser = null;
+    window.currentUser = null;
     if (unsubTx)  { unsubTx();   unsubTx  = null; }
     if (unsubSal) { unsubSal();  unsubSal = null; }
     if (unsubBudg){ unsubBudg(); unsubBudg= null; }
@@ -2907,6 +2909,10 @@ select.form-input option{background:var(--bg2)}
         splash.style.opacity = '0';
         setTimeout(() => {
           splash.style.display = 'none';
+          // Ne rien afficher si l'utilisateur est déjà connecté
+          if (window.currentUser || (window._auth && window._auth.currentUser)) {
+            return;
+          }
           // Afficher onboarding si première visite
           const done = localStorage.getItem('aet_ob_done');
           const ob = document.getElementById('onboardingScreen');
@@ -6856,5 +6862,14 @@ setInterval(_checkUserAndLoad, 1500);
 
 
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<!-- ════ PWA : ENREGISTREMENT SERVICE WORKER ════ -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(e => console.warn('SW register failed:', e));
+  });
+}
+</script>
+
 </body>
 </html>

@@ -755,7 +755,7 @@ function renderDashboard() {
   setTxt('dInHero',  fmt(totalIn));
   setTxt('dOutHero', fmt(totalOut));
   window._heroSolde = solde;
-  if (!balanceHidden) setTxt('dSoldeHero', fmt(solde) + ' XOF');
+  if (!balanceHidden) setTxt('dSoldeHero', fmt(solde));
 
   // Greeting name
   const greetEl = document.getElementById('dGreetName');
@@ -1020,7 +1020,7 @@ function toggleBalanceVisibility() {
     el.textContent = '•••••• XOF';
     icon.className = 'fas fa-eye-slash';
   } else {
-    el.textContent = fmt(window._heroSolde||0) + ' XOF';
+    el.textContent = fmt(window._heroSolde||0);
     icon.className = 'fas fa-eye';
   }
 }
@@ -4527,14 +4527,14 @@ window.switchTab = function(tab) {
   <div style="position:relative;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
     <button id="apkFabClose" onclick="document.getElementById('apkFab').style.display='none'" title="Masquer">✕</button>
     <a id="apkFabBtn"
-       href="https://github.com/ALBAN3886/AET-MonBudget-App/releases/download/v1.0.0/_ALBAN_ELOH_19826934.apk"
+       href="https://github.com/ALBAN3886/Application-AET-MonBudget/raw/principal/_ALBAN_ELOH_19826934.apk"
        download>
       <i class="fas fa-android"></i>
       Télécharger l'APK
     </a>
     <div id="apkFabTooltip">
-      <strong>AET MonBudget v1.0.0</strong>
-      Android · 31,9 Mo · Gratuit
+      <strong>AET MonBudget v2.0.0</strong>
+      Android · Gratuit
     </div>
   </div>
 </div>

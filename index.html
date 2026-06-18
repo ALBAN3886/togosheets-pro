@@ -3264,7 +3264,7 @@ select.form-input option{background:var(--bg2)}
         </div>
 
         <!-- Actions rapides -->
-        <div class="home-actions-row" style="margin-bottom:16px">
+        <div class="home-actions-row" style="margin-bottom:14px">
           <div class="home-action-btn ha-income" onclick="openTxModal('salaire')">
             <i class="fas fa-arrow-down-to-bracket"></i>
             <span>Revenu</span>
@@ -3277,6 +3277,29 @@ select.form-input option{background:var(--bg2)}
             <i class="fas fa-piggy-bank"></i>
             <span>Épargne</span>
           </div>
+        </div>
+
+        <!-- ═══ TUILE VEDETTE COMMERCE (écran d'accueil) ═══ -->
+        <div class="home-commerce-tile" onclick="mainMenuSwitch('commerce','Commerce','fa-store')"
+             style="position:relative;display:flex;align-items:center;gap:14px;padding:16px 16px;margin-bottom:16px;
+                    background:linear-gradient(135deg,#10b981 0%,#059669 55%,#047857 100%);
+                    border-radius:18px;cursor:pointer;overflow:hidden;
+                    box-shadow:0 8px 22px rgba(16,185,129,.32);transition:transform .15s ease, box-shadow .15s ease"
+             onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 12px 28px rgba(16,185,129,.42)'"
+             onmouseout="this.style.transform='';this.style.boxShadow='0 8px 22px rgba(16,185,129,.32)'">
+          <div aria-hidden="true" style="position:absolute;right:-22px;top:-22px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.10)"></div>
+          <div aria-hidden="true" style="position:absolute;right:18px;bottom:-30px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.08)"></div>
+          <div style="flex-shrink:0;width:54px;height:54px;border-radius:14px;background:rgba(255,255,255,.20);display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);position:relative;z-index:1">
+            <i class="fas fa-store" style="font-size:24px;color:#fff"></i>
+          </div>
+          <div style="flex:1;min-width:0;position:relative;z-index:1">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+              <span style="font-size:16px;font-weight:800;color:#fff;letter-spacing:.2px">Commerce</span>
+              <span style="font-size:9px;font-weight:800;color:#047857;background:#fff;padding:2px 7px;border-radius:20px;letter-spacing:.5px">NOUVEAU</span>
+            </div>
+            <div style="font-size:12px;color:rgba(255,255,255,.92);font-weight:500;line-height:1.35">Gérez vos boutiques, stock et ventes</div>
+          </div>
+          <i class="fas fa-chevron-right" style="color:#fff;font-size:14px;opacity:.9;position:relative;z-index:1"></i>
         </div>
 
         <!-- Barre budget -->
@@ -3303,10 +3326,14 @@ select.form-input option{background:var(--bg2)}
         <!-- ═══ RACCOURCIS RAPIDES ═══ -->
         <div style="margin-bottom:16px">
           <div style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Accès rapide</div>
-          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px">
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
             <div onclick="bnavSwitchExt('tontines')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;background:var(--card);border:1px solid var(--border);border-radius:14px;cursor:pointer;transition:all .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
               <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#ef4444);display:flex;align-items:center;justify-content:center;font-size:18px">💰</div>
               <span style="font-size:10px;font-weight:700;color:var(--text);text-align:center;line-height:1.2">Tontines</span>
+            </div>
+            <div onclick="mainMenuSwitch('commerce','Commerce','fa-store')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;background:var(--card);border:1px solid var(--border);border-radius:14px;cursor:pointer;transition:all .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+              <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#10b981,#047857);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff"><i class="fas fa-store"></i></div>
+              <span style="font-size:10px;font-weight:700;color:var(--text);text-align:center;line-height:1.2">Commerce</span>
             </div>
             <div onclick="dashSubTab('graphes')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;background:var(--card);border:1px solid var(--border);border-radius:14px;cursor:pointer;transition:all .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
               <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:18px">📊</div>
@@ -7963,6 +7990,7 @@ window.CM_DEBUG = CM;
 })();
 </script>
 <!-- ═══════════════ FIN MODULE COMMERCE ═══════════════ -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>

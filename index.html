@@ -3168,6 +3168,9 @@ select.form-input option{background:var(--bg2)}
         <div class="main-menu-item" id="mm-conseils" onclick="mainMenuSwitch('conseils','Conseils Financiers','fa-graduation-cap')">
           <i class="fas fa-graduation-cap"></i><span>Conseils</span>
         </div>
+        <div class="main-menu-item" id="mm-commerce" onclick="mainMenuSwitch('commerce','Commerce','fa-store')">
+          <i class="fas fa-store" style="color:#10b981"></i><span>Commerce</span>
+        </div>
       </div>
     </div>
 
@@ -4126,6 +4129,9 @@ select.form-input option{background:var(--bg2)}
     <div class="bnav-drawer-item" id="bnd-bibliotheque" onclick="switchTab('bibliotheque');closeBnavDrawer()">
       <i class="fas fa-book-open"></i>Bibliothèque
     </div>
+    <div class="bnav-drawer-item" id="bnd-commerce" onclick="switchTab('commerce');closeBnavDrawer()">
+      <i class="fas fa-store" style="color:#10b981"></i>Commerce
+    </div>
     <div class="bnav-drawer-item" onclick="doLogout();closeBnavDrawer()" style="background:rgba(239,68,68,.05);border-color:rgba(239,68,68,.15);">
       <i class="fas fa-right-from-bracket" style="color:var(--danger-l);"></i>Déconnexion
     </div>
@@ -4134,7 +4140,8 @@ select.form-input option{background:var(--bg2)}
 
 <script>
 // ══ MENU PRINCIPAL ══
-const ALL_MENU_TABS = ['dashboard','revenus','depenses','epargne','budget','salaire','historique','notes','plangestion','bibliotheque'];
+const ALL_MENU_TABS = ['dashboard','revenus','depenses','epargne','budget','salaire','historique','notes','plangestion','bibliotheque','conseils','commerce'];
+window.ALL_MENU_TABS = ALL_MENU_TABS;
 
 window.toggleMainMenu = function() {
   const d = document.getElementById('mainMenuDrawer');
@@ -4222,7 +4229,8 @@ function renderFxRates() {
 // Charger les taux au démarrage
 loadFxRates();
 const BNAV_MAIN = ['dashboard','historique','epargne'];
-const BNAV_DRAWER = ['revenus','depenses','budget','salaire','notes','plangestion'];
+const BNAV_DRAWER = ['revenus','depenses','budget','salaire','notes','plangestion','conseils','commerce'];
+window.BNAV_DRAWER = BNAV_DRAWER;
 
 window.bnavSwitch = function(tab) {
   // Onglets principaux
@@ -4261,8 +4269,8 @@ window.switchTab = function(tab) {
   if(moreBtn) moreBtn.classList.toggle('active',BNAV_DRAWER.includes(tab));
   // Sync main menu chips
   ALL_MENU_TABS.forEach(t => { const el=document.getElementById('mm-'+t); if(el) el.classList.toggle('active',t===tab); });
-  const _labels={dashboard:'Tableau de bord',revenus:'Revenus',depenses:'Dépenses',epargne:'Épargne',budget:'Budget',salaire:'Salaire',historique:'Historique',notes:'Notes',plangestion:'Plan de Gestion'};
-  const _icons={dashboard:'fa-chart-pie',revenus:'fa-arrow-down',depenses:'fa-arrow-up-from-bracket',epargne:'fa-piggy-bank',budget:'fa-bullseye',salaire:'fa-briefcase',historique:'fa-clock-rotate-left',notes:'fa-calendar-pen',plangestion:'fa-map-signs'};
+  const _labels={dashboard:'Tableau de bord',revenus:'Revenus',depenses:'Dépenses',epargne:'Épargne',budget:'Budget',salaire:'Salaire',historique:'Historique',notes:'Notes',plangestion:'Plan de Gestion',bibliotheque:'Bibliothèque Financière',conseils:'Conseils Financiers',commerce:'Commerce'};
+  const _icons={dashboard:'fa-chart-pie',revenus:'fa-arrow-down',depenses:'fa-arrow-up-from-bracket',epargne:'fa-piggy-bank',budget:'fa-bullseye',salaire:'fa-briefcase',historique:'fa-clock-rotate-left',notes:'fa-calendar-pen',plangestion:'fa-map-signs',bibliotheque:'fa-book-open',conseils:'fa-graduation-cap',commerce:'fa-store'};
   const chip=document.getElementById('activeTabName');
   const chipI=document.getElementById('activeTabChip')?.querySelector('i');
   if(chip&&_labels[tab]) chip.textContent=_labels[tab];
@@ -7955,6 +7963,7 @@ window.CM_DEBUG = CM;
 })();
 </script>
 <!-- ═══════════════ FIN MODULE COMMERCE ═══════════════ -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>

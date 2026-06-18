@@ -43,6 +43,8 @@ const firebaseConfig = {
 const fbApp = initializeApp(firebaseConfig);
 const auth  = getAuth(fbApp);
 const db    = getFirestore(fbApp);
+window.__AET_DB__ = db;
+window.__AET_FIRESTORE__ = { doc, getDoc, setDoc, serverTimestamp };
 
 // ══ CATÉGORIES COMPLÈTES ══
 const CATS = {
@@ -7120,7 +7122,7 @@ if ('serviceWorker' in navigator) {
       <input type="text" id="cmShopName" class="cm-modal-input" placeholder="Ex: Épicerie du quartier">
 
       <label class="cm-modal-label">Type</label>
-      <select id="cmShopType" class="cm-modal-input">
+      <select id="cmShopType" class="cm-modal-input" onchange="cmHandleShopTypeChange()">
         <option value="alimentaire">🛒 Alimentaire / Épicerie</option>
         <option value="bar">🍻 Bar / Buvette</option>
         <option value="restaurant">🍽️ Restaurant / Maquis</option>
@@ -7139,8 +7141,28 @@ if ('serviceWorker' in navigator) {
         <option value="autre">🏬 Autre</option>
       </select>
 
+      <div id="cmShopTypeOtherWrap" style="display:none">
+        <label class="cm-modal-label">Préciser le type</label>
+        <input type="text" id="cmShopTypeOther" class="cm-modal-input" placeholder="Ex: Librairie chrétienne, Atelier couture, Vente gaz...">
+      </div>
+
+      <div class="cm-modal-row">
+        <div>
+          <label class="cm-modal-label">Pays</label>
+          <select id="cmShopCountry" class="cm-modal-input" onchange="cmHandleCountryChange()">
+            <option value="">Choisir un pays</option>
+          </select>
+        </div>
+        <div>
+          <label class="cm-modal-label">Ville</label>
+          <select id="cmShopCity" class="cm-modal-input">
+            <option value="">Choisir une ville</option>
+          </select>
+        </div>
+      </div>
+
       <label class="cm-modal-label">Adresse (optionnel)</label>
-      <input type="text" id="cmShopAddr" class="cm-modal-input" placeholder="Quartier, ville…">
+      <input type="text" id="cmShopAddr" class="cm-modal-input" placeholder="Quartier, rue, repère…">
 
       <label class="cm-modal-label">Seuil d'alerte stock (par défaut)</label>
       <input type="number" id="cmShopSeuil" class="cm-modal-input" value="5" min="0">
@@ -7309,6 +7331,19 @@ const CM_SHOP_ICONS = {
   cyber:'fa-laptop',coiffure:'fa-scissors',station:'fa-gas-pump',autre:'fa-store'
 };
 
+const CM_SHOP_LABELS = {
+  alimentaire:'Alimentaire / Épicerie',bar:'Bar / Buvette',restaurant:'Restaurant / Maquis',boulangerie:'Boulangerie',
+  boucherie:'Boucherie / Poissonnerie',cosmetique:'Cosmétique / Beauté',vetement:'Vêtements / Mode',chaussure:'Chaussures',
+  pharmacie:'Pharmacie',quincaillerie:'Quincaillerie',electronique:'Électronique / Téléphonie',papeterie:'Papeterie / Librairie',
+  cyber:'Cybercafé',coiffure:'Salon de coiffure',station:'Station-service',autre:'Autre'
+};
+const CM_COUNTRY_CACHE_KEY = 'aet_cm_country_city_world_v1';
+const CM_COUNTRY_API = 'https://countriesnow.space/api/v0.1/countries';
+let CM_COUNTRIES = [];
+let CM_COUNTRY_LOAD_PROMISE = null;
+let cmDataStamp = 0;
+let cmRemoteSaveTimer = null;
+
 /* ── État ── */
 let CM = {
   shops: [],           // {id,name,type,addr,seuil,createdAt}
@@ -7324,29 +7359,95 @@ let CM = {
   editingShopId: null,
 };
 
-/* ── Persistance localStorage ── */
+/* ── Persistance locale + cloud ── */
 function cmKey(){
   const uid = (window.currentUser && window.currentUser.uid) || 'guest';
   return 'aet_commerce_' + uid;
+}
+function cmSnapshot(){
+  return {
+    shops: CM.shops,
+    articles: CM.articles,
+    mouvements: CM.mouvements,
+    currentShopId: CM.currentShopId,
+    updatedAtMs: Date.now(),
+    schemaVersion: 2
+  };
+}
+function cmApplyData(d){
+  CM.shops = Array.isArray(d?.shops) ? d.shops : [];
+  CM.articles = Array.isArray(d?.articles) ? d.articles : [];
+  CM.mouvements = Array.isArray(d?.mouvements) ? d.mouvements : [];
+  CM.currentShopId = d?.currentShopId || (CM.shops[0] && CM.shops[0].id) || null;
+  cmDataStamp = Number(d?.updatedAtMs || 0);
+}
+function cmSaveLocal(payload){
+  try{ localStorage.setItem(cmKey(), JSON.stringify(payload)); }
+  catch(e){ console.warn('CM save local',e); }
 }
 function cmLoad(){
   try{
     const raw = localStorage.getItem(cmKey());
     if(raw){
-      const d = JSON.parse(raw);
-      CM.shops = d.shops || [];
-      CM.articles = d.articles || [];
-      CM.mouvements = d.mouvements || [];
-      CM.currentShopId = d.currentShopId || (CM.shops[0] && CM.shops[0].id) || null;
+      cmApplyData(JSON.parse(raw));
+      return;
     }
   }catch(e){ console.warn('CM load',e); }
+  cmApplyData({ shops:[], articles:[], mouvements:[], currentShopId:null, updatedAtMs:0 });
+}
+async function cmLoadRemote(force=false){
+  const uid = (window.currentUser && window.currentUser.uid) || '';
+  const db = window.__AET_DB__;
+  const fs = window.__AET_FIRESTORE__;
+  if(!uid || !db || !fs) return;
+  try{
+    const snap = await fs.getDoc(fs.doc(db,'commerce_data',uid));
+    if(!snap.exists()){
+      if((CM.shops.length || CM.articles.length || CM.mouvements.length) && cmDataStamp>0) cmQueueRemoteSave();
+      return;
+    }
+    const remote = snap.data() || {};
+    const remoteStamp = Number(remote.updatedAtMs || 0);
+    if(remoteStamp >= cmDataStamp){
+      cmApplyData(remote);
+      cmSaveLocal({
+        shops: CM.shops,
+        articles: CM.articles,
+        mouvements: CM.mouvements,
+        currentShopId: CM.currentShopId,
+        updatedAtMs: cmDataStamp,
+        schemaVersion: 2
+      });
+      cmRenderAll();
+    } else if(force) {
+      cmQueueRemoteSave();
+    }
+  }catch(e){ console.warn('CM load remote', e); }
+}
+async function cmSaveRemote(){
+  const uid = (window.currentUser && window.currentUser.uid) || '';
+  const db = window.__AET_DB__;
+  const fs = window.__AET_FIRESTORE__;
+  if(!uid || !db || !fs) return;
+  const payload = cmSnapshot();
+  cmDataStamp = payload.updatedAtMs;
+  try{
+    await fs.setDoc(fs.doc(db,'commerce_data',uid), {
+      userId: uid,
+      ...payload,
+      updatedAt: fs.serverTimestamp()
+    }, { merge:true });
+  }catch(e){ console.warn('CM save remote', e); }
+}
+function cmQueueRemoteSave(){
+  clearTimeout(cmRemoteSaveTimer);
+  cmRemoteSaveTimer = setTimeout(()=>{ cmSaveRemote(); }, 350);
 }
 function cmSave(){
-  try{
-    localStorage.setItem(cmKey(), JSON.stringify({
-      shops: CM.shops, articles: CM.articles, mouvements: CM.mouvements, currentShopId: CM.currentShopId
-    }));
-  }catch(e){ console.warn('CM save',e); }
+  const payload = cmSnapshot();
+  cmDataStamp = payload.updatedAtMs;
+  cmSaveLocal(payload);
+  cmQueueRemoteSave();
 }
 
 /* ── Helpers ── */
@@ -7370,6 +7471,81 @@ function cmCurrentMonth(){ return new Date().toISOString().slice(0,7); }
 function cmGetShop(){ return CM.shops.find(s=>s.id===CM.currentShopId); }
 function cmGetShopArticles(){ return CM.articles.filter(a=>a.shopId===CM.currentShopId); }
 function cmGetShopMvts(){ return CM.mouvements.filter(m=>m.shopId===CM.currentShopId); }
+function cmGetShopTypeLabel(shop){
+  if(!shop) return '';
+  return (shop.customType && shop.type==='autre') ? shop.customType : (CM_SHOP_LABELS[shop.type] || shop.type || '');
+}
+function cmGetShopLocationLabel(shop){
+  if(!shop) return '';
+  return [shop.city, shop.country, shop.addr].filter(Boolean).join(' • ');
+}
+async function cmEnsureCountryData(){
+  if(CM_COUNTRIES.length) return CM_COUNTRIES;
+  try{
+    const cached = localStorage.getItem(CM_COUNTRY_CACHE_KEY);
+    if(cached){
+      CM_COUNTRIES = JSON.parse(cached);
+      if(Array.isArray(CM_COUNTRIES) && CM_COUNTRIES.length) return CM_COUNTRIES;
+    }
+  }catch(e){ console.warn('CM countries cache', e); }
+  if(!CM_COUNTRY_LOAD_PROMISE){
+    CM_COUNTRY_LOAD_PROMISE = fetch(CM_COUNTRY_API)
+      .then(r=>r.json())
+      .then(json=>{
+        const rows = Array.isArray(json?.data) ? json.data : [];
+        CM_COUNTRIES = rows.map(row=>({
+          country: row.country,
+          cities: Array.isArray(row.cities) ? row.cities.filter(Boolean).sort((a,b)=>a.localeCompare(b,'fr')) : []
+        })).filter(x=>x.country).sort((a,b)=>a.country.localeCompare(b.country,'fr'));
+        try{ localStorage.setItem(CM_COUNTRY_CACHE_KEY, JSON.stringify(CM_COUNTRIES)); }catch(e){}
+        return CM_COUNTRIES;
+      })
+      .catch(err=>{ console.warn('CM countries load', err); return CM_COUNTRIES; })
+      .finally(()=>{ CM_COUNTRY_LOAD_PROMISE = null; });
+  }
+  return CM_COUNTRY_LOAD_PROMISE;
+}
+function cmPopulateCountrySelect(selected=''){
+  const el = document.getElementById('cmShopCountry');
+  if(!el) return;
+  const opts = ['<option value="">Choisir un pays</option>']
+    .concat(CM_COUNTRIES.map(item=>`<option value="${item.country}" ${item.country===selected?'selected':''}>${item.country}</option>`));
+  el.innerHTML = opts.join('');
+}
+function cmPopulateCitySelect(country='', selected=''){
+  const el = document.getElementById('cmShopCity');
+  if(!el) return;
+  if(!country){
+    el.innerHTML = '<option value="">Choisir une ville</option>';
+    el.disabled = true;
+    return;
+  }
+  const match = CM_COUNTRIES.find(item=>item.country===country);
+  const cities = Array.isArray(match?.cities) ? match.cities : [];
+  el.disabled = false;
+  el.innerHTML = ['<option value="">Choisir une ville</option>']
+    .concat(cities.map(city=>`<option value="${city}" ${city===selected?'selected':''}>${city}</option>`)).join('');
+}
+window.cmHandleCountryChange = function(){
+  const country = document.getElementById('cmShopCountry')?.value || '';
+  cmPopulateCitySelect(country);
+};
+window.cmHandleShopTypeChange = function(){
+  const type = document.getElementById('cmShopType')?.value || '';
+  const wrap = document.getElementById('cmShopTypeOtherWrap');
+  const input = document.getElementById('cmShopTypeOther');
+  if(wrap) wrap.style.display = type==='autre' ? 'block' : 'none';
+  if(input && type!=='autre') input.value = '';
+};
+async function cmInitShopGeoFields(selectedCountry='', selectedCity=''){
+  const countryEl = document.getElementById('cmShopCountry');
+  const cityEl = document.getElementById('cmShopCity');
+  if(countryEl) countryEl.innerHTML = '<option value="">Chargement des pays...</option>';
+  if(cityEl){ cityEl.innerHTML = '<option value="">Choisir une ville</option>'; cityEl.disabled = true; }
+  await cmEnsureCountryData();
+  cmPopulateCountrySelect(selectedCountry);
+  cmPopulateCitySelect(selectedCountry, selectedCity);
+}
 
 /* ── Render: select boutique ── */
 function cmRenderShopSelect(){
@@ -7392,13 +7568,16 @@ window.cmSelectShop = function(id){
 };
 
 /* ── Modal Boutique ── */
-window.cmOpenShopModal = function(forceNew){
+window.cmOpenShopModal = async function(forceNew){
   CM.editingShopId = null;
   document.getElementById('cmShopModalTitle').textContent = 'Nouvelle boutique';
   document.getElementById('cmShopName').value = '';
   document.getElementById('cmShopType').value = 'alimentaire';
+  document.getElementById('cmShopTypeOther').value = '';
   document.getElementById('cmShopAddr').value = '';
   document.getElementById('cmShopSeuil').value = '5';
+  cmHandleShopTypeChange();
+  await cmInitShopGeoFields('', '');
   cmRenderShopList();
   if(window.openModal) window.openModal('cmShopModal');
 };
@@ -7410,11 +7589,12 @@ function cmRenderShopList(){
   c.innerHTML = '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px;">Mes boutiques (' + CM.shops.length + ')</div>' +
     CM.shops.map(s=>{
       const ic = CM_SHOP_ICONS[s.type]||'fa-store';
+      const sub = [cmGetShopTypeLabel(s), cmGetShopLocationLabel(s)].filter(Boolean).join(' • ');
       return `<div class="cm-card" style="cursor:default">
         <div class="cm-card-icon"><i class="fas ${ic}"></i></div>
         <div class="cm-card-body">
           <div class="cm-card-title">${s.name}</div>
-          <div class="cm-card-sub">${s.type}${s.addr?' • '+s.addr:''}</div>
+          <div class="cm-card-sub">${sub || '—'}</div>
         </div>
         <div style="display:flex;gap:6px;">
           <button class="cm-mini-btn" onclick="cmEditShop('${s.id}')"><i class="fas fa-pen"></i></button>
@@ -7424,15 +7604,18 @@ function cmRenderShopList(){
     }).join('');
 }
 
-window.cmEditShop = function(id){
+window.cmEditShop = async function(id){
   const s = CM.shops.find(x=>x.id===id);
   if(!s) return;
   CM.editingShopId = id;
   document.getElementById('cmShopModalTitle').textContent = 'Modifier boutique';
   document.getElementById('cmShopName').value = s.name;
   document.getElementById('cmShopType').value = s.type;
+  document.getElementById('cmShopTypeOther').value = s.customType||'';
   document.getElementById('cmShopAddr').value = s.addr||'';
   document.getElementById('cmShopSeuil').value = s.seuil||5;
+  cmHandleShopTypeChange();
+  await cmInitShopGeoFields(s.country||'', s.city||'');
 };
 
 window.cmDeleteShop = function(id){
@@ -7452,26 +7635,36 @@ window.cmDeleteShop = function(id){
 window.cmSaveShop = function(){
   const name = document.getElementById('cmShopName').value.trim();
   const type = document.getElementById('cmShopType').value;
+  const customType = document.getElementById('cmShopTypeOther').value.trim();
+  const country = document.getElementById('cmShopCountry').value;
+  const city = document.getElementById('cmShopCity').value;
   const addr = document.getElementById('cmShopAddr').value.trim();
   const seuil = parseInt(document.getElementById('cmShopSeuil').value)||5;
   if(!name){ cmToast('Nom de boutique requis','error'); return; }
+  if(type==='autre' && !customType){ cmToast('Précisez le type de boutique','error'); return; }
+  const payload = { name, type, customType:type==='autre'?customType:'', country, city, addr, seuil };
   if(CM.editingShopId){
     const s = CM.shops.find(x=>x.id===CM.editingShopId);
-    if(s){ s.name=name; s.type=type; s.addr=addr; s.seuil=seuil; }
+    if(s) Object.assign(s, payload);
     cmToast('Boutique modifiée','success');
   } else {
     const id = cmUID();
-    CM.shops.push({id,name,type,addr,seuil,createdAt:Date.now()});
+    CM.shops.push({ id, ...payload, createdAt:Date.now() });
     if(!CM.currentShopId) CM.currentShopId = id;
     cmToast('Boutique créée','success');
   }
   CM.editingShopId = null;
   cmSave();
   cmRenderAll();
-  // Reset form
   document.getElementById('cmShopName').value = '';
+  document.getElementById('cmShopType').value = 'alimentaire';
+  document.getElementById('cmShopTypeOther').value = '';
+  document.getElementById('cmShopCountry').value = '';
+  document.getElementById('cmShopCity').innerHTML = '<option value="">Choisir une ville</option>';
+  document.getElementById('cmShopCity').disabled = true;
   document.getElementById('cmShopAddr').value = '';
   document.getElementById('cmShopModalTitle').textContent = 'Nouvelle boutique';
+  cmHandleShopTypeChange();
   cmRenderShopList();
 };
 
@@ -7963,6 +8156,8 @@ function cmInit(){
   cmInjectMenu();
   cmHookSwitchTab();
   cmRenderAll();
+  cmEnsureCountryData();
+  if(window.currentUser && window.currentUser.uid) cmLoadRemote(true);
 }
 
 /* Re-init quand utilisateur se connecte (changement uid) */
@@ -7973,6 +8168,7 @@ setInterval(function(){
     _cmLastUid = uid;
     cmLoad();
     cmRenderAll();
+    if(uid) cmLoadRemote(true);
   }
   // S'assurer que l'item drawer est bien là
   if(!document.getElementById('bnd-commerce')) cmInjectMenu();

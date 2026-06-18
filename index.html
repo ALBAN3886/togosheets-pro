@@ -6871,5 +6871,1090 @@ if ('serviceWorker' in navigator) {
 }
 </script>
 
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<!-- ═════════════ MODULE COMMERCE (BOUTIQUES & STOCK) ═════════════════ -->
+<!-- ════════════════════════════════════════════════════════════════════ -->
+<style>
+/* ═══ Module Commerce — styles isolés (préfixe .cm-) ═══ */
+#tab-commerce{display:none;padding:0 16px 120px;animation:fade .3s}
+#tab-commerce.active{display:block}
+
+.cm-header{text-align:center;padding:24px 0 18px;}
+.cm-header h2{font-size:24px;font-weight:900;background:linear-gradient(135deg,#10b981,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px;}
+.cm-header p{font-size:13px;color:var(--dim);}
+
+.cm-shop-bar{display:flex;gap:8px;align-items:center;margin-bottom:14px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:10px 12px;}
+.cm-shop-bar select{flex:1;background:transparent;border:none;color:var(--text);font-weight:700;font-size:14px;outline:none;cursor:pointer;}
+.cm-shop-bar select option{background:#0f172a;color:#fff;}
+.cm-shop-bar button{background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;padding:8px 12px;font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px;}
+.cm-shop-bar .cm-shop-edit{background:rgba(148,163,184,.15);color:var(--text);}
+
+.cm-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:18px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:5px;}
+.cm-tab{padding:10px 8px;text-align:center;border-radius:10px;cursor:pointer;font-size:12px;font-weight:700;color:var(--muted);transition:all .15s;border:none;background:transparent;display:flex;flex-direction:column;align-items:center;gap:3px;}
+.cm-tab i{font-size:15px;}
+.cm-tab.active{background:linear-gradient(135deg,#10b981,#06b6d4);color:#fff;}
+
+.cm-section{display:none;}
+.cm-section.active{display:block;animation:fade .25s;}
+
+.cm-stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;}
+.cm-stat{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;}
+.cm-stat-label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:6px;}
+.cm-stat-value{font-size:18px;font-weight:900;color:var(--text);}
+.cm-stat.cm-rev .cm-stat-value{color:#10b981;}
+.cm-stat.cm-dep .cm-stat-value{color:#ef4444;}
+.cm-stat.cm-marge .cm-stat-value{color:#f59e0b;}
+.cm-stat.cm-stock .cm-stat-value{color:#06b6d4;}
+
+.cm-fab-add{position:fixed;bottom:96px;right:18px;width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;font-size:22px;box-shadow:0 8px 24px rgba(16,185,129,.4);cursor:pointer;z-index:500;display:none;align-items:center;justify-content:center;}
+.cm-fab-add:active{transform:scale(.92);}
+#tab-commerce.active ~ .cm-fab-add,.cm-fab-add.cm-show{display:flex;}
+
+.cm-empty{text-align:center;padding:40px 20px;color:var(--muted);}
+.cm-empty i{font-size:42px;opacity:.4;margin-bottom:10px;display:block;}
+
+.cm-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .15s;}
+.cm-card:active{transform:scale(.98);}
+.cm-card-icon{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#10b981,#06b6d4);display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;flex-shrink:0;}
+.cm-card-body{flex:1;min-width:0;}
+.cm-card-title{font-weight:800;font-size:14px;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.cm-card-sub{font-size:12px;color:var(--muted);}
+.cm-card-right{text-align:right;flex-shrink:0;}
+.cm-card-price{font-weight:900;font-size:14px;color:#10b981;}
+.cm-card-stock{font-size:11px;color:var(--muted);margin-top:2px;}
+.cm-card-stock.low{color:#ef4444;font-weight:700;}
+
+.cm-mvt-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;}
+.cm-mvt-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;}
+.cm-mvt-icon.vente{background:rgba(16,185,129,.15);color:#10b981;}
+.cm-mvt-icon.achat{background:rgba(239,68,68,.15);color:#ef4444;}
+.cm-mvt-body{flex:1;min-width:0;}
+.cm-mvt-title{font-weight:700;font-size:13px;color:var(--text);}
+.cm-mvt-sub{font-size:11px;color:var(--muted);}
+.cm-mvt-amt{font-weight:900;font-size:13px;}
+.cm-mvt-amt.vente{color:#10b981;}
+.cm-mvt-amt.achat{color:#ef4444;}
+
+.cm-modal-input{width:100%;padding:11px 14px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:10px;color:var(--text);font-size:14px;margin-bottom:10px;outline:none;font-family:inherit;}
+.cm-modal-input:focus{border-color:#10b981;}
+.cm-modal-label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;display:block;}
+.cm-modal-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.cm-modal-row > div{margin-bottom:10px;}
+
+.cm-type-pills{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;}
+.cm-type-pill{padding:12px;border-radius:12px;border:2px solid var(--border);background:transparent;color:var(--muted);font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:all .15s;}
+.cm-type-pill.active.vente{background:rgba(16,185,129,.12);border-color:#10b981;color:#10b981;}
+.cm-type-pill.active.achat{background:rgba(239,68,68,.12);border-color:#ef4444;color:#ef4444;}
+
+.cm-cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;max-height:180px;overflow-y:auto;}
+.cm-cat-chip{padding:8px 4px;border-radius:8px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;text-align:center;}
+.cm-cat-chip.active{background:linear-gradient(135deg,#10b981,#06b6d4);color:#fff;border-color:transparent;}
+
+.cm-art-picker{max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:6px;margin-bottom:10px;}
+.cm-art-picker-item{padding:10px;border-radius:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;}
+.cm-art-picker-item:hover{background:rgba(255,255,255,.04);}
+.cm-art-picker-item.selected{background:rgba(16,185,129,.12);border:1px solid #10b981;}
+
+.cm-search-box{position:relative;margin-bottom:12px;}
+.cm-search-box input{width:100%;padding:11px 14px 11px 38px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:12px;color:var(--text);outline:none;font-size:13px;}
+.cm-search-box i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--muted);}
+
+.cm-mini-btn{background:rgba(148,163,184,.12);border:none;color:var(--text);padding:6px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;}
+.cm-mini-btn.danger{background:rgba(239,68,68,.12);color:#ef4444;}
+
+.cm-filter-bar{display:flex;gap:6px;overflow-x:auto;margin-bottom:12px;padding-bottom:4px;}
+.cm-filter-bar::-webkit-scrollbar{display:none;}
+.cm-filter-chip{padding:6px 12px;border-radius:20px;background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+.cm-filter-chip.active{background:linear-gradient(135deg,#10b981,#06b6d4);color:#fff;border-color:transparent;}
+
+.cm-top-art{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
+.cm-top-art-name{font-weight:700;font-size:13px;}
+.cm-top-art-stat{font-size:11px;color:var(--muted);}
+.cm-top-art-val{font-weight:900;color:#10b981;font-size:13px;}
+
+@media(max-width:380px){
+  .cm-cat-grid{grid-template-columns:repeat(2,1fr);}
+  .cm-stat-grid{grid-template-columns:1fr 1fr;}
+}
+</style>
+
+<!-- ═══ TAB COMMERCE ═══ -->
+<div id="tab-commerce" class="tab-content">
+  <div class="cm-header">
+    <h2><i class="fas fa-store" style="margin-right:8px"></i>Commerce</h2>
+    <p>Gérez vos boutiques, stocks, achats et ventes</p>
+  </div>
+
+  <!-- Barre boutique -->
+  <div class="cm-shop-bar">
+    <i class="fas fa-shop" style="color:#10b981"></i>
+    <select id="cmShopSelect" onchange="cmSelectShop(this.value)"></select>
+    <button class="cm-shop-edit" onclick="cmOpenShopModal()" title="Gérer boutiques"><i class="fas fa-cog"></i></button>
+    <button onclick="cmOpenShopModal(true)" title="Nouvelle boutique"><i class="fas fa-plus"></i></button>
+  </div>
+
+  <!-- Onglets internes -->
+  <div class="cm-tabs">
+    <button class="cm-tab active" data-cmtab="resume" onclick="cmSwitch('resume')"><i class="fas fa-chart-line"></i><span>Résumé</span></button>
+    <button class="cm-tab" data-cmtab="articles" onclick="cmSwitch('articles')"><i class="fas fa-box"></i><span>Articles</span></button>
+    <button class="cm-tab" data-cmtab="mouvements" onclick="cmSwitch('mouvements')"><i class="fas fa-right-left"></i><span>Mouvements</span></button>
+    <button class="cm-tab" data-cmtab="stock" onclick="cmSwitch('stock')"><i class="fas fa-warehouse"></i><span>Stock</span></button>
+  </div>
+
+  <!-- ═══ Section : Résumé ═══ -->
+  <div class="cm-section active" id="cm-sec-resume">
+    <div class="cm-stat-grid">
+      <div class="cm-stat cm-rev">
+        <div class="cm-stat-label"><i class="fas fa-arrow-trend-up"></i> Ventes (mois)</div>
+        <div class="cm-stat-value" id="cmStatVentes">0</div>
+      </div>
+      <div class="cm-stat cm-dep">
+        <div class="cm-stat-label"><i class="fas fa-arrow-trend-down"></i> Achats (mois)</div>
+        <div class="cm-stat-value" id="cmStatAchats">0</div>
+      </div>
+      <div class="cm-stat cm-marge">
+        <div class="cm-stat-label"><i class="fas fa-percent"></i> Bénéfice</div>
+        <div class="cm-stat-value" id="cmStatMarge">0</div>
+      </div>
+      <div class="cm-stat cm-stock">
+        <div class="cm-stat-label"><i class="fas fa-cubes"></i> Valeur stock</div>
+        <div class="cm-stat-value" id="cmStatStock">0</div>
+      </div>
+    </div>
+
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px;">
+      <div style="font-size:13px;font-weight:800;margin-bottom:10px;display:flex;align-items:center;gap:8px;">
+        <i class="fas fa-trophy" style="color:#f59e0b"></i> Top articles vendus
+      </div>
+      <div id="cmTopArticles"><div class="cm-empty" style="padding:20px 10px;"><i class="fas fa-inbox"></i>Aucune vente pour l'instant</div></div>
+    </div>
+
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;">
+      <div style="font-size:13px;font-weight:800;margin-bottom:10px;display:flex;align-items:center;gap:8px;">
+        <i class="fas fa-triangle-exclamation" style="color:#ef4444"></i> Alertes stock bas
+      </div>
+      <div id="cmAlerts"><div class="cm-empty" style="padding:20px 10px;"><i class="fas fa-check-circle" style="color:#10b981"></i>Tous les stocks sont OK</div></div>
+    </div>
+  </div>
+
+  <!-- ═══ Section : Articles ═══ -->
+  <div class="cm-section" id="cm-sec-articles">
+    <div class="cm-search-box">
+      <i class="fas fa-search"></i>
+      <input type="text" id="cmArtSearch" placeholder="Rechercher un article…" oninput="cmRenderArticles()">
+    </div>
+    <div class="cm-filter-bar" id="cmCatFilter"></div>
+    <div id="cmArticlesList"></div>
+    <button style="width:100%;padding:14px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:12px;font-weight:800;cursor:pointer;margin-top:8px;" onclick="cmOpenArticleModal()">
+      <i class="fas fa-plus"></i> Nouvel article
+    </button>
+  </div>
+
+  <!-- ═══ Section : Mouvements ═══ -->
+  <div class="cm-section" id="cm-sec-mouvements">
+    <div class="cm-filter-bar">
+      <div class="cm-filter-chip active" data-mvt="all" onclick="cmFilterMvt('all',this)">Tous</div>
+      <div class="cm-filter-chip" data-mvt="vente" onclick="cmFilterMvt('vente',this)">Ventes</div>
+      <div class="cm-filter-chip" data-mvt="achat" onclick="cmFilterMvt('achat',this)">Achats</div>
+    </div>
+    <div id="cmMvtList"></div>
+    <button style="width:100%;padding:14px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:12px;font-weight:800;cursor:pointer;margin-top:8px;" onclick="cmOpenMvtModal()">
+      <i class="fas fa-plus"></i> Nouveau mouvement
+    </button>
+  </div>
+
+  <!-- ═══ Section : Stock ═══ -->
+  <div class="cm-section" id="cm-sec-stock">
+    <div class="cm-search-box">
+      <i class="fas fa-search"></i>
+      <input type="text" id="cmStockSearch" placeholder="Rechercher…" oninput="cmRenderStock()">
+    </div>
+    <div id="cmStockList"></div>
+  </div>
+</div>
+
+<!-- ═══ Modal : Boutique ═══ -->
+<div class="modal-overlay" id="cmShopModal">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-header">
+      <h3><i class="fas fa-shop" style="color:#10b981;margin-right:8px"></i><span id="cmShopModalTitle">Nouvelle boutique</span></h3>
+      <button class="modal-close" onclick="closeModal('cmShopModal')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <label class="cm-modal-label">Nom de la boutique</label>
+      <input type="text" id="cmShopName" class="cm-modal-input" placeholder="Ex: Épicerie du quartier">
+
+      <label class="cm-modal-label">Type</label>
+      <select id="cmShopType" class="cm-modal-input">
+        <option value="alimentaire">🛒 Alimentaire / Épicerie</option>
+        <option value="bar">🍻 Bar / Buvette</option>
+        <option value="restaurant">🍽️ Restaurant / Maquis</option>
+        <option value="boulangerie">🥖 Boulangerie</option>
+        <option value="boucherie">🥩 Boucherie / Poissonnerie</option>
+        <option value="cosmetique">💄 Cosmétique / Beauté</option>
+        <option value="vetement">👕 Vêtements / Mode</option>
+        <option value="chaussure">👟 Chaussures</option>
+        <option value="pharmacie">💊 Pharmacie</option>
+        <option value="quincaillerie">🔧 Quincaillerie</option>
+        <option value="electronique">📱 Électronique / Téléphonie</option>
+        <option value="papeterie">📚 Papeterie / Librairie</option>
+        <option value="cyber">💻 Cybercafé</option>
+        <option value="coiffure">💇 Salon de coiffure</option>
+        <option value="station">⛽ Station-service</option>
+        <option value="autre">🏬 Autre</option>
+      </select>
+
+      <label class="cm-modal-label">Adresse (optionnel)</label>
+      <input type="text" id="cmShopAddr" class="cm-modal-input" placeholder="Quartier, ville…">
+
+      <label class="cm-modal-label">Seuil d'alerte stock (par défaut)</label>
+      <input type="number" id="cmShopSeuil" class="cm-modal-input" value="5" min="0">
+
+      <div id="cmShopList" style="margin-top:14px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('cmShopModal')">Annuler</button>
+      <button class="btn-save" id="cmShopSaveBtn" onclick="cmSaveShop()" style="background:linear-gradient(135deg,#10b981,#059669);">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Modal : Article ═══ -->
+<div class="modal-overlay" id="cmArticleModal">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-header">
+      <h3><i class="fas fa-box" style="color:#10b981;margin-right:8px"></i><span id="cmArtModalTitle">Nouvel article</span></h3>
+      <button class="modal-close" onclick="closeModal('cmArticleModal')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <label class="cm-modal-label">Nom de l'article *</label>
+      <input type="text" id="cmArtName" class="cm-modal-input" placeholder="Ex: Bière 33cl, Riz parfumé 5kg…">
+
+      <label class="cm-modal-label">Catégorie *</label>
+      <div class="cm-cat-grid" id="cmArtCatGrid"></div>
+
+      <div class="cm-modal-row">
+        <div>
+          <label class="cm-modal-label">Prix d'achat (unitaire)</label>
+          <input type="number" id="cmArtPrixA" class="cm-modal-input" step="0.01" min="0" placeholder="0">
+        </div>
+        <div>
+          <label class="cm-modal-label">Prix de vente *</label>
+          <input type="number" id="cmArtPrixV" class="cm-modal-input" step="0.01" min="0" placeholder="0">
+        </div>
+      </div>
+
+      <div class="cm-modal-row">
+        <div>
+          <label class="cm-modal-label">Stock initial</label>
+          <input type="number" id="cmArtStock" class="cm-modal-input" step="1" min="0" value="0">
+        </div>
+        <div>
+          <label class="cm-modal-label">Unité</label>
+          <select id="cmArtUnit" class="cm-modal-input">
+            <option value="pcs">Pièce</option>
+            <option value="kg">Kilogramme (kg)</option>
+            <option value="g">Gramme (g)</option>
+            <option value="L">Litre (L)</option>
+            <option value="cl">Centilitre (cl)</option>
+            <option value="m">Mètre (m)</option>
+            <option value="paq">Paquet</option>
+            <option value="carton">Carton</option>
+            <option value="sac">Sac</option>
+            <option value="bout">Bouteille</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="cm-modal-row">
+        <div>
+          <label class="cm-modal-label">Seuil alerte stock bas</label>
+          <input type="number" id="cmArtSeuil" class="cm-modal-input" step="1" min="0" value="5">
+        </div>
+        <div>
+          <label class="cm-modal-label">Code-barre (optionnel)</label>
+          <input type="text" id="cmArtCode" class="cm-modal-input" placeholder="—">
+        </div>
+      </div>
+
+      <label class="cm-modal-label">Note (optionnel)</label>
+      <textarea id="cmArtNote" class="cm-modal-input" rows="2" placeholder="Description, fournisseur…"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" id="cmArtDelBtn" onclick="cmDeleteArticle()" style="display:none;background:rgba(239,68,68,.12);color:#ef4444"><i class="fas fa-trash"></i> Supprimer</button>
+      <button class="btn-cancel" onclick="closeModal('cmArticleModal')">Annuler</button>
+      <button class="btn-save" onclick="cmSaveArticle()" style="background:linear-gradient(135deg,#10b981,#059669);">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Modal : Mouvement (Achat/Vente) ═══ -->
+<div class="modal-overlay" id="cmMvtModal">
+  <div class="modal-box" style="max-width:520px">
+    <div class="modal-header">
+      <h3><i class="fas fa-right-left" style="color:#10b981;margin-right:8px"></i>Nouveau mouvement</h3>
+      <button class="modal-close" onclick="closeModal('cmMvtModal')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="cm-type-pills">
+        <button class="cm-type-pill vente active" id="cmMvtPillV" onclick="cmSetMvtType('vente')"><i class="fas fa-cash-register"></i> Vente</button>
+        <button class="cm-type-pill achat" id="cmMvtPillA" onclick="cmSetMvtType('achat')"><i class="fas fa-truck-ramp-box"></i> Achat</button>
+      </div>
+
+      <label class="cm-modal-label">Article *</label>
+      <div class="cm-search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" id="cmMvtArtSearch" placeholder="Rechercher article…" oninput="cmRenderMvtPicker()">
+      </div>
+      <div class="cm-art-picker" id="cmMvtArtPicker"></div>
+
+      <div class="cm-modal-row">
+        <div>
+          <label class="cm-modal-label">Quantité *</label>
+          <input type="number" id="cmMvtQte" class="cm-modal-input" step="0.01" min="0.01" value="1" oninput="cmUpdateMvtTotal()">
+        </div>
+        <div>
+          <label class="cm-modal-label">Prix unitaire</label>
+          <input type="number" id="cmMvtPrix" class="cm-modal-input" step="0.01" min="0" oninput="cmUpdateMvtTotal()">
+        </div>
+      </div>
+
+      <div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:12px;padding:12px;margin-bottom:10px;text-align:center;">
+        <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.6px">Total</div>
+        <div id="cmMvtTotal" style="font-size:22px;font-weight:900;color:#10b981;margin-top:2px;">0</div>
+      </div>
+
+      <label class="cm-modal-label">Date</label>
+      <input type="date" id="cmMvtDate" class="cm-modal-input">
+
+      <label class="cm-modal-label">Client / Fournisseur (optionnel)</label>
+      <input type="text" id="cmMvtPerson" class="cm-modal-input" placeholder="—">
+
+      <label class="cm-modal-label">Note (optionnel)</label>
+      <textarea id="cmMvtNote" class="cm-modal-input" rows="2" placeholder="—"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('cmMvtModal')">Annuler</button>
+      <button class="btn-save" onclick="cmSaveMvt()" style="background:linear-gradient(135deg,#10b981,#059669);">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════════════════════ */
+/* ═══════════════ MODULE COMMERCE — LOGIQUE ═════════════════════════ */
+/* ════════════════════════════════════════════════════════════════════ */
+(function(){
+'use strict';
+
+/* ── Catégories d'articles selon type de boutique ── */
+const CM_CATS = {
+  alimentaire: ['Céréales/Riz','Farine/Pâtes','Huile','Sucre/Sel','Conserves','Lait/Œufs','Fruits','Légumes','Épices','Surgelés','Snacks','Biscuits','Bonbons','Eau','Jus','Sodas','Pain','Autre'],
+  bar: ['Bière','Vin','Liqueur/Whisky','Champagne','Sucrerie/Soda','Eau','Jus','Énergie (Red Bull)','Cigarettes','Apéritifs','Cocktail','Glace','Snack','Autre'],
+  restaurant: ['Plat principal','Entrée','Dessert','Boisson','Viande','Poisson','Riz/Garniture','Sauce','Légumes','Épices','Gaz/Charbon','Vaisselle','Autre'],
+  boulangerie: ['Pain','Viennoiserie','Pâtisserie','Gâteau','Farine','Sucre','Beurre','Levure','Œufs','Lait','Emballage','Autre'],
+  boucherie: ['Bœuf','Poulet','Mouton','Porc','Poisson','Crustacés','Charcuterie','Abats','Œufs','Emballage','Autre'],
+  cosmetique: ['Crème visage','Crème corps','Savon','Parfum','Maquillage','Shampoing','Huile capillaire','Mèche/Tresse','Vernis','Accessoires','Autre'],
+  vetement: ['Homme','Femme','Enfant','Bébé','Sous-vêtement','Pagne/Tissu','Sac','Ceinture','Bijou','Montre','Autre'],
+  chaussure: ['Homme','Femme','Enfant','Sport','Sandale','Talon','Botte','Cirage','Lacets','Autre'],
+  pharmacie: ['Antidouleur','Antibiotique','Vitamine','Premiers soins','Hygiène','Pansement','Sirop','Sérum','Préservatif','Bébé','Autre'],
+  quincaillerie: ['Outil','Visserie','Peinture','Plomberie','Électricité','Ciment','Fer','Bois','Carrelage','Serrurerie','Autre'],
+  electronique: ['Téléphone','Accessoire tél','Chargeur','Écouteur','Batterie','Carte SIM','Recharge','Ordinateur','TV','Câble','Autre'],
+  papeterie: ['Cahier','Stylo','Crayon','Livre scolaire','Sac','Trousse','Calculatrice','Papier','Encre','Jeu','Autre'],
+  cyber: ['Impression N&B','Impression couleur','Photocopie','Scan','Saisie','Internet (h)','Recharge tél','Clé USB','CD/DVD','Autre'],
+  coiffure: ['Coupe homme','Coupe femme','Tresse','Teinture','Mèche','Soin','Maquillage','Manucure','Produit','Autre'],
+  station: ['Essence','Gasoil','Pétrole','Huile moteur','Lubrifiant','Gaz','Lave-glace','Boisson','Snack','Autre'],
+  autre: ['Article','Service','Autre']
+};
+
+const CM_SHOP_ICONS = {
+  alimentaire:'fa-cart-shopping',bar:'fa-beer-mug-empty',restaurant:'fa-utensils',boulangerie:'fa-bread-slice',
+  boucherie:'fa-drumstick-bite',cosmetique:'fa-spray-can-sparkles',vetement:'fa-shirt',chaussure:'fa-shoe-prints',
+  pharmacie:'fa-pills',quincaillerie:'fa-screwdriver-wrench',electronique:'fa-mobile-screen',papeterie:'fa-book',
+  cyber:'fa-laptop',coiffure:'fa-scissors',station:'fa-gas-pump',autre:'fa-store'
+};
+
+/* ── État ── */
+let CM = {
+  shops: [],           // {id,name,type,addr,seuil,createdAt}
+  articles: [],        // {id,shopId,name,cat,prixA,prixV,stock,unit,seuil,code,note,createdAt}
+  mouvements: [],      // {id,shopId,artId,artName,type,qte,prix,total,date,person,note,createdAt}
+  currentShopId: null,
+  currentSection: 'resume',
+  currentMvtType: 'vente',
+  currentMvtArtId: null,
+  currentMvtFilter: 'all',
+  currentCatFilter: 'all',
+  editingArtId: null,
+  editingShopId: null,
+};
+
+/* ── Persistance localStorage ── */
+function cmKey(){
+  const uid = (window.currentUser && window.currentUser.uid) || 'guest';
+  return 'aet_commerce_' + uid;
+}
+function cmLoad(){
+  try{
+    const raw = localStorage.getItem(cmKey());
+    if(raw){
+      const d = JSON.parse(raw);
+      CM.shops = d.shops || [];
+      CM.articles = d.articles || [];
+      CM.mouvements = d.mouvements || [];
+      CM.currentShopId = d.currentShopId || (CM.shops[0] && CM.shops[0].id) || null;
+    }
+  }catch(e){ console.warn('CM load',e); }
+}
+function cmSave(){
+  try{
+    localStorage.setItem(cmKey(), JSON.stringify({
+      shops: CM.shops, articles: CM.articles, mouvements: CM.mouvements, currentShopId: CM.currentShopId
+    }));
+  }catch(e){ console.warn('CM save',e); }
+}
+
+/* ── Helpers ── */
+function cmFmt(n){
+  const v = Number(n||0);
+  if(typeof window.fmt === 'function'){ try{ return window.fmt(v); }catch(e){} }
+  return v.toLocaleString('fr-FR',{maximumFractionDigits:2});
+}
+function cmCur(){
+  return (window.activeCurrency || localStorage.getItem('aet_currency') || 'XOF');
+}
+function cmAmt(n){ return cmFmt(n) + ' ' + cmCur(); }
+function cmUID(){ return 'cm_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function cmToast(msg, type){
+  if(typeof window.toast === 'function'){ window.toast(msg, type||'success'); return; }
+  alert(msg);
+}
+function cmToday(){ return new Date().toISOString().slice(0,10); }
+function cmMonthOf(dateStr){ return (dateStr||'').slice(0,7); }
+function cmCurrentMonth(){ return new Date().toISOString().slice(0,7); }
+function cmGetShop(){ return CM.shops.find(s=>s.id===CM.currentShopId); }
+function cmGetShopArticles(){ return CM.articles.filter(a=>a.shopId===CM.currentShopId); }
+function cmGetShopMvts(){ return CM.mouvements.filter(m=>m.shopId===CM.currentShopId); }
+
+/* ── Render: select boutique ── */
+function cmRenderShopSelect(){
+  const sel = document.getElementById('cmShopSelect');
+  if(!sel) return;
+  if(CM.shops.length===0){
+    sel.innerHTML = '<option value="">— Aucune boutique —</option>';
+    return;
+  }
+  sel.innerHTML = CM.shops.map(s=>{
+    const emoji = ({alimentaire:'🛒',bar:'🍻',restaurant:'🍽️',boulangerie:'🥖',boucherie:'🥩',cosmetique:'💄',vetement:'👕',chaussure:'👟',pharmacie:'💊',quincaillerie:'🔧',electronique:'📱',papeterie:'📚',cyber:'💻',coiffure:'💇',station:'⛽',autre:'🏬'})[s.type]||'🏬';
+    return `<option value="${s.id}" ${s.id===CM.currentShopId?'selected':''}>${emoji} ${s.name}</option>`;
+  }).join('');
+}
+
+window.cmSelectShop = function(id){
+  CM.currentShopId = id;
+  cmSave();
+  cmRenderAll();
+};
+
+/* ── Modal Boutique ── */
+window.cmOpenShopModal = function(forceNew){
+  CM.editingShopId = null;
+  document.getElementById('cmShopModalTitle').textContent = 'Nouvelle boutique';
+  document.getElementById('cmShopName').value = '';
+  document.getElementById('cmShopType').value = 'alimentaire';
+  document.getElementById('cmShopAddr').value = '';
+  document.getElementById('cmShopSeuil').value = '5';
+  cmRenderShopList();
+  if(window.openModal) window.openModal('cmShopModal');
+};
+
+function cmRenderShopList(){
+  const c = document.getElementById('cmShopList');
+  if(!c) return;
+  if(CM.shops.length===0){ c.innerHTML=''; return; }
+  c.innerHTML = '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:14px 0 8px;">Mes boutiques (' + CM.shops.length + ')</div>' +
+    CM.shops.map(s=>{
+      const ic = CM_SHOP_ICONS[s.type]||'fa-store';
+      return `<div class="cm-card" style="cursor:default">
+        <div class="cm-card-icon"><i class="fas ${ic}"></i></div>
+        <div class="cm-card-body">
+          <div class="cm-card-title">${s.name}</div>
+          <div class="cm-card-sub">${s.type}${s.addr?' • '+s.addr:''}</div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="cm-mini-btn" onclick="cmEditShop('${s.id}')"><i class="fas fa-pen"></i></button>
+          <button class="cm-mini-btn danger" onclick="cmDeleteShop('${s.id}')"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>`;
+    }).join('');
+}
+
+window.cmEditShop = function(id){
+  const s = CM.shops.find(x=>x.id===id);
+  if(!s) return;
+  CM.editingShopId = id;
+  document.getElementById('cmShopModalTitle').textContent = 'Modifier boutique';
+  document.getElementById('cmShopName').value = s.name;
+  document.getElementById('cmShopType').value = s.type;
+  document.getElementById('cmShopAddr').value = s.addr||'';
+  document.getElementById('cmShopSeuil').value = s.seuil||5;
+};
+
+window.cmDeleteShop = function(id){
+  const s = CM.shops.find(x=>x.id===id);
+  if(!s) return;
+  const nArt = CM.articles.filter(a=>a.shopId===id).length;
+  const nMvt = CM.mouvements.filter(m=>m.shopId===id).length;
+  if(!confirm(`Supprimer la boutique "${s.name}" ?\n${nArt} article(s) et ${nMvt} mouvement(s) seront aussi supprimés.`)) return;
+  CM.shops = CM.shops.filter(x=>x.id!==id);
+  CM.articles = CM.articles.filter(a=>a.shopId!==id);
+  CM.mouvements = CM.mouvements.filter(m=>m.shopId!==id);
+  if(CM.currentShopId===id) CM.currentShopId = CM.shops[0] ? CM.shops[0].id : null;
+  cmSave(); cmRenderAll(); cmRenderShopList();
+  cmToast('Boutique supprimée','success');
+};
+
+window.cmSaveShop = function(){
+  const name = document.getElementById('cmShopName').value.trim();
+  const type = document.getElementById('cmShopType').value;
+  const addr = document.getElementById('cmShopAddr').value.trim();
+  const seuil = parseInt(document.getElementById('cmShopSeuil').value)||5;
+  if(!name){ cmToast('Nom de boutique requis','error'); return; }
+  if(CM.editingShopId){
+    const s = CM.shops.find(x=>x.id===CM.editingShopId);
+    if(s){ s.name=name; s.type=type; s.addr=addr; s.seuil=seuil; }
+    cmToast('Boutique modifiée','success');
+  } else {
+    const id = cmUID();
+    CM.shops.push({id,name,type,addr,seuil,createdAt:Date.now()});
+    if(!CM.currentShopId) CM.currentShopId = id;
+    cmToast('Boutique créée','success');
+  }
+  CM.editingShopId = null;
+  cmSave();
+  cmRenderAll();
+  // Reset form
+  document.getElementById('cmShopName').value = '';
+  document.getElementById('cmShopAddr').value = '';
+  document.getElementById('cmShopModalTitle').textContent = 'Nouvelle boutique';
+  cmRenderShopList();
+};
+
+/* ── Switch sous-onglets ── */
+window.cmSwitch = function(sec){
+  CM.currentSection = sec;
+  document.querySelectorAll('#tab-commerce .cm-tab').forEach(b=>{
+    b.classList.toggle('active', b.dataset.cmtab===sec);
+  });
+  document.querySelectorAll('#tab-commerce .cm-section').forEach(s=>{
+    s.classList.toggle('active', s.id==='cm-sec-'+sec);
+  });
+  cmRenderSection();
+};
+
+function cmRenderSection(){
+  if(!cmGetShop()){
+    ['cmStatVentes','cmStatAchats','cmStatMarge','cmStatStock'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent='—'; });
+    const emptyMsg = '<div class="cm-empty"><i class="fas fa-store-slash"></i>Créez d\'abord une boutique<br><button onclick="cmOpenShopModal(true)" style="margin-top:12px;padding:10px 18px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;"><i class="fas fa-plus"></i> Nouvelle boutique</button></div>';
+    ['cmArticlesList','cmMvtList','cmStockList','cmTopArticles','cmAlerts'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el) el.innerHTML = emptyMsg;
+    });
+    return;
+  }
+  if(CM.currentSection==='resume') cmRenderResume();
+  if(CM.currentSection==='articles') cmRenderArticles();
+  if(CM.currentSection==='mouvements') cmRenderMvts();
+  if(CM.currentSection==='stock') cmRenderStock();
+}
+
+/* ── Résumé ── */
+function cmRenderResume(){
+  const month = cmCurrentMonth();
+  const mvts = cmGetShopMvts().filter(m=>cmMonthOf(m.date)===month);
+  const ventes = mvts.filter(m=>m.type==='vente').reduce((a,b)=>a+(b.total||0),0);
+  const achats = mvts.filter(m=>m.type==='achat').reduce((a,b)=>a+(b.total||0),0);
+  const marge = ventes - achats;
+  const stockVal = cmGetShopArticles().reduce((a,b)=>a+((b.prixA||b.prixV||0)*(b.stock||0)),0);
+
+  document.getElementById('cmStatVentes').textContent = cmAmt(ventes);
+  document.getElementById('cmStatAchats').textContent = cmAmt(achats);
+  document.getElementById('cmStatMarge').textContent = cmAmt(marge);
+  document.getElementById('cmStatStock').textContent = cmAmt(stockVal);
+
+  // Top articles vendus
+  const top = {};
+  cmGetShopMvts().filter(m=>m.type==='vente').forEach(m=>{
+    if(!top[m.artId]) top[m.artId] = {name:m.artName, qte:0, total:0};
+    top[m.artId].qte += (m.qte||0);
+    top[m.artId].total += (m.total||0);
+  });
+  const topArr = Object.values(top).sort((a,b)=>b.total-a.total).slice(0,5);
+  const topC = document.getElementById('cmTopArticles');
+  if(topArr.length===0){
+    topC.innerHTML = '<div class="cm-empty" style="padding:20px 10px;"><i class="fas fa-inbox"></i>Aucune vente pour l\'instant</div>';
+  } else {
+    topC.innerHTML = topArr.map((t,i)=>`
+      <div class="cm-top-art">
+        <div>
+          <div class="cm-top-art-name">#${i+1} ${t.name}</div>
+          <div class="cm-top-art-stat">${cmFmt(t.qte)} unités vendues</div>
+        </div>
+        <div class="cm-top-art-val">${cmAmt(t.total)}</div>
+      </div>`).join('');
+  }
+
+  // Alertes stock bas
+  const shop = cmGetShop();
+  const seuilDef = (shop && shop.seuil) || 5;
+  const lows = cmGetShopArticles().filter(a=>(a.stock||0) <= (a.seuil!==undefined?a.seuil:seuilDef));
+  const alC = document.getElementById('cmAlerts');
+  if(lows.length===0){
+    alC.innerHTML = '<div class="cm-empty" style="padding:20px 10px;"><i class="fas fa-check-circle" style="color:#10b981"></i>Tous les stocks sont OK</div>';
+  } else {
+    alC.innerHTML = lows.map(a=>`
+      <div class="cm-top-art" style="border-left:3px solid #ef4444;">
+        <div>
+          <div class="cm-top-art-name">${a.name}</div>
+          <div class="cm-top-art-stat">Stock: ${cmFmt(a.stock||0)} ${a.unit||''} (seuil: ${a.seuil||seuilDef})</div>
+        </div>
+        <button class="cm-mini-btn" onclick="cmQuickRestock('${a.id}')" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;"><i class="fas fa-plus"></i> Achat</button>
+      </div>`).join('');
+  }
+}
+
+window.cmQuickRestock = function(artId){
+  CM.currentMvtType = 'achat';
+  CM.currentMvtArtId = artId;
+  cmOpenMvtModal();
+};
+
+/* ── Articles ── */
+function cmRenderCatFilter(){
+  const shop = cmGetShop();
+  if(!shop) return;
+  const cats = ['all', ...(CM_CATS[shop.type]||CM_CATS.autre)];
+  const c = document.getElementById('cmCatFilter');
+  c.innerHTML = cats.map(cat=>`
+    <div class="cm-filter-chip ${cat===CM.currentCatFilter?'active':''}" onclick="cmSetCatFilter('${cat}')">${cat==='all'?'Tous':cat}</div>
+  `).join('');
+}
+
+window.cmSetCatFilter = function(cat){
+  CM.currentCatFilter = cat;
+  cmRenderArticles();
+};
+
+window.cmRenderArticles = function(){
+  cmRenderCatFilter();
+  const c = document.getElementById('cmArticlesList');
+  if(!c) return;
+  const search = (document.getElementById('cmArtSearch').value||'').toLowerCase();
+  let arts = cmGetShopArticles();
+  if(CM.currentCatFilter && CM.currentCatFilter!=='all') arts = arts.filter(a=>a.cat===CM.currentCatFilter);
+  if(search) arts = arts.filter(a=>a.name.toLowerCase().includes(search) || (a.code||'').toLowerCase().includes(search));
+  arts.sort((a,b)=>a.name.localeCompare(b.name));
+  if(arts.length===0){
+    c.innerHTML = '<div class="cm-empty"><i class="fas fa-box-open"></i>Aucun article<br><small>Cliquez sur "Nouvel article" pour commencer</small></div>';
+    return;
+  }
+  const shop = cmGetShop();
+  const seuilDef = (shop && shop.seuil) || 5;
+  c.innerHTML = arts.map(a=>{
+    const seuil = a.seuil!==undefined?a.seuil:seuilDef;
+    const low = (a.stock||0) <= seuil;
+    return `<div class="cm-card" onclick="cmEditArticle('${a.id}')">
+      <div class="cm-card-icon"><i class="fas fa-box"></i></div>
+      <div class="cm-card-body">
+        <div class="cm-card-title">${a.name}</div>
+        <div class="cm-card-sub">${a.cat} • ${cmAmt(a.prixV)}</div>
+      </div>
+      <div class="cm-card-right">
+        <div class="cm-card-price">${cmAmt(a.prixV)}</div>
+        <div class="cm-card-stock ${low?'low':''}">${cmFmt(a.stock||0)} ${a.unit||''} ${low?'<i class="fas fa-triangle-exclamation"></i>':''}</div>
+      </div>
+    </div>`;
+  }).join('');
+};
+
+/* ── Modal Article ── */
+window.cmOpenArticleModal = function(){
+  if(!cmGetShop()){ cmToast('Créez d\'abord une boutique','error'); return; }
+  CM.editingArtId = null;
+  document.getElementById('cmArtModalTitle').textContent = 'Nouvel article';
+  document.getElementById('cmArtName').value = '';
+  document.getElementById('cmArtPrixA').value = '';
+  document.getElementById('cmArtPrixV').value = '';
+  document.getElementById('cmArtStock').value = '0';
+  document.getElementById('cmArtUnit').value = 'pcs';
+  const shop = cmGetShop();
+  document.getElementById('cmArtSeuil').value = (shop && shop.seuil) || 5;
+  document.getElementById('cmArtCode').value = '';
+  document.getElementById('cmArtNote').value = '';
+  document.getElementById('cmArtDelBtn').style.display = 'none';
+  cmRenderArtCatGrid();
+  if(window.openModal) window.openModal('cmArticleModal');
+};
+
+window.cmEditArticle = function(id){
+  const a = CM.articles.find(x=>x.id===id);
+  if(!a) return;
+  CM.editingArtId = id;
+  document.getElementById('cmArtModalTitle').textContent = 'Modifier article';
+  document.getElementById('cmArtName').value = a.name;
+  document.getElementById('cmArtPrixA').value = a.prixA||'';
+  document.getElementById('cmArtPrixV').value = a.prixV||'';
+  document.getElementById('cmArtStock').value = a.stock||0;
+  document.getElementById('cmArtUnit').value = a.unit||'pcs';
+  document.getElementById('cmArtSeuil').value = a.seuil!==undefined?a.seuil:5;
+  document.getElementById('cmArtCode').value = a.code||'';
+  document.getElementById('cmArtNote').value = a.note||'';
+  document.getElementById('cmArtDelBtn').style.display = '';
+  cmRenderArtCatGrid(a.cat);
+  if(window.openModal) window.openModal('cmArticleModal');
+};
+
+function cmRenderArtCatGrid(selected){
+  const shop = cmGetShop();
+  if(!shop) return;
+  const cats = CM_CATS[shop.type]||CM_CATS.autre;
+  const sel = selected || cats[0];
+  const c = document.getElementById('cmArtCatGrid');
+  c.innerHTML = cats.map(cat=>`<button type="button" class="cm-cat-chip ${cat===sel?'active':''}" data-cat="${cat}" onclick="cmPickArtCat(this)">${cat}</button>`).join('');
+}
+
+window.cmPickArtCat = function(btn){
+  document.querySelectorAll('#cmArtCatGrid .cm-cat-chip').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+};
+
+window.cmSaveArticle = function(){
+  const name = document.getElementById('cmArtName').value.trim();
+  const catEl = document.querySelector('#cmArtCatGrid .cm-cat-chip.active');
+  const cat = catEl ? catEl.dataset.cat : '';
+  const prixA = parseFloat(document.getElementById('cmArtPrixA').value)||0;
+  const prixV = parseFloat(document.getElementById('cmArtPrixV').value)||0;
+  const stock = parseFloat(document.getElementById('cmArtStock').value)||0;
+  const unit = document.getElementById('cmArtUnit').value;
+  const seuil = parseInt(document.getElementById('cmArtSeuil').value)||0;
+  const code = document.getElementById('cmArtCode').value.trim();
+  const note = document.getElementById('cmArtNote').value.trim();
+
+  if(!name){ cmToast('Nom requis','error'); return; }
+  if(!cat){ cmToast('Choisissez une catégorie','error'); return; }
+  if(prixV<=0){ cmToast('Prix de vente requis','error'); return; }
+
+  if(CM.editingArtId){
+    const a = CM.articles.find(x=>x.id===CM.editingArtId);
+    if(a){
+      Object.assign(a,{name,cat,prixA,prixV,stock,unit,seuil,code,note});
+      cmToast('Article modifié','success');
+    }
+  } else {
+    CM.articles.push({
+      id: cmUID(), shopId: CM.currentShopId,
+      name,cat,prixA,prixV,stock,unit,seuil,code,note,
+      createdAt: Date.now()
+    });
+    cmToast('Article ajouté','success');
+  }
+  CM.editingArtId = null;
+  cmSave();
+  if(window.closeModal) window.closeModal('cmArticleModal');
+  cmRenderAll();
+};
+
+window.cmDeleteArticle = function(){
+  if(!CM.editingArtId) return;
+  const a = CM.articles.find(x=>x.id===CM.editingArtId);
+  if(!a) return;
+  if(!confirm(`Supprimer l'article "${a.name}" ?\n(Les mouvements liés seront conservés)`)) return;
+  CM.articles = CM.articles.filter(x=>x.id!==CM.editingArtId);
+  CM.editingArtId = null;
+  cmSave();
+  if(window.closeModal) window.closeModal('cmArticleModal');
+  cmRenderAll();
+  cmToast('Article supprimé','success');
+};
+
+/* ── Mouvements ── */
+window.cmFilterMvt = function(f, el){
+  CM.currentMvtFilter = f;
+  document.querySelectorAll('#cm-sec-mouvements .cm-filter-chip').forEach(c=>c.classList.remove('active'));
+  if(el) el.classList.add('active');
+  cmRenderMvts();
+};
+
+function cmRenderMvts(){
+  const c = document.getElementById('cmMvtList');
+  if(!c) return;
+  let mvts = cmGetShopMvts().slice();
+  if(CM.currentMvtFilter!=='all') mvts = mvts.filter(m=>m.type===CM.currentMvtFilter);
+  mvts.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  if(mvts.length===0){
+    c.innerHTML = '<div class="cm-empty"><i class="fas fa-right-left"></i>Aucun mouvement<br><small>Enregistrez votre première vente ou achat</small></div>';
+    return;
+  }
+  c.innerHTML = mvts.map(m=>{
+    const ic = m.type==='vente'?'fa-cash-register':'fa-truck-ramp-box';
+    const sign = m.type==='vente'?'+':'−';
+    return `<div class="cm-mvt-card" onclick="cmDeleteMvt('${m.id}')">
+      <div class="cm-mvt-icon ${m.type}"><i class="fas ${ic}"></i></div>
+      <div class="cm-mvt-body">
+        <div class="cm-mvt-title">${m.artName} <span style="color:var(--muted);font-weight:500">×${cmFmt(m.qte)}</span></div>
+        <div class="cm-mvt-sub">${m.date}${m.person?' • '+m.person:''}${m.note?' • '+m.note:''}</div>
+      </div>
+      <div class="cm-mvt-amt ${m.type}">${sign}${cmAmt(m.total)}</div>
+    </div>`;
+  }).join('');
+}
+
+window.cmDeleteMvt = function(id){
+  const m = CM.mouvements.find(x=>x.id===id);
+  if(!m) return;
+  if(!confirm(`Supprimer ce mouvement ?\n${m.type==='vente'?'Vente':'Achat'} : ${m.artName} ×${m.qte}\nLe stock sera réajusté.`)) return;
+  // Annuler effet stock
+  const art = CM.articles.find(a=>a.id===m.artId);
+  if(art){
+    if(m.type==='vente') art.stock = (art.stock||0) + (m.qte||0);
+    else art.stock = (art.stock||0) - (m.qte||0);
+  }
+  CM.mouvements = CM.mouvements.filter(x=>x.id!==id);
+  cmSave();
+  cmRenderAll();
+  cmToast('Mouvement supprimé','success');
+};
+
+/* ── Modal Mouvement ── */
+window.cmOpenMvtModal = function(){
+  if(!cmGetShop()){ cmToast('Créez d\'abord une boutique','error'); return; }
+  if(cmGetShopArticles().length===0){ cmToast('Créez d\'abord un article','error'); return; }
+  document.getElementById('cmMvtArtSearch').value = '';
+  document.getElementById('cmMvtQte').value = '1';
+  document.getElementById('cmMvtPrix').value = '';
+  document.getElementById('cmMvtDate').value = cmToday();
+  document.getElementById('cmMvtPerson').value = '';
+  document.getElementById('cmMvtNote').value = '';
+  cmSetMvtType(CM.currentMvtType||'vente');
+  cmRenderMvtPicker();
+  cmUpdateMvtTotal();
+  if(window.openModal) window.openModal('cmMvtModal');
+};
+
+window.cmSetMvtType = function(t){
+  CM.currentMvtType = t;
+  document.getElementById('cmMvtPillV').classList.toggle('active', t==='vente');
+  document.getElementById('cmMvtPillA').classList.toggle('active', t==='achat');
+  // Mettre à jour prix par défaut
+  if(CM.currentMvtArtId){
+    const a = CM.articles.find(x=>x.id===CM.currentMvtArtId);
+    if(a){
+      document.getElementById('cmMvtPrix').value = t==='vente'?(a.prixV||''):(a.prixA||a.prixV||'');
+      cmUpdateMvtTotal();
+    }
+  }
+};
+
+window.cmRenderMvtPicker = function(){
+  const c = document.getElementById('cmMvtArtPicker');
+  const s = (document.getElementById('cmMvtArtSearch').value||'').toLowerCase();
+  let arts = cmGetShopArticles();
+  if(s) arts = arts.filter(a=>a.name.toLowerCase().includes(s) || (a.code||'').toLowerCase().includes(s));
+  arts.sort((a,b)=>a.name.localeCompare(b.name));
+  if(arts.length===0){
+    c.innerHTML = '<div class="cm-empty" style="padding:20px 10px"><i class="fas fa-box-open"></i>Aucun article</div>';
+    return;
+  }
+  c.innerHTML = arts.map(a=>{
+    const sel = a.id===CM.currentMvtArtId?'selected':'';
+    return `<div class="cm-art-picker-item ${sel}" onclick="cmPickMvtArt('${a.id}')">
+      <div>
+        <div style="font-weight:700;font-size:13px;">${a.name}</div>
+        <div style="font-size:11px;color:var(--muted)">${a.cat} • Stock: ${cmFmt(a.stock||0)} ${a.unit||''}</div>
+      </div>
+      <div style="font-weight:700;color:#10b981;font-size:13px;">${cmAmt(a.prixV)}</div>
+    </div>`;
+  }).join('');
+};
+
+window.cmPickMvtArt = function(id){
+  CM.currentMvtArtId = id;
+  const a = CM.articles.find(x=>x.id===id);
+  if(a){
+    document.getElementById('cmMvtPrix').value = CM.currentMvtType==='vente'?(a.prixV||''):(a.prixA||a.prixV||'');
+    cmUpdateMvtTotal();
+  }
+  cmRenderMvtPicker();
+};
+
+window.cmUpdateMvtTotal = function(){
+  const qte = parseFloat(document.getElementById('cmMvtQte').value)||0;
+  const prix = parseFloat(document.getElementById('cmMvtPrix').value)||0;
+  document.getElementById('cmMvtTotal').textContent = cmAmt(qte*prix);
+};
+
+window.cmSaveMvt = function(){
+  if(!CM.currentMvtArtId){ cmToast('Choisissez un article','error'); return; }
+  const a = CM.articles.find(x=>x.id===CM.currentMvtArtId);
+  if(!a){ cmToast('Article introuvable','error'); return; }
+  const qte = parseFloat(document.getElementById('cmMvtQte').value)||0;
+  const prix = parseFloat(document.getElementById('cmMvtPrix').value)||0;
+  const date = document.getElementById('cmMvtDate').value || cmToday();
+  const person = document.getElementById('cmMvtPerson').value.trim();
+  const note = document.getElementById('cmMvtNote').value.trim();
+  if(qte<=0){ cmToast('Quantité invalide','error'); return; }
+  if(prix<0){ cmToast('Prix invalide','error'); return; }
+
+  // Vérification stock pour vente
+  if(CM.currentMvtType==='vente' && qte > (a.stock||0)){
+    if(!confirm(`⚠️ Stock insuffisant !\nStock actuel: ${cmFmt(a.stock||0)} ${a.unit||''}\nVente demandée: ${cmFmt(qte)}\n\nContinuer quand même ?`)) return;
+  }
+
+  // Mise à jour stock
+  if(CM.currentMvtType==='vente') a.stock = (a.stock||0) - qte;
+  else a.stock = (a.stock||0) + qte;
+
+  // Si achat : mettre à jour prix d'achat moyen
+  if(CM.currentMvtType==='achat' && prix>0) a.prixA = prix;
+
+  CM.mouvements.push({
+    id: cmUID(), shopId: CM.currentShopId, artId: a.id, artName: a.name,
+    type: CM.currentMvtType, qte, prix, total: qte*prix,
+    date, person, note, createdAt: Date.now()
+  });
+
+  CM.currentMvtArtId = null;
+  cmSave();
+  if(window.closeModal) window.closeModal('cmMvtModal');
+  cmRenderAll();
+  cmToast(CM.currentMvtType==='vente'?'✓ Vente enregistrée':'✓ Achat enregistré','success');
+};
+
+/* ── Stock ── */
+function cmRenderStock(){
+  const c = document.getElementById('cmStockList');
+  if(!c) return;
+  const s = (document.getElementById('cmStockSearch').value||'').toLowerCase();
+  let arts = cmGetShopArticles();
+  if(s) arts = arts.filter(a=>a.name.toLowerCase().includes(s));
+  // Trier par stock croissant (les plus bas d'abord)
+  arts.sort((a,b)=>(a.stock||0)-(b.stock||0));
+  if(arts.length===0){
+    c.innerHTML = '<div class="cm-empty"><i class="fas fa-warehouse"></i>Aucun article en stock</div>';
+    return;
+  }
+  const shop = cmGetShop();
+  const seuilDef = (shop && shop.seuil) || 5;
+  c.innerHTML = arts.map(a=>{
+    const seuil = a.seuil!==undefined?a.seuil:seuilDef;
+    const low = (a.stock||0) <= seuil;
+    const val = (a.prixA||a.prixV||0)*(a.stock||0);
+    return `<div class="cm-card" onclick="cmEditArticle('${a.id}')">
+      <div class="cm-card-icon" style="background:${low?'linear-gradient(135deg,#ef4444,#dc2626)':'linear-gradient(135deg,#10b981,#06b6d4)'}"><i class="fas fa-cubes"></i></div>
+      <div class="cm-card-body">
+        <div class="cm-card-title">${a.name}</div>
+        <div class="cm-card-sub">${a.cat} • ${cmAmt(val)} en stock</div>
+      </div>
+      <div class="cm-card-right">
+        <div class="cm-card-price" style="color:${low?'#ef4444':'#10b981'}">${cmFmt(a.stock||0)} ${a.unit||''}</div>
+        <div class="cm-card-stock">${low?'⚠️ Stock bas':'OK'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+window.cmRenderStock = cmRenderStock;
+
+/* ── Render global ── */
+function cmRenderAll(){
+  cmRenderShopSelect();
+  cmRenderSection();
+}
+
+/* ════ INTÉGRATION AVEC L'APP ════ */
+
+/* Ajouter "Commerce" dans le drawer "Plus" */
+function cmInjectMenu(){
+  const drawer = document.querySelector('#bnavDrawer .bnav-drawer-grid');
+  if(!drawer || document.getElementById('bnd-commerce')) return;
+  const item = document.createElement('div');
+  item.className = 'bnav-drawer-item';
+  item.id = 'bnd-commerce';
+  item.innerHTML = '<i class="fas fa-store" style="color:#10b981"></i>Commerce';
+  item.onclick = function(){
+    if(window.switchTab) window.switchTab('commerce');
+    if(window.closeBnavDrawer) window.closeBnavDrawer();
+  };
+  // Insérer avant le bouton Déconnexion (dernier élément)
+  const logoutBtn = drawer.querySelector('[onclick*="doLogout"]');
+  if(logoutBtn) drawer.insertBefore(item, logoutBtn);
+  else drawer.appendChild(item);
+}
+
+/* Hook switchTab pour gérer notre onglet */
+function cmHookSwitchTab(){
+  if(window._cmHooked) return;
+  const orig = window.switchTab;
+  if(typeof orig !== 'function') return;
+  window.switchTab = function(tab){
+    orig.apply(this, arguments);
+    const t = document.getElementById('tab-commerce');
+    if(t){
+      if(tab==='commerce'){
+        t.classList.add('active');
+        t.style.display = 'block';
+        // Cacher les autres tab-content au cas où
+        document.querySelectorAll('.tab-content').forEach(c=>{
+          if(c.id!=='tab-commerce') c.classList.remove('active');
+        });
+        // Cacher le filtre mois et résumé global s'ils sont visibles
+        cmRenderAll();
+      } else {
+        t.classList.remove('active');
+        t.style.display = '';
+      }
+    }
+    // Sync drawer item
+    const dItem = document.getElementById('bnd-commerce');
+    if(dItem) dItem.classList.toggle('active', tab==='commerce');
+    const moreBtn = document.getElementById('bnav-more');
+    if(moreBtn && tab==='commerce') moreBtn.classList.add('active');
+  };
+  window._cmHooked = true;
+}
+
+/* Init au chargement */
+function cmInit(){
+  cmLoad();
+  cmInjectMenu();
+  cmHookSwitchTab();
+  cmRenderAll();
+}
+
+/* Re-init quand utilisateur se connecte (changement uid) */
+let _cmLastUid = null;
+setInterval(function(){
+  const uid = (window.currentUser && window.currentUser.uid) || null;
+  if(uid !== _cmLastUid){
+    _cmLastUid = uid;
+    cmLoad();
+    cmRenderAll();
+  }
+  // S'assurer que l'item drawer est bien là
+  if(!document.getElementById('bnd-commerce')) cmInjectMenu();
+}, 1500);
+
+if(document.readyState==='loading'){
+  document.addEventListener('DOMContentLoaded', cmInit);
+} else {
+  setTimeout(cmInit, 100);
+}
+
+// Exposer pour debug
+window.CM_DEBUG = CM;
+
+})();
+</script>
+<!-- ═══════════════ FIN MODULE COMMERCE ═══════════════ -->
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>

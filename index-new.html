@@ -1,0 +1,1868 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<title>AET MonBudget — Gestion Financière Personnelle</title>
+<meta name="description" content="Application de gestion financière personnelle — Alban Eloh Technology"/>
+<meta name="theme-color" content="#2563eb"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="icon" href="icon-192.png" type="image/png"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="AET MonBudget"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<style>
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+/* 🎨 SYSTÈME DE DESIGN MODERNE - AET MonBudget */
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Thème par défaut (Dark) */
+  --theme: 'dark';
+  
+  /* COULEURS PRIMAIRES */
+  --primary: #2563eb;
+  --primary-dark: #1e40af;
+  --primary-light: #3b82f6;
+  --primary-lighter: #60a5fa;
+  --secondary: #10b981;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --danger-light: #fca5a5;
+  --success: #10b981;
+  
+  /* FOND & TEXTE - DARK MODE */
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --text-primary: #f1f5f9;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
+  --text-disabled: #64748b;
+  --border-color: #334155;
+  --border-light: #475569;
+  
+  /* NAVIGATION */
+  --nav-width: 280px;
+  --nav-width-collapsed: 80px;
+  --nav-bg: linear-gradient(135deg, #1e293b 0%, #1a202c 100%);
+  
+  /* TIMING */
+  --transition-fast: 0.15s;
+  --transition-normal: 0.3s;
+  --transition-slow: 0.5s;
+  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  
+  /* SHADOWS */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.2);
+  --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.3);
+  
+  /* RADIUS */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+}
+
+/* LIGHT MODE */
+html.light-mode {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-tertiary: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #64748b;
+  --text-disabled: #cbd5e1;
+  --border-color: #e2e8f0;
+  --border-light: #cbd5e1;
+  --nav-bg: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+/* 🎯 RÉINITIALISATION & BASE */
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  display: grid;
+  grid-template-columns: var(--nav-width) 1fr;
+  grid-template-rows: 1fr auto;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: 'Poppins', sans-serif;
+  transition: background var(--transition-normal) var(--ease-smooth);
+}
+
+body.nav-collapsed {
+  grid-template-columns: var(--nav-width-collapsed) 1fr;
+}
+
+/* RESPONSIVE LAYOUT */
+@media (max-width: 768px) {
+  body {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+  }
+  
+  body.nav-collapsed {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+/* 📱 MOBILE HEADER */
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+
+.mobile-header {
+  display: none;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  padding: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  grid-column: 1;
+  grid-row: 0;
+  grid-area: unset;
+}
+
+@media (max-width: 768px) {
+  .mobile-header {
+    display: flex;
+  }
+  
+  body {
+    grid-template-rows: auto 1fr auto;
+  }
+}
+
+.mobile-header h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.mobile-menu-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0.625rem;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-normal) var(--ease-smooth);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mobile-menu-btn:active {
+  background: rgba(37, 99, 235, 0.2);
+  transform: scale(0.95);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+/* 🧭 SIDEBAR MODERNE */
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+
+.navbar-modern {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  background: var(--nav-bg);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: all var(--transition-normal) var(--ease-smooth);
+  z-index: 1000;
+  box-shadow: var(--shadow-lg);
+}
+
+@media (max-width: 768px) {
+  .navbar-modern {
+    position: fixed;
+    left: -100%;
+    top: 0;
+    width: 75vw;
+    max-width: 320px;
+    height: 100vh;
+    border-right: 2px solid var(--border-color);
+    transition: left var(--transition-normal) var(--ease-smooth);
+    grid-row: 1;
+    top: 60px;
+    height: calc(100vh - 60px);
+  }
+  
+  .navbar-modern.active {
+    left: 0;
+    box-shadow: var(--shadow-xl);
+  }
+}
+
+/* SCROLLBAR PERSONNALISÉE */
+.navbar-modern::-webkit-scrollbar {
+  width: 6px;
+}
+
+.navbar-modern::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.navbar-modern::-webkit-scrollbar-thumb {
+  background: var(--border-light);
+  border-radius: 3px;
+  transition: background var(--transition-normal);
+}
+
+.navbar-modern::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+/* 🏠 HEADER SIDEBAR */
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+
+.navbar-header {
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 70px;
+  gap: 1rem;
+}
+
+.navbar-header .logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  transition: transform var(--transition-normal) var(--ease-smooth);
+}
+
+.navbar-header .logo:hover {
+  transform: scale(1.05);
+}
+
+.navbar-header .logo i {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.navbar-header .logo-text {
+  transition: opacity var(--transition-normal) var(--ease-smooth);
+}
+
+body.nav-collapsed .navbar-header .logo-text {
+  display: none;
+}
+
+.navbar-header .toggle-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.5rem;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-normal) var(--ease-smooth);
+  display: none;
+  width: 40px;
+  height: 40px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+@media (min-width: 769px) {
+  .navbar-header .toggle-btn {
+    display: flex;
+  }
+}
+
+.navbar-header .toggle-btn:hover {
+  background: rgba(37, 99, 235, 0.2);
+  border-color: var(--primary);
+}
+
+.navbar-header .toggle-btn:active {
+  transform: rotate(90deg);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+/* 📋 CONTENU SIDEBAR */
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+
+.navbar-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 0;
+}
+
+.nav-section {
+  margin-bottom: 1.5rem;
+}
+
+.nav-section-title {
+  padding: 0.75rem 1.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  transition: opacity var(--transition-normal) var(--ease-smooth);
+  opacity: 1;
+}
+
+body.nav-collapsed .nav-section-title {
+  opacity: 0;
+  display: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+/* 🔗 ITEMS NAVIGATION */
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.875rem 1.5rem;
+  margin: 0.25rem 0.5rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-normal) var(--ease-smooth);
+  cursor: pointer;
+  position: relative;
+  font-weight: 500;
+  border-left: 3px solid transparent;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.nav-item:hover {
+  background: rgba(37, 99, 235, 0.1);
+  color: var(--primary);
+  transform: translateX(4px);
+}
+
+.nav-item.active {
+  background: rgba(37, 99, 235, 0.15);
+  color: var(--primary);
+  border-left-color: var(--primary);
+  font-weight: 600;
+}
+
+.nav-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--primary), var(--primary-light));
+  border-radius: 0 3px 3px 0;
+}
+
+.nav-item i {
+  font-size: 1.25rem;
+  min-width: 1.5rem;
+  text-align: center;
+  transition: all var(--transition-normal) var(--ease-smooth);
+}
+
+.nav-item:hover i {
+  transform: translateX(2px) rotate(5deg);
+}
+
+.nav-item-label {
+  flex: 1;
+  transition: opacity var(--transition-normal) var(--ease-smooth);
+}
+
+body.nav-collapsed .nav-item-label {
+  display: none;
+}
+
+/* BADGE */
+.nav-badge {
+  background: var(--danger);
+  color: white;
+  border-radius: 9999px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  margin-left: auto;
+  transition: all var(--transition-normal) var(--ease-smooth);
+  animation: pulse-badge 2s infinite;
+}
+
+@keyframes pulse-badge {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+body.nav-collapsed .nav-badge {
+  opacity: 0;
+  display: none;
+}
+
+/* DROPDOWN */
+.nav-dropdown {
+  position: relative;
+}
+
+.nav-dropdown-toggle::after {
+  content: '▸';
+  transition: transform var(--transition-normal) var(--ease-bounce);
+  font-size: 0.75rem;
+  margin-left: auto;
+}
+
+.nav-dropdown.expanded .nav-dropdown-toggle::after {
+  transform: rotate(90deg);
+}
+
+.nav-submenu {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height var(--transition-normal) var(--ease-smooth);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.nav-dropdown.expanded .nav-submenu {
+  max-height: 500px;
+}
+
+.nav-submenu .nav-item {
+  padding: 0.75rem 1.5rem 0.75rem 3.5rem;
+  font-size: 0.95rem;
+  border-left: none;
+  margin: 0.125rem 0.5rem;
+}
+
+.nav-submenu .nav-item.active {
+  border-left-color: var(--primary);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+/* 👤 FOOTER SIDEBAR */
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+
+.navbar-footer {
+  border-top: 1px solid var(--border-color);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.05);
+  transition: all var(--transition-normal) var(--ease-smooth);
+  cursor: pointer;
+  user-select: none;
+}
+
+.user-profile:hover {
+  background: rgba(37, 99, 235, 0.15);
+  transform: translateY(-2px);
+}
+
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 1rem;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-md);
+}
+
+.user-info {
+  flex: 1;
+  transition: opacity var(--transition-normal) var(--ease-smooth);
+}
+
+body.nav-collapsed .user-info {
+  display: none;
+}
+
+.user-name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.user-email {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: var(--danger);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-normal) var(--ease-smooth);
+  font-weight: 500;
+  margin-top: 0.5rem;
+  width: 100%;
+}
+
+.logout-btn:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: var(--danger);
+}
+
+.logout-btn span {
+  transition: opacity var(--transition-normal);
+}
+
+body.nav-collapsed .logout-btn span {
+  display: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+/* 📄 CONTENU PRINCIPAL */
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+
+.main-content {
+  grid-column: 2;
+  grid-row: 1;
+  overflow-y: auto;
+  padding: 2rem;
+  background: var(--bg-primary);
+  transition: all var(--transition-normal) var(--ease-smooth);
+}
+
+@media (max-width: 768px) {
+  .main-content {
+    grid-column: 1;
+    grid-row: 2;
+    padding: 1.5rem;
+    padding-bottom: 5rem;
+  }
+}
+
+/* LAZY LOADING ANIMATION */
+.main-content {
+  animation: fadeInUp 0.5s var(--ease-smooth);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ═══════════���═══════════════════════════════════════════════════════════════════ */
+/* 📱 BOTTOM NAVIGATION */
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+
+.bottom-nav-modern {
+  grid-column: 1 / 3;
+  grid-row: 2;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  display: none;
+  gap: 0;
+  justify-content: space-around;
+  align-items: center;
+  padding: 0.5rem 0;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+}
+
+@media (max-width: 768px) {
+  .bottom-nav-modern {
+    grid-column: 1;
+    display: flex;
+    grid-row: 3;
+  }
+}
+
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: all var(--transition-normal) var(--ease-smooth);
+  cursor: pointer;
+  position: relative;
+  border-top: 3px solid transparent;
+  flex: 1;
+  text-align: center;
+  user-select: none;
+}
+
+.bottom-nav-item:active {
+  transform: scale(0.95);
+}
+
+.bottom-nav-item:hover,
+.bottom-nav-item.active {
+  color: var(--primary);
+  background: rgba(37, 99, 235, 0.1);
+  border-top-color: var(--primary);
+}
+
+.bottom-nav-item i {
+  font-size: 1.5rem;
+  transition: transform var(--transition-normal) var(--ease-smooth);
+}
+
+.bottom-nav-item.active i {
+  transform: scale(1.1) translateY(-2px);
+}
+
+.bottom-nav-item span {
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+/* 🎭 OVERLAY & MODAL */
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+
+.nav-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  backdrop-filter: blur(2px);
+  animation: fadeIn 0.3s var(--ease-smooth);
+}
+
+@media (max-width: 768px) {
+  .nav-overlay.active {
+    display: block;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+/* 🎨 THEME TOGGLE */
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-normal) var(--ease-smooth);
+  font-size: 1.25rem;
+}
+
+.theme-toggle-btn:hover {
+  background: rgba(37, 99, 235, 0.2);
+  border-color: var(--primary);
+}
+
+.theme-toggle-btn:active {
+  transform: rotate(180deg) scale(0.95);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+/* ⚡ OPTIMISATIONS PERFORMANCE */
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+
+/* Réduction des animations sur batterie faible */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Optimisation pour faible luminosité */
+@media (prefers-color-scheme: light) {
+  html:not(.light-mode) {
+    color-scheme: dark;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+/* 📐 UTILITAIRES */
+/* ═══════════════════════════════════════════════════════════════════════════════ */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Selection styling */
+::selection {
+  background: var(--primary);
+  color: white;
+}
+
+::-moz-selection {
+  background: var(--primary);
+  color: white;
+}
+</style>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════ -->
+<!-- 🎬 FIREBASE & CONFIGURATION -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════ -->
+
+<script type="module">
+import { initializeApp }                                         from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword,
+         createUserWithEmailAndPassword, signOut, updateProfile,
+         sendPasswordResetEmail, EmailAuthProvider,
+         reauthenticateWithCredential, updatePassword }          from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, addDoc, doc, deleteDoc,
+         updateDoc, query, where, orderBy, onSnapshot, getDocs,
+         serverTimestamp, setDoc, getDoc, limit }               from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyB5hpkRlFZ9HFRRbpQlvpHwMNDja37Nr2s",
+  authDomain:        "gestion-salaire-9d3e9.firebaseapp.com",
+  databaseURL:       "https://gestion-salaire-9d3e9-default-rtdb.firebaseio.com",
+  projectId:         "gestion-salaire-9d3e9",
+  storageBucket:     "gestion-salaire-9d3e9.firebasestorage.app",
+  messagingSenderId: "1090226725870",
+  appId:             "1:1090226725870:web:d16c25eb46397b3f2de4ff",
+  measurementId:     "G-MJCB7XVY6D"
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const auth  = getAuth(fbApp);
+const db    = getFirestore(fbApp);
+window.__AET_DB__ = db;
+window.__AET_FIRESTORE__ = { doc, getDoc, setDoc, serverTimestamp };
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🎨 SYSTÈME DE THÈME MODERNE
+// ══════════════════════════════════════════════════════════════════════════════
+
+class ThemeManager {
+  constructor() {
+    this.currentTheme = localStorage.getItem('aet_theme') || 'dark';
+    this.init();
+  }
+
+  init() {
+    this.applyTheme(this.currentTheme);
+    this.createThemeToggle();
+  }
+
+  applyTheme(theme) {
+    this.currentTheme = theme;
+    if (theme === 'light') {
+      document.documentElement.classList.add('light-mode');
+    } else {
+      document.documentElement.classList.remove('light-mode');
+    }
+    localStorage.setItem('aet_theme', theme);
+    this.updateThemeIcon();
+  }
+
+  toggle() {
+    this.applyTheme(this.currentTheme === 'dark' ? 'light' : 'dark');
+  }
+
+  updateThemeIcon() {
+    const btn = document.getElementById('themeToggle');
+    if (btn) {
+      btn.innerHTML = this.currentTheme === 'dark' 
+        ? '<i class="fas fa-sun"></i>' 
+        : '<i class="fas fa-moon"></i>';
+    }
+  }
+
+  createThemeToggle() {
+    const header = document.querySelector('.navbar-header');
+    if (header && !document.getElementById('themeToggle')) {
+      const btn = document.createElement('button');
+      btn.id = 'themeToggle';
+      btn.className = 'theme-toggle-btn';
+      btn.setAttribute('aria-label', 'Changer le thème');
+      btn.onclick = () => this.toggle();
+      header.appendChild(btn);
+      this.updateThemeIcon();
+    }
+  }
+}
+
+window.themeManager = new ThemeManager();
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🧭 GESTIONNAIRE DE NAVIGATION MODERNE
+// ══════════════════════════════════════════════════════════════════════════════
+
+class NavigationManager {
+  constructor() {
+    this.navbarCollapsed = localStorage.getItem('aet_nav_collapsed') === '1';
+    this.activeTab = localStorage.getItem('aet_active_tab') || 'dashboard';
+    this.init();
+  }
+
+  init() {
+    this.restoreState();
+    this.attachEventListeners();
+    this.setupDropdowns();
+    this.lazyLoadContent();
+  }
+
+  restoreState() {
+    if (this.navbarCollapsed) {
+      document.body.classList.add('nav-collapsed');
+    }
+  }
+
+  toggleSidebarCollapse() {
+    this.navbarCollapsed = !this.navbarCollapsed;
+    document.body.classList.toggle('nav-collapsed', this.navbarCollapsed);
+    localStorage.setItem('aet_nav_collapsed', this.navbarCollapsed ? '1' : '0');
+    
+    // Animation smooth
+    document.querySelector('.navbar-modern')?.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+  }
+
+  toggleNavbar() {
+    const navbar = document.getElementById('modernNavbar');
+    const overlay = document.getElementById('navOverlay');
+    const isActive = navbar.classList.contains('active');
+    
+    navbar.classList.toggle('active', !isActive);
+    overlay.classList.toggle('active', !isActive);
+    document.body.style.overflow = !isActive ? 'hidden' : 'auto';
+  }
+
+  closeNavbar() {
+    document.getElementById('modernNavbar')?.classList.remove('active');
+    document.getElementById('navOverlay')?.classList.remove('active');
+    document.body.style.overflow = 'auto';
+  }
+
+  attachEventListeners() {
+    // Fermer la navbar au clic sur un item
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', () => this.closeNavbar());
+    });
+
+    // Fermer au clic sur l'overlay
+    document.getElementById('navOverlay')?.addEventListener('click', () => this.closeNavbar());
+
+    // Fermer au clic en dehors (desktop)
+    if (window.innerWidth > 768) {
+      document.addEventListener('click', (e) => {
+        if (!e.target.closest('.navbar-modern') && !e.target.closest('.mobile-menu-btn')) {
+          this.closeNavbar();
+        }
+      });
+    }
+  }
+
+  setupDropdowns() {
+    document.querySelectorAll('.nav-dropdown-toggle').forEach(toggle => {
+      toggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        const dropdown = toggle.closest('.nav-dropdown');
+        dropdown?.classList.toggle('expanded');
+      });
+    });
+  }
+
+  updateActiveNavItem(tabName) {
+    this.activeTab = tabName;
+    localStorage.setItem('aet_active_tab', tabName);
+
+    document.querySelectorAll('.nav-item, .bottom-nav-item').forEach(item => {
+      item.classList.remove('active');
+    });
+
+    // Trouver le bon item
+    document.querySelectorAll('.nav-item, .bottom-nav-item').forEach(item => {
+      if (item.textContent.toLowerCase().includes(tabName.toLowerCase()) ||
+          item.getAttribute('data-tab') === tabName) {
+        item.classList.add('active');
+        item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    });
+  }
+
+  lazyLoadContent() {
+    const mainContent = document.getElementById('mainContent');
+    if (!mainContent) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.style.animation = 'fadeInUp 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+          observer.unobserve(entry.target);
+        }
+      });
+    });
+
+    observer.observe(mainContent);
+  }
+}
+
+window.navigationManager = new NavigationManager();
+
+// Exposer les méthodes globalement
+window.toggleSidebarCollapse = () => window.navigationManager.toggleSidebarCollapse();
+window.toggleNavbar = () => window.navigationManager.toggleNavbar();
+window.closeNavbar = () => window.navigationManager.closeNavbar();
+window.updateActiveNavItem = (tab) => window.navigationManager.updateActiveNavItem(tab);
+
+// Wrapper pour switchTab existant
+const originalSwitchTab = window.switchTab;
+window.switchTab = function(tab) {
+  window.navigationManager.updateActiveNavItem(tab);
+  if (originalSwitchTab) originalSwitchTab(tab);
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 📊 ÉTAT DE L'APPLICATION
+// ══════════════════════════════════════════════════════════════════════════════
+
+// CATÉGORIES
+const CATS = {
+  salaire:   ['Salaire net mensuel','Rappel de salaire','Avance sur salaire','13ème mois','Régularisation'],
+  prime:     ['Prime de rendement','Prime de productivité','Prime de fin d\'année','Prime exceptionnelle',
+              'Prime de transport','Prime de logement','Prime de risque','Indemnité journalière',
+              'Heures supplémentaires','Gratification','Bonus commercial'],
+  autres_in: ['Freelance / Prestation','Revenu commercial','Vente de marchandise','Revenu locatif',
+              'Transfert reçu (Flooz/TMoney)','Virement reçu','Remboursement reçu','Don / Cadeau reçu',
+              'Dividende / Intérêt','Revenu agricole','Bénéfice A.E.T.','Autre revenu'],
+  out_alim:  ['Alimentation marché','Supermarché / Épicerie','Restaurant / Maquis','Eau potable','Boissons'],
+  out_logem: ['Loyer mensuel','Charges locatives','Électricité (CEET)','Eau (TdE)','Gaz / Pétrole',
+              'Entretien logement','Réparation / Travaux','Mobilier / Équipement'],
+  out_transp:['Carburant','Transport en commun (moto)','Taxi / VTC','Entretien véhicule','Réparation véhicule',
+              'Assurance véhicule','Stationnement'],
+  out_sante: ['Consultation médicale','Médicaments / Pharmacie','Hospitalisation','Analyse / Examens',
+              'Optique / Lunettes','Hygiène personnelle'],
+  out_educ:  ['Frais de scolarité','Fournitures scolaires','Formation / Cours','Livres / Manuels',
+              'Transport scolaire','Uniforme scolaire'],
+  out_com:   ['Crédit téléphone (Togocel/Moov)','Abonnement internet','Abonnement TV / Canal+',
+              'Transfert Flooz','Transfert T-Money'],
+  out_famille:['Soutien famille','Envoi argent parents','Cérémonie / Fête','Funérailles / Deuil',
+               'Dot / Mariage','Cadeau offert'],
+  out_fin:   ['Remboursement crédit','Épargne mobile money','Cotisation tontine','Assurance vie',
+               'Impôts / Taxes','Frais bancaires'],
+  out_divers:['Vêtements / Chaussures','Coiffure / Beauté','Loisirs / Sorties','Sport / Fitness',
+              'Voyage / Vacances','Presse / Abonnement','Matériel informatique','Divers'],
+  save:      ['Épargne générale','Objectif / Projet','Fonds d\'urgence','Investissement','Tontine',
+              'Mobile money (Flooz/TMoney)','Épargne retraite','Autre épargne'],
+};
+
+const CAT_GROUPS_OUT = [
+  { label:'🍽️ Alimentation',    key:'out_alim'   },
+  { label:'🏠 Logement',        key:'out_logem'  },
+  { label:'🚗 Transport',       key:'out_transp' },
+  { label:'💊 Santé',           key:'out_sante'  },
+  { label:'📚 Éducation',       key:'out_educ'   },
+  { label:'📱 Communication',   key:'out_com'    },
+  { label:'👨‍👩‍👧 Famille/Social', key:'out_famille'},
+  { label:'💳 Finance/Épargne', key:'out_fin'    },
+  { label:'🛍️ Divers',          key:'out_divers' },
+];
+
+let currentUser = null;
+let transactions = [];
+let salaryConfig = { net:0, prime_fixe:0, autres_fixes:0, poste:'', payday:25 };
+let budgets = [];
+let unsubTx = null, unsubSal = null, unsubBudg = null;
+let charts = {};
+let editingTxId = null;
+let activeTab = 'dashboard';
+let selMonth = '';
+
+// DEVISES
+const $ = s => document.querySelector(s);
+const CURRENCIES = {
+  XOF: { code:'XOF', symbol:'XOF', name:'Franc CFA',    locale:'fr-TG', decimals:0, flag:'🇹🇬' },
+  USD: { code:'USD', symbol:'$',   name:'US Dollar',     locale:'en-US', decimals:2, flag:'🇺🇸' },
+  EUR: { code:'EUR', symbol:'€',   name:'Euro',          locale:'fr-FR', decimals:2, flag:'🇪🇺' },
+  GHS: { code:'GHS', symbol:'₵',   name:'Cedi (Ghana)',  locale:'en-GH', decimals:2, flag:'🇬🇭' },
+  NGN: { code:'NGN', symbol:'₦',   name:'Naira (Nigeria)',locale:'en-NG',decimals:0, flag:'🇳🇬' },
+};
+let activeCurrency = localStorage.getItem('aet_currency') || 'XOF';
+window.activeCurrency = activeCurrency;
+window.CURRENCIES = CURRENCIES;
+
+function fmt(n) {
+  const cur = CURRENCIES[activeCurrency] || CURRENCIES.XOF;
+  try {
+    return new Intl.NumberFormat(cur.locale,{style:'currency',currency:cur.code,maximumFractionDigits:cur.decimals}).format(n||0);
+  } catch(e) {
+    return (n||0).toLocaleString(cur.locale) + ' ' + cur.symbol;
+  }
+}
+
+const fmtDate = d => new Date(d).toLocaleDateString('fr-FR',{day:'2-digit',month:'short',year:'numeric'});
+const monthOf = d => (d||'').substring(0,7);
+const todayISO = () => new Date().toISOString().slice(0,10);
+const currentMonth = () => new Date().toISOString().substring(0,7);
+
+// PREMIUM
+let unsubPremium = null;
+let premiumStatus = { isPremium:false, plan:'free', expiresAt:null };
+window.isPremiumUser = false;
+window.PREMIUM_PRICE = 500;
+const PREMIUM_DURATION_DAYS = 30;
+
+// TOAST NOTIFICATIONS
+function toast(msg, type='success') {
+  const c = $('#toastContainer');
+  const t = document.createElement('div');
+  const icons = {success:'check-circle', error:'circle-exclamation', info:'circle-info', warning:'triangle-exclamation'};
+  t.className = `toast toast-${type}`;
+  t.innerHTML = `<i class="fas fa-${icons[type]||'circle-info'}"></i><span>${msg}</span>`;
+  c.appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; setTimeout(()=>t.remove(),400); }, 3200);
+}
+
+function loader(show) { $('#globalLoader').style.display = show ? 'flex' : 'none'; }
+window.toast = toast;
+window.loader = loader;
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🔐 GESTION PREMIUM
+// ══════════════════════════════════════════════════════════════════════════════
+
+async function ensurePremiumFields(uid) {
+  try {
+    const ref = doc(db, 'users', uid);
+    const snap = await getDoc(ref);
+    const data = snap.exists() ? snap.data() : {};
+    if (data.isPremium === undefined) {
+      await setDoc(ref, {
+        isPremium: false,
+        subscriptionPlan: 'free',
+        premiumExpiresAt: null,
+      }, { merge: true });
+    }
+  } catch(e) { console.warn('ensurePremiumFields', e); }
+}
+
+function watchPremiumStatus(uid) {
+  if (unsubPremium) { unsubPremium(); unsubPremium = null; }
+  unsubPremium = onSnapshot(doc(db, 'users', uid), snap => {
+    const data = snap.data() || {};
+    let isPremium = !!data.isPremium;
+    const expiresAt = data.premiumExpiresAt ? data.premiumExpiresAt.toDate() : null;
+    if (isPremium && expiresAt && new Date() > expiresAt) {
+      isPremium = false;
+      updateDoc(doc(db,'users', uid), { isPremium:false, subscriptionPlan:'free' }).catch(()=>{});
+    }
+    premiumStatus = { isPremium, plan: isPremium ? (data.subscriptionPlan||'premium') : 'free', expiresAt };
+    window.isPremiumUser = isPremium;
+    updatePremiumUI();
+  }, err => console.warn('watchPremiumStatus', err));
+}
+
+function updatePremiumUI() {
+  const badge = document.getElementById('premiumBadge');
+  if (badge) badge.style.display = premiumStatus.isPremium ? 'inline-flex' : 'none';
+}
+
+window.openPremiumModal = function() {
+  toast('Fonctionnalité Premium disponible','info');
+};
+
+window.closePremiumModal = function() {
+  const m = document.getElementById('premiumModal');
+  if (m) m.style.display = 'none';
+};
+
+window.requestPremiumActivation = async function() {
+  if (!currentUser) { toast('Veuillez vous connecter', 'error'); return; }
+  const btn = document.getElementById('premiumSubscribeBtn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Envoi...'; }
+  try {
+    await addDoc(collection(db, 'premiumRequests'), {
+      userId: currentUser.uid,
+      email: currentUser.email,
+      displayName: currentUser.displayName || '',
+      amount: window.PREMIUM_PRICE,
+      status: 'pending',
+      createdAt: serverTimestamp(),
+    });
+    toast('Demande envoyée ! Effectuez le paiement de ' + window.PREMIUM_PRICE + ' FCFA via Flooz/T-Money, votre compte sera activé sous peu.', 'success');
+    window.closePremiumModal();
+  } catch(e) {
+    console.error(e);
+    toast('Erreur lors de la demande, réessayez', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-crown"></i> S\'abonner — ' + window.PREMIUM_PRICE + ' FCFA/mois'; }
+  }
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🔑 AUTHENTIFICATION
+// ══════════════════════════════════════════════════════════════════════════════
+
+onAuthStateChanged(auth, user => {
+  if (user) {
+    currentUser = user;
+    window.currentUser = user;
+    $('#authScreen').style.display = 'none';
+    $('#app').style.display = 'block';
+    const bn = document.getElementById('bottomNav');
+    if (bn) bn.style.display = '';
+    const name = user.displayName || user.email.split('@')[0];
+    $('#userName').textContent = name;
+    const _uat = document.getElementById('userAvatarText'); if(_uat) _uat.textContent = name.charAt(0).toUpperCase();
+    const _ed=document.getElementById('userEmailDisp'); if(_ed) _ed.textContent=user.email;
+    addDoc(collection(db,'sessions'), {
+      userId:      user.uid,
+      email:       user.email,
+      displayName: user.displayName || '',
+      loginAt:     serverTimestamp(),
+      userAgent:   navigator.userAgent,
+    }).catch(()=>{});
+    setDoc(doc(db,'users', user.uid), {
+      userId:      user.uid,
+      email:       user.email,
+      displayName: user.displayName || '',
+      lastSeen:    serverTimestamp(),
+    }, { merge: true }).catch(()=>{});
+    ensurePremiumFields(user.uid);
+    watchPremiumStatus(user.uid);
+    loadAll();
+    toast(`Bienvenue ${name} ! 👋`, 'success');
+  } else {
+    currentUser = null;
+    window.currentUser = null;
+    if (unsubTx)  { unsubTx();   unsubTx  = null; }
+    if (unsubSal) { unsubSal();  unsubSal = null; }
+    if (unsubBudg){ unsubBudg(); unsubBudg= null; }
+    if (unsubPremium){ unsubPremium(); unsubPremium = null; }
+    premiumStatus = { isPremium:false, plan:'free', expiresAt:null };
+    window.isPremiumUser = false;
+    transactions = []; salaryConfig = { net:0, prime_fixe:0, autres_fixes:0, poste:'', payday:25 }; budgets = [];
+    $('#app').style.display = 'none';
+    const bn2 = document.getElementById('bottomNav');
+    if (bn2) bn2.style.display = 'none';
+    const _obDone = localStorage.getItem('aet_ob_done');
+    const _ob = document.getElementById('onboardingScreen');
+    const _as = document.getElementById('authScreen');
+    if (_obDone || !_ob) {
+      if (_as) _as.style.display = 'flex';
+    }
+  }
+});
+
+// FONCTIONS AUTH
+window.doLogin = async () => {
+  const email = $('#loginEmail').value.trim();
+  const pwd   = $('#loginPwd').value;
+  const err   = $('#loginErr');
+  err.textContent = '';
+  if (!email||!pwd) { err.textContent = 'Remplissez tous les champs'; return; }
+  loader(true);
+  try {
+    await signInWithEmailAndPassword(auth, email, pwd);
+  } catch(e) {
+    err.textContent = fbErr(e);
+  }
+  loader(false);
+};
+
+window.doSignup = async () => {
+  const name  = $('#signupName').value.trim();
+  const email = $('#signupEmail').value.trim();
+  const pwd   = $('#signupPwd').value;
+  const pwd2  = $('#signupPwd2').value;
+  const err   = $('#signupErr');
+  err.textContent = '';
+  if (!name||!email||!pwd) { err.textContent = 'Tous les champs sont requis'; return; }
+  if (pwd !== pwd2) { err.textContent = 'Les mots de passe ne correspondent pas'; return; }
+  if (pwd.length < 6) { err.textContent = 'Minimum 6 caractères'; return; }
+  loader(true);
+  try {
+    const cred = await createUserWithEmailAndPassword(auth, email, pwd);
+    await updateProfile(cred.user, { displayName: name });
+  } catch(e) {
+    err.textContent = fbErr(e);
+  }
+  loader(false);
+};
+
+window.doLogout = async () => { await signOut(auth); toast('Déconnecté','info'); };
+
+window.doForgotPwd = async () => {
+  const email = $('#loginEmail').value.trim();
+  if (!email) { $('#loginErr').textContent = 'Saisissez votre email d\'abord'; return; }
+  try {
+    await sendPasswordResetEmail(auth, email);
+    toast('Email de réinitialisation envoyé ✓','success');
+  } catch(e) { toast(fbErr(e),'error'); }
+};
+
+window.doChangePwd = async () => {
+  const oldP = $('#cpOld').value;
+  const newP = $('#cpNew').value;
+  const conf = $('#cpConf').value;
+  const err  = $('#cpErr');
+  err.textContent = '';
+  if (newP !== conf) { err.textContent = 'Les mots de passe ne correspondent pas'; return; }
+  if (newP.length < 6) { err.textContent = 'Minimum 6 caractères'; return; }
+  try {
+    loader(true);
+    const cred = EmailAuthProvider.credential(currentUser.email, oldP);
+    await reauthenticateWithCredential(currentUser, cred);
+    await updatePassword(currentUser, newP);
+    ['cpOld','cpNew','cpConf'].forEach(id => document.getElementById(id).value='');
+    closeModal('changePwdModal');
+    toast('Mot de passe mis à jour ✓','success');
+  } catch(e) { err.textContent = fbErr(e); }
+  loader(false);
+};
+
+function fbErr(e) {
+  const m = { 'auth/invalid-credential':'Email ou mot de passe incorrect.',
+    'auth/email-already-in-use':'Email déjà utilisé.',
+    'auth/weak-password':'Mot de passe trop faible.',
+    'auth/user-not-found':'Aucun compte trouvé.',
+    'auth/wrong-password':'Mot de passe incorrect.',
+    'auth/too-many-requests':'Trop de tentatives. Réessayez plus tard.',
+    'auth/network-request-failed':'Erreur réseau.' };
+  return m[e.code] || e.message || 'Erreur inconnue';
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🌐 LANGUES & TRADUCTIONS
+// ══════════════════════════════════════════════════════════════════════════════
+
+const LANG_DICT = {
+  fr: {
+    dashboard:'Tableau de bord', revenus:'Revenus', depenses:'Dépenses', epargne:'Épargne',
+    budget:'Budget', salaire:'Salaire', historique:'Historique', notes:'Notes', plangestion:'Plan de Gestion',
+    add:'Ajouter', addExpense:'Ajouter dépense', addSaving:'Ajouter épargne',
+    salaires:'💼 Salaires', primes:'🏅 Primes', autres:'📥 Autres',
+    totalMonth:'Total mois', totalSaved:'Total épargné',
+    currentMonth:'Mois courant', allMonths:'Tous les mois', allTypes:'Tous les types',
+    expenses:'📤 Dépenses', income:'📥 Revenus', savings:'🏦 Épargne',
+    salaryLabel:'💼 Salaire', primeLabel:'🏅 Primes', incomeLabel:'📥 Revenues',
+    welcome:'Bienvenue', logout:'Déconnexion',
+    saveBtn:'Enregistrer', cancel:'Annuler', close:'Fermer',
+    langTitle:'Paramètres de langue', currencyTitle:'Devise d\'affichage',
+    langNote:'Les données restent en français pour la compatibilité. Seule l\'interface est traduite.',
+    amount:'Montant', date:'Date', description:'Description', category:'Catégorie',
+    note:'Note (optionnel)', operationType:'Type d\'opération',
+    export:'Exporter CSV', search:'🔍 Rechercher...',
+    byCategory:'Par catégorie', financialHealth:'Santé financière estimée',
+  },
+  en: {
+    dashboard:'Dashboard', revenus:'Income', depenses:'Expenses', epargne:'Savings',
+    budget:'Budget', salaire:'Salary', historique:'History', notes:'Notes', plangestion:'Budget Plan',
+    add:'Add', addExpense:'Add expense', addSaving:'Add saving',
+    salaires:'💼 Salaries', primes:'🏅 Bonuses', autres:'📥 Other',
+    totalMonth:'This month', totalSaved:'Total saved',
+    currentMonth:'Current month', allMonths:'All months', allTypes:'All types',
+    expenses:'📤 Expenses', income:'📥 Income', savings:'🏦 Savings',
+    salaryLabel:'💼 Salary', primeLabel:'🏅 Bonuses', incomeLabel:'📥 Income',
+    welcome:'Welcome', logout:'Logout',
+    saveBtn:'Save', cancel:'Cancel', close:'Close',
+    langTitle:'Language settings', currencyTitle:'Display currency',
+    langNote:'Transaction data stays in French for compatibility. Only the interface is translated.',
+    amount:'Amount', date:'Date', description:'Description', category:'Category',
+    note:'Note (optional)', operationType:'Operation type',
+    export:'Export CSV', search:'🔍 Search...',
+    byCategory:'By category', financialHealth:'Estimated financial health',
+  },
+};
+
+let activeLang = localStorage.getItem('aet_lang') || 'fr';
+
+window.applyLang = function(lang) {
+  activeLang = lang;
+  localStorage.setItem('aet_lang', lang);
+  document.querySelectorAll('.lang-card').forEach(c => c.classList.toggle('active', c.dataset.lang === lang));
+  document.documentElement.lang = lang;
+  const d = LANG_DICT[lang] || LANG_DICT.fr;
+  const tabLabels = {dashboard:d.dashboard, revenus:d.revenus, depenses:d.depenses,
+    epargne:d.epargne, budget:d.budget, salaire:d.salaire, historique:d.historique,
+    notes:d.notes, plangestion:d.plangestion };
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    const key = b.dataset.tab;
+    const sp = b.querySelector('span');
+    if (sp && tabLabels[key]) sp.textContent = tabLabels[key];
+  });
+  const bnavMap = { dashboard:d.dashboard, revenus:d.revenus, depenses:d.depenses, epargne:d.epargne };
+  Object.entries(bnavMap).forEach(([k,v])=>{
+    const btn = document.getElementById('bnav-'+k);
+    if (btn) { const nodes=[...btn.childNodes]; const textNode=nodes.find(n=>n.nodeType===3&&n.textContent.trim()); if(textNode) textNode.textContent=v; }
+  });
+  if (typeof renderAll === 'function') renderAll();
+  toast(lang==='en'?'Language: English':'Langue : Français','success');
+};
+
+window.applyCurrency = function(code) {
+  if (!CURRENCIES[code]) return;
+  activeCurrency = code;
+  window.activeCurrency = code;
+  localStorage.setItem('aet_currency', code);
+  document.querySelectorAll('.currency-card').forEach(c => c.classList.toggle('active', c.dataset.cur === code));
+  if (typeof renderAll === 'function') renderAll();
+  toast(`${CURRENCIES[code].flag} ${CURRENCIES[code].name}`,'success');
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 💾 CHARGEMENT DONNÉES
+// ══════════════════════════════════════════════════════════════════════════════
+
+function loadAll() {
+  if (unsubTx) unsubTx();
+  const q = query(collection(db,'transactions'), where('userId','==',currentUser.uid));
+  unsubTx = onSnapshot(q, snap => {
+    transactions = snap.docs.map(d => ({ id:d.id, ...d.data() })).sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+    if (typeof renderAll === 'function') renderAll();
+  }, err => { console.error(err); toast('Erreur chargement transactions','error'); });
+
+  if (unsubSal) unsubSal();
+  const salDocRef = doc(db, 'salary_config', currentUser.uid);
+  unsubSal = onSnapshot(salDocRef, snap => {
+    if (snap.exists()) {
+      const d = snap.data();
+      salaryConfig = {
+        net:          Number(d.net)          || 0,
+        prime_fixe:   Number(d.prime_fixe)   || 0,
+        autres_fixes: Number(d.autres_fixes) || 0,
+        poste:        d.poste  || '',
+        payday:       Number(d.payday) || 25,
+        total:        Number(d.total)  || 0,
+      };
+      if (!salaryConfig.total) salaryConfig.total = salaryConfig.net + salaryConfig.prime_fixe + salaryConfig.autres_fixes;
+    } else {
+      salaryConfig = { net:0, prime_fixe:0, autres_fixes:0, poste:'', payday:25, total:0 };
+    }
+    if (typeof renderSalaryPage === 'function') renderSalaryPage();
+    if (typeof renderDashboard === 'function') renderDashboard();
+  }, e => console.error('sal err:', e));
+
+  if (unsubBudg) unsubBudg();
+  const qb = query(collection(db,'budgets'), where('userId','==',currentUser.uid));
+  unsubBudg = onSnapshot(qb, snap => {
+    budgets = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+    if (typeof renderBudgetPage === 'function') renderBudgetPage();
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 💼 GESTION SALAIRE
+// ══════════════════════════════════════════════════════════════════════════════
+
+window.saveSalary = async () => {
+  const net    = parseFloat($('#salNet').value)    || 0;
+  const prime  = parseFloat($('#salPrime').value)  || 0;
+  const autres = parseFloat($('#salAutres').value) || 0;
+  const cfg = {
+    userId: currentUser.uid,
+    net, prime_fixe: prime, autres_fixes: autres,
+    poste:  $('#salPoste').value.trim(),
+    payday: parseInt($('#salPayday').value) || 25,
+    total:  net + prime + autres,
+  };
+  try {
+    loader(true);
+    salaryConfig = { net:cfg.net, prime_fixe:cfg.prime_fixe, autres_fixes:cfg.autres_fixes,
+                     poste:cfg.poste, payday:cfg.payday, total:cfg.total };
+    if (typeof renderAll === 'function') renderAll();
+    await setDoc(doc(db,'salary_config',currentUser.uid), cfg);
+    toast('✅ Salaire enregistré — Dashboard mis à jour !','success');
+  } catch(e) { toast('Erreur: '+e.message,'error'); }
+  loader(false);
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 💳 GESTION TRANSACTIONS
+// ══════════════════════════════════════════════════════════════════════════════
+
+window.openTxModal = (typePreset) => {
+  editingTxId = null;
+  $('#txModalTitle').textContent = '➕ Nouvelle opération';
+  $('#txAmount').value = '';
+  $('#txDesc').value   = '';
+  $('#txNote').value   = '';
+  $('#txDate').value   = todayISO();
+  window.setTxType(typePreset || 'salaire');
+  window.openModal('txModal');
+};
+
+window.openEditModal = async (id) => {
+  const tx = transactions.find(t => t.id === id);
+  if (!tx) return;
+  editingTxId = id;
+  $('#txModalTitle').textContent = '✏️ Modifier l\'opération';
+  window.setTxType(tx.subtype || tx.type);
+  $('#txAmount').value = tx.amount;
+  $('#txDesc').value   = tx.description || '';
+  $('#txNote').value   = tx.note || '';
+  $('#txDate').value   = tx.date;
+  $('#txCat').value    = tx.category || '';
+  window.openModal('txModal');
+};
+
+window.setTxType = (t) => {
+  window._txType = t;
+  document.querySelectorAll('.type-pill').forEach(p => p.classList.toggle('active', p.dataset.type === t));
+  const sel = $('#txCat');
+  sel.innerHTML = '<option value="">— Catégorie —</option>';
+
+  let cats = [];
+  if      (t === 'salaire')    cats = CATS.salaire;
+  else if (t === 'prime')      cats = CATS.prime;
+  else if (t === 'autres_in')  cats = CATS.autres_in;
+  else if (t === 'save')       cats = CATS.save;
+  else if (t === 'out') {
+    sel.innerHTML = '<option value="">— Catégorie —</option>';
+    CAT_GROUPS_OUT.forEach(g => {
+      const og = document.createElement('optgroup');
+      og.label = g.label;
+      (CATS[g.key]||[]).forEach(c => {
+        const o = document.createElement('option'); o.value=c; o.textContent=c;
+        og.appendChild(o);
+      });
+      sel.appendChild(og);
+    });
+    if (!editingTxId) $('#txDesc').value = '';
+    return;
+  }
+  cats.forEach(c => {
+    const o = document.createElement('option'); o.value=c; o.textContent=c;
+    sel.appendChild(o);
+  });
+  if (t === 'salaire' && !editingTxId) {
+    const now = new Date();
+    $('#txDesc').value = 'Salaire ' + now.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+    sel.value = 'Salaire net mensuel';
+  } else if (!editingTxId) {
+    $('#txDesc').value = '';
+  }
+};
+
+window.saveTx = async () => {
+  const amount = parseFloat($('#txAmount').value);
+  const desc   = $('#txDesc').value.trim();
+  const date   = $('#txDate').value;
+  const cat    = $('#txCat').value;
+  const note   = $('#txNote').value.trim();
+  const subtype= window._txType || 'out';
+  if (!amount || amount <= 0) { toast('Montant invalide','error'); return; }
+  if (!desc)                  { toast('Description requise','error'); return; }
+  if (!date)                  { toast('Date requise','error'); return; }
+
+  const flow = subtype === 'out' ? 'out' : subtype === 'save' ? 'save' : 'in';
+  const data = {
+    userId: currentUser.uid, subtype, flow,
+    amount, description: desc, date, category: cat || '', note,
+    createdAt: serverTimestamp(),
+  };
+  try {
+    loader(true);
+    if (editingTxId) {
+      await updateDoc(doc(db,'transactions',editingTxId), { ...data });
+      toast('Opération modifiée ✓','success');
+    } else {
+      await addDoc(collection(db,'transactions'), data);
+      toast('Opération enregistrée ✓','success');
+    }
+    window.closeModal('txModal');
+  } catch(e) { toast(e.message,'error'); }
+  loader(false);
+};
+
+window.delTx = async (id) => {
+  if (!confirm('Supprimer cette opération ?')) return;
+  try {
+    loader(true);
+    await deleteDoc(doc(db,'transactions',id));
+    toast('Supprimé','info');
+  } catch(e) { toast(e.message,'error'); }
+  loader(false);
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 📊 BUDGETS
+// ═════════════════════════════════════════════════════════���════════════════════
+
+window.addBudget = async () => {
+  const cat   = $('#budCat').value.trim();
+  const limit = parseFloat($('#budLimit').value);
+  if (!cat || !limit) { toast('Remplissez les deux champs','error'); return; }
+  try {
+    loader(true);
+    await addDoc(collection(db,'budgets'),{ userId:currentUser.uid, cat, limit });
+    $('#budCat').value=''; $('#budLimit').value='';
+    toast('Budget ajouté ✓','success');
+  } catch(e) { toast(e.message,'error'); }
+  loader(false);
+};
+
+window.delBudget = async (id) => {
+  if (!confirm('Supprimer ce budget ?')) return;
+  try { await deleteDoc(doc(db,'budgets',id)); toast('Budget supprimé','info'); }
+  catch(e) { toast(e.message,'error'); }
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 📥 EXPORT
+// ══════════════════════════════════════════════════════════════════════════════
+
+window.exportCSV = () => {
+  if (!transactions.length) { toast('Aucune donnée à exporter','info'); return; }
+  const rows = [['Date','Description','Catégorie','Type','Flux','Montant (FCFA)']];
+  transactions.forEach(t => rows.push([
+    t.date, `"${(t.description||'').replace(/"/g,'""')}"`,
+    t.category||'', t.subtype||'', t.flow||'',
+    t.flow==='out' ? -t.amount : t.amount
+  ]));
+  const csv = rows.map(r=>r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download = `budget_${currentMonth()}.csv`;
+  a.click();
+  toast('Export CSV téléchargé ✓','success');
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🧭 NAVIGATION
+// ══════════════════════════════════════════════════════════════════════════════
+
+window.switchTab = (tab) => {
+  activeTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id==='tab-'+tab));
+  window.navigationManager?.updateActiveNavItem(tab);
+  if (tab === 'notes') { if(typeof renderNotesCalendar==='function')renderNotesCalendar(); if(typeof renderNoteMonthList==='function')renderNoteMonthList(); }
+  if (tab === 'plangestion') { if(typeof renderPlanGestion==='function')renderPlanGestion(); }
+};
+
+window.switchAuthTab = (tab) => {
+  const login = document.getElementById('authBody-login');
+  const signup = document.getElementById('authBody-signup');
+  if (login) login.style.display = tab === 'login' ? 'flex' : 'none';
+  if (signup) signup.style.display = tab === 'signup' ? 'flex' : 'none';
+  ['login','signup'].forEach(t => {
+    const el = document.getElementById('authForm-'+t);
+    if (el) el.style.display = t===tab ? 'block':'none';
+    const btn = document.querySelector('[data-auth="'+t+'"]');
+    if (btn) btn.classList.toggle('active', t===tab);
+  });
+};
+
+window.setMonthFilter = (m) => {
+  localStorage.setItem('aet_selected_month', m);
+  selMonth = m;
+  if (typeof renderAll === 'function') renderAll();
+};
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🎯 MODALS
+// ══════════════════════════════════════════════════════════════════════════════
+
+window.openModal  = id => {
+  const m = document.getElementById(id);
+  if (m) m.classList.add('open');
+};
+window.closeModal = id => {
+  const m = document.getElementById(id);
+  if (m) m.classList.remove('open');
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.modal-overlay').forEach(o => {
+    o.addEventListener('click', e => { if(e.target===o) o.classList.remove('open'); });
+  });
+  document.querySelectorAll('.type-pill').forEach(p => {
+    p.addEventListener('click', () => window.setTxType(p.dataset.type));
+  });
+  document.querySelectorAll('.note-color-btn').forEach(b => {
+    b.addEventListener('click', () => { if(typeof setNoteColor==='function')setNoteColor(b.dataset.color); });
+  });
+  ['salNet','salPrime','salAutres'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('input', () => { if(typeof updateSalTotal==='function')updateSalTotal(); });
+  });
+  const savedLang = localStorage.getItem('aet_lang') || 'fr';
+  const savedCur  = localStorage.getItem('aet_currency') || 'XOF';
+  activeLang = savedLang;
+  activeCurrency = savedCur;
+  window.activeCurrency = savedCur;
+  document.querySelectorAll('.lang-card').forEach(c => c.classList.toggle('active', c.dataset.lang === savedLang));
+  document.querySelectorAll('.currency-card').forEach(c => c.classList.toggle('active', c.dataset.cur === savedCur));
+  document.documentElement.lang = savedLang;
+  if (savedLang !== 'fr') setTimeout(()=>window.applyLang(savedLang), 500);
+  window.switchTab('dashboard');
+});
+
+// ══════════════════════════════════════════════════════════════════════════════
+// 🌀 INIT APP
+// ══════════════════════════════════════════════════════════════════════════════
+
+window.addEventListener('load', () => {
+  console.log('🚀 AET MonBudget Modern Navigation Loaded');
+  console.log('✅ Theme Manager:', window.themeManager ? 'Activé' : 'Désactivé');
+  console.log('✅ Navigation Manager:', window.navigationManager ? 'Activé' : 'Désactivé');
+});
+
+</script>
+
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════ -->
+<!-- 📱 MOBILE HEADER -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════ -->
+<div class="mobile-header">
+  <button class="mobile-menu-btn" onclick="toggleNavbar()" aria-label="Ouvrir le menu">
+    <i class="fas fa-bars"></i>
+  </button>
+  <h1><i class="fas fa-wallet"></i> AET MonBudget</h1>
+  <button class="mobile-menu-btn" onclick="openModal('langModal')" aria-label="Paramètres">
+    <i class="fas fa-cog"></i>
+  </button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════ -->
+<!-- 🎭 OVERLAY SIDEBAR MOBILE -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════ -->
+<div class="nav-overlay" id="navOverlay"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════ -->
+<!-- 🧭 SIDEBAR MODERNE -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════ -->
+<nav class="navbar-modern" id="modernNavbar">
+  <!-- Header -->
+  <div class="navbar-header">
+    <div class="logo">
+      <i class="fas fa-wallet"></i>
+      <span class="logo-text">AET MonBudget</span>
+    </div>
+    <button class="toggle-btn" onclick="toggleSidebarCollapse()" aria-label="Réduire le menu">
+      <i class="fas fa-chevron-left"></i>
+    </button>
+  </div>
+
+  <!-- Contenu -->
+  <div class="navbar-content">
+    <!-- SECTION: PRINCIPAL -->
+    <div class="nav-section">
+      <div class="nav-section-title">📊 Principal</div>
+      <a class="nav-item active" data-tab="dashboard" onclick="switchTab('dashboard'); closeNavbar()">
+        <i class="fas fa-chart-pie"></i>
+        <span class="nav-item-label">Tableau de bord</span>
+      </a>
+      <a class="nav-item" data-tab="plangestion" onclick="switchTab('plangestion'); closeNavbar()">
+        <i class="fas fa-map"></i>
+        <span class="nav-item-label">Plan de Gestion</span>
+      </a>
+    </div>
+
+    <!-- SECTION: FINANCES -->
+    <div class="nav-section">
+      <div class="nav-section-title">💰 Finances</div>
+      <a class="nav-item" data-tab="revenus" onclick="switchTab('revenus'); closeNavbar()">
+        <i class="fas fa-arrow-up-right"></i>
+        <span class="nav-item-label">Revenus</span>
+        <span class="nav-badge">3</span>
+      </a>
+      <a class="nav-item" data-tab="depenses" onclick="switchTab('depenses'); closeNavbar()">
+        <i class="fas fa-arrow-down-left"></i>
+        <span class="nav-item-label">Dépenses</span>
+      </a>
+      <a class="nav-item" data-tab="epargne" onclick="switchTab('epargne'); closeNavbar()">
+        <i class="fas fa-piggy-bank"></i>
+        <span class="nav-item-label">Épargne</span>
+      </a>
+      <a class="nav-item" data-tab="budget" onclick="switchTab('budget'); closeNavbar()">
+        <i class="fas fa-chart-line"></i>
+        <span class="nav-item-label">Budgets</span>
+      </a>
+    </div>
+
+    <!-- SECTION: OUTILS -->
+    <div class="nav-section">
+      <div class="nav-section-title">🛠️ Outils</div>
+      <a class="nav-item" data-tab="salaire" onclick="switchTab('salaire'); closeNavbar()">
+        <i class="fas fa-briefcase"></i>
+        <span class="nav-item-label">Configuration Salaire</span>
+      </a>
+      <a class="nav-item" data-tab="historique" onclick="switchTab('historique'); closeNavbar()">
+        <i class="fas fa-clock"></i>
+        <span class="nav-item-label">Historique</span>
+      </a>
+      <a class="nav-item" data-tab="notes" onclick="switchTab('notes'); closeNavbar()">
+        <i class="fas fa-sticky-note"></i>
+        <span class="nav-item-label">Notes</span>
+      </a>
+    </div>
+
+    <!-- SECTION: RESSOURCES -->
+    <div class="nav-section">
+      <div class="nav-section-title">📚 Ressources</div>
+      <a class="nav-item" onclick="switchTab('bibliotheque'); closeNavbar()">
+        <i class="fas fa-book"></i>
+        <span class="nav-item-label">Bibliothèque</span>
+      </a>
+      <a class="nav-item" onclick="switchTab('conseils'); closeNavbar()">
+        <i class="fas fa-lightbulb"></i>
+        <span class="nav-item-label">Conseils</span>
+      </a>
+    </div>
+
+    <!-- SECTION: PARAMÈTRES -->
+    <div class="nav-section">
+      <div class="nav-section-title">⚙️ Paramètres</div>
+      <a class="nav-item" onclick="openModal('langModal')">
+        <i class="fas fa-globe"></i>
+        <span class="nav-item-label">Langue & Devise</span>
+      </a>
+      <a class="nav-item" onclick="openPremiumModal()">
+        <i class="fas fa-crown"></i>
+        <span class="nav-item-label">Premium</span>
+        <span id="premiumBadge" style="display:none; background:#f59e0b; margin-left:auto; padding:0.25rem 0.5rem; border-radius:9999px; font-size:0.7rem;">✓</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="navbar-footer">
+    <div class="user-profile" onclick="openModal('profileModal')">
+      <div class="user-avatar" id="userAvatarText">A</div>
+      <div class="user-info">
+        <div class="user-name" id="userName">Utilisateur</div>
+        <div class="user-email" id="userEmailDisp">email@example.com</div>
+      </div>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">
+      <i class="fas fa-sign-out-alt"></i>
+      <span>Déconnexion</span>
+    </button>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════ -->
+<!-- 📄 CONTENU PRINCIPAL -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════ -->
+<div class="main-content" id="mainContent">
+  <div id="authScreen" style="display:none;"></div>
+  <div id="app" style="display:none;"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════════ -->
+<!-- 📱 BOTTOM NAVIGATION (Mobile) -->
+<!-- ═══════════════════════════════════════════════════════════════════════════════ -->
+<nav class="bottom-nav-modern" id="bottomNav">
+  <a class="bottom-nav-item active" data-tab="dashboard" onclick="switchTab('dashboard'); closeNavbar()">
+    <i class="fas fa-chart-pie"></i>
+    <span>Dashboard</span>
+  </a>
+  <a class="bottom-nav-item" data-tab="revenus" onclick="switchTab('revenus'); closeNavbar()">
+    <i class="fas fa-arrow-up-right"></i>
+    <span>Revenus</span>
+  </a>
+  <a class="bottom-nav-item" data-tab="depenses" onclick="switchTab('depenses'); closeNavbar()">
+    <i class="fas fa-arrow-down-left"></i>
+    <span>Dépenses</span>
+  </a>
+  <a class="bottom-nav-item" data-tab="epargne" onclick="switchTab('epargne'); closeNavbar()">
+    <i class="fas fa-piggy-bank"></i>
+    <span>Épargne</span>
+  </a>
+  <a class="bottom-nav-item" onclick="openTxModal()">
+    <i class="fas fa-plus-circle"></i>
+    <span>Ajouter</span>
+  </a>
+</nav>
+
+<!-- CONTAINERS REQUIS -->
+<div id="toastContainer" style="position:fixed; top:1rem; right:1rem; z-index:10000; display:flex; flex-direction:column; gap:0.75rem;"></div>
+<div id="globalLoader" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); z-index:9999; align-items:center; justify-content:center;"><i class="fas fa-spinner fa-spin" style="font-size:3rem; color:#3b82f6;"></i></div>
+
+</body>
+</html>

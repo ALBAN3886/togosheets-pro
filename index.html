@@ -16,6 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<link rel="stylesheet" href="assets/css/aet-enhancements.css"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 
 <!-- ═══════════════ FIREBASE ═══════════════ -->
@@ -25,7 +26,7 @@ import { getAuth, onAuthStateChanged, signInWithEmailAndPassword,
          createUserWithEmailAndPassword, signOut, updateProfile,
          sendPasswordResetEmail, EmailAuthProvider,
          reauthenticateWithCredential, updatePassword }          from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, addDoc, doc, deleteDoc,
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, addDoc, doc, deleteDoc,
          updateDoc, query, where, orderBy, onSnapshot, getDocs,
          serverTimestamp, setDoc, getDoc, limit }               from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -40,9 +41,12 @@ const firebaseConfig = {
   measurementId:     "G-MJCB7XVY6D"
 };
 
+window.__AET_FIREBASE_CONFIG__ = firebaseConfig;
 const fbApp = initializeApp(firebaseConfig);
 const auth  = getAuth(fbApp);
-const db    = getFirestore(fbApp);
+const db    = initializeFirestore(fbApp, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+window.__AET_FBAPP__ = fbApp;
+window.__AET_AUTH__ = auth;
 window.__AET_DB__ = db;
 window.__AET_FIRESTORE__ = { doc, getDoc, setDoc, serverTimestamp };
 
@@ -2135,9 +2139,9 @@ function pgAutoFillSalary() {
 }
 
 
-const ADMIN_EMAIL    = 'albaneloh@admin.monbudget';   // ← ton email admin
-const ADMIN_PASSWORD = 'AET@Admin2025!';              // ← ton mot de passe admin
-const ADMIN_PARAM    = 'admin';                       // ?admin dans l'URL
+const ADMIN_EMAIL    = '';
+const ADMIN_PASSWORD = '';
+const ADMIN_PARAM    = 'admin';
 
 let adminMode = false;
 let unsubAdminUsers = null, unsubAdminSessions = null, unsubAdminTx = null;
@@ -2158,22 +2162,22 @@ window.doAdminLogin = async () => {
   const pwd   = document.getElementById('adminPwd').value;
   const err   = document.getElementById('adminLoginErr');
   err.textContent = '';
-  if (email !== ADMIN_EMAIL || pwd !== ADMIN_PASSWORD) {
-    err.textContent = 'Identifiants incorrects.';
-    return;
-  }
   loader(true);
-  // Connexion Firebase avec le compte admin (doit exister dans Firebase Auth)
   try {
     await signInWithEmailAndPassword(auth, email, pwd);
+    const s = await getDoc(doc(db,'users', auth.currentUser.uid));
+    const data = s.exists() ? s.data() : {};
+    if (!(data.isAdmin === true || data.role === 'admin')) {
+      err.textContent = 'Accès administrateur refusé.';
+      await signOut(auth);
+      loader(false);
+      return;
+    }
     document.getElementById('adminLoginScreen').style.display = 'none';
     document.getElementById('adminPanel').style.display = 'block';
     loadAdminData();
   } catch(e) {
-    // Si le compte n'existe pas encore, on l'utilise sans Firebase Auth
-    document.getElementById('adminLoginScreen').style.display = 'none';
-    document.getElementById('adminPanel').style.display = 'block';
-    loadAdminData();
+    err.textContent = 'Connexion administrateur impossible.';
   }
   loader(false);
 };
@@ -7177,7 +7181,7 @@ setInterval(_checkUserAndLoad, 1500);
 </script>
 
 
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+
 <!-- ════ PWA : ENREGISTREMENT SERVICE WORKER ════ -->
 <script>
 if ('serviceWorker' in navigator) {
@@ -8524,9 +8528,9 @@ window.CM_DEBUG = CM;
 })();
 </script>
 <!-- ═══════════════ FIN MODULE COMMERCE ═══════════════ -->
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+
+
+
 <script>
 // ════════════════ SIDEBAR : synchronisation & contrôles mobile ════════════════
 (function(){
@@ -8583,5 +8587,7 @@ window.CM_DEBUG = CM;
   }
 })();
 </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+<script type="module" src="assets/js/aet-enhancements.js"></script>
 </body>
 </html>

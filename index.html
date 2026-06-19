@@ -99,6 +99,13 @@ let editingTxId = null;
 let activeTab = 'dashboard';
 let selMonth = '';  // filtre mois actif (YYYY-MM)
 
+// ══ PREMIUM ══
+let unsubPremium = null;
+let premiumStatus = { isPremium:false, plan:'free', expiresAt:null };
+window.isPremiumUser = false;
+window.PREMIUM_PRICE = 500; // FCFA / mois
+const PREMIUM_DURATION_DAYS = 30;
+
 // ══ DEVISES ══
 const $ = s => document.querySelector(s);
 const CURRENCIES = {
@@ -139,6 +146,108 @@ function loader(show) { $('#globalLoader').style.display = show ? 'flex' : 'none
 window.toast = toast;
 window.loader = loader;
 
+// ══ PREMIUM : GESTION DU STATUT ══
+// Crée les champs premium par défaut sur le doc utilisateur s'ils n'existent pas encore
+// (on ne les inclut jamais dans le setDoc de connexion pour ne jamais écraser un abonnement actif)
+async function ensurePremiumFields(uid) {
+  try {
+    const ref = doc(db, 'users', uid);
+    const snap = await getDoc(ref);
+    const data = snap.exists() ? snap.data() : {};
+    if (data.isPremium === undefined) {
+      await setDoc(ref, {
+        isPremium: false,
+        subscriptionPlan: 'free',
+        premiumExpiresAt: null,
+      }, { merge: true });
+    }
+  } catch(e) { console.warn('ensurePremiumFields', e); }
+}
+
+// Écoute en temps réel le statut premium et met à jour l'UI + window.isPremiumUser
+function watchPremiumStatus(uid) {
+  if (unsubPremium) { unsubPremium(); unsubPremium = null; }
+  unsubPremium = onSnapshot(doc(db, 'users', uid), snap => {
+    const data = snap.data() || {};
+    let isPremium = !!data.isPremium;
+    const expiresAt = data.premiumExpiresAt ? data.premiumExpiresAt.toDate() : null;
+    // Rétrogradation automatique si l'abonnement est expiré
+    if (isPremium && expiresAt && new Date() > expiresAt) {
+      isPremium = false;
+      updateDoc(doc(db,'users', uid), { isPremium:false, subscriptionPlan:'free' }).catch(()=>{});
+    }
+    premiumStatus = { isPremium, plan: isPremium ? (data.subscriptionPlan||'premium') : 'free', expiresAt };
+    window.isPremiumUser = isPremium;
+    updatePremiumUI();
+  }, err => console.warn('watchPremiumStatus', err));
+}
+
+// Met à jour les éléments d'interface liés au statut premium (badge, libellés, etc.)
+function updatePremiumUI() {
+  const badge = document.getElementById('premiumBadge');
+  if (badge) badge.style.display = premiumStatus.isPremium ? 'inline-flex' : 'none';
+  const menuLabel = document.getElementById('premiumMenuLabel');
+  if (menuLabel) {
+    menuLabel.textContent = premiumStatus.isPremium ? 'Abonnement Premium actif' : 'Passer Premium';
+  }
+  const menuIcon = document.getElementById('premiumMenuIcon');
+  if (menuIcon) menuIcon.style.background = premiumStatus.isPremium ? 'linear-gradient(135deg,#f59e0b,#fbbf24)' : '';
+  const statusEl = document.getElementById('premiumModalStatus');
+  if (statusEl) {
+    if (premiumStatus.isPremium) {
+      const dateStr = premiumStatus.expiresAt ? fmtDate(premiumStatus.expiresAt) : '—';
+      statusEl.innerHTML = `<i class="fas fa-crown" style="color:#f59e0b"></i> Premium actif jusqu'au <strong>${dateStr}</strong>`;
+    } else {
+      statusEl.innerHTML = `<i class="fas fa-circle-info"></i> Vous utilisez la version gratuite`;
+    }
+  }
+  const subBtn = document.getElementById('premiumSubscribeBtn');
+  if (subBtn) subBtn.style.display = premiumStatus.isPremium ? 'none' : '';
+}
+window.updatePremiumUI = updatePremiumUI;
+
+// Ouvre/ferme le modal Premium
+window.openPremiumModal = function() {
+  const m = document.getElementById('premiumModal');
+  if (m) m.style.display = 'flex';
+  updatePremiumUI();
+};
+window.closePremiumModal = function() {
+  const m = document.getElementById('premiumModal');
+  if (m) m.style.display = 'none';
+};
+
+// Demande d'activation Premium (solution transitoire en attendant l'intégration CinetPay/PayGate)
+// Enregistre la demande dans Firestore — l'activation se fait manuellement après réception du paiement
+// Mobile Money (Flooz/T-Money), puis automatiquement via la passerelle une fois celle-ci connectée.
+window.requestPremiumActivation = async function() {
+  if (!currentUser) { toast('Veuillez vous connecter', 'error'); return; }
+  const btn = document.getElementById('premiumSubscribeBtn');
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Envoi...'; }
+  try {
+    await addDoc(collection(db, 'premiumRequests'), {
+      userId: currentUser.uid,
+      email: currentUser.email,
+      displayName: currentUser.displayName || '',
+      amount: window.PREMIUM_PRICE,
+      status: 'pending',
+      createdAt: serverTimestamp(),
+    });
+    toast('Demande envoyée ! Effectuez le paiement de ' + window.PREMIUM_PRICE + ' FCFA via Flooz/T-Money, votre compte sera activé sous peu.', 'success');
+    closePremiumModal();
+  } catch(e) {
+    console.error(e);
+    toast('Erreur lors de la demande, réessayez', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-crown"></i> S\'abonner — ' + window.PREMIUM_PRICE + ' FCFA/mois'; }
+  }
+};
+
+// Helper interne pour activer manuellement un utilisateur premium (à utiliser depuis la console Firebase
+// ou une future Cloud Function après confirmation du paiement) :
+// updateDoc(doc(db,'users', uid), { isPremium:true, subscriptionPlan:'premium',
+//   premiumExpiresAt: Timestamp.fromDate(new Date(Date.now()+30*24*60*60*1000)) })
+
 // ══ AUTH ══
 onAuthStateChanged(auth, user => {
   if (user) {
@@ -167,6 +276,8 @@ onAuthStateChanged(auth, user => {
       displayName: user.displayName || '',
       lastSeen:    serverTimestamp(),
     }, { merge: true }).catch(()=>{});
+    ensurePremiumFields(user.uid);
+    watchPremiumStatus(user.uid);
     loadAll();
     toast(`Bienvenue ${name} ! 👋`, 'success');
   } else {
@@ -176,6 +287,9 @@ onAuthStateChanged(auth, user => {
     if (unsubSal) { unsubSal();  unsubSal = null; }
     if (unsubBudg){ unsubBudg(); unsubBudg= null; }
     if (unsubNotes){ unsubNotes(); unsubNotes= null; }
+    if (unsubPremium){ unsubPremium(); unsubPremium = null; }
+    premiumStatus = { isPremium:false, plan:'free', expiresAt:null };
+    window.isPremiumUser = false;
     transactions = []; salaryConfig = { net:0, prime_fixe:0, autres_fixes:0, poste:'', payday:25 }; budgets = [];
     $('#app').style.display = 'none';
     const bn2 = document.getElementById('bottomNav');
@@ -5188,6 +5302,17 @@ document.addEventListener('DOMContentLoaded', () => {
 .btn-logout-profile{width:100%;padding:14px;background:rgba(239,68,68,.08);color:var(--danger);border:1px solid rgba(239,68,68,.2);border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;margin:8px 0 100px}
 .btn-logout-profile:hover{background:rgba(239,68,68,.14)}
 
+/* ─────────── PREMIUM ─────────── */
+.premium-badge{display:none;align-items:center;gap:5px;background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;font-size:11px;font-weight:800;padding:4px 10px;border-radius:20px;margin-top:8px;box-shadow:0 4px 12px rgba(245,158,11,.35)}
+.pmi-premium{background:rgba(245,158,11,.15);color:#f59e0b}
+.premium-modal-card{background:linear-gradient(135deg,#1e293b,#0f172a);color:#fff;border-radius:18px;padding:22px;text-align:center;margin-bottom:18px}
+.premium-modal-card .pmc-price{font-size:32px;font-weight:800;margin:6px 0}
+.premium-modal-card .pmc-price span{font-size:14px;font-weight:500;opacity:.7}
+.premium-feature-list{display:flex;flex-direction:column;gap:10px;margin:18px 0}
+.premium-feature-item{display:flex;align-items:center;gap:10px;font-size:14px;color:var(--text)}
+.premium-feature-item i{color:#10b981;width:18px}
+.premium-status-box{background:var(--bg2,rgba(0,0,0,.03));border-radius:12px;padding:12px 14px;font-size:13.5px;color:var(--text);margin-bottom:16px;text-align:center}
+
 /* ─────────── OBJECTIFS MOCKUP ─────────── */
 .goal-tabs{display:flex;gap:8px;margin:0 0 18px}
 .goal-tab{flex:1;padding:11px 14px;background:var(--card);border:1px solid var(--border);border-radius:11px;font-weight:700;font-size:13.5px;color:var(--muted);cursor:pointer;text-align:center;transition:all .2s;box-shadow:var(--shadow)}
@@ -5312,9 +5437,15 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>
     <div class="profile-name" id="profileNameBig">Utilisateur</div>
     <div class="profile-phone" id="profilePhoneBig">—</div>
+    <div class="premium-badge" id="premiumBadge"><i class="fas fa-crown"></i> PREMIUM</div>
   </div>
 
   <div class="profile-menu">
+    <div class="profile-menu-item" onclick="openPremiumModal()">
+      <div class="profile-menu-icon pmi-premium" id="premiumMenuIcon"><i class="fas fa-crown"></i></div>
+      <div class="profile-menu-label" id="premiumMenuLabel">Passer Premium</div>
+      <i class="fas fa-chevron-right profile-menu-chev"></i>
+    </div>
     <div class="profile-menu-item" onclick="openProfileEdit()">
       <div class="profile-menu-icon pmi-info"><i class="fas fa-user"></i></div>
       <div class="profile-menu-label">Informations personnelles</div>
@@ -5350,6 +5481,39 @@ document.addEventListener('DOMContentLoaded', () => {
   <button class="btn-logout-profile" onclick="doLogout()">
     <i class="fas fa-right-from-bracket"></i> Déconnexion
   </button>
+</div>
+
+<!-- ════ MODAL PREMIUM ════ -->
+<div class="aet-modal-overlay" id="premiumModal" style="display:none" onclick="if(event.target===this)closePremiumModal()">
+  <div class="aet-modal" style="max-width:380px">
+    <div class="aet-modal-header">
+      <h3><i class="fas fa-crown" style="color:#f59e0b"></i> AET MonBudget Premium</h3>
+      <button class="aet-modal-close" onclick="closePremiumModal()"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="aet-modal-body">
+      <div class="premium-status-box" id="premiumModalStatus">
+        <i class="fas fa-circle-info"></i> Vous utilisez la version gratuite
+      </div>
+      <div class="premium-modal-card">
+        <div style="font-size:13px;opacity:.8">Abonnement mensuel</div>
+        <div class="pmc-price">500 <span>FCFA / mois</span></div>
+        <div style="font-size:12px;opacity:.7">Paiement via Flooz ou T-Money</div>
+      </div>
+      <div class="premium-feature-list">
+        <div class="premium-feature-item"><i class="fas fa-check-circle"></i> Tontines illimitées</div>
+        <div class="premium-feature-item"><i class="fas fa-check-circle"></i> Objectifs financiers illimités</div>
+        <div class="premium-feature-item"><i class="fas fa-check-circle"></i> Export PDF / Excel des rapports</div>
+        <div class="premium-feature-item"><i class="fas fa-check-circle"></i> Sauvegarde et synchronisation multi-appareils</div>
+        <div class="premium-feature-item"><i class="fas fa-check-circle"></i> Accès complet à la Bibliothèque Financière</div>
+      </div>
+      <button class="aet-btn-primary" id="premiumSubscribeBtn" onclick="requestPremiumActivation()" style="width:100%">
+        <i class="fas fa-crown"></i> S'abonner — 500 FCFA/mois
+      </button>
+      <div style="font-size:11.5px;color:var(--muted);text-align:center;margin-top:10px">
+        Après votre demande, effectuez le paiement Mobile Money — votre compte sera activé dès confirmation.
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ════ TAB OBJECTIFS (mockup) ════ -->

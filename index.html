@@ -8353,5 +8353,284 @@ window.CM_DEBUG = CM;
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+
+<style id="aet-sidebar-dashboard-redesign">
+@media (min-width:1100px){
+  body{
+    background:
+      radial-gradient(circle at top left, rgba(37,99,235,.12), transparent 28%),
+      radial-gradient(circle at bottom right, rgba(16,185,129,.08), transparent 22%),
+      linear-gradient(180deg,#f8fbff 0%,#eef4ff 100%);
+  }
+  .header{
+    padding:16px 28px;
+    background:rgba(255,255,255,.92);
+    box-shadow:0 6px 30px rgba(15,23,42,.04);
+  }
+  #app .container{
+    max-width:1560px;
+    display:grid;
+    grid-template-columns:290px minmax(0,1fr);
+    gap:24px;
+    padding:24px 22px 40px;
+    align-items:start;
+  }
+  #desktopToolbar{
+    grid-column:2;
+    display:flex !important;
+    align-items:flex-start !important;
+    justify-content:space-between;
+    gap:18px;
+    margin-bottom:0 !important;
+    padding:20px 22px;
+    background:rgba(255,255,255,.94);
+    border:1px solid rgba(148,163,184,.16);
+    border-radius:24px;
+    box-shadow:0 18px 40px rgba(15,23,42,.06);
+  }
+  #desktopToolbar #mainMenuBtn{display:none !important;}
+  .desktop-toolbar-headline{display:flex;flex-direction:column;gap:6px;min-width:0;}
+  #activeTabChip{
+    display:flex !important;
+    align-items:center !important;
+    gap:12px !important;
+    padding:0 !important;
+    margin:0 !important;
+    background:transparent !important;
+    border:none !important;
+    color:#0f172a !important;
+    border-radius:0 !important;
+    font-size:28px !important;
+    font-weight:800 !important;
+    letter-spacing:-.03em;
+  }
+  #activeTabChip i{
+    width:44px;height:44px;border-radius:14px;
+    display:inline-flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#2563eb,#3b82f6);
+    color:#fff;
+    box-shadow:0 10px 22px rgba(37,99,235,.24);
+    font-size:18px;
+    flex-shrink:0;
+  }
+  #desktopToolbarCaption{
+    padding-left:56px;
+    color:#64748b;
+    font-size:13px;
+    line-height:1.5;
+    max-width:720px;
+  }
+  #mainMenuDrawer{
+    display:block !important;
+    grid-column:1;
+    grid-row:1 / span 60;
+    margin:0 !important;
+    padding:18px 14px 16px !important;
+    border-radius:28px !important;
+    position:sticky;
+    top:92px;
+    background:rgba(255,255,255,.96) !important;
+    box-shadow:0 22px 50px rgba(15,23,42,.08);
+    min-height:calc(100vh - 132px);
+    overflow:hidden;
+  }
+  #mainMenuDrawer > div{
+    display:flex !important;
+    flex-direction:column;
+    gap:8px !important;
+  }
+  .desktop-side-brand{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:8px 12px 18px;
+    margin:0 0 14px;
+    border-bottom:1px solid rgba(148,163,184,.16);
+  }
+  .desktop-side-brand-icon{
+    width:48px;height:48px;border-radius:16px;
+    display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#2563eb,#3b82f6);
+    color:#fff;font-size:20px;
+    box-shadow:0 14px 24px rgba(37,99,235,.22);
+    flex-shrink:0;
+  }
+  .desktop-side-brand-title{
+    font-size:20px;
+    font-weight:800;
+    color:#0f172a;
+    letter-spacing:-.03em;
+    line-height:1.1;
+  }
+  .desktop-side-brand-title span{color:#2563eb;}
+  .desktop-side-brand-sub{
+    margin-top:5px;
+    font-size:12px;
+    color:#64748b;
+    line-height:1.45;
+  }
+  .main-menu-item{
+    display:flex !important;
+    flex-direction:row !important;
+    align-items:center !important;
+    justify-content:flex-start !important;
+    gap:12px !important;
+    padding:13px 14px !important;
+    border-radius:16px !important;
+    font-size:13px !important;
+    text-align:left !important;
+  }
+  .main-menu-item i{
+    width:18px;
+    font-size:16px !important;
+    color:#2563eb;
+    text-align:center;
+    flex-shrink:0;
+  }
+  .main-menu-item span{flex:1;line-height:1.3;}
+  .main-menu-item:hover{transform:translateX(4px);}
+  .main-menu-item.active{
+    background:linear-gradient(135deg,#2563eb,#3b82f6) !important;
+    color:#fff !important;
+    box-shadow:0 12px 24px rgba(37,99,235,.24) !important;
+  }
+  .main-menu-item.active i{color:#fff !important;}
+  .desktop-side-footer{
+    margin-top:16px;
+    padding:14px 12px 4px;
+    border-top:1px solid rgba(148,163,184,.14);
+    color:#64748b;
+    font-size:12px;
+    line-height:1.55;
+  }
+  .desktop-side-footer strong{display:block;color:#0f172a;margin-bottom:4px;}
+  .tabs-nav{display:none !important;}
+  #app .container > .tab-content{
+    grid-column:2;
+    min-width:0;
+    width:100%;
+  }
+  #tab-dashboard{padding-top:2px;}
+  .home-section-grid{
+    grid-template-columns:repeat(4,minmax(0,1fr)) !important;
+    gap:14px !important;
+  }
+  .balance-hero{
+    border-radius:24px;
+    padding:24px 26px;
+    box-shadow:0 16px 36px rgba(37,99,235,.22);
+  }
+  .home-quick-card,
+  .home-action-btn,
+  .panel,
+  .form-card,
+  .settings-section,
+  .rev-card{
+    box-shadow:0 10px 26px rgba(15,23,42,.05);
+  }
+  .home-quick-card,
+  .panel,
+  .form-card,
+  .settings-section,
+  .rev-card{border-radius:20px;}
+  .home-action-btn{border-radius:16px;padding:16px 10px;font-size:12px;}
+  .sub-tabs{padding-bottom:4px;}
+}
+@media (max-width:1099px){
+  .desktop-side-brand,
+  .desktop-side-footer,
+  #desktopToolbarCaption{display:none !important;}
+}
+</style>
+<script id="aet-sidebar-dashboard-script">
+(function(){
+  const CAPTIONS = {
+    dashboard: 'Vue synthétique de vos revenus, dépenses, épargne et indicateurs mensuels.',
+    revenus: 'Suivez vos salaires, primes et autres entrées d\'argent depuis un espace unique.',
+    depenses: 'Contrôlez vos sorties, analysez les catégories et repérez les dépassements.',
+    epargne: 'Centralisez vos mises de côté et visualisez votre progression.',
+    budget: 'Définissez vos plafonds et pilotez vos limites mensuelles.',
+    salaire: 'Configurez votre structure salariale et mesurez le reste à vivre.',
+    historique: 'Retrouvez rapidement les opérations passées et leur détail.',
+    notes: 'Gardez vos rappels, événements et notes financières à portée de main.',
+    plangestion: 'Projetez un plan budgétaire adapté à votre situation.',
+    bibliotheque: 'Accédez à vos ressources financières dans un format plus lisible.',
+    conseils: 'Consultez vos guides pratiques et recommandations du moment.',
+    commerce: 'Pilotez votre activité commerciale depuis la même interface.'
+  };
+
+  function enhanceLayout(){
+    const container = document.querySelector('#app .container');
+    if(!container) return;
+
+    const toolbar = Array.from(container.children).find(el => el.querySelector && el.querySelector('#mainMenuBtn') && el.querySelector('#activeTabChip'));
+    if(toolbar && !toolbar.id) toolbar.id = 'desktopToolbar';
+
+    const chip = document.getElementById('activeTabChip');
+    if(toolbar && chip && !toolbar.querySelector('.desktop-toolbar-headline')){
+      const headline = document.createElement('div');
+      headline.className = 'desktop-toolbar-headline';
+      chip.parentNode.insertBefore(headline, chip);
+      headline.appendChild(chip);
+      const caption = document.createElement('div');
+      caption.id = 'desktopToolbarCaption';
+      headline.appendChild(caption);
+    }
+
+    const drawer = document.getElementById('mainMenuDrawer');
+    if(drawer){
+      if(!drawer.querySelector('.desktop-side-brand')){
+        const brand = document.createElement('div');
+        brand.className = 'desktop-side-brand';
+        brand.innerHTML = '<div class="desktop-side-brand-icon"><i class="fas fa-chart-line"></i></div><div><div class="desktop-side-brand-title">AET <span>MonBudget</span></div><div class="desktop-side-brand-sub">Menu latéral de navigation<br/>et tableau de bord modernisé</div></div>';
+        drawer.insertBefore(brand, drawer.firstChild);
+      }
+      if(!drawer.querySelector('.desktop-side-footer')){
+        const footer = document.createElement('div');
+        footer.className = 'desktop-side-footer';
+        footer.innerHTML = '<strong>Navigation rapide</strong>Accédez aux modules principaux depuis la colonne de gauche tout en gardant le contenu au centre.';
+        drawer.appendChild(footer);
+      }
+    }
+
+    ['tab-bibliotheque','tab-commerce'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el && container && el.parentElement !== container){
+        container.appendChild(el);
+      }
+    });
+  }
+
+  function syncCaption(){
+    const caption = document.getElementById('desktopToolbarCaption');
+    if(!caption) return;
+    const current = window.activeTab || 'dashboard';
+    caption.textContent = CAPTIONS[current] || 'Espace de pilotage de votre application.';
+  }
+
+  function boot(){
+    enhanceLayout();
+    syncCaption();
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', boot);
+  } else {
+    boot();
+  }
+
+  const previousSwitchTab = window.switchTab;
+  if(typeof previousSwitchTab === 'function' && !window.__aetSidebarDashboardWrapped){
+    window.switchTab = function(tab){
+      const result = previousSwitchTab.apply(this, arguments);
+      setTimeout(syncCaption, 0);
+      return result;
+    };
+    window.__aetSidebarDashboardWrapped = true;
+  }
+})();
+</script>
+
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>

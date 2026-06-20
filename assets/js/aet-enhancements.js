@@ -132,13 +132,25 @@ import {
   }
 
   function addNavigationEntry(tab, label, icon, color) {
-    const sidebar = document.getElementById('sb-profil')?.parentElement;
+    let sidebarTarget = document.getElementById('aetx-sb-section');
+    if (!sidebarTarget) {
+      const sbScroll = document.getElementById('sb-profil')?.closest('.sb-scroll');
+      const compteLabel = Array.from(sbScroll?.querySelectorAll('.sb-section-label') || [])
+        .find(el => el.textContent.trim() === 'Compte');
+      if (sbScroll && compteLabel) {
+        compteLabel.insertAdjacentHTML('beforebegin', `
+          <div class="sb-section-label">Modules avancés</div>
+          <div id="aetx-sb-section"></div>
+        `);
+        sidebarTarget = document.getElementById('aetx-sb-section');
+      }
+    }
     const drawer  = document.getElementById('bnavDrawer')?.querySelector('.bnav-drawer-grid');
     const menu    = document.getElementById('mm-commerce')?.parentElement;
     const tabsNav = document.querySelector('.tabs-nav');
 
-    if (sidebar && !document.getElementById('sb-' + tab)) {
-      appendHTML(sidebar, `<div class="sidebar-link" id="sb-${tab}" onclick="mainMenuSwitch('${tab}','${label}','${icon}')" style="--sb-ic:${color}"><i class="fas ${icon}"></i><span>${label}</span></div>`);
+    if (sidebarTarget && !document.getElementById('sb-' + tab)) {
+      appendHTML(sidebarTarget, `<div class="sidebar-link" id="sb-${tab}" onclick="mainMenuSwitch('${tab}','${label}','${icon}')" style="--sb-ic:${color}"><i class="fas ${icon}"></i><span>${label}</span></div>`);
     }
     if (menu && !document.getElementById('mm-' + tab)) {
       appendHTML(menu, `<div class="main-menu-item" id="mm-${tab}" onclick="mainMenuSwitch('${tab}','${label}','${icon}')"><i class="fas ${icon}"></i><span>${label}</span></div>`);
@@ -248,6 +260,58 @@ import {
     return Object.entries(map).sort((a,b) => b[1] - a[1]);
   }
 
+  // ══ IA : détection des dépenses excessives (comparaison à la moyenne des 3 derniers mois) ══
+  function categoryAverages(monthsBack = 3) {
+    const ref = currentMonth();
+    const buckets = {};
+    for (let i = 1; i <= monthsBack; i++) {
+      const d = new Date();
+      d.setMonth(d.getMonth() - i);
+      const ym = monthKey(d);
+      state.tx.filter(t => t.flow === 'out' && (t.date || '').startsWith(ym))
+        .forEach(t => {
+          const cat = t.category || 'Autres';
+          buckets[cat] = buckets[cat] || [];
+          buckets[cat][i - 1] = (buckets[cat][i - 1] || 0) + Number(t.amount || 0);
+        });
+    }
+    const avg = {};
+    Object.entries(buckets).forEach(([cat, vals]) => {
+      const filled = vals.filter(v => v !== undefined);
+      avg[cat] = filled.length ? sum(filled) / monthsBack : 0;
+    });
+    return avg;
+  }
+
+  function detectExcessiveSpending() {
+    const avg = categoryAverages(3);
+    const current = topCategories(currentMonth());
+    return current.map(([cat, amount]) => {
+      const avgAmt = avg[cat] || 0;
+      const pct = avgAmt > 0 ? (amount / avgAmt) * 100 : (amount > 0 ? 999 : 0);
+      return { cat, amount, avgAmt, pct };
+    })
+    .filter(c => c.amount >= 3000 && (c.pct >= 130 || (c.avgAmt === 0 && c.amount >= 15000)))
+    .sort((a,b) => b.amount - a.amount)
+    .slice(0, 4);
+  }
+
+  const SAVINGS_TIPS = {
+    'électricité': "Débranchez les appareils en veille et privilégiez les heures creuses pour le gros électroménager.",
+    'eau': "Vérifiez l'absence de fuites et limitez l'arrosage / lavage à grande eau.",
+    'internet': "Comparez les forfaits Togocom/Moov disponibles, un changement d'offre peut faire baisser la facture.",
+    'transport': "Regroupez vos trajets ou testez le covoiturage / taxi-moto partagé sur les trajets récurrents.",
+    'alimentation': "Préparer les repas à l'avance et acheter en gros au marché réduit souvent la facture de 15-20%.",
+    'restauration': "Réduire les sorties au restaurant de moitié ce mois-ci libérerait une part significative du budget.",
+    'abonnements': "Passez en revue vos abonnements (Canal+, streaming, appli) : désactivez ceux peu utilisés.",
+    'loisirs': "Fixez-vous un plafond mensuel dédié aux loisirs pour garder le cap sur vos objectifs d'épargne.",
+    'santé': "Pensez à la prévention (consultations régulières) pour éviter des frais médicaux plus lourds plus tard.",
+  };
+  function suggestionFor(cat) {
+    const key = Object.keys(SAVINGS_TIPS).find(k => (cat || '').toLowerCase().includes(k));
+    return key ? SAVINGS_TIPS[key] : `Essayez de réduire "${cat}" de 10 à 15% ce mois-ci pour rester dans votre rythme habituel.`;
+  }
+
   function buildInsights() {
     const now = monthStats(currentMonth());
     const prev = monthStats(previousMonth());
@@ -267,13 +331,16 @@ import {
       return { ...g, pct };
     }).sort((a,b)=>b.pct-a.pct);
     const expensiveShift = prev.expenses ? ((now.expenses - prev.expenses) / prev.expenses) * 100 : 0;
+    const excessive = detectExcessiveSpending();
+    const suggestions = excessive.map(e => ({ cat: e.cat, tip: suggestionFor(e.cat), amount: e.amount }));
     const insights = [];
     if (expensiveShift > 15) insights.push(`Les dépenses du mois augmentent de ${expensiveShift.toFixed(0)}% par rapport au mois précédent.`);
     if (top[0]) insights.push(`Le poste le plus lourd est ${top[0][0]} avec ${fmt(top[0][1])}.`);
+    if (excessive[0]) insights.push(`Dépense inhabituelle détectée sur "${excessive[0].cat}" (${Math.round(excessive[0].pct)}% de la moyenne habituelle).`);
     if (forecastEnd < 0) insights.push(`À ce rythme, le solde de fin de mois risque d'être négatif (${fmt(forecastEnd)}).`);
     if (!insights.length) insights.push('La trajectoire du mois reste saine. Continuez à alimenter vos objectifs d’épargne.');
     const weekly = buildWeeklySummary(now.arr);
-    return { now, prev, top, forecastOut, forecastIn, forecastEnd, overBudgets, goalProgress, insights, weekly };
+    return { now, prev, top, forecastOut, forecastIn, forecastEnd, overBudgets, goalProgress, excessive, suggestions, insights, weekly };
   }
 
   function buildWeeklySummary(arr) {
@@ -331,6 +398,24 @@ import {
           <div class="aetx-section-title" style="margin-bottom:10px"><h3>Objectifs d'épargne</h3></div>
           ${info.goalProgress.length ? info.goalProgress.slice(0,4).map(g => `<div class="aetx-mb"><div style="display:flex;justify-content:space-between;gap:8px"><strong>${esc(g.name || 'Objectif')}</strong><span class="aetx-small">${g.pct}%</span></div><div class="aetx-progress"><span style="width:${g.pct}%"></span></div><div class="aetx-small">${fmt(g.saved || 0)} / ${fmt(g.target || 0)}</div></div>`).join('') : '<div class="aetx-empty">Aucun objectif enregistré.</div>'}
         </div>
+      </div>
+      <div class="aetx-card aetx-mt">
+        <div class="aetx-section-title" style="margin-bottom:10px">
+          <h3><i class="fas fa-robot" style="margin-right:6px;color:var(--aetx-primary)"></i>Détection intelligente & suggestions d'économies</h3>
+          <span class="aetx-chip ${info.excessive.length ? 'warn' : 'success'}"><i class="fas fa-magnifying-glass-dollar"></i> vs moyenne 3 derniers mois</span>
+        </div>
+        ${info.excessive.length ? `
+          <div class="aetx-list">
+            ${info.suggestions.map(s => {
+              const exc = info.excessive.find(e => e.cat === s.cat);
+              const pctTxt = exc && exc.avgAmt > 0 ? `${Math.round(exc.pct)}% de votre moyenne habituelle` : 'dépense inhabituelle pour cette catégorie';
+              return `<div class="aetx-list-item">
+                <div><h5><i class="fas fa-triangle-exclamation" style="color:var(--aetx-warning);margin-right:6px"></i>${esc(s.cat)}</h5><p>${esc(pctTxt)}. ${esc(s.tip)}</p></div>
+                <div class="aetx-amount neg">${fmt(s.amount)}</div>
+              </div>`;
+            }).join('')}
+          </div>
+        ` : '<div class="aetx-empty">Aucune dépense inhabituelle détectée ce mois-ci — vos habitudes restent cohérentes avec vos 3 derniers mois.</div>'}
       </div>
     `;
   }

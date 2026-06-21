@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aet-monbudget-v2';
+const CACHE_NAME = 'aet-monbudget-v3';
 const OFFLINE_ASSETS = [
   './',
   './index.html',
@@ -19,6 +19,21 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
+  // Stratégie réseau-d'abord pour index.html : on veut toujours la
+  // dernière version de la page principale, avec repli sur le cache
+  // hors-ligne. Les autres fichiers restent cache-first (rapide).
+  const url = new URL(event.request.url);
+  const isHTML = event.request.mode === 'navigate' || url.pathname.endsWith('/index.html') || url.pathname.endsWith('/');
+  if (isHTML) {
+    event.respondWith(
+      fetch(event.request).then(response => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
+        return response;
+      }).catch(() => caches.match(event.request).then(cached => cached || caches.match('./index.html')))
+    );
+    return;
+  }
   event.respondWith(
     caches.match(event.request).then(cached => cached || fetch(event.request).then(response => {
       const copy = response.clone();

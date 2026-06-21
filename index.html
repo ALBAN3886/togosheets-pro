@@ -789,6 +789,32 @@ window.setMonthFilter = (m) => {
   renderAll();
 };
 
+// ══ DEBUG : afficher les erreurs JS à l'écran (diagnostic mobile) ══
+window.addEventListener('error', function(e){
+  try{
+    let box = document.getElementById('cmDebugBox');
+    if(!box){
+      box = document.createElement('div');
+      box.id = 'cmDebugBox';
+      box.style.cssText = 'position:fixed;bottom:0;left:0;right:0;max-height:40vh;overflow:auto;background:#1a0000;color:#ff8888;font-size:11px;font-family:monospace;padding:10px;z-index:999999;white-space:pre-wrap;border-top:3px solid red';
+      document.body.appendChild(box);
+    }
+    box.textContent += '[ERREUR] ' + e.message + '\n  → ' + (e.filename||'') + ':' + e.lineno + ':' + e.colno + '\n\n';
+  }catch(_){}
+});
+window.addEventListener('unhandledrejection', function(e){
+  try{
+    let box = document.getElementById('cmDebugBox');
+    if(!box){
+      box = document.createElement('div');
+      box.id = 'cmDebugBox';
+      box.style.cssText = 'position:fixed;bottom:0;left:0;right:0;max-height:40vh;overflow:auto;background:#1a0000;color:#ff8888;font-size:11px;font-family:monospace;padding:10px;z-index:999999;white-space:pre-wrap;border-top:3px solid red';
+      document.body.appendChild(box);
+    }
+    box.textContent += '[PROMESSE REJETÉE] ' + (e.reason && e.reason.message ? e.reason.message : e.reason) + '\n\n';
+  }catch(_){}
+});
+
 // ══ MODALS ══
 window.openModal  = id => document.getElementById(id).classList.add('open');
 window.closeModal = id => document.getElementById(id).classList.remove('open');

@@ -197,7 +197,7 @@ import { getMessaging, getToken, onMessage, isSupported as messagingIsSupported 
       <div id="aetx-settings-extra" class="aetx-section aetx-mt">
         <div class="aetx-section-title"><h3>Notifications & sauvegarde intelligente</h3></div>
         <div class="aetx-toggle-row">
-          <div><strong>Push navigateur</strong><div class="aetx-small">Active la permission Notification pour les rappels de budget, factures et objectifs.</div></div>
+          <div><strong>Push navigateur</strong><div class="aetx-small">Enregistre cet appareil pour les rappels (budget, factures, objectifs). L'envoi automatique nécessite le plan Firebase Blaze.</div></div>
           <button class="aetx-btn soft" onclick="window.aetxRequestPushPermission()">Activer</button>
           <button class="aetx-btn soft" onclick="window.aetxDisablePushNotifications()">Désactiver ici</button>
         </div>
@@ -878,7 +878,7 @@ import { getMessaging, getToken, onMessage, isSupported as messagingIsSupported 
         notify(`${title} — ${body}`, 'info');
       });
 
-      notify('Notifications push activées ✓', 'success');
+      notify("Appareil enregistré ✓ — les rappels auto. s'activeront dès le passage au plan Blaze", 'success');
     } catch (e) {
       console.error('aetxRequestPushPermission', e);
       notify('Erreur activation notifications : ' + e.message, 'error');

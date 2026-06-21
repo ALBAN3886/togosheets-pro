@@ -8234,17 +8234,21 @@ function cmGenArticleCode(){
 }
 
 function cmQrPayload(a){
-  // Payload compact scanné par le module Commerce : AETCM|shopId|articleId|code
-  return `AETCM|${a.shopId}|${a.id}|${a.code||''}`;
+  // Payload compact scanné par le module Commerce : AETCM|shopId|articleId|qrId
+  // qrId est l'identifiant unique généré automatiquement, distinct du
+  // code-barre (a.code) que l'utilisateur peut saisir à la main.
+  if(!a.qrId) a.qrId = cmGenArticleCode();
+  return `AETCM|${a.shopId}|${a.id}|${a.qrId}`;
 }
 
 window.cmShowQr = function(id){
   const a = CM.articles.find(x=>x.id===id);
   if(!a) return;
   CM.qrArtId = id;
+  if(!a.qrId){ a.qrId = cmGenArticleCode(); cmSave(); }
   document.getElementById('cmQrName').textContent = a.name;
   document.getElementById('cmQrPrice').textContent = cmAmt(a.prixV);
-  document.getElementById('cmQrCodeTxt').textContent = a.code || '—';
+  document.getElementById('cmQrCodeTxt').textContent = a.qrId || '—';
   // Ouvrir la modal D'ABORD : qrcodejs dessine via canvas et a besoin
   // que le conteneur soit visible/layouté (sinon canvas vide sur mobile).
   if(window.openModal) window.openModal('cmQrModal');
@@ -8436,13 +8440,18 @@ window.cmSaveArticle = function(){
     const a = CM.articles.find(x=>x.id===CM.editingArtId);
     if(a){
       Object.assign(a,{name,cat,prixA,prixV,stock,unit,seuil,code,note});
+      // a.qrId est l'identifiant unique servant au QR — distinct du
+      // code-barre (a.code) saisi à la main. On le génère ici s'il
+      // manque encore (cas des articles créés avant ce système).
+      if(!a.qrId) a.qrId = cmGenArticleCode();
       cmToast('Article modifié','success');
     }
   } else {
     CM.articles.push({
       id: cmUID(), shopId: CM.currentShopId,
       name,cat,prixA,prixV,stock,unit,seuil,
-      code: code || cmGenArticleCode(),
+      code,
+      qrId: cmGenArticleCode(),
       note,
       createdAt: Date.now()
     });

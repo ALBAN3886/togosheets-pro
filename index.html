@@ -2974,7 +2974,7 @@ select.form-input option{background:var(--bg2)}
   .sb-close{ display:none !important; }
   .sb-toggle-btn{ display:none !important; }
   .header{ margin-left:var(--sb-w); width:calc(100% - var(--sb-w)); }
-  .container{ margin-left:var(--sb-w); max-width:calc(1420px); }
+  .container{ margin-left:calc(var(--sb-w) + max(0px, (100vw - var(--sb-w) - 1420px)/2)); margin-right:auto; }
 }
 
 /* ── SCROLLBAR ── */

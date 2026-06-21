@@ -8245,10 +8245,19 @@ window.cmShowQr = function(id){
   document.getElementById('cmQrName').textContent = a.name;
   document.getElementById('cmQrPrice').textContent = cmAmt(a.prixV);
   document.getElementById('cmQrCodeTxt').textContent = a.code || '—';
+  // Ouvrir la modal D'ABORD : qrcodejs dessine via canvas et a besoin
+  // que le conteneur soit visible/layouté (sinon canvas vide sur mobile).
+  if(window.openModal) window.openModal('cmQrModal');
   const holder = document.getElementById('cmQrCanvas');
   holder.innerHTML = '';
-  new QRCode(holder, { text: cmQrPayload(a), width: 180, height: 180, correctLevel: QRCode.CorrectLevel.M });
-  if(window.openModal) window.openModal('cmQrModal');
+  setTimeout(()=>{
+    if(typeof QRCode === 'undefined'){
+      holder.innerHTML = '<div style="padding:20px;color:#dc2626;font-size:13px;text-align:center">Bibliothèque QR non chargée.<br>Vérifie ta connexion internet et recharge la page.</div>';
+      if(window.cmToast) cmToast('Erreur : librairie QR non chargée','error');
+      return;
+    }
+    new QRCode(holder, { text: cmQrPayload(a), width: 180, height: 180, correctLevel: QRCode.CorrectLevel.M });
+  }, 30);
 };
 
 window.cmPrintCurrentQr = function(){
@@ -8271,10 +8280,18 @@ function cmBuildPrintSheet(arts){
     const cellId = 'lbl_' + a.id;
     return `<div class="cm-label"><div id="${cellId}"></div><div class="lbl-name">${a.name}</div><div class="lbl-price">${cmAmt(a.prixV)}</div></div>`;
   }).join('') + '</div>';
+  // qrcodejs dessine via <canvas> et a besoin que le conteneur soit
+  // visible/layouté pour produire un rendu correct (sinon canvas vide
+  // sur mobile, car #cmPrintLabels est display:none hors impression).
+  // On le rend visible hors-écran le temps de générer les QR.
+  sheet.style.cssText = 'display:block;position:absolute;left:-9999px;top:0;width:210mm;';
   arts.forEach(a=>{
     const el = document.getElementById('lbl_' + a.id);
     if(el) new QRCode(el, { text: cmQrPayload(a), width: 90, height: 90, correctLevel: QRCode.CorrectLevel.M });
   });
+  // On retire le style inline après le rendu : la feuille reprend son
+  // comportement normal (cachée à l'écran, visible via @media print).
+  setTimeout(()=>{ sheet.style.cssText = ''; }, 50);
 }
 
 // ══ SCANNER CAMÉRA : identifie un article par son QR ══

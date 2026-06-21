@@ -2,8 +2,10 @@ import { initializeApp, getApp, getApps } from 'https://www.gstatic.com/firebase
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {
   getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, setDoc, getDoc,
-  query, where, onSnapshot, orderBy, serverTimestamp, limit, getDocs
+  query, where, onSnapshot, orderBy, serverTimestamp, limit, getDocs, arrayUnion, arrayRemove
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getMessaging, getToken, onMessage, isSupported as messagingIsSupported }
+  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js';
 
 /**
  * Extension non destructive pour AET MonBudget.
@@ -20,6 +22,10 @@ import {
   const app  = getApps().length ? getApp() : initializeApp(firebaseConfig);
   const auth = window.__AET_AUTH__ || getAuth(app);
   const db   = window.__AET_DB__ || getFirestore(app);
+
+  // ⚠️ À remplacer par ta clé VAPID : Firebase Console → ⚙️ Paramètres du projet
+  // → Cloud Messaging → "Certificats Web Push" → Générer une paire de clés.
+  const VAPID_KEY = 'REMPLACE_PAR_TA_CLE_VAPID';
 
   const state = {
     uid: null,
@@ -193,6 +199,7 @@ import {
         <div class="aetx-toggle-row">
           <div><strong>Push navigateur</strong><div class="aetx-small">Active la permission Notification pour les rappels de budget, factures et objectifs.</div></div>
           <button class="aetx-btn soft" onclick="window.aetxRequestPushPermission()">Activer</button>
+          <button class="aetx-btn soft" onclick="window.aetxDisablePushNotifications()">Désactiver ici</button>
         </div>
         <div class="aetx-toggle-row">
           <div><strong>Mode sombre rapide</strong><div class="aetx-small">Bascule moderne clair / sombre sans toucher au thème historique.</div></div>
@@ -839,9 +846,56 @@ import {
   };
 
   window.aetxRequestPushPermission = async function() {
-    if (!('Notification' in window)) return notify('Notifications non supportées', 'warning');
-    const permission = await Notification.requestPermission();
-    notify(permission === 'granted' ? 'Notifications activées' : 'Notifications refusées', permission === 'granted' ? 'success' : 'warning');
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+      return notify('Notifications non supportées sur cet appareil', 'warning');
+    }
+    if (VAPID_KEY === 'REMPLACE_PAR_TA_CLE_VAPID') {
+      return notify('Clé VAPID non configurée — voir le commentaire en haut de aet-enhancements.js', 'warning');
+    }
+    try {
+      const supported = await messagingIsSupported();
+      if (!supported) return notify('Notifications push non supportées par ce navigateur', 'warning');
+
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        return notify('Notifications refusées', 'warning');
+      }
+
+      const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      const messaging = getMessaging(app);
+      const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
+
+      if (token && state.uid) {
+        await updateDoc(doc(db, 'users', state.uid), { fcmTokens: arrayUnion(token) }).catch(async () => {
+          await setDoc(doc(db, 'users', state.uid), { fcmTokens: [token] }, { merge: true });
+        });
+      }
+
+      // Affichage des notifications reçues alors que l'app est ouverte au premier plan
+      onMessage(messaging, (payload) => {
+        const title = payload?.notification?.title || 'AET MonBudget';
+        const body  = payload?.notification?.body  || '';
+        notify(`${title} — ${body}`, 'info');
+      });
+
+      notify('Notifications push activées ✓', 'success');
+    } catch (e) {
+      console.error('aetxRequestPushPermission', e);
+      notify('Erreur activation notifications : ' + e.message, 'error');
+    }
+  };
+
+  // Désactivation : retire le jeton de cet appareil pour ne plus recevoir de push ici.
+  window.aetxDisablePushNotifications = async function() {
+    try {
+      const messaging = getMessaging(app);
+      const reg = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
+      if (reg && state.uid) {
+        const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg }).catch(() => null);
+        if (token) await updateDoc(doc(db, 'users', state.uid), { fcmTokens: arrayRemove(token) }).catch(() => {});
+      }
+      notify('Notifications désactivées sur cet appareil', 'info');
+    } catch (e) { console.error(e); }
   };
 
   window.aetxSetTheme = function(mode) {

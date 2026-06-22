@@ -1408,7 +1408,7 @@ const LANGS = {
     // Header
     app_title:'AET MonBudget', app_subtitle:'ALBAN ELOH TECHNOLOGY · Gestion financière · Franc CFA',
     btn_logout:'Déconnexion', btn_save:'Enregistrer', btn_add:'Ajouter', btn_cancel:'Annuler',
-    btn_edit:'Modifier', btn_delete:'Supprimer', btn_export:'Exporter CSV',
+    btn_edit:'Modifier', btn_delete:'Supprimer', btn_export:'Exporter CSV', btn_close:'Fermer',
     // Auth
     auth_login:'Connexion', auth_signup:'Créer un compte', auth_email:'Email',
     auth_password:'Mot de passe', auth_name:'Nom complet', auth_confirm:'Confirmer',
@@ -1464,6 +1464,80 @@ const LANGS = {
     loading:'Chargement…', no_operation:'Aucune opération', fcfa:'FCFA / mois',
     expense:'DÉPENSE', savings:'ÉPARGNE', investment:'INVESTISSEMENT', various:'DIVERS',
     total_expenses:'Total dépenses', total_distributed:'Total distribué',
+    // ══ Module Commerce ══
+    cm_title:'Commerce', cm_subtitle:'Gérez vos boutiques, stocks, achats et ventes',
+    cm_feat_stock_t:'Gestion du stock', cm_feat_stock_d:'Surveillez vos entrées, sorties et quantités disponibles pour éviter les manques et optimiser vos articles.',
+    cm_feat_ventes_t:'Gestion des ventes', cm_feat_ventes_d:'Enregistrez chaque vente rapidement, consultez vos performances et imprimez vos factures en toute simplicité.',
+    cm_feat_achats_t:'Gestion des achats', cm_feat_achats_d:'Gardez une vue claire sur vos approvisionnements et suivez vos dépenses avec précision.',
+    cm_feat_credit_t:'Gestion du crédit', cm_feat_credit_d:'Suivez facilement les clients et fournisseurs en attente de règlement, avec des alertes pratiques.',
+    cm_feat_treso_t:'Suivi de trésorerie', cm_feat_treso_d:'Visualisez vos mouvements financiers et gardez le contrôle sur votre activité au quotidien.',
+    cm_feat_facture_t:'Facturation intelligente', cm_feat_facture_d:'Créez des factures professionnelles en un clic, avec des calculs automatiques et un design propre.',
+    cm_feat_distant_t:'Accès à distance', cm_feat_distant_d:'Travaillez depuis votre PC, tablette ou téléphone — vos données restent toujours synchronisées.',
+    cm_feat_multi_t:'Multi-utilisateurs avec gestion des accès', cm_feat_multi_d:'Attribuez des rôles personnalisés et sécurisez l\'utilisation de votre application.',
+    cm_feat_rapport_t:'Rapports d\'activité instantanés', cm_feat_rapport_d:'Obtenez des tableaux et analyses clairs pour suivre l\'évolution de votre commerce.',
+    cm_tab_resume:'Résumé', cm_tab_articles:'Articles', cm_tab_mouvements:'Mouvements', cm_tab_stock:'Stock',
+    cm_stat_ventes:'Ventes (mois)', cm_stat_achats:'Achats (mois)', cm_stat_marge:'Bénéfice', cm_stat_stock:'Valeur stock',
+    cm_top_articles:'Top articles vendus', cm_no_sale:'Aucune vente pour l\'instant',
+    cm_alerts:'Alertes stock bas', cm_stock_ok:'Tous les stocks sont OK',
+    cm_filter_all:'Tous', cm_filter_ventes:'Ventes', cm_filter_achats:'Achats',
+    cm_new_shop:'Nouvelle boutique', cm_edit_shop:'Modifier la boutique',
+    cm_shop_name:'Nom de la boutique', cm_shop_type:'Type', cm_shop_type_precise:'Préciser le type',
+    cm_shop_country:'Pays', cm_shop_choose_country:'Choisir un pays',
+    cm_shop_city:'Ville', cm_shop_choose_city:'Choisir une ville',
+    cm_shop_address:'Adresse (optionnel)', cm_shop_seuil:'Seuil d\'alerte stock (par défaut)',
+    cm_new_article:'Nouvel article', cm_edit_article:'Modifier article',
+    cm_art_name:'Nom de l\'article *', cm_art_cat:'Catégorie *',
+    cm_art_prixa:'Prix d\'achat (unitaire)', cm_art_prixv:'Prix de vente *',
+    cm_art_stock:'Stock initial', cm_art_unit:'Unité', cm_art_seuil:'Seuil alerte stock bas',
+    cm_art_code:'Code-barre (optionnel)', cm_art_note:'Note (optionnel)',
+    cm_unit_pcs:'Pièce', cm_unit_kg:'Kilogramme (kg)', cm_unit_g:'Gramme (g)', cm_unit_l:'Litre (L)',
+    cm_unit_cl:'Centilitre (cl)', cm_unit_m:'Mètre (m)', cm_unit_paq:'Paquet', cm_unit_carton:'Carton',
+    cm_unit_sac:'Sac', cm_unit_bout:'Bouteille',
+    cm_new_mvt:'Nouveau mouvement', cm_mvt_article:'Article *', cm_mvt_qte:'Quantité *',
+    cm_mvt_prix:'Prix unitaire', cm_mvt_total:'Total', cm_mvt_date:'Date',
+    cm_mvt_person:'Client / Fournisseur (optionnel)', cm_mvt_note:'Note (optionnel)',
+    cm_quick_sale:'Vente rapide (scan caisse)', cm_scan_article:'Scanner un article',
+    cm_scan_hint:'Cadrez le QR code de l\'étiquette de l\'article',
+    cm_pay_btn:'Payer (1 unité)', cm_pay_cancel:'Annuler',
+    cm_qr_title:'Code QR de l\'article', cm_qr_print:'Imprimer',
+    cm_search_article:'Rechercher un article…', cm_no_movement:'Aucun mouvement',
+    cm_no_movement_sub:'Enregistrez votre première vente ou achat',
+    cm_create_first_shop:'Créer ma première boutique', cm_manage_shops:'Gérer boutiques',
+    cm_shop_name_ph:'Ex: Épicerie du quartier',
+    cm_art_name_ph:'Ex: Bière 33cl, Riz parfumé 5kg…', cm_art_note_ph:'Description, fournisseur…',
+    cm_filter_ventes_sing:'Vente', cm_filter_achats_sing:'Achat',
+    cm_search_article_short:'Rechercher article…', cm_scan_qr_title:'Scanner un QR',
+    cm_code_label:'Code',
+    cm_search_generic:'Rechercher…', cm_print_all_labels:'Imprimer toutes les étiquettes QR',
+    cm_msg_shop_deleted:'Boutique supprimée', cm_msg_shop_name_required:'Nom de boutique requis',
+    cm_msg_shop_type_required:'Précisez le type de boutique',
+    cm_msg_shop_updated:'Boutique modifiée', cm_msg_shop_created:'Boutique créée',
+    cm_msg_qr_lib_error:'Erreur : librairie QR non chargée',
+    cm_msg_nothing_to_print:'Aucun article à imprimer', cm_msg_no_unit_to_print:'Aucune unité en stock à imprimer',
+    cm_msg_camera_denied:'Accès caméra refusé ou indisponible',
+    cm_msg_sold_prefix:'✓ Vendu :', cm_msg_article_recognized:'Article reconnu :',
+    cm_msg_create_shop_first:'Créez d\'abord une boutique', cm_msg_create_article_first:'Créez d\'abord un article',
+    cm_msg_name_required:'Nom requis', cm_msg_category_required:'Choisissez une catégorie',
+    cm_msg_price_required:'Prix de vente requis',
+    cm_msg_article_updated:'Article modifié', cm_msg_article_created:'Article ajouté', cm_msg_article_deleted:'Article supprimé',
+    cm_msg_mvt_deleted:'Mouvement supprimé', cm_msg_choose_article:'Choisissez un article',
+    cm_msg_article_not_found:'Article introuvable', cm_msg_invalid_qty:'Quantité invalide', cm_msg_invalid_price:'Prix invalide',
+    cm_msg_sale_recorded:'✓ Vente enregistrée', cm_msg_purchase_recorded:'✓ Achat enregistré',
+    cm_confirm_delete_shop:'Supprimer la boutique "{name}" ?\n{n} article(s) et {m} mouvement(s) seront aussi supprimés.',
+    cm_confirm_delete_article:'Supprimer l\'article "{name}" ?\n(Les mouvements liés seront conservés)',
+    cm_confirm_delete_mvt:'Supprimer ce mouvement ?\n{type} : {name} ×{qte}\nLe stock sera réajusté.',
+    cm_confirm_low_stock:'⚠️ Stock insuffisant !\nStock actuel: {stock} {unit}\nVente demandée: {qte}\n\nContinuer quand même ?',
+    cm_edit_shop_title:'Modifier boutique',
+    cm_scan_stock_label:'Stock :',
+    cm_units_summary:'{n} unité(s) — {avail} en stock, {sold} vendue(s)',
+    cm_unit_label:'Unité', cm_unit_sold:'Vendue', cm_unit_available:'En stock',
+    cm_note_quick_sale:'Vente rapide (scan)', cm_note_quick_sale_unit:'Vente rapide (scan unité #{num})',
+    cm_no_article:'Aucun article', cm_no_article_sub:'Cliquez sur "Nouvel article" pour commencer',
+    cm_no_stock_article:'Aucun article en stock', cm_in_stock_suffix:'en stock',
+    cm_stock_low_label:'⚠️ Stock bas', cm_stock_ok_label:'OK',
+    cm_units_sold_suffix:'unités vendues', cm_stock_seuil_line:'Stock: {stock} {unit} (seuil: {seuil})',
+    cm_msg_unit_already_sold:'Cette unité (#{num}) a déjà été vendue',
+    cm_msg_insufficient_stock:'Stock insuffisant ({stock} {unit} restant)',
   },
   en: {
     code:'en', name:'English', flag:'🇬🇧', dir:'ltr', font:'Syne',
@@ -1472,7 +1546,7 @@ const LANGS = {
     nav_historique:'History', nav_notes:'Notes', nav_plangestion:'Budget Plan',
     app_title:'AET MonBudget', app_subtitle:'ALBAN ELOH TECHNOLOGY · Personal Finance · CFA Franc',
     btn_logout:'Log out', btn_save:'Save', btn_add:'Add', btn_cancel:'Cancel',
-    btn_edit:'Edit', btn_delete:'Delete', btn_export:'Export CSV',
+    btn_edit:'Edit', btn_delete:'Delete', btn_export:'Export CSV', btn_close:'Close',
     auth_login:'Sign In', auth_signup:'Create Account', auth_email:'Email',
     auth_password:'Password', auth_name:'Full Name', auth_confirm:'Confirm',
     auth_forgot:'Forgot password?', auth_btn_login:'Sign In', auth_btn_signup:'Create my account',
@@ -1514,6 +1588,80 @@ const LANGS = {
     loading:'Loading…', no_operation:'No transactions', fcfa:'FCFA / month',
     expense:'EXPENSE', savings:'SAVINGS', investment:'INVESTMENT', various:'MISC',
     total_expenses:'Total expenses', total_distributed:'Total distributed',
+    // ══ Commerce module ══
+    cm_title:'Commerce', cm_subtitle:'Manage your shops, stock, purchases and sales',
+    cm_feat_stock_t:'Stock management', cm_feat_stock_d:'Track your incoming and outgoing stock and available quantities to avoid shortages and optimize your items.',
+    cm_feat_ventes_t:'Sales management', cm_feat_ventes_d:'Record every sale quickly, review your performance and print your invoices with ease.',
+    cm_feat_achats_t:'Purchase management', cm_feat_achats_d:'Keep a clear view of your supplies and track your spending accurately.',
+    cm_feat_credit_t:'Credit tracking', cm_feat_credit_d:'Easily track customers and suppliers with pending payments, with handy alerts.',
+    cm_feat_treso_t:'Cash flow tracking', cm_feat_treso_d:'Visualize your financial movements and keep control of your business day to day.',
+    cm_feat_facture_t:'Smart invoicing', cm_feat_facture_d:'Create professional invoices in one click, with automatic calculations and a clean design.',
+    cm_feat_distant_t:'Remote access', cm_feat_distant_d:'Work from your PC, tablet or phone — your data always stays in sync.',
+    cm_feat_multi_t:'Multi-user with access management', cm_feat_multi_d:'Assign custom roles and secure the use of your application.',
+    cm_feat_rapport_t:'Instant activity reports', cm_feat_rapport_d:'Get clear charts and analysis to track your business growth.',
+    cm_tab_resume:'Summary', cm_tab_articles:'Items', cm_tab_mouvements:'Transactions', cm_tab_stock:'Stock',
+    cm_stat_ventes:'Sales (month)', cm_stat_achats:'Purchases (month)', cm_stat_marge:'Profit', cm_stat_stock:'Stock value',
+    cm_top_articles:'Top selling items', cm_no_sale:'No sales yet',
+    cm_alerts:'Low stock alerts', cm_stock_ok:'All stock levels are OK',
+    cm_filter_all:'All', cm_filter_ventes:'Sales', cm_filter_achats:'Purchases',
+    cm_new_shop:'New shop', cm_edit_shop:'Edit shop',
+    cm_shop_name:'Shop name', cm_shop_type:'Type', cm_shop_type_precise:'Specify type',
+    cm_shop_country:'Country', cm_shop_choose_country:'Choose a country',
+    cm_shop_city:'City', cm_shop_choose_city:'Choose a city',
+    cm_shop_address:'Address (optional)', cm_shop_seuil:'Low stock alert threshold (default)',
+    cm_new_article:'New item', cm_edit_article:'Edit item',
+    cm_art_name:'Item name *', cm_art_cat:'Category *',
+    cm_art_prixa:'Purchase price (unit)', cm_art_prixv:'Selling price *',
+    cm_art_stock:'Initial stock', cm_art_unit:'Unit', cm_art_seuil:'Low stock alert threshold',
+    cm_art_code:'Barcode (optional)', cm_art_note:'Note (optional)',
+    cm_unit_pcs:'Piece', cm_unit_kg:'Kilogram (kg)', cm_unit_g:'Gram (g)', cm_unit_l:'Liter (L)',
+    cm_unit_cl:'Centiliter (cl)', cm_unit_m:'Meter (m)', cm_unit_paq:'Pack', cm_unit_carton:'Carton',
+    cm_unit_sac:'Bag', cm_unit_bout:'Bottle',
+    cm_new_mvt:'New transaction', cm_mvt_article:'Item *', cm_mvt_qte:'Quantity *',
+    cm_mvt_prix:'Unit price', cm_mvt_total:'Total', cm_mvt_date:'Date',
+    cm_mvt_person:'Customer / Supplier (optional)', cm_mvt_note:'Note (optional)',
+    cm_quick_sale:'Quick sale (scan checkout)', cm_scan_article:'Scan an item',
+    cm_scan_hint:'Aim at the item label\'s QR code',
+    cm_pay_btn:'Pay (1 unit)', cm_pay_cancel:'Cancel',
+    cm_qr_title:'Item QR code', cm_qr_print:'Print',
+    cm_search_article:'Search an item…', cm_no_movement:'No transactions yet',
+    cm_no_movement_sub:'Record your first sale or purchase',
+    cm_create_first_shop:'Create my first shop', cm_manage_shops:'Manage shops',
+    cm_shop_name_ph:'E.g.: Neighborhood grocery',
+    cm_art_name_ph:'E.g.: Beer 33cl, Scented rice 5kg…', cm_art_note_ph:'Description, supplier…',
+    cm_filter_ventes_sing:'Sale', cm_filter_achats_sing:'Purchase',
+    cm_search_article_short:'Search item…', cm_scan_qr_title:'Scan a QR code',
+    cm_code_label:'Code',
+    cm_search_generic:'Search…', cm_print_all_labels:'Print all QR labels',
+    cm_msg_shop_deleted:'Shop deleted', cm_msg_shop_name_required:'Shop name required',
+    cm_msg_shop_type_required:'Please specify the shop type',
+    cm_msg_shop_updated:'Shop updated', cm_msg_shop_created:'Shop created',
+    cm_msg_qr_lib_error:'Error: QR library not loaded',
+    cm_msg_nothing_to_print:'No item to print', cm_msg_no_unit_to_print:'No unit in stock to print',
+    cm_msg_camera_denied:'Camera access denied or unavailable',
+    cm_msg_sold_prefix:'✓ Sold:', cm_msg_article_recognized:'Item recognized:',
+    cm_msg_create_shop_first:'Create a shop first', cm_msg_create_article_first:'Create an item first',
+    cm_msg_name_required:'Name required', cm_msg_category_required:'Choose a category',
+    cm_msg_price_required:'Selling price required',
+    cm_msg_article_updated:'Item updated', cm_msg_article_created:'Item added', cm_msg_article_deleted:'Item deleted',
+    cm_msg_mvt_deleted:'Transaction deleted', cm_msg_choose_article:'Choose an item',
+    cm_msg_article_not_found:'Item not found', cm_msg_invalid_qty:'Invalid quantity', cm_msg_invalid_price:'Invalid price',
+    cm_msg_sale_recorded:'✓ Sale recorded', cm_msg_purchase_recorded:'✓ Purchase recorded',
+    cm_confirm_delete_shop:'Delete shop "{name}"?\n{n} item(s) and {m} transaction(s) will also be deleted.',
+    cm_confirm_delete_article:'Delete item "{name}"?\n(Related transactions will be kept)',
+    cm_confirm_delete_mvt:'Delete this transaction?\n{type}: {name} ×{qte}\nStock will be adjusted.',
+    cm_confirm_low_stock:'⚠️ Insufficient stock!\nCurrent stock: {stock} {unit}\nRequested sale: {qte}\n\nContinue anyway?',
+    cm_edit_shop_title:'Edit shop',
+    cm_scan_stock_label:'Stock:',
+    cm_units_summary:'{n} unit(s) — {avail} in stock, {sold} sold',
+    cm_unit_label:'Unit', cm_unit_sold:'Sold', cm_unit_available:'In stock',
+    cm_note_quick_sale:'Quick sale (scan)', cm_note_quick_sale_unit:'Quick sale (scan unit #{num})',
+    cm_no_article:'No items yet', cm_no_article_sub:'Click "New item" to get started',
+    cm_no_stock_article:'No items in stock', cm_in_stock_suffix:'in stock',
+    cm_stock_low_label:'⚠️ Low stock', cm_stock_ok_label:'OK',
+    cm_units_sold_suffix:'units sold', cm_stock_seuil_line:'Stock: {stock} {unit} (threshold: {seuil})',
+    cm_msg_unit_already_sold:'This unit (#{num}) has already been sold',
+    cm_msg_insufficient_stock:'Insufficient stock ({stock} {unit} left)',
   },
   ar: {
     code:'ar', name:'العربية', flag:'🇲🇦', dir:'rtl', font:'Syne',
@@ -1522,7 +1670,7 @@ const LANGS = {
     nav_historique:'السجل', nav_notes:'الملاحظات', nav_plangestion:'خطة الميزانية',
     app_title:'AET MonBudget', app_subtitle:'ALBAN ELOH TECHNOLOGY · إدارة الأموال الشخصية · فرنك أفريقي',
     btn_logout:'خروج', btn_save:'حفظ', btn_add:'إضافة', btn_cancel:'إلغاء',
-    btn_edit:'تعديل', btn_delete:'حذف', btn_export:'تصدير CSV',
+    btn_edit:'تعديل', btn_delete:'حذف', btn_export:'تصدير CSV', btn_close:'إغلاق',
     auth_login:'تسجيل الدخول', auth_signup:'إنشاء حساب', auth_email:'البريد الإلكتروني',
     auth_password:'كلمة المرور', auth_name:'الاسم الكامل', auth_confirm:'تأكيد',
     auth_forgot:'نسيت كلمة المرور؟', auth_btn_login:'دخول', auth_btn_signup:'إنشاء حسابي',
@@ -1572,7 +1720,7 @@ const LANGS = {
     nav_historique:'Nuzãzã', nav_notes:'Nuŋlɔŋlɔ', nav_plangestion:'Ðɔkpɔkpɔ Sesẽ',
     app_title:'AET MonBudget', app_subtitle:'ALBAN ELOH TECHNOLOGY · Ðɔ kpɔkpɔ sesẽ · Franc CFA',
     btn_logout:'Fle', btn_save:'Dzra', btn_add:'Tsɔ', btn_cancel:'Trɔ',
-    btn_edit:'Trɔ alo', btn_delete:'Ɖe eme', btn_export:'Export CSV',
+    btn_edit:'Trɔ alo', btn_delete:'Ɖe eme', btn_export:'Export CSV', btn_close:'Tu eme',
     auth_login:'Tsɔ ŋu', auth_signup:'Wɔ akonto', auth_email:'Email',
     auth_password:'Ŋkɔ ƒukpɔi', auth_name:'Ŋkɔ nyuie', auth_confirm:'Kpɔ gake',
     auth_forgot:'A wo ŋkɔ ƒukpɔi?', auth_btn_login:'Tsɔ ŋu', auth_btn_signup:'Wɔ akonto',
@@ -1619,8 +1767,12 @@ const LANGS = {
 
 let currentLang = localStorage.getItem('aet_lang') || 'fr';
 
-function t(key) {
-  return (LANGS[currentLang] && LANGS[currentLang][key]) || (LANGS['fr'] && LANGS['fr'][key]) || key;
+function t(key, vars) {
+  let str = (LANGS[currentLang] && LANGS[currentLang][key]) || (LANGS['fr'] && LANGS['fr'][key]) || key;
+  if (vars) {
+    Object.keys(vars).forEach(k => { str = str.split('{' + k + '}').join(vars[k]); });
+  }
+  return str;
 }
 
 function applyLang(code) {
@@ -1643,8 +1795,18 @@ function applyLang(code) {
       el.textContent = t(key);
     }
   });
+  // Traductions d'attributs title (tooltips)
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    el.title = t(el.dataset.i18nTitle);
+  });
   // Mettre à jour le titre
   document.title = t('app_title') + ' — ' + (code === 'fr' ? 'Gestion Financière' : code === 'en' ? 'Personal Finance' : code === 'ar' ? 'إدارة الأموال' : 'Ðɔ Kpɔkpɔ');
+  // Re-rendre le module Commerce : son texte dynamique (cartes, listes,
+  // filtres, états vides) n'est pas couvert par data-i18n et doit être
+  // régénéré explicitement pour refléter la nouvelle langue tout de suite.
+  if (typeof cmRenderAll === 'function' && typeof CM !== 'undefined' && CM.currentShopId) {
+    try { cmRenderAll(); } catch(e) {}
+  }
   toast(t('lang_saved'), 'success');
 }
 
@@ -7372,12 +7534,9 @@ if ('serviceWorker' in navigator) {
 
 <!-- ═══ TAB COMMERCE ═══ -->
 <div id="tab-commerce" class="tab-content">
-  <div style="background:#7c3aed;color:#fff;text-align:center;padding:8px;font-size:13px;font-weight:700;border-radius:8px;margin-bottom:10px">
-    🔧 VERSION QR-v3 — si tu vois ce bandeau violet, le bon fichier est bien chargé
-  </div>
   <div class="cm-header">
-    <h2><i class="fas fa-store" style="margin-right:8px"></i>Commerce</h2>
-    <p>Gérez vos boutiques, stocks, achats et ventes</p>
+    <h2><i class="fas fa-store" style="margin-right:8px"></i><span data-i18n="cm_title">Commerce</span></h2>
+    <p data-i18n="cm_subtitle">Gérez vos boutiques, stocks, achats et ventes</p>
   </div>
 
   <!-- ═══ Présentation des fonctionnalités (visible avant la 1ère boutique) ═══ -->
@@ -7385,43 +7544,43 @@ if ('serviceWorker' in navigator) {
     <div class="cm-feat-grid">
       <div class="cm-feat-card">
         <div class="cm-feat-ico" style="--fc:#10b981"><i class="fas fa-check"></i></div>
-        <div><b>Gestion du stock</b><p>Surveillez vos entrées, sorties et quantités disponibles pour éviter les manques et optimiser vos articles.</p></div>
+        <div><b data-i18n="cm_feat_stock_t">Gestion du stock</b><p data-i18n="cm_feat_stock_d">Surveillez vos entrées, sorties et quantités disponibles pour éviter les manques et optimiser vos articles.</p></div>
       </div>
       <div class="cm-feat-card">
         <div class="cm-feat-ico" style="--fc:#10b981"><i class="fas fa-check"></i></div>
-        <div><b>Gestion des ventes</b><p>Enregistrez chaque vente rapidement, consultez vos performances et imprimez vos factures en toute simplicité.</p></div>
+        <div><b data-i18n="cm_feat_ventes_t">Gestion des ventes</b><p data-i18n="cm_feat_ventes_d">Enregistrez chaque vente rapidement, consultez vos performances et imprimez vos factures en toute simplicité.</p></div>
       </div>
       <div class="cm-feat-card">
         <div class="cm-feat-ico" style="--fc:#10b981"><i class="fas fa-check"></i></div>
-        <div><b>Gestion des achats</b><p>Gardez une vue claire sur vos approvisionnements et suivez vos dépenses avec précision.</p></div>
+        <div><b data-i18n="cm_feat_achats_t">Gestion des achats</b><p data-i18n="cm_feat_achats_d">Gardez une vue claire sur vos approvisionnements et suivez vos dépenses avec précision.</p></div>
       </div>
       <div class="cm-feat-card">
         <div class="cm-feat-ico" style="--fc:#10b981"><i class="fas fa-check"></i></div>
-        <div><b>Gestion du crédit</b><p>Suivez facilement les clients et fournisseurs en attente de règlement, avec des alertes pratiques.</p></div>
+        <div><b data-i18n="cm_feat_credit_t">Gestion du crédit</b><p data-i18n="cm_feat_credit_d">Suivez facilement les clients et fournisseurs en attente de règlement, avec des alertes pratiques.</p></div>
       </div>
       <div class="cm-feat-card">
         <div class="cm-feat-ico" style="--fc:#10b981"><i class="fas fa-check"></i></div>
-        <div><b>Suivi de trésorerie</b><p>Visualisez vos mouvements financiers et gardez le contrôle sur votre activité au quotidien.</p></div>
+        <div><b data-i18n="cm_feat_treso_t">Suivi de trésorerie</b><p data-i18n="cm_feat_treso_d">Visualisez vos mouvements financiers et gardez le contrôle sur votre activité au quotidien.</p></div>
       </div>
       <div class="cm-feat-card">
         <div class="cm-feat-ico" style="--fc:#10b981"><i class="fas fa-check"></i></div>
-        <div><b>Facturation intelligente</b><p>Créez des factures professionnelles en un clic, avec des calculs automatiques et un design propre.</p></div>
+        <div><b data-i18n="cm_feat_facture_t">Facturation intelligente</b><p data-i18n="cm_feat_facture_d">Créez des factures professionnelles en un clic, avec des calculs automatiques et un design propre.</p></div>
       </div>
       <div class="cm-feat-card">
         <div class="cm-feat-ico" style="--fc:#10b981"><i class="fas fa-check"></i></div>
-        <div><b>Accès à distance</b><p>Travaillez depuis votre PC, tablette ou téléphone — vos données restent toujours synchronisées.</p></div>
+        <div><b data-i18n="cm_feat_distant_t">Accès à distance</b><p data-i18n="cm_feat_distant_d">Travaillez depuis votre PC, tablette ou téléphone — vos données restent toujours synchronisées.</p></div>
       </div>
       <div class="cm-feat-card">
         <div class="cm-feat-ico" style="--fc:#10b981"><i class="fas fa-check"></i></div>
-        <div><b>Multi-utilisateurs avec gestion des accès</b><p>Attribuez des rôles personnalisés et sécurisez l'utilisation de votre application.</p></div>
+        <div><b data-i18n="cm_feat_multi_t">Multi-utilisateurs avec gestion des accès</b><p data-i18n="cm_feat_multi_d">Attribuez des rôles personnalisés et sécurisez l'utilisation de votre application.</p></div>
       </div>
       <div class="cm-feat-card">
         <div class="cm-feat-ico" style="--fc:#10b981"><i class="fas fa-check"></i></div>
-        <div><b>Rapports d'activité instantanés</b><p>Obtenez des tableaux et analyses clairs pour suivre l'évolution de votre commerce.</p></div>
+        <div><b data-i18n="cm_feat_rapport_t">Rapports d'activité instantanés</b><p data-i18n="cm_feat_rapport_d">Obtenez des tableaux et analyses clairs pour suivre l'évolution de votre commerce.</p></div>
       </div>
     </div>
     <button onclick="cmOpenShopModal(true)" style="width:100%;margin-top:14px;padding:14px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:14px;font-weight:800;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 8px 20px rgba(16,185,129,.3)">
-      <i class="fas fa-plus"></i> Créer ma première boutique
+      <i class="fas fa-plus"></i> <span data-i18n="cm_create_first_shop">Créer ma première boutique</span>
     </button>
   </div>
 
@@ -7429,51 +7588,51 @@ if ('serviceWorker' in navigator) {
   <div class="cm-shop-bar">
     <i class="fas fa-shop" style="color:#10b981"></i>
     <select id="cmShopSelect" onchange="cmSelectShop(this.value)"></select>
-    <button class="cm-shop-edit" onclick="cmOpenShopModal()" title="Gérer boutiques"><i class="fas fa-cog"></i></button>
-    <button onclick="cmOpenShopModal(true)" title="Nouvelle boutique"><i class="fas fa-plus"></i></button>
+    <button class="cm-shop-edit" onclick="cmOpenShopModal()" data-i18n-title="cm_manage_shops" title="Gérer boutiques"><i class="fas fa-cog"></i></button>
+    <button onclick="cmOpenShopModal(true)" data-i18n-title="cm_new_shop" title="Nouvelle boutique"><i class="fas fa-plus"></i></button>
   </div>
 
   <!-- Onglets internes -->
   <div class="cm-tabs">
-    <button class="cm-tab active" data-cmtab="resume" onclick="cmSwitch('resume')"><i class="fas fa-chart-line"></i><span>Résumé</span></button>
-    <button class="cm-tab" data-cmtab="articles" onclick="cmSwitch('articles')"><i class="fas fa-box"></i><span>Articles</span></button>
-    <button class="cm-tab" data-cmtab="mouvements" onclick="cmSwitch('mouvements')"><i class="fas fa-right-left"></i><span>Mouvements</span></button>
-    <button class="cm-tab" data-cmtab="stock" onclick="cmSwitch('stock')"><i class="fas fa-warehouse"></i><span>Stock</span></button>
+    <button class="cm-tab active" data-cmtab="resume" onclick="cmSwitch('resume')"><i class="fas fa-chart-line"></i><span data-i18n="cm_tab_resume">Résumé</span></button>
+    <button class="cm-tab" data-cmtab="articles" onclick="cmSwitch('articles')"><i class="fas fa-box"></i><span data-i18n="cm_tab_articles">Articles</span></button>
+    <button class="cm-tab" data-cmtab="mouvements" onclick="cmSwitch('mouvements')"><i class="fas fa-right-left"></i><span data-i18n="cm_tab_mouvements">Mouvements</span></button>
+    <button class="cm-tab" data-cmtab="stock" onclick="cmSwitch('stock')"><i class="fas fa-warehouse"></i><span data-i18n="cm_tab_stock">Stock</span></button>
   </div>
 
   <!-- ═══ Section : Résumé ═══ -->
   <div class="cm-section active" id="cm-sec-resume">
     <div class="cm-stat-grid">
       <div class="cm-stat cm-rev">
-        <div class="cm-stat-label"><i class="fas fa-arrow-trend-up"></i> Ventes (mois)</div>
+        <div class="cm-stat-label"><i class="fas fa-arrow-trend-up"></i> <span data-i18n="cm_stat_ventes">Ventes (mois)</span></div>
         <div class="cm-stat-value" id="cmStatVentes">0</div>
       </div>
       <div class="cm-stat cm-dep">
-        <div class="cm-stat-label"><i class="fas fa-arrow-trend-down"></i> Achats (mois)</div>
+        <div class="cm-stat-label"><i class="fas fa-arrow-trend-down"></i> <span data-i18n="cm_stat_achats">Achats (mois)</span></div>
         <div class="cm-stat-value" id="cmStatAchats">0</div>
       </div>
       <div class="cm-stat cm-marge">
-        <div class="cm-stat-label"><i class="fas fa-percent"></i> Bénéfice</div>
+        <div class="cm-stat-label"><i class="fas fa-percent"></i> <span data-i18n="cm_stat_marge">Bénéfice</span></div>
         <div class="cm-stat-value" id="cmStatMarge">0</div>
       </div>
       <div class="cm-stat cm-stock">
-        <div class="cm-stat-label"><i class="fas fa-cubes"></i> Valeur stock</div>
+        <div class="cm-stat-label"><i class="fas fa-cubes"></i> <span data-i18n="cm_stat_stock">Valeur stock</span></div>
         <div class="cm-stat-value" id="cmStatStock">0</div>
       </div>
     </div>
 
     <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:14px;">
       <div style="font-size:13px;font-weight:800;margin-bottom:10px;display:flex;align-items:center;gap:8px;">
-        <i class="fas fa-trophy" style="color:#f59e0b"></i> Top articles vendus
+        <i class="fas fa-trophy" style="color:#f59e0b"></i> <span data-i18n="cm_top_articles">Top articles vendus</span>
       </div>
-      <div id="cmTopArticles"><div class="cm-empty" style="padding:20px 10px;"><i class="fas fa-inbox"></i>Aucune vente pour l'instant</div></div>
+      <div id="cmTopArticles"><div class="cm-empty" style="padding:20px 10px;"><i class="fas fa-inbox"></i><span data-i18n="cm_no_sale">Aucune vente pour l'instant</span></div></div>
     </div>
 
     <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;">
       <div style="font-size:13px;font-weight:800;margin-bottom:10px;display:flex;align-items:center;gap:8px;">
-        <i class="fas fa-triangle-exclamation" style="color:#ef4444"></i> Alertes stock bas
+        <i class="fas fa-triangle-exclamation" style="color:#ef4444"></i> <span data-i18n="cm_alerts">Alertes stock bas</span>
       </div>
-      <div id="cmAlerts"><div class="cm-empty" style="padding:20px 10px;"><i class="fas fa-check-circle" style="color:#10b981"></i>Tous les stocks sont OK</div></div>
+      <div id="cmAlerts"><div class="cm-empty" style="padding:20px 10px;"><i class="fas fa-check-circle" style="color:#10b981"></i><span data-i18n="cm_stock_ok">Tous les stocks sont OK</span></div></div>
     </div>
   </div>
 
@@ -7481,15 +7640,15 @@ if ('serviceWorker' in navigator) {
   <div class="cm-section" id="cm-sec-articles">
     <div class="cm-search-box">
       <i class="fas fa-search"></i>
-      <input type="text" id="cmArtSearch" placeholder="Rechercher un article…" oninput="cmRenderArticles()">
+      <input type="text" id="cmArtSearch" data-i18n="cm_search_article" placeholder="Rechercher un article…" oninput="cmRenderArticles()">
     </div>
     <div class="cm-filter-bar" id="cmCatFilter"></div>
     <div id="cmArticlesList"></div>
     <div style="display:flex;gap:8px;margin-top:8px">
       <button style="flex:1;padding:14px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:12px;font-weight:800;cursor:pointer;" onclick="cmOpenArticleModal()">
-        <i class="fas fa-plus"></i> Nouvel article
+        <i class="fas fa-plus"></i> <span data-i18n="cm_new_article">Nouvel article</span>
       </button>
-      <button style="flex-shrink:0;padding:14px 16px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:12px;font-weight:800;cursor:pointer;" onclick="cmPrintAllLabels()" title="Imprimer toutes les étiquettes QR">
+      <button style="flex-shrink:0;padding:14px 16px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:12px;font-weight:800;cursor:pointer;" onclick="cmPrintAllLabels()" data-i18n-title="cm_print_all_labels" title="Imprimer toutes les étiquettes QR">
         <i class="fas fa-print"></i>
       </button>
     </div>
@@ -7498,16 +7657,16 @@ if ('serviceWorker' in navigator) {
   <!-- ═══ Section : Mouvements ═══ -->
   <div class="cm-section" id="cm-sec-mouvements">
     <div class="cm-filter-bar">
-      <div class="cm-filter-chip active" data-mvt="all" onclick="cmFilterMvt('all',this)">Tous</div>
-      <div class="cm-filter-chip" data-mvt="vente" onclick="cmFilterMvt('vente',this)">Ventes</div>
-      <div class="cm-filter-chip" data-mvt="achat" onclick="cmFilterMvt('achat',this)">Achats</div>
+      <div class="cm-filter-chip active" data-mvt="all" onclick="cmFilterMvt('all',this)" data-i18n="cm_filter_all">Tous</div>
+      <div class="cm-filter-chip" data-mvt="vente" onclick="cmFilterMvt('vente',this)" data-i18n="cm_filter_ventes">Ventes</div>
+      <div class="cm-filter-chip" data-mvt="achat" onclick="cmFilterMvt('achat',this)" data-i18n="cm_filter_achats">Achats</div>
     </div>
     <div id="cmMvtList"></div>
     <button style="width:100%;padding:14px;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;border:none;border-radius:12px;font-weight:800;cursor:pointer;margin-top:8px;" onclick="cmScanForQuickSale()">
-      <i class="fas fa-qrcode"></i> Vente rapide (scan caisse)
+      <i class="fas fa-qrcode"></i> <span data-i18n="cm_quick_sale">Vente rapide (scan caisse)</span>
     </button>
     <button style="width:100%;padding:14px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:12px;font-weight:800;cursor:pointer;margin-top:8px;" onclick="cmOpenMvtModal()">
-      <i class="fas fa-plus"></i> Nouveau mouvement
+      <i class="fas fa-plus"></i> <span data-i18n="cm_new_mvt">Nouveau mouvement</span>
     </button>
   </div>
 
@@ -7516,7 +7675,7 @@ if ('serviceWorker' in navigator) {
   <div class="cm-section" id="cm-sec-stock">
     <div class="cm-search-box">
       <i class="fas fa-search"></i>
-      <input type="text" id="cmStockSearch" placeholder="Rechercher…" oninput="cmRenderStock()">
+      <input type="text" id="cmStockSearch" data-i18n="cm_search_generic" placeholder="Rechercher…" oninput="cmRenderStock()">
     </div>
     <div id="cmStockList"></div>
   </div>
@@ -7526,14 +7685,14 @@ if ('serviceWorker' in navigator) {
 <div class="modal-overlay" id="cmShopModal">
   <div class="modal-box" style="max-width:480px">
     <div class="modal-header">
-      <h3><i class="fas fa-shop" style="color:#10b981;margin-right:8px"></i><span id="cmShopModalTitle">Nouvelle boutique</span></h3>
+      <h3><i class="fas fa-shop" style="color:#10b981;margin-right:8px"></i><span id="cmShopModalTitle" data-i18n="cm_new_shop">Nouvelle boutique</span></h3>
       <button class="modal-close" onclick="closeModal('cmShopModal')"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body">
-      <label class="cm-modal-label">Nom de la boutique</label>
-      <input type="text" id="cmShopName" class="cm-modal-input" placeholder="Ex: Épicerie du quartier">
+      <label class="cm-modal-label" data-i18n="cm_shop_name">Nom de la boutique</label>
+      <input type="text" id="cmShopName" class="cm-modal-input" data-i18n="cm_shop_name_ph" placeholder="Ex: Épicerie du quartier">
 
-      <label class="cm-modal-label">Type</label>
+      <label class="cm-modal-label" data-i18n="cm_shop_type">Type</label>
       <select id="cmShopType" class="cm-modal-input" onchange="cmHandleShopTypeChange()">
         <option value="alimentaire">🛒 Alimentaire / Épicerie</option>
         <option value="bar">🍻 Bar / Buvette</option>
@@ -7554,36 +7713,36 @@ if ('serviceWorker' in navigator) {
       </select>
 
       <div id="cmShopTypeOtherWrap" style="display:none">
-        <label class="cm-modal-label">Préciser le type</label>
+        <label class="cm-modal-label" data-i18n="cm_shop_type_precise">Préciser le type</label>
         <input type="text" id="cmShopTypeOther" class="cm-modal-input" placeholder="Ex: Librairie chrétienne, Atelier couture, Vente gaz...">
       </div>
 
       <div class="cm-modal-row">
         <div>
-          <label class="cm-modal-label">Pays</label>
+          <label class="cm-modal-label" data-i18n="cm_shop_country">Pays</label>
           <select id="cmShopCountry" class="cm-modal-input" onchange="cmHandleCountryChange()">
-            <option value="">Choisir un pays</option>
+            <option value="" data-i18n="cm_shop_choose_country">Choisir un pays</option>
           </select>
         </div>
         <div>
-          <label class="cm-modal-label">Ville</label>
+          <label class="cm-modal-label" data-i18n="cm_shop_city">Ville</label>
           <select id="cmShopCity" class="cm-modal-input">
-            <option value="">Choisir une ville</option>
+            <option value="" data-i18n="cm_shop_choose_city">Choisir une ville</option>
           </select>
         </div>
       </div>
 
-      <label class="cm-modal-label">Adresse (optionnel)</label>
+      <label class="cm-modal-label" data-i18n="cm_shop_address">Adresse (optionnel)</label>
       <input type="text" id="cmShopAddr" class="cm-modal-input" placeholder="Quartier, rue, repère…">
 
-      <label class="cm-modal-label">Seuil d'alerte stock (par défaut)</label>
+      <label class="cm-modal-label" data-i18n="cm_shop_seuil">Seuil d'alerte stock (par défaut)</label>
       <input type="number" id="cmShopSeuil" class="cm-modal-input" value="5" min="0">
 
       <div id="cmShopList" style="margin-top:14px"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn-cancel" onclick="closeModal('cmShopModal')">Annuler</button>
-      <button class="btn-save" id="cmShopSaveBtn" onclick="cmSaveShop()" style="background:linear-gradient(135deg,#10b981,#059669);">Enregistrer</button>
+      <button class="btn-cancel" onclick="closeModal('cmShopModal')" data-i18n="btn_cancel">Annuler</button>
+      <button class="btn-save" id="cmShopSaveBtn" onclick="cmSaveShop()" style="background:linear-gradient(135deg,#10b981,#059669);" data-i18n="btn_save">Enregistrer</button>
     </div>
   </div>
 </div>
@@ -7592,67 +7751,67 @@ if ('serviceWorker' in navigator) {
 <div class="modal-overlay" id="cmArticleModal">
   <div class="modal-box" style="max-width:520px">
     <div class="modal-header">
-      <h3><i class="fas fa-box" style="color:#10b981;margin-right:8px"></i><span id="cmArtModalTitle">Nouvel article</span></h3>
+      <h3><i class="fas fa-box" style="color:#10b981;margin-right:8px"></i><span id="cmArtModalTitle" data-i18n="cm_new_article">Nouvel article</span></h3>
       <button class="modal-close" onclick="closeModal('cmArticleModal')"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body">
-      <label class="cm-modal-label">Nom de l'article *</label>
-      <input type="text" id="cmArtName" class="cm-modal-input" placeholder="Ex: Bière 33cl, Riz parfumé 5kg…">
+      <label class="cm-modal-label" data-i18n="cm_art_name">Nom de l'article *</label>
+      <input type="text" id="cmArtName" class="cm-modal-input" data-i18n="cm_art_name_ph" placeholder="Ex: Bière 33cl, Riz parfumé 5kg…">
 
-      <label class="cm-modal-label">Catégorie *</label>
+      <label class="cm-modal-label" data-i18n="cm_art_cat">Catégorie *</label>
       <div class="cm-cat-grid" id="cmArtCatGrid"></div>
 
       <div class="cm-modal-row">
         <div>
-          <label class="cm-modal-label">Prix d'achat (unitaire)</label>
+          <label class="cm-modal-label" data-i18n="cm_art_prixa">Prix d'achat (unitaire)</label>
           <input type="number" id="cmArtPrixA" class="cm-modal-input" step="0.01" min="0" placeholder="0">
         </div>
         <div>
-          <label class="cm-modal-label">Prix de vente *</label>
+          <label class="cm-modal-label" data-i18n="cm_art_prixv">Prix de vente *</label>
           <input type="number" id="cmArtPrixV" class="cm-modal-input" step="0.01" min="0" placeholder="0">
         </div>
       </div>
 
       <div class="cm-modal-row">
         <div>
-          <label class="cm-modal-label">Stock initial</label>
+          <label class="cm-modal-label" data-i18n="cm_art_stock">Stock initial</label>
           <input type="number" id="cmArtStock" class="cm-modal-input" step="1" min="0" value="0">
         </div>
         <div>
-          <label class="cm-modal-label">Unité</label>
+          <label class="cm-modal-label" data-i18n="cm_art_unit">Unité</label>
           <select id="cmArtUnit" class="cm-modal-input">
-            <option value="pcs">Pièce</option>
-            <option value="kg">Kilogramme (kg)</option>
-            <option value="g">Gramme (g)</option>
-            <option value="L">Litre (L)</option>
-            <option value="cl">Centilitre (cl)</option>
-            <option value="m">Mètre (m)</option>
-            <option value="paq">Paquet</option>
-            <option value="carton">Carton</option>
-            <option value="sac">Sac</option>
-            <option value="bout">Bouteille</option>
+            <option value="pcs" data-i18n="cm_unit_pcs">Pièce</option>
+            <option value="kg" data-i18n="cm_unit_kg">Kilogramme (kg)</option>
+            <option value="g" data-i18n="cm_unit_g">Gramme (g)</option>
+            <option value="L" data-i18n="cm_unit_l">Litre (L)</option>
+            <option value="cl" data-i18n="cm_unit_cl">Centilitre (cl)</option>
+            <option value="m" data-i18n="cm_unit_m">Mètre (m)</option>
+            <option value="paq" data-i18n="cm_unit_paq">Paquet</option>
+            <option value="carton" data-i18n="cm_unit_carton">Carton</option>
+            <option value="sac" data-i18n="cm_unit_sac">Sac</option>
+            <option value="bout" data-i18n="cm_unit_bout">Bouteille</option>
           </select>
         </div>
       </div>
 
       <div class="cm-modal-row">
         <div>
-          <label class="cm-modal-label">Seuil alerte stock bas</label>
+          <label class="cm-modal-label" data-i18n="cm_art_seuil">Seuil alerte stock bas</label>
           <input type="number" id="cmArtSeuil" class="cm-modal-input" step="1" min="0" value="5">
         </div>
         <div>
-          <label class="cm-modal-label">Code-barre (optionnel)</label>
+          <label class="cm-modal-label" data-i18n="cm_art_code">Code-barre (optionnel)</label>
           <input type="text" id="cmArtCode" class="cm-modal-input" placeholder="—">
         </div>
       </div>
 
-      <label class="cm-modal-label">Note (optionnel)</label>
-      <textarea id="cmArtNote" class="cm-modal-input" rows="2" placeholder="Description, fournisseur…"></textarea>
+      <label class="cm-modal-label" data-i18n="cm_art_note">Note (optionnel)</label>
+      <textarea id="cmArtNote" class="cm-modal-input" rows="2" data-i18n="cm_art_note_ph" placeholder="Description, fournisseur…"></textarea>
     </div>
     <div class="modal-footer">
-      <button class="btn-cancel" id="cmArtDelBtn" onclick="cmDeleteArticle()" style="display:none;background:rgba(239,68,68,.12);color:#ef4444"><i class="fas fa-trash"></i> Supprimer</button>
-      <button class="btn-cancel" onclick="closeModal('cmArticleModal')">Annuler</button>
-      <button class="btn-save" onclick="cmSaveArticle()" style="background:linear-gradient(135deg,#10b981,#059669);">Enregistrer</button>
+      <button class="btn-cancel" id="cmArtDelBtn" onclick="cmDeleteArticle()" style="display:none;background:rgba(239,68,68,.12);color:#ef4444"><i class="fas fa-trash"></i> <span data-i18n="btn_delete">Supprimer</span></button>
+      <button class="btn-cancel" onclick="closeModal('cmArticleModal')" data-i18n="btn_cancel">Annuler</button>
+      <button class="btn-save" onclick="cmSaveArticle()" style="background:linear-gradient(135deg,#10b981,#059669);" data-i18n="btn_save">Enregistrer</button>
     </div>
   </div>
 </div>
@@ -7661,53 +7820,53 @@ if ('serviceWorker' in navigator) {
 <div class="modal-overlay" id="cmMvtModal">
   <div class="modal-box" style="max-width:520px">
     <div class="modal-header">
-      <h3><i class="fas fa-right-left" style="color:#10b981;margin-right:8px"></i>Nouveau mouvement</h3>
+      <h3><i class="fas fa-right-left" style="color:#10b981;margin-right:8px"></i><span data-i18n="cm_new_mvt">Nouveau mouvement</span></h3>
       <button class="modal-close" onclick="closeModal('cmMvtModal')"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body">
       <div class="cm-type-pills">
-        <button class="cm-type-pill vente active" id="cmMvtPillV" onclick="cmSetMvtType('vente')"><i class="fas fa-cash-register"></i> Vente</button>
-        <button class="cm-type-pill achat" id="cmMvtPillA" onclick="cmSetMvtType('achat')"><i class="fas fa-truck-ramp-box"></i> Achat</button>
+        <button class="cm-type-pill vente active" id="cmMvtPillV" onclick="cmSetMvtType('vente')"><i class="fas fa-cash-register"></i> <span data-i18n="cm_filter_ventes_sing">Vente</span></button>
+        <button class="cm-type-pill achat" id="cmMvtPillA" onclick="cmSetMvtType('achat')"><i class="fas fa-truck-ramp-box"></i> <span data-i18n="cm_filter_achats_sing">Achat</span></button>
       </div>
 
-      <label class="cm-modal-label">Article *</label>
+      <label class="cm-modal-label" data-i18n="cm_mvt_article">Article *</label>
       <div style="display:flex;gap:8px;align-items:stretch">
         <div class="cm-search-box" style="flex:1">
           <i class="fas fa-search"></i>
-          <input type="text" id="cmMvtArtSearch" placeholder="Rechercher article…" oninput="cmRenderMvtPicker()">
+          <input type="text" id="cmMvtArtSearch" data-i18n="cm_search_article_short" placeholder="Rechercher article…" oninput="cmRenderMvtPicker()">
         </div>
-        <button onclick="cmScanForMvt()" title="Scanner un QR" style="flex-shrink:0;width:44px;border:none;border-radius:12px;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;font-size:16px;cursor:pointer"><i class="fas fa-qrcode"></i></button>
+        <button onclick="cmScanForMvt()" data-i18n-title="cm_scan_qr_title" title="Scanner un QR" style="flex-shrink:0;width:44px;border:none;border-radius:12px;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;font-size:16px;cursor:pointer"><i class="fas fa-qrcode"></i></button>
       </div>
       <div class="cm-art-picker" id="cmMvtArtPicker"></div>
 
       <div class="cm-modal-row">
         <div>
-          <label class="cm-modal-label">Quantité *</label>
+          <label class="cm-modal-label" data-i18n="cm_mvt_qte">Quantité *</label>
           <input type="number" id="cmMvtQte" class="cm-modal-input" step="0.01" min="0.01" value="1" oninput="cmUpdateMvtTotal()">
         </div>
         <div>
-          <label class="cm-modal-label">Prix unitaire</label>
+          <label class="cm-modal-label" data-i18n="cm_mvt_prix">Prix unitaire</label>
           <input type="number" id="cmMvtPrix" class="cm-modal-input" step="0.01" min="0" oninput="cmUpdateMvtTotal()">
         </div>
       </div>
 
       <div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:12px;padding:12px;margin-bottom:10px;text-align:center;">
-        <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.6px">Total</div>
+        <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.6px" data-i18n="cm_mvt_total">Total</div>
         <div id="cmMvtTotal" style="font-size:22px;font-weight:900;color:#10b981;margin-top:2px;">0</div>
       </div>
 
-      <label class="cm-modal-label">Date</label>
+      <label class="cm-modal-label" data-i18n="cm_mvt_date">Date</label>
       <input type="date" id="cmMvtDate" class="cm-modal-input">
 
-      <label class="cm-modal-label">Client / Fournisseur (optionnel)</label>
+      <label class="cm-modal-label" data-i18n="cm_mvt_person">Client / Fournisseur (optionnel)</label>
       <input type="text" id="cmMvtPerson" class="cm-modal-input" placeholder="—">
 
-      <label class="cm-modal-label">Note (optionnel)</label>
+      <label class="cm-modal-label" data-i18n="cm_mvt_note">Note (optionnel)</label>
       <textarea id="cmMvtNote" class="cm-modal-input" rows="2" placeholder="—"></textarea>
     </div>
     <div class="modal-footer">
-      <button class="btn-cancel" onclick="closeModal('cmMvtModal')">Annuler</button>
-      <button class="btn-save" onclick="cmSaveMvt()" style="background:linear-gradient(135deg,#10b981,#059669);">Enregistrer</button>
+      <button class="btn-cancel" onclick="closeModal('cmMvtModal')" data-i18n="btn_cancel">Annuler</button>
+      <button class="btn-save" onclick="cmSaveMvt()" style="background:linear-gradient(135deg,#10b981,#059669);" data-i18n="btn_save">Enregistrer</button>
     </div>
   </div>
 </div>
@@ -7716,19 +7875,19 @@ if ('serviceWorker' in navigator) {
 <div class="modal-overlay" id="cmQrModal">
   <div class="modal-content" style="max-width:340px">
     <div class="modal-header">
-      <h3><i class="fas fa-qrcode"></i> Code QR de l'article</h3>
+      <h3><i class="fas fa-qrcode"></i> <span data-i18n="cm_qr_title">Code QR de l'article</span></h3>
       <button class="modal-close" onclick="closeModal('cmQrModal')"><i class="fas fa-xmark"></i></button>
     </div>
     <div class="cm-qr-box">
       <div id="cmQrCanvas"></div>
       <div class="cm-qr-name" id="cmQrName">—</div>
       <div class="cm-qr-price" id="cmQrPrice">—</div>
-      <div class="cm-qr-code">Code : <span id="cmQrCodeTxt">—</span></div>
+      <div class="cm-qr-code"><span data-i18n="cm_code_label">Code</span> : <span id="cmQrCodeTxt">—</span></div>
       <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.3px;margin-top:4px" id="cmQrShopName">—</div>
     </div>
     <div class="modal-footer">
-      <button class="btn-cancel" onclick="closeModal('cmQrModal')">Fermer</button>
-      <button class="btn-save" onclick="cmPrintCurrentQr()" style="background:linear-gradient(135deg,#2563eb,#3b82f6);"><i class="fas fa-print"></i> Imprimer</button>
+      <button class="btn-cancel" onclick="closeModal('cmQrModal')" data-i18n="btn_close">Fermer</button>
+      <button class="btn-save" onclick="cmPrintCurrentQr()" style="background:linear-gradient(135deg,#2563eb,#3b82f6);"><i class="fas fa-print"></i> <span data-i18n="cm_qr_print">Imprimer</span></button>
     </div>
   </div>
 </div>
@@ -7736,12 +7895,12 @@ if ('serviceWorker' in navigator) {
 <!-- ═══ Scanner caméra (plein écran) ═══ -->
 <div id="cmScanModal">
   <div class="cm-scan-top">
-    <span style="color:#fff;font-weight:700;font-size:14px"><i class="fas fa-qrcode"></i> Scanner un article</span>
+    <span style="color:#fff;font-weight:700;font-size:14px"><i class="fas fa-qrcode"></i> <span data-i18n="cm_scan_article">Scanner un article</span></span>
     <button onclick="cmCloseScanner()"><i class="fas fa-xmark"></i></button>
   </div>
   <video id="cmScanVideo" autoplay playsinline muted></video>
   <div class="cm-scan-frame"></div>
-  <div class="cm-scan-hint" id="cmScanHint">Cadrez le QR code de l'étiquette de l'article</div>
+  <div class="cm-scan-hint" id="cmScanHint" data-i18n="cm_scan_hint">Cadrez le QR code de l'étiquette de l'article</div>
   <!-- Fiche article + bouton Payer, affichée par-dessus la caméra en mode caisse -->
   <div id="cmScanSaleCard" style="display:none;position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:20px 20px 0 0;padding:20px;box-shadow:0 -4px 20px rgba(0,0,0,.3)">
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
@@ -7753,8 +7912,8 @@ if ('serviceWorker' in navigator) {
       <div id="cmScanSalePrice" style="font-weight:800;font-size:18px;color:#10b981">—</div>
     </div>
     <div style="display:flex;gap:10px">
-      <button onclick="cmCancelScanSale()" style="flex:1;padding:14px;border-radius:12px;border:1px solid var(--border);background:#fff;color:var(--text);font-weight:600;cursor:pointer">Annuler</button>
-      <button onclick="cmConfirmScanSale()" style="flex:2;padding:14px;border-radius:12px;border:none;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:700;font-size:15px;cursor:pointer"><i class="fas fa-check"></i> Payer (1 unité)</button>
+      <button onclick="cmCancelScanSale()" style="flex:1;padding:14px;border-radius:12px;border:1px solid var(--border);background:#fff;color:var(--text);font-weight:600;cursor:pointer" data-i18n="cm_pay_cancel">Annuler</button>
+      <button onclick="cmConfirmScanSale()" style="flex:2;padding:14px;border-radius:12px;border:none;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:700;font-size:15px;cursor:pointer"><i class="fas fa-check"></i> <span data-i18n="cm_pay_btn">Payer (1 unité)</span></button>
     </div>
   </div>
 </div>
@@ -7804,6 +7963,70 @@ const CM_SERVICE_CATS = new Set([
 // n'est pas dans la liste des services ci-dessus.
 function cmIsPhysicalArticle(a){
   return !CM_SERVICE_CATS.has(a.cat);
+}
+
+const CM_CAT_I18N = {
+  en: {
+    'Abats':'Offal', 'Accessoire tél':'Phone accessory', 'Accessoires':'Accessories',
+    'Antibiotique':'Antibiotic', 'Antidouleur':'Painkiller', 'Apéritifs':'Aperitifs',
+    'Article':'Item', 'Autre':'Other', 'Batterie':'Battery',
+    'Beurre':'Butter', 'Bijou':'Jewelry', 'Biscuits':'Cookies',
+    'Bière':'Beer', 'Bois':'Wood', 'Boisson':'Drink',
+    'Bonbons':'Candy', 'Botte':'Boot', 'Bébé':'Baby',
+    'Bœuf':'Beef', 'CD/DVD':'CD/DVD', 'Cahier':'Notebook',
+    'Calculatrice':'Calculator', 'Carrelage':'Tiling', 'Carte SIM':'SIM card',
+    'Ceinture':'Belt', 'Champagne':'Champagne', 'Charcuterie':'Deli meats',
+    'Chargeur':'Charger', 'Cigarettes':'Cigarettes', 'Ciment':'Cement',
+    'Cirage':'Shoe polish', 'Clé USB':'USB drive', 'Cocktail':'Cocktail',
+    'Conserves':'Canned goods', 'Coupe femme':'Women\'s haircut', 'Coupe homme':'Men\'s haircut',
+    'Crayon':'Pencil', 'Crustacés':'Shellfish', 'Crème corps':'Body cream',
+    'Crème visage':'Face cream', 'Câble':'Cable', 'Céréales/Riz':'Cereals/Rice',
+    'Dessert':'Dessert', 'Eau':'Water', 'Emballage':'Packaging',
+    'Encre':'Ink', 'Enfant':'Child', 'Entrée':'Starter',
+    'Essence':'Gasoline', 'Farine':'Flour', 'Farine/Pâtes':'Flour/Pasta',
+    'Femme':'Women', 'Fer':'Iron/Rebar', 'Fruits':'Fruits',
+    'Gasoil':'Diesel', 'Gaz':'Gas', 'Gaz/Charbon':'Gas/Charcoal',
+    'Glace':'Ice cream', 'Gâteau':'Cake', 'Homme':'Men',
+    'Huile':'Oil', 'Huile capillaire':'Hair oil', 'Huile moteur':'Motor oil',
+    'Hygiène':'Hygiene', 'Impression N&B':'B&W printing', 'Impression couleur':'Color printing',
+    'Internet (h)':'Internet (hr)', 'Jeu':'Game', 'Jus':'Juice',
+    'Lacets':'Shoelaces', 'Lait':'Milk', 'Lait/Œufs':'Milk/Eggs',
+    'Lave-glace':'Windshield fluid', 'Levure':'Yeast', 'Liqueur/Whisky':'Liquor/Whisky',
+    'Livre scolaire':'School book', 'Lubrifiant':'Lubricant', 'Légumes':'Vegetables',
+    'Manucure':'Manicure', 'Maquillage':'Makeup', 'Montre':'Watch',
+    'Mouton':'Mutton', 'Mèche':'Hair weave', 'Mèche/Tresse':'Weave/Braids',
+    'Ordinateur':'Computer', 'Outil':'Tool', 'Pagne/Tissu':'Wax fabric',
+    'Pain':'Bread', 'Pansement':'Bandage', 'Papier':'Paper',
+    'Parfum':'Perfume', 'Peinture':'Paint', 'Photocopie':'Photocopy',
+    'Plat principal':'Main dish', 'Plomberie':'Plumbing', 'Poisson':'Fish',
+    'Porc':'Pork', 'Poulet':'Chicken', 'Premiers soins':'First aid',
+    'Produit':'Product', 'Préservatif':'Condom', 'Pâtisserie':'Pastry',
+    'Pétrole':'Kerosene', 'Recharge':'Top-up', 'Recharge tél':'Phone top-up',
+    'Riz/Garniture':'Rice/Side', 'Sac':'Bag', 'Saisie':'Data entry',
+    'Sandale':'Sandal', 'Sauce':'Sauce', 'Savon':'Soap',
+    'Scan':'Scan', 'Serrurerie':'Locksmith', 'Service':'Service',
+    'Shampoing':'Shampoo', 'Sirop':'Syrup', 'Snack':'Snack',
+    'Snacks':'Snacks', 'Sodas':'Sodas', 'Soin':'Treatment',
+    'Sous-vêtement':'Underwear', 'Sport':'Sport', 'Stylo':'Pen',
+    'Sucre':'Sugar', 'Sucre/Sel':'Sugar/Salt', 'Sucrerie/Soda':'Sweets/Soda',
+    'Surgelés':'Frozen foods', 'Sérum':'Serum', 'TV':'TV',
+    'Talon':'Heel', 'Teinture':'Hair dye', 'Tresse':'Braids',
+    'Trousse':'Pencil case', 'Téléphone':'Phone', 'Vaisselle':'Dishware',
+    'Vernis':'Nail polish', 'Viande':'Meat', 'Viennoiserie':'Pastries',
+    'Vin':'Wine', 'Visserie':'Screws/Bolts', 'Vitamine':'Vitamins',
+    'Écouteur':'Earphones', 'Électricité':'Electrical', 'Énergie (Red Bull)':'Energy drinks',
+    'Épices':'Spices', 'Œufs':'Eggs',
+  }
+};
+
+// Retourne le libellé d'une catégorie dans la langue courante.
+// Le français reste la langue de STOCKAGE interne (a.cat) ; seul
+// l'AFFICHAGE est traduit, pour ne jamais casser les comparaisons
+// internes (CM_SERVICE_CATS, filtres, etc.) qui utilisent le français.
+function cmCatLabel(cat){
+  if(currentLang==='fr' || currentLang==='ar' || currentLang==='ee') return cat;
+  const dict = CM_CAT_I18N[currentLang];
+  return (dict && dict[cat]) || cat;
 }
 
 const CM_SHOP_ICONS = {
@@ -7990,7 +8213,7 @@ async function cmEnsureCountryData(){
 function cmPopulateCountrySelect(selected=''){
   const el = document.getElementById('cmShopCountry');
   if(!el) return;
-  const opts = ['<option value="">Choisir un pays</option>']
+  const opts = [`<option value="">${t('cm_shop_choose_country')}</option>`]
     .concat(CM_COUNTRIES.map(item=>`<option value="${item.country}" ${item.country===selected?'selected':''}>${item.country}</option>`));
   el.innerHTML = opts.join('');
 }
@@ -7998,14 +8221,14 @@ function cmPopulateCitySelect(country='', selected=''){
   const el = document.getElementById('cmShopCity');
   if(!el) return;
   if(!country){
-    el.innerHTML = '<option value="">Choisir une ville</option>';
+    el.innerHTML = `<option value="">${t('cm_shop_choose_city')}</option>`;
     el.disabled = true;
     return;
   }
   const match = CM_COUNTRIES.find(item=>item.country===country);
   const cities = Array.isArray(match?.cities) ? match.cities : [];
   el.disabled = false;
-  el.innerHTML = ['<option value="">Choisir une ville</option>']
+  el.innerHTML = [`<option value="">${t('cm_shop_choose_city')}</option>`]
     .concat(cities.map(city=>`<option value="${city}" ${city===selected?'selected':''}>${city}</option>`)).join('');
 }
 window.cmHandleCountryChange = function(){
@@ -8023,7 +8246,7 @@ async function cmInitShopGeoFields(selectedCountry='', selectedCity=''){
   const countryEl = document.getElementById('cmShopCountry');
   const cityEl = document.getElementById('cmShopCity');
   if(countryEl) countryEl.innerHTML = '<option value="">Chargement des pays...</option>';
-  if(cityEl){ cityEl.innerHTML = '<option value="">Choisir une ville</option>'; cityEl.disabled = true; }
+  if(cityEl){ cityEl.innerHTML = `<option value="">${t('cm_shop_choose_city')}</option>`; cityEl.disabled = true; }
   await cmEnsureCountryData();
   cmPopulateCountrySelect(selectedCountry);
   cmPopulateCitySelect(selectedCountry, selectedCity);
@@ -8052,7 +8275,7 @@ window.cmSelectShop = function(id){
 /* ── Modal Boutique ── */
 window.cmOpenShopModal = async function(forceNew){
   CM.editingShopId = null;
-  document.getElementById('cmShopModalTitle').textContent = 'Nouvelle boutique';
+  document.getElementById('cmShopModalTitle').textContent = t('cm_new_shop');
   document.getElementById('cmShopName').value = '';
   document.getElementById('cmShopType').value = 'alimentaire';
   document.getElementById('cmShopTypeOther').value = '';
@@ -8090,7 +8313,7 @@ window.cmEditShop = async function(id){
   const s = CM.shops.find(x=>x.id===id);
   if(!s) return;
   CM.editingShopId = id;
-  document.getElementById('cmShopModalTitle').textContent = 'Modifier boutique';
+  document.getElementById('cmShopModalTitle').textContent = t('cm_edit_shop_title');
   document.getElementById('cmShopName').value = s.name;
   document.getElementById('cmShopType').value = s.type;
   document.getElementById('cmShopTypeOther').value = s.customType||'';
@@ -8105,13 +8328,13 @@ window.cmDeleteShop = function(id){
   if(!s) return;
   const nArt = CM.articles.filter(a=>a.shopId===id).length;
   const nMvt = CM.mouvements.filter(m=>m.shopId===id).length;
-  if(!confirm(`Supprimer la boutique "${s.name}" ?\n${nArt} article(s) et ${nMvt} mouvement(s) seront aussi supprimés.`)) return;
+  if(!confirm(t('cm_confirm_delete_shop',{name:s.name,n:nArt,m:nMvt}))) return;
   CM.shops = CM.shops.filter(x=>x.id!==id);
   CM.articles = CM.articles.filter(a=>a.shopId!==id);
   CM.mouvements = CM.mouvements.filter(m=>m.shopId!==id);
   if(CM.currentShopId===id) CM.currentShopId = CM.shops[0] ? CM.shops[0].id : null;
   cmSave(); cmRenderAll(); cmRenderShopList();
-  cmToast('Boutique supprimée','success');
+  cmToast(t('cm_msg_shop_deleted'),'success');
 };
 
 window.cmSaveShop = function(){
@@ -8122,18 +8345,18 @@ window.cmSaveShop = function(){
   const city = document.getElementById('cmShopCity').value;
   const addr = document.getElementById('cmShopAddr').value.trim();
   const seuil = parseInt(document.getElementById('cmShopSeuil').value)||5;
-  if(!name){ cmToast('Nom de boutique requis','error'); return; }
-  if(type==='autre' && !customType){ cmToast('Précisez le type de boutique','error'); return; }
+  if(!name){ cmToast(t('cm_msg_shop_name_required'),'error'); return; }
+  if(type==='autre' && !customType){ cmToast(t('cm_msg_shop_type_required'),'error'); return; }
   const payload = { name, type, customType:type==='autre'?customType:'', country, city, addr, seuil };
   if(CM.editingShopId){
     const s = CM.shops.find(x=>x.id===CM.editingShopId);
     if(s) Object.assign(s, payload);
-    cmToast('Boutique modifiée','success');
+    cmToast(t('cm_msg_shop_updated'),'success');
   } else {
     const id = cmUID();
     CM.shops.push({ id, ...payload, createdAt:Date.now() });
     if(!CM.currentShopId) CM.currentShopId = id;
-    cmToast('Boutique créée','success');
+    cmToast(t('cm_msg_shop_created'),'success');
   }
   CM.editingShopId = null;
   cmSave();
@@ -8142,10 +8365,10 @@ window.cmSaveShop = function(){
   document.getElementById('cmShopType').value = 'alimentaire';
   document.getElementById('cmShopTypeOther').value = '';
   document.getElementById('cmShopCountry').value = '';
-  document.getElementById('cmShopCity').innerHTML = '<option value="">Choisir une ville</option>';
+  document.getElementById('cmShopCity').innerHTML = `<option value="">${t('cm_shop_choose_city')}</option>`;
   document.getElementById('cmShopCity').disabled = true;
   document.getElementById('cmShopAddr').value = '';
-  document.getElementById('cmShopModalTitle').textContent = 'Nouvelle boutique';
+  document.getElementById('cmShopModalTitle').textContent = t('cm_new_shop');
   cmHandleShopTypeChange();
   cmRenderShopList();
 };
@@ -8204,15 +8427,15 @@ function cmRenderResume(){
   const topArr = Object.values(top).sort((a,b)=>b.total-a.total).slice(0,5);
   const topC = document.getElementById('cmTopArticles');
   if(topArr.length===0){
-    topC.innerHTML = '<div class="cm-empty" style="padding:20px 10px;"><i class="fas fa-inbox"></i>Aucune vente pour l\'instant</div>';
+    topC.innerHTML = `<div class="cm-empty" style="padding:20px 10px;"><i class="fas fa-inbox"></i>${t('cm_no_sale')}</div>`;
   } else {
-    topC.innerHTML = topArr.map((t,i)=>`
+    topC.innerHTML = topArr.map((top1,i)=>`
       <div class="cm-top-art">
         <div>
-          <div class="cm-top-art-name">#${i+1} ${t.name}</div>
-          <div class="cm-top-art-stat">${cmFmt(t.qte)} unités vendues</div>
+          <div class="cm-top-art-name">#${i+1} ${top1.name}</div>
+          <div class="cm-top-art-stat">${cmFmt(top1.qte)} ${t('cm_units_sold_suffix')}</div>
         </div>
-        <div class="cm-top-art-val">${cmAmt(t.total)}</div>
+        <div class="cm-top-art-val">${cmAmt(top1.total)}</div>
       </div>`).join('');
   }
 
@@ -8222,15 +8445,15 @@ function cmRenderResume(){
   const lows = cmGetShopArticles().filter(a=>(a.stock||0) <= (a.seuil!==undefined?a.seuil:seuilDef));
   const alC = document.getElementById('cmAlerts');
   if(lows.length===0){
-    alC.innerHTML = '<div class="cm-empty" style="padding:20px 10px;"><i class="fas fa-check-circle" style="color:#10b981"></i>Tous les stocks sont OK</div>';
+    alC.innerHTML = `<div class="cm-empty" style="padding:20px 10px;"><i class="fas fa-check-circle" style="color:#10b981"></i>${t('cm_stock_ok')}</div>`;
   } else {
     alC.innerHTML = lows.map(a=>`
       <div class="cm-top-art" style="border-left:3px solid #ef4444;">
         <div>
           <div class="cm-top-art-name">${a.name}</div>
-          <div class="cm-top-art-stat">Stock: ${cmFmt(a.stock||0)} ${a.unit||''} (seuil: ${a.seuil||seuilDef})</div>
+          <div class="cm-top-art-stat">${t('cm_stock_seuil_line',{stock:cmFmt(a.stock||0),unit:(a.unit||''),seuil:(a.seuil||seuilDef)})}</div>
         </div>
-        <button class="cm-mini-btn" onclick="cmQuickRestock('${a.id}')" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;"><i class="fas fa-plus"></i> Achat</button>
+        <button class="cm-mini-btn" onclick="cmQuickRestock('${a.id}')" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;"><i class="fas fa-plus"></i> ${t('cm_filter_achats_sing')}</button>
       </div>`).join('');
   }
 }
@@ -8248,7 +8471,7 @@ function cmRenderCatFilter(){
   const cats = ['all', ...(CM_CATS[shop.type]||CM_CATS.autre)];
   const c = document.getElementById('cmCatFilter');
   c.innerHTML = cats.map(cat=>`
-    <div class="cm-filter-chip ${cat===CM.currentCatFilter?'active':''}" onclick="cmSetCatFilter('${cat}')">${cat==='all'?'Tous':cat}</div>
+    <div class="cm-filter-chip ${cat===CM.currentCatFilter?'active':''}" onclick="cmSetCatFilter('${cat}')">${cat==='all'?t('cm_filter_all'):cmCatLabel(cat)}</div>
   `).join('');
 }
 
@@ -8267,7 +8490,7 @@ window.cmRenderArticles = function(){
   if(search) arts = arts.filter(a=>a.name.toLowerCase().includes(search) || (a.code||'').toLowerCase().includes(search));
   arts.sort((a,b)=>a.name.localeCompare(b.name));
   if(arts.length===0){
-    c.innerHTML = '<div class="cm-empty"><i class="fas fa-box-open"></i>Aucun article<br><small>Cliquez sur "Nouvel article" pour commencer</small></div>';
+    c.innerHTML = `<div class="cm-empty"><i class="fas fa-box-open"></i>${t('cm_no_article')}<br><small>${t('cm_no_article_sub')}</small></div>`;
     return;
   }
   const shop = cmGetShop();
@@ -8280,7 +8503,7 @@ window.cmRenderArticles = function(){
         <div class="cm-card-icon"><i class="fas fa-box"></i></div>
         <div class="cm-card-body">
           <div class="cm-card-title">${a.name}</div>
-          <div class="cm-card-sub">${a.cat} • ${cmAmt(a.prixV)}</div>
+          <div class="cm-card-sub">${cmCatLabel(a.cat)} • ${cmAmt(a.prixV)}</div>
         </div>
         <div class="cm-card-right">
           <div class="cm-card-price">${cmAmt(a.prixV)}</div>
@@ -8369,7 +8592,7 @@ window.cmShowQr = function(id){
   setTimeout(()=>{
     if(typeof QRCode === 'undefined'){
       holder.innerHTML = '<div style="padding:20px;color:#dc2626;font-size:13px;text-align:center">Bibliothèque QR non chargée.<br>Vérifie ta connexion internet et recharge la page.</div>';
-      if(window.cmToast) cmToast('Erreur : librairie QR non chargée','error');
+      if(window.cmToast) cmToast(t('cm_msg_qr_lib_error'),'error');
       return;
     }
     new QRCode(holder, { text: cmQrPayload(a), width: 180, height: 180, correctLevel: QRCode.CorrectLevel.M });
@@ -8385,11 +8608,11 @@ window.cmShowUnitsList = function(a){
   const units = (a.units||[]).slice().sort((x,y)=>x.num-y.num);
   const sold = units.filter(u=>u.sold).length;
   document.getElementById('cmQrCodeTxt').textContent =
-    `${units.length} unité(s) — ${units.length-sold} en stock, ${sold} vendue(s)`;
+    t('cm_units_summary',{n:units.length,avail:units.length-sold,sold:sold});
   const holder = document.getElementById('cmQrCanvas');
   holder.innerHTML = `<div style="max-height:260px;overflow-y:auto;text-align:left;font-size:13px;padding:4px">` +
     units.map(u=>`<div style="display:flex;justify-content:space-between;padding:4px 8px;border-bottom:1px solid #eee">
-      <span>Unité #${u.num}</span><span style="color:${u.sold?'#94a3b8':'#10b981'};font-weight:600">${u.sold?'Vendue':'En stock'}</span>
+      <span>${t('cm_unit_label')} #${u.num}</span><span style="color:${u.sold?'#94a3b8':'#10b981'};font-weight:600">${u.sold?t('cm_unit_sold'):t('cm_unit_available')}</span>
     </div>`).join('') +
     `</div>`;
   if(window.openModal) window.openModal('cmQrModal');
@@ -8404,7 +8627,7 @@ window.cmPrintCurrentQr = function(){
 
 window.cmPrintAllLabels = function(){
   const arts = cmGetShopArticles();
-  if(arts.length===0){ cmToast('Aucun article à imprimer','error'); return; }
+  if(arts.length===0){ cmToast(t('cm_msg_nothing_to_print'),'error'); return; }
   cmBuildPrintSheet(arts);
   setTimeout(()=>window.print(), 150);
 };
@@ -8441,7 +8664,7 @@ function cmBuildPrintSheet(arts){
   });
   cmSave();
 
-  if(labels.length===0){ cmToast('Aucune unité en stock à imprimer','error'); return; }
+  if(labels.length===0){ cmToast(t('cm_msg_no_unit_to_print'),'error'); return; }
 
   sheet.innerHTML = '<div class="cm-label-grid">' + labels.map(l=>
     `<div class="cm-label"><div id="${l.cellId}"></div><div class="lbl-name">${l.name}</div><div class="lbl-price">${l.price}</div><div class="lbl-shop">${shopName}</div></div>`
@@ -8500,7 +8723,7 @@ window.cmOpenScanner = function(onFound, opts){
     video.play();
     cmScanLoop();
   }).catch(()=>{
-    cmToast('Accès caméra refusé ou indisponible','error');
+    cmToast(t('cm_msg_camera_denied'),'error');
     window.cmCloseScanner();
   });
 };
@@ -8542,7 +8765,7 @@ function cmShowScanSaleCard(art, unit){
   cmScanSaleArtId = art.id;
   cmScanSaleUnitId = unit ? unit.qrId : null;
   document.getElementById('cmScanSaleName').textContent = art.name + (unit ? ` (unité #${unit.num})` : '');
-  document.getElementById('cmScanSaleStock').textContent = 'Stock : ' + cmFmt(art.stock||0) + ' ' + (art.unit||'');
+  document.getElementById('cmScanSaleStock').textContent = t('cm_scan_stock_label') + ' ' + cmFmt(art.stock||0) + ' ' + (art.unit||'');
   document.getElementById('cmScanSalePrice').textContent = cmAmt(art.prixV);
   document.getElementById('cmScanHint').style.display = 'none';
   document.getElementById('cmScanSaleCard').style.display = '';
@@ -8564,7 +8787,7 @@ window.cmConfirmScanSale = function(){
     window.cmCancelScanSale();
     return;
   }
-  cmToast('✓ Vendu : ' + res.article.name + ' — ' + cmAmt(res.article.prixV), 'success');
+  cmToast(t('cm_msg_sold_prefix') + ' ' + res.article.name + ' — ' + cmAmt(res.article.prixV), 'success');
   // Paiement validé : on ferme complètement la caméra pour éviter tout
   // double-scan accidentel. Il faudra réappuyer sur le bouton pour le
   // client suivant.
@@ -8585,21 +8808,21 @@ window.cmScanForMvt = function(){
     document.getElementById('cmMvtArtSearch').value = art.name;
     cmRenderMvtPicker();
     cmPickMvtArt(art.id);
-    cmToast('Article reconnu : ' + art.name, 'success');
+    cmToast(t('cm_msg_article_recognized') + ' ' + art.name, 'success');
   });
 };
 
 // Lancement du scanner en mode "caisse rapide" : vente immédiate de 1 unité
 window.cmScanForQuickSale = function(){
-  if(!cmGetShop()){ cmToast('Créez d\'abord une boutique','error'); return; }
-  if(cmGetShopArticles().length===0){ cmToast('Créez d\'abord un article','error'); return; }
+  if(!cmGetShop()){ cmToast(t('cm_msg_create_shop_first'),'error'); return; }
+  if(cmGetShopArticles().length===0){ cmToast(t('cm_msg_create_article_first'),'error'); return; }
   window.cmOpenScanner(null, { mode:'sale' });
 };
 
 window.cmOpenArticleModal = function(){
-  if(!cmGetShop()){ cmToast('Créez d\'abord une boutique','error'); return; }
+  if(!cmGetShop()){ cmToast(t('cm_msg_create_shop_first'),'error'); return; }
   CM.editingArtId = null;
-  document.getElementById('cmArtModalTitle').textContent = 'Nouvel article';
+  document.getElementById('cmArtModalTitle').textContent = t('cm_new_article');
   document.getElementById('cmArtName').value = '';
   document.getElementById('cmArtPrixA').value = '';
   document.getElementById('cmArtPrixV').value = '';
@@ -8618,7 +8841,7 @@ window.cmEditArticle = function(id){
   const a = CM.articles.find(x=>x.id===id);
   if(!a) return;
   CM.editingArtId = id;
-  document.getElementById('cmArtModalTitle').textContent = 'Modifier article';
+  document.getElementById('cmArtModalTitle').textContent = t('cm_edit_article');
   document.getElementById('cmArtName').value = a.name;
   document.getElementById('cmArtPrixA').value = a.prixA||'';
   document.getElementById('cmArtPrixV').value = a.prixV||'';
@@ -8638,7 +8861,7 @@ function cmRenderArtCatGrid(selected){
   const cats = CM_CATS[shop.type]||CM_CATS.autre;
   const sel = selected || cats[0];
   const c = document.getElementById('cmArtCatGrid');
-  c.innerHTML = cats.map(cat=>`<button type="button" class="cm-cat-chip ${cat===sel?'active':''}" data-cat="${cat}" onclick="cmPickArtCat(this)">${cat}</button>`).join('');
+  c.innerHTML = cats.map(cat=>`<button type="button" class="cm-cat-chip ${cat===sel?'active':''}" data-cat="${cat}" onclick="cmPickArtCat(this)">${cmCatLabel(cat)}</button>`).join('');
 }
 
 window.cmPickArtCat = function(btn){
@@ -8658,9 +8881,9 @@ window.cmSaveArticle = function(){
   const code = document.getElementById('cmArtCode').value.trim();
   const note = document.getElementById('cmArtNote').value.trim();
 
-  if(!name){ cmToast('Nom requis','error'); return; }
-  if(!cat){ cmToast('Choisissez une catégorie','error'); return; }
-  if(prixV<=0){ cmToast('Prix de vente requis','error'); return; }
+  if(!name){ cmToast(t('cm_msg_name_required'),'error'); return; }
+  if(!cat){ cmToast(t('cm_msg_category_required'),'error'); return; }
+  if(prixV<=0){ cmToast(t('cm_msg_price_required'),'error'); return; }
 
   if(CM.editingArtId){
     const a = CM.articles.find(x=>x.id===CM.editingArtId);
@@ -8670,7 +8893,7 @@ window.cmSaveArticle = function(){
       // du code-barre (a.code) saisi à la main.
       if(!a.qrId) a.qrId = cmGenArticleCode();
       cmSyncArticleUnits(a);
-      cmToast('Article modifié','success');
+      cmToast(t('cm_msg_article_updated'),'success');
     }
   } else {
     const a = {
@@ -8684,7 +8907,7 @@ window.cmSaveArticle = function(){
     };
     CM.articles.push(a);
     cmSyncArticleUnits(a);
-    cmToast('Article ajouté','success');
+    cmToast(t('cm_msg_article_created'),'success');
   }
   CM.editingArtId = null;
   cmSave();
@@ -8696,13 +8919,13 @@ window.cmDeleteArticle = function(){
   if(!CM.editingArtId) return;
   const a = CM.articles.find(x=>x.id===CM.editingArtId);
   if(!a) return;
-  if(!confirm(`Supprimer l'article "${a.name}" ?\n(Les mouvements liés seront conservés)`)) return;
+  if(!confirm(t('cm_confirm_delete_article',{name:a.name}))) return;
   CM.articles = CM.articles.filter(x=>x.id!==CM.editingArtId);
   CM.editingArtId = null;
   cmSave();
   if(window.closeModal) window.closeModal('cmArticleModal');
   cmRenderAll();
-  cmToast('Article supprimé','success');
+  cmToast(t('cm_msg_article_deleted'),'success');
 };
 
 /* ── Mouvements ── */
@@ -8720,7 +8943,7 @@ function cmRenderMvts(){
   if(CM.currentMvtFilter!=='all') mvts = mvts.filter(m=>m.type===CM.currentMvtFilter);
   mvts.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
   if(mvts.length===0){
-    c.innerHTML = '<div class="cm-empty"><i class="fas fa-right-left"></i>Aucun mouvement<br><small>Enregistrez votre première vente ou achat</small></div>';
+    c.innerHTML = `<div class="cm-empty"><i class="fas fa-right-left"></i>${t('cm_no_movement')}<br><small>${t('cm_no_movement_sub')}</small></div>`;
     return;
   }
   c.innerHTML = mvts.map(m=>{
@@ -8740,7 +8963,7 @@ function cmRenderMvts(){
 window.cmDeleteMvt = function(id){
   const m = CM.mouvements.find(x=>x.id===id);
   if(!m) return;
-  if(!confirm(`Supprimer ce mouvement ?\n${m.type==='vente'?'Vente':'Achat'} : ${m.artName} ×${m.qte}\nLe stock sera réajusté.`)) return;
+  if(!confirm(t('cm_confirm_delete_mvt',{type:(m.type==='vente'?t('cm_filter_ventes_sing'):t('cm_filter_achats_sing')),name:m.artName,qte:m.qte}))) return;
   // Annuler effet stock
   const art = CM.articles.find(a=>a.id===m.artId);
   if(art){
@@ -8750,13 +8973,13 @@ window.cmDeleteMvt = function(id){
   CM.mouvements = CM.mouvements.filter(x=>x.id!==id);
   cmSave();
   cmRenderAll();
-  cmToast('Mouvement supprimé','success');
+  cmToast(t('cm_msg_mvt_deleted'),'success');
 };
 
 /* ── Modal Mouvement ── */
 window.cmOpenMvtModal = function(){
-  if(!cmGetShop()){ cmToast('Créez d\'abord une boutique','error'); return; }
-  if(cmGetShopArticles().length===0){ cmToast('Créez d\'abord un article','error'); return; }
+  if(!cmGetShop()){ cmToast(t('cm_msg_create_shop_first'),'error'); return; }
+  if(cmGetShopArticles().length===0){ cmToast(t('cm_msg_create_article_first'),'error'); return; }
   document.getElementById('cmMvtArtSearch').value = '';
   document.getElementById('cmMvtQte').value = '1';
   document.getElementById('cmMvtPrix').value = '';
@@ -8790,7 +9013,7 @@ window.cmRenderMvtPicker = function(){
   if(s) arts = arts.filter(a=>a.name.toLowerCase().includes(s) || (a.code||'').toLowerCase().includes(s));
   arts.sort((a,b)=>a.name.localeCompare(b.name));
   if(arts.length===0){
-    c.innerHTML = '<div class="cm-empty" style="padding:20px 10px"><i class="fas fa-box-open"></i>Aucun article</div>';
+    c.innerHTML = `<div class="cm-empty" style="padding:20px 10px"><i class="fas fa-box-open"></i>${t('cm_no_article')}</div>`;
     return;
   }
   c.innerHTML = arts.map(a=>{
@@ -8798,7 +9021,7 @@ window.cmRenderMvtPicker = function(){
     return `<div class="cm-art-picker-item ${sel}" onclick="cmPickMvtArt('${a.id}')">
       <div>
         <div style="font-weight:700;font-size:13px;">${a.name}</div>
-        <div style="font-size:11px;color:var(--muted)">${a.cat} • Stock: ${cmFmt(a.stock||0)} ${a.unit||''}</div>
+        <div style="font-size:11px;color:var(--muted)">${cmCatLabel(a.cat)} • ${t('cm_scan_stock_label')} ${cmFmt(a.stock||0)} ${a.unit||''}</div>
       </div>
       <div style="font-weight:700;color:#10b981;font-size:13px;">${cmAmt(a.prixV)}</div>
     </div>`;
@@ -8822,20 +9045,20 @@ window.cmUpdateMvtTotal = function(){
 };
 
 window.cmSaveMvt = function(){
-  if(!CM.currentMvtArtId){ cmToast('Choisissez un article','error'); return; }
+  if(!CM.currentMvtArtId){ cmToast(t('cm_msg_choose_article'),'error'); return; }
   const a = CM.articles.find(x=>x.id===CM.currentMvtArtId);
-  if(!a){ cmToast('Article introuvable','error'); return; }
+  if(!a){ cmToast(t('cm_msg_article_not_found'),'error'); return; }
   const qte = parseFloat(document.getElementById('cmMvtQte').value)||0;
   const prix = parseFloat(document.getElementById('cmMvtPrix').value)||0;
   const date = document.getElementById('cmMvtDate').value || cmToday();
   const person = document.getElementById('cmMvtPerson').value.trim();
   const note = document.getElementById('cmMvtNote').value.trim();
-  if(qte<=0){ cmToast('Quantité invalide','error'); return; }
-  if(prix<0){ cmToast('Prix invalide','error'); return; }
+  if(qte<=0){ cmToast(t('cm_msg_invalid_qty'),'error'); return; }
+  if(prix<0){ cmToast(t('cm_msg_invalid_price'),'error'); return; }
 
   // Vérification stock pour vente
   if(CM.currentMvtType==='vente' && qte > (a.stock||0)){
-    if(!confirm(`⚠️ Stock insuffisant !\nStock actuel: ${cmFmt(a.stock||0)} ${a.unit||''}\nVente demandée: ${cmFmt(qte)}\n\nContinuer quand même ?`)) return;
+    if(!confirm(t('cm_confirm_low_stock',{stock:cmFmt(a.stock||0),unit:(a.unit||''),qte:cmFmt(qte)}))) return;
   }
 
   // Mise à jour stock
@@ -8855,7 +9078,7 @@ window.cmSaveMvt = function(){
   cmSave();
   if(window.closeModal) window.closeModal('cmMvtModal');
   cmRenderAll();
-  cmToast(CM.currentMvtType==='vente'?'✓ Vente enregistrée':'✓ Achat enregistré','success');
+  cmToast(CM.currentMvtType==='vente'?t('cm_msg_sale_recorded'):t('cm_msg_purchase_recorded'),'success');
 };
 
 // ══ VENTE RAPIDE (caisse) : enregistre directement 1 unité vendue ══
@@ -8864,18 +9087,18 @@ window.cmSaveMvt = function(){
 function cmQuickSale(articleId, qte, unitQrId){
   qte = qte || 1;
   const a = CM.articles.find(x=>x.id===articleId);
-  if(!a) return { ok:false, msg:'Article introuvable' };
+  if(!a) return { ok:false, msg:t('cm_msg_article_not_found') };
 
   let unit = null;
   if(cmIsPhysicalArticle(a) && unitQrId){
     unit = (a.units||[]).find(u=>u.qrId===unitQrId) || null;
     if(unit && unit.sold){
-      return { ok:false, msg:`Cette unité (#${unit.num}) a déjà été vendue` };
+      return { ok:false, msg:t('cm_msg_unit_already_sold',{num:unit.num}) };
     }
   }
 
   if(qte > (a.stock||0)){
-    return { ok:false, msg:`Stock insuffisant (${cmFmt(a.stock||0)} ${a.unit||''} restant)` };
+    return { ok:false, msg:t('cm_msg_insufficient_stock',{stock:cmFmt(a.stock||0),unit:(a.unit||'')}) };
   }
   a.stock = (a.stock||0) - qte;
   if(unit) unit.sold = true;
@@ -8883,7 +9106,7 @@ function cmQuickSale(articleId, qte, unitQrId){
   CM.mouvements.push({
     id: cmUID(), shopId: CM.currentShopId, artId: a.id, artName: a.name,
     type: 'vente', qte, prix: a.prixV||0, total: qte*(a.prixV||0),
-    date: cmToday(), person:'', note: unit ? `Vente rapide (scan unité #${unit.num})` : 'Vente rapide (scan)',
+    date: cmToday(), person:'', note: unit ? t('cm_note_quick_sale_unit',{num:unit.num}) : t('cm_note_quick_sale'),
     createdAt: Date.now()
   });
   cmSave();
@@ -8901,7 +9124,7 @@ function cmRenderStock(){
   // Trier par stock croissant (les plus bas d'abord)
   arts.sort((a,b)=>(a.stock||0)-(b.stock||0));
   if(arts.length===0){
-    c.innerHTML = '<div class="cm-empty"><i class="fas fa-warehouse"></i>Aucun article en stock</div>';
+    c.innerHTML = `<div class="cm-empty"><i class="fas fa-warehouse"></i>${t('cm_no_stock_article')}</div>`;
     return;
   }
   const shop = cmGetShop();
@@ -8914,11 +9137,11 @@ function cmRenderStock(){
       <div class="cm-card-icon" style="background:${low?'linear-gradient(135deg,#ef4444,#dc2626)':'linear-gradient(135deg,#10b981,#06b6d4)'}"><i class="fas fa-cubes"></i></div>
       <div class="cm-card-body">
         <div class="cm-card-title">${a.name}</div>
-        <div class="cm-card-sub">${a.cat} • ${cmAmt(val)} en stock</div>
+        <div class="cm-card-sub">${cmCatLabel(a.cat)} • ${cmAmt(val)} ${t('cm_in_stock_suffix')}</div>
       </div>
       <div class="cm-card-right">
         <div class="cm-card-price" style="color:${low?'#ef4444':'#10b981'}">${cmFmt(a.stock||0)} ${a.unit||''}</div>
-        <div class="cm-card-stock">${low?'⚠️ Stock bas':'OK'}</div>
+        <div class="cm-card-stock">${low?t('cm_stock_low_label'):t('cm_stock_ok_label')}</div>
       </div>
     </div>`;
   }).join('');

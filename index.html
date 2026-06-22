@@ -1811,6 +1811,16 @@ function applyLang(code) {
 }
 
 window.applyLang = applyLang;
+// Exposer aussi t(), LANGS et currentLang sur window : ces éléments sont
+// définis dans ce <script type="module"> et donc scopés au module — sans
+// cette exposition, les <script> classiques (comme le module Commerce)
+// ne peuvent pas y accéder et lèvent "t is not defined".
+window.t = t;
+window.LANGS = LANGS;
+Object.defineProperty(window, 'currentLang', {
+  get(){ return currentLang; },
+  set(v){ currentLang = v; }
+});
 
 // ══ DONNÉES BUDGET PRÉÉTABLIES ══
 const BUDGET_PRESETS = {

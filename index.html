@@ -7314,6 +7314,7 @@ if ('serviceWorker' in navigator) {
 .cm-label img,.cm-label canvas{width:90px;height:90px}
 .cm-label .lbl-name{font-size:11px;font-weight:700;color:#000}
 .cm-label .lbl-price{font-size:12px;font-weight:800;color:#000}
+.cm-label .lbl-shop{font-size:9px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.3px}
 
 .cm-mvt-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;}
 .cm-mvt-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;}
@@ -7723,6 +7724,7 @@ if ('serviceWorker' in navigator) {
       <div class="cm-qr-name" id="cmQrName">—</div>
       <div class="cm-qr-price" id="cmQrPrice">—</div>
       <div class="cm-qr-code">Code : <span id="cmQrCodeTxt">—</span></div>
+      <div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.3px;margin-top:4px" id="cmQrShopName">—</div>
     </div>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeModal('cmQrModal')">Fermer</button>
@@ -7786,6 +7788,23 @@ const CM_CATS = {
   station: ['Essence','Gasoil','Pétrole','Huile moteur','Lubrifiant','Gaz','Lave-glace','Boisson','Snack','Autre'],
   autre: ['Article','Service','Autre']
 };
+
+// Catégories considérées comme des SERVICES (pas de stock physique fixe à
+// numéroter à l'avance) : elles gardent l'ancien système de QR partagé.
+// Tout ce qui n'est PAS dans cette liste est traité comme un PRODUIT
+// PHYSIQUE et reçoit un QR individuel numéroté par unité de stock.
+const CM_SERVICE_CATS = new Set([
+  'Impression N&B','Impression couleur','Photocopie','Scan','Saisie',
+  'Internet (h)','Recharge tél','Coupe homme','Coupe femme','Tresse',
+  'Teinture','Mèche','Soin','Manucure','Essence','Gasoil','Pétrole',
+  'Gaz','Lave-glace','Service'
+]);
+
+// Un article est "physique" (QR individuel par unité) si sa catégorie
+// n'est pas dans la liste des services ci-dessus.
+function cmIsPhysicalArticle(a){
+  return !CM_SERVICE_CATS.has(a.cat);
+}
 
 const CM_SHOP_ICONS = {
   alimentaire:'fa-cart-shopping',bar:'fa-beer-mug-empty',restaurant:'fa-utensils',boulangerie:'fa-bread-slice',
@@ -8281,18 +8300,63 @@ function cmGenArticleCode(){
   return (Date.now().toString(36) + Math.random().toString(36).slice(2,5)).toUpperCase();
 }
 
-function cmQrPayload(a){
+// Crée/ajuste la liste d'unités numérotées (a.units) d'un article PHYSIQUE
+// pour qu'elle compte exactement `a.stock` unités NON vendues.
+// - Articles SERVICE (cmIsPhysicalArticle = false) : aucune unité, on
+//   garde l'ancien système de QR unique partagé (a.qrId).
+// - Si le stock augmente : on ajoute de nouvelles unités, numérotées en
+//   continuant après le numéro le plus haut déjà utilisé (jamais de
+//   doublon, même après des ventes).
+// - Si le stock diminue : on retire des unités NON vendues (numéros les
+//   plus hauts d'abord). Les unités déjà vendues sont toujours
+//   conservées pour l'historique et ne sont jamais supprimées ici.
+function cmSyncArticleUnits(a){
+  if(!cmIsPhysicalArticle(a)){ a.units = []; return; }
+  if(!Array.isArray(a.units)) a.units = [];
+
+  const available = a.units.filter(u=>!u.sold);
+  const targetStock = Math.max(0, Math.floor(a.stock||0));
+
+  if(available.length < targetStock){
+    const maxNum = a.units.reduce((m,u)=>Math.max(m,u.num||0), 0);
+    const toAdd = targetStock - available.length;
+    for(let i=1;i<=toAdd;i++){
+      a.units.push({ num: maxNum+i, qrId: cmGenArticleCode(), sold:false });
+    }
+  } else if(available.length > targetStock){
+    let toRemove = available.length - targetStock;
+    const availSorted = available.slice().sort((x,y)=>y.num-x.num);
+    const removeIds = new Set(availSorted.slice(0, toRemove).map(u=>u.qrId));
+    a.units = a.units.filter(u=>!removeIds.has(u.qrId));
+  }
+}
+
+function cmQrPayload(a, unit){
   // Payload compact scanné par le module Commerce : AETCM|shopId|articleId|qrId
-  // qrId est l'identifiant unique généré automatiquement, distinct du
-  // code-barre (a.code) que l'utilisateur peut saisir à la main.
-  if(!a.qrId) a.qrId = cmGenArticleCode();
-  return `AETCM|${a.shopId}|${a.id}|${a.qrId}`;
+  // Pour un article PHYSIQUE, `unit` est l'unité précise scannée/imprimée
+  // (chaque unité a son propre qrId). Pour un article SERVICE, on utilise
+  // le qrId partagé de l'article (a.qrId), comme avant.
+  const qrId = unit ? unit.qrId : (a.qrId || (a.qrId = cmGenArticleCode()));
+  return `AETCM|${a.shopId}|${a.id}|${qrId}`;
 }
 
 window.cmShowQr = function(id){
   const a = CM.articles.find(x=>x.id===id);
   if(!a) return;
   CM.qrArtId = id;
+  const shop = cmGetShop();
+  document.getElementById('cmQrShopName').textContent = shop ? shop.name : '—';
+
+  if(cmIsPhysicalArticle(a)){
+    // Produit physique : un QR différent par unité de stock. On affiche
+    // la liste des unités (numéro + statut) avec un bouton pour tout
+    // imprimer en une fois, plutôt qu'un QR unique.
+    cmSyncArticleUnits(a); cmSave();
+    cmShowUnitsList(a);
+    return;
+  }
+
+  // Service : ancien comportement, un seul QR partagé pour l'article
   if(!a.qrId){ a.qrId = cmGenArticleCode(); cmSave(); }
   document.getElementById('cmQrName').textContent = a.name;
   document.getElementById('cmQrPrice').textContent = cmAmt(a.prixV);
@@ -8312,6 +8376,25 @@ window.cmShowQr = function(id){
   }, 30);
 };
 
+// Affiche la liste des unités numérotées d'un article physique, avec
+// leur statut (en stock / vendue) et un bouton pour imprimer toutes les
+// étiquettes des unités encore en stock.
+window.cmShowUnitsList = function(a){
+  document.getElementById('cmQrName').textContent = a.name;
+  document.getElementById('cmQrPrice').textContent = cmAmt(a.prixV);
+  const units = (a.units||[]).slice().sort((x,y)=>x.num-y.num);
+  const sold = units.filter(u=>u.sold).length;
+  document.getElementById('cmQrCodeTxt').textContent =
+    `${units.length} unité(s) — ${units.length-sold} en stock, ${sold} vendue(s)`;
+  const holder = document.getElementById('cmQrCanvas');
+  holder.innerHTML = `<div style="max-height:260px;overflow-y:auto;text-align:left;font-size:13px;padding:4px">` +
+    units.map(u=>`<div style="display:flex;justify-content:space-between;padding:4px 8px;border-bottom:1px solid #eee">
+      <span>Unité #${u.num}</span><span style="color:${u.sold?'#94a3b8':'#10b981'};font-weight:600">${u.sold?'Vendue':'En stock'}</span>
+    </div>`).join('') +
+    `</div>`;
+  if(window.openModal) window.openModal('cmQrModal');
+};
+
 window.cmPrintCurrentQr = function(){
   const a = CM.articles.find(x=>x.id===CM.qrArtId);
   if(!a) return;
@@ -8326,20 +8409,51 @@ window.cmPrintAllLabels = function(){
   setTimeout(()=>window.print(), 150);
 };
 
+// Construit la feuille d'étiquettes à imprimer. Pour un article PHYSIQUE,
+// génère une étiquette numérotée PAR UNITÉ en stock (pas les unités déjà
+// vendues). Pour un article SERVICE, génère une seule étiquette partagée,
+// comme avant.
 function cmBuildPrintSheet(arts){
   const sheet = document.getElementById('cmPrintLabels');
-  sheet.innerHTML = '<div class="cm-label-grid">' + arts.map(a=>{
-    const cellId = 'lbl_' + a.id;
-    return `<div class="cm-label"><div id="${cellId}"></div><div class="lbl-name">${a.name}</div><div class="lbl-price">${cmAmt(a.prixV)}</div></div>`;
-  }).join('') + '</div>';
+  const shop = cmGetShop();
+  const shopName = shop ? shop.name : '';
+  // Construit la liste à plat des étiquettes à générer : { cellId, qrText, label, price }
+  const labels = [];
+  arts.forEach(a=>{
+    if(cmIsPhysicalArticle(a)){
+      cmSyncArticleUnits(a);
+      (a.units||[]).filter(u=>!u.sold).forEach(u=>{
+        labels.push({
+          cellId: 'lbl_' + a.id + '_' + u.qrId,
+          qrText: cmQrPayload(a, u),
+          name: a.name + ' #' + u.num,
+          price: cmAmt(a.prixV)
+        });
+      });
+    } else {
+      labels.push({
+        cellId: 'lbl_' + a.id,
+        qrText: cmQrPayload(a),
+        name: a.name,
+        price: cmAmt(a.prixV)
+      });
+    }
+  });
+  cmSave();
+
+  if(labels.length===0){ cmToast('Aucune unité en stock à imprimer','error'); return; }
+
+  sheet.innerHTML = '<div class="cm-label-grid">' + labels.map(l=>
+    `<div class="cm-label"><div id="${l.cellId}"></div><div class="lbl-name">${l.name}</div><div class="lbl-price">${l.price}</div><div class="lbl-shop">${shopName}</div></div>`
+  ).join('') + '</div>';
   // qrcodejs dessine via <canvas> et a besoin que le conteneur soit
   // visible/layouté pour produire un rendu correct (sinon canvas vide
   // sur mobile, car #cmPrintLabels est display:none hors impression).
   // On le rend visible hors-écran le temps de générer les QR.
   sheet.style.cssText = 'display:block;position:absolute;left:-9999px;top:0;width:210mm;';
-  arts.forEach(a=>{
-    const el = document.getElementById('lbl_' + a.id);
-    if(el) new QRCode(el, { text: cmQrPayload(a), width: 90, height: 90, correctLevel: QRCode.CorrectLevel.M });
+  labels.forEach(l=>{
+    const el = document.getElementById(l.cellId);
+    if(el) new QRCode(el, { text: l.qrText, width: 90, height: 90, correctLevel: QRCode.CorrectLevel.M });
   });
   // On retire le style inline après le rendu : la feuille reprend son
   // comportement normal (cachée à l'écran, visible via @media print).
@@ -8349,17 +8463,27 @@ function cmBuildPrintSheet(arts){
 // ══ SCANNER CAMÉRA : identifie un article par son QR ══
 let cmScanStream = null, cmScanRAF = null, cmScanTargetCb = null;
 
+// Retrouve l'article correspondant à un QR scanné. Retourne null si non
+// trouvé, ou { article, unit } où `unit` est l'unité précise scannée
+// (uniquement pour les articles physiques ; null pour un service).
 function cmFindArticleByPayload(payload){
   const txt = (payload||'').trim();
-  // Format AETCM|shopId|articleId|code
   if(txt.startsWith('AETCM|')){
     const parts = txt.split('|');
     const artId = parts[2];
+    const qrId = parts[3];
     const found = CM.articles.find(a=>a.id===artId && a.shopId===CM.currentShopId);
-    if(found) return found;
+    if(found){
+      if(cmIsPhysicalArticle(found) && Array.isArray(found.units)){
+        const unit = found.units.find(u=>u.qrId===qrId) || null;
+        return { article: found, unit };
+      }
+      return { article: found, unit: null };
+    }
   }
   // Repli : on tente de matcher directement sur le champ code-barre
-  return cmGetShopArticles().find(a => (a.code||'') === txt) || null;
+  const byCode = cmGetShopArticles().find(a => (a.code||'') === txt);
+  return byCode ? { article: byCode, unit: null } : null;
 }
 
 window.cmOpenScanner = function(onFound, opts){
@@ -8394,28 +8518,30 @@ function cmScanLoop(){
   const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const result = window.jsQR ? jsQR(img.data, img.width, img.height) : null;
   if(result && result.data){
-    const art = cmFindArticleByPayload(result.data);
-    if(art){
+    const found = cmFindArticleByPayload(result.data);
+    if(found){
       if(CM.scanMode === 'sale'){
-        cmShowScanSaleCard(art);
+        cmShowScanSaleCard(found.article, found.unit);
         // On ne relance pas la boucle tout de suite : on attend que
         // l'utilisateur appuie Payer/Annuler. La caméra continue de
         // tourner en arrière-plan (pas besoin de l'arrêter).
         return;
       }
       window.cmCloseScanner();
-      if(cmScanTargetCb) cmScanTargetCb(art);
+      if(cmScanTargetCb) cmScanTargetCb(found.article, found.unit);
       return;
     }
   }
   cmScanRAF = requestAnimationFrame(cmScanLoop);
 }
 
-// Affiche la fiche article par-dessus la caméra, en mode caisse
-let cmScanSaleArtId = null;
-function cmShowScanSaleCard(art){
+// Affiche la fiche article par-dessus la caméra, en mode caisse.
+// `unit` est l'unité précise scannée (produit physique) ou null (service).
+let cmScanSaleArtId = null, cmScanSaleUnitId = null;
+function cmShowScanSaleCard(art, unit){
   cmScanSaleArtId = art.id;
-  document.getElementById('cmScanSaleName').textContent = art.name;
+  cmScanSaleUnitId = unit ? unit.qrId : null;
+  document.getElementById('cmScanSaleName').textContent = art.name + (unit ? ` (unité #${unit.num})` : '');
   document.getElementById('cmScanSaleStock').textContent = 'Stock : ' + cmFmt(art.stock||0) + ' ' + (art.unit||'');
   document.getElementById('cmScanSalePrice').textContent = cmAmt(art.prixV);
   document.getElementById('cmScanHint').style.display = 'none';
@@ -8424,6 +8550,7 @@ function cmShowScanSaleCard(art){
 
 window.cmCancelScanSale = function(){
   cmScanSaleArtId = null;
+  cmScanSaleUnitId = null;
   document.getElementById('cmScanSaleCard').style.display = 'none';
   document.getElementById('cmScanHint').style.display = '';
   cmScanRAF = requestAnimationFrame(cmScanLoop); // relance le scan
@@ -8431,17 +8558,17 @@ window.cmCancelScanSale = function(){
 
 window.cmConfirmScanSale = function(){
   if(!cmScanSaleArtId) return;
-  const res = cmQuickSale(cmScanSaleArtId, 1);
+  const res = cmQuickSale(cmScanSaleArtId, 1, cmScanSaleUnitId);
   if(!res.ok){
     cmToast(res.msg, 'error');
     window.cmCancelScanSale();
     return;
   }
   cmToast('✓ Vendu : ' + res.article.name + ' — ' + cmAmt(res.article.prixV), 'success');
-  cmScanSaleArtId = null;
-  document.getElementById('cmScanSaleCard').style.display = 'none';
-  document.getElementById('cmScanHint').style.display = '';
-  cmScanRAF = requestAnimationFrame(cmScanLoop); // prêt pour le client suivant
+  // Paiement validé : on ferme complètement la caméra pour éviter tout
+  // double-scan accidentel. Il faudra réappuyer sur le bouton pour le
+  // client suivant.
+  window.cmCloseScanner();
 };
 
 window.cmCloseScanner = function(){
@@ -8539,21 +8666,24 @@ window.cmSaveArticle = function(){
     const a = CM.articles.find(x=>x.id===CM.editingArtId);
     if(a){
       Object.assign(a,{name,cat,prixA,prixV,stock,unit,seuil,code,note});
-      // a.qrId est l'identifiant unique servant au QR — distinct du
-      // code-barre (a.code) saisi à la main. On le génère ici s'il
-      // manque encore (cas des articles créés avant ce système).
+      // a.qrId est l'identifiant unique servant au QR (services) — distinct
+      // du code-barre (a.code) saisi à la main.
       if(!a.qrId) a.qrId = cmGenArticleCode();
+      cmSyncArticleUnits(a);
       cmToast('Article modifié','success');
     }
   } else {
-    CM.articles.push({
+    const a = {
       id: cmUID(), shopId: CM.currentShopId,
       name,cat,prixA,prixV,stock,unit,seuil,
       code,
       qrId: cmGenArticleCode(),
+      units: [],
       note,
       createdAt: Date.now()
-    });
+    };
+    CM.articles.push(a);
+    cmSyncArticleUnits(a);
     cmToast('Article ajouté','success');
   }
   CM.editingArtId = null;
@@ -8731,22 +8861,34 @@ window.cmSaveMvt = function(){
 // ══ VENTE RAPIDE (caisse) : enregistre directement 1 unité vendue ══
 // Réutilisé par le scanner caméra en mode "caisse". Ne touche pas au
 // formulaire "Nouveau mouvement" classique.
-function cmQuickSale(articleId, qte){
+function cmQuickSale(articleId, qte, unitQrId){
   qte = qte || 1;
   const a = CM.articles.find(x=>x.id===articleId);
   if(!a) return { ok:false, msg:'Article introuvable' };
+
+  let unit = null;
+  if(cmIsPhysicalArticle(a) && unitQrId){
+    unit = (a.units||[]).find(u=>u.qrId===unitQrId) || null;
+    if(unit && unit.sold){
+      return { ok:false, msg:`Cette unité (#${unit.num}) a déjà été vendue` };
+    }
+  }
+
   if(qte > (a.stock||0)){
     return { ok:false, msg:`Stock insuffisant (${cmFmt(a.stock||0)} ${a.unit||''} restant)` };
   }
   a.stock = (a.stock||0) - qte;
+  if(unit) unit.sold = true;
+
   CM.mouvements.push({
     id: cmUID(), shopId: CM.currentShopId, artId: a.id, artName: a.name,
     type: 'vente', qte, prix: a.prixV||0, total: qte*(a.prixV||0),
-    date: cmToday(), person:'', note:'Vente rapide (scan)', createdAt: Date.now()
+    date: cmToday(), person:'', note: unit ? `Vente rapide (scan unité #${unit.num})` : 'Vente rapide (scan)',
+    createdAt: Date.now()
   });
   cmSave();
   cmRenderAll();
-  return { ok:true, article:a, qte };
+  return { ok:true, article:a, qte, unit };
 }
 
 /* ── Stock ── */

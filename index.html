@@ -1538,6 +1538,44 @@ const LANGS = {
     cm_units_sold_suffix:'unités vendues', cm_stock_seuil_line:'Stock: {stock} {unit} (seuil: {seuil})',
     cm_msg_unit_already_sold:'Cette unité (#{num}) a déjà été vendue',
     cm_msg_insufficient_stock:'Stock insuffisant ({stock} {unit} restant)',
+    // ══ Module Objectifs ══
+    goal_title:'Objectifs', goal_tab_active:'Actifs', goal_tab_done:'Terminés',
+    goal_none_active:'Aucun objectif actif', goal_none_done:'Aucun objectif terminé',
+    goal_create_first:'Créer mon premier objectif',
+    goal_target_label:'Objectif :', goal_deadline_label:'Échéance :',
+    goal_btn_add:'Ajouter', goal_btn_edit:'Modifier',
+    goal_new:'Nouvel objectif', goal_edit:'Modifier l\'objectif',
+    goal_icon:'Icône / Emoji', goal_name:'Nom de l\'objectif', goal_name_ph:'ex: Achat terrain',
+    goal_target_amount:'Montant cible (FCFA)', goal_target_ph:'5 000 000',
+    goal_already_saved:'Montant déjà épargné',
+    goal_deadline_optional:'Date limite (optionnel)',
+    goal_description:'Description', goal_desc_ph:'Détails de l\'objectif...',
+    goal_save:'Enregistrer l\'objectif',
+    goal_msg_name_required:'Nom requis', goal_msg_invalid_target:'Montant cible invalide',
+    goal_msg_saved_title:'Objectif enregistré !', goal_msg_saved_body:'Votre objectif est maintenant suivi.',
+    goal_msg_error:'Erreur :',
+    goal_add_prompt:'Ajouter combien à "{name}" ?\n\nDéjà épargné : {saved} / {target}',
+    goal_msg_added_title:'Épargne ajoutée !', goal_msg_added_body:'{amt} ajouté à "{name}"',
+    goal_confirm_delete:'Supprimer l\'objectif "{name}" ?', goal_msg_deleted:'Objectif supprimé',
+    // ══ Module Tontines ══
+    tont_title:'Tontines', tont_create:'Créer une tontine',
+    tont_new:'Nouvelle tontine', tont_edit:'Modifier la tontine',
+    tont_name:'Nom de la tontine', tont_name_ph:'ex: Tontine famille',
+    tont_type:'Type', tont_type_famille:'👨‍👩‍👧 Famille', tont_type_amis:'👥 Amis',
+    tont_type_travail:'💼 Travail', tont_type_quartier:'🏘️ Quartier', tont_type_autre:'🤝 Autre',
+    tont_members:'Nombre de participants', tont_members_ph:'10',
+    tont_amount:'Montant de la cotisation (FCFA)', tont_amount_ph:'50 000',
+    tont_freq:'Fréquence', tont_freq_weekly:'📅 Hebdomadaire', tont_freq_biweekly:'📅 Tous les 15 jours', tont_freq_monthly:'📅 Mensuelle',
+    tont_start:'Date de début', tont_position:'Position de tirage (sur N)', tont_position_ph:'ex: 3',
+    tont_description:'Description', tont_desc_ph:'Détails sur la tontine...',
+    tont_save:'Créer la tontine',
+    tont_none_yet:'Aucune tontine pour l\'instant', tont_create_first:'Créez votre première tontine ci-dessous',
+    tont_freq_hebdo_short:'Hebdo', tont_freq_bimensuel_short:'Bi-mensuel', tont_freq_mensuel_short:'Mensuel',
+    tont_members_suffix:'membres', tont_contribution:'Cotisation', tont_total_pot:'Total pot', tont_my_position:'Ma position',
+    tont_next_draw:'Prochain tirage :', tont_btn_edit:'Modifier', tont_btn_delete:'Supprimer',
+    tont_msg_min_members:'Au moins 2 membres', tont_msg_invalid_amount:'Cotisation invalide',
+    tont_msg_saved_title:'Tontine enregistrée !', tont_msg_saved_body:'Votre tontine est maintenant suivie.',
+    tont_confirm_delete:'Supprimer la tontine "{name}" ?', tont_msg_deleted:'Tontine supprimée',
   },
   en: {
     code:'en', name:'English', flag:'🇬🇧', dir:'ltr', font:'Syne',
@@ -1662,6 +1700,44 @@ const LANGS = {
     cm_units_sold_suffix:'units sold', cm_stock_seuil_line:'Stock: {stock} {unit} (threshold: {seuil})',
     cm_msg_unit_already_sold:'This unit (#{num}) has already been sold',
     cm_msg_insufficient_stock:'Insufficient stock ({stock} {unit} left)',
+    // ══ Goals module ══
+    goal_title:'Goals', goal_tab_active:'Active', goal_tab_done:'Completed',
+    goal_none_active:'No active goals', goal_none_done:'No completed goals',
+    goal_create_first:'Create my first goal',
+    goal_target_label:'Target:', goal_deadline_label:'Deadline:',
+    goal_btn_add:'Add', goal_btn_edit:'Edit',
+    goal_new:'New goal', goal_edit:'Edit goal',
+    goal_icon:'Icon / Emoji', goal_name:'Goal name', goal_name_ph:'e.g.: Buy land',
+    goal_target_amount:'Target amount (FCFA)', goal_target_ph:'5,000,000',
+    goal_already_saved:'Amount already saved',
+    goal_deadline_optional:'Deadline (optional)',
+    goal_description:'Description', goal_desc_ph:'Goal details...',
+    goal_save:'Save goal',
+    goal_msg_name_required:'Name required', goal_msg_invalid_target:'Invalid target amount',
+    goal_msg_saved_title:'Goal saved!', goal_msg_saved_body:'Your goal is now being tracked.',
+    goal_msg_error:'Error:',
+    goal_add_prompt:'How much to add to "{name}"?\n\nAlready saved: {saved} / {target}',
+    goal_msg_added_title:'Savings added!', goal_msg_added_body:'{amt} added to "{name}"',
+    goal_confirm_delete:'Delete goal "{name}"?', goal_msg_deleted:'Goal deleted',
+    // ══ Tontines module ══
+    tont_title:'Savings circles', tont_create:'Create a savings circle',
+    tont_new:'New savings circle', tont_edit:'Edit savings circle',
+    tont_name:'Circle name', tont_name_ph:'e.g.: Family circle',
+    tont_type:'Type', tont_type_famille:'👨‍👩‍👧 Family', tont_type_amis:'👥 Friends',
+    tont_type_travail:'💼 Work', tont_type_quartier:'🏘️ Neighborhood', tont_type_autre:'🤝 Other',
+    tont_members:'Number of members', tont_members_ph:'10',
+    tont_amount:'Contribution amount (FCFA)', tont_amount_ph:'50,000',
+    tont_freq:'Frequency', tont_freq_weekly:'📅 Weekly', tont_freq_biweekly:'📅 Every 2 weeks', tont_freq_monthly:'📅 Monthly',
+    tont_start:'Start date', tont_position:'Draw position (out of N)', tont_position_ph:'e.g.: 3',
+    tont_description:'Description', tont_desc_ph:'Details about the circle...',
+    tont_save:'Create savings circle',
+    tont_none_yet:'No savings circle yet', tont_create_first:'Create your first savings circle below',
+    tont_freq_hebdo_short:'Weekly', tont_freq_bimensuel_short:'Bi-weekly', tont_freq_mensuel_short:'Monthly',
+    tont_members_suffix:'members', tont_contribution:'Contribution', tont_total_pot:'Total pot', tont_my_position:'My position',
+    tont_next_draw:'Next draw:', tont_btn_edit:'Edit', tont_btn_delete:'Delete',
+    tont_msg_min_members:'At least 2 members required', tont_msg_invalid_amount:'Invalid contribution amount',
+    tont_msg_saved_title:'Savings circle saved!', tont_msg_saved_body:'Your savings circle is now being tracked.',
+    tont_confirm_delete:'Delete savings circle "{name}"?', tont_msg_deleted:'Savings circle deleted',
   },
   ar: {
     code:'ar', name:'العربية', flag:'🇲🇦', dir:'rtl', font:'Syne',
@@ -5839,14 +5915,14 @@ document.addEventListener('DOMContentLoaded', () => {
 <!-- ════ TAB OBJECTIFS (mockup) ════ -->
 <div id="tab-objectifs" class="tab-content" style="padding:0 16px">
   <div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 16px">
-    <h2 style="font-size:22px;font-weight:800;color:var(--text)">Objectifs</h2>
+    <h2 style="font-size:22px;font-weight:800;color:var(--text)" data-i18n="goal_title">Objectifs</h2>
     <button onclick="openGoalModal()" style="background:var(--grad);color:#fff;border:none;width:42px;height:42px;border-radius:50%;cursor:pointer;font-size:16px;box-shadow:0 6px 18px rgba(37,99,235,.4)">
       <i class="fas fa-plus"></i>
     </button>
   </div>
   <div class="goal-tabs">
-    <div class="goal-tab active" id="goalTabActive" onclick="switchGoalTab('active')">Actifs</div>
-    <div class="goal-tab" id="goalTabDone" onclick="switchGoalTab('done')">Terminés</div>
+    <div class="goal-tab active" id="goalTabActive" onclick="switchGoalTab('active')" data-i18n="goal_tab_active">Actifs</div>
+    <div class="goal-tab" id="goalTabDone" onclick="switchGoalTab('done')" data-i18n="goal_tab_done">Terminés</div>
   </div>
   <div id="goalsList"></div>
 </div>
@@ -5854,14 +5930,14 @@ document.addEventListener('DOMContentLoaded', () => {
 <!-- ════ TAB TONTINES ════ -->
 <div id="tab-tontines" class="tab-content" style="padding:0 16px">
   <div style="display:flex;align-items:center;justify-content:space-between;margin:4px 0 16px">
-    <h2 style="font-size:22px;font-weight:800;color:var(--text)">Tontines</h2>
+    <h2 style="font-size:22px;font-weight:800;color:var(--text)" data-i18n="tont_title">Tontines</h2>
     <button onclick="openTontineModal()" style="background:var(--grad);color:#fff;border:none;width:42px;height:42px;border-radius:50%;cursor:pointer;font-size:16px;box-shadow:0 6px 18px rgba(37,99,235,.4)">
       <i class="fas fa-plus"></i>
     </button>
   </div>
   <div id="tontinesList"></div>
   <button onclick="openTontineModal()" style="width:100%;padding:14px;background:var(--grad);color:#fff;border:none;border-radius:12px;font-weight:700;font-size:14px;cursor:pointer;margin:8px 0 100px;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 6px 18px rgba(37,99,235,.3)">
-    <i class="fas fa-plus"></i> Créer une tontine
+    <i class="fas fa-plus"></i> <span data-i18n="tont_create">Créer une tontine</span>
   </button>
 </div>
 
@@ -6161,36 +6237,36 @@ document.addEventListener('DOMContentLoaded', () => {
 <div class="aet-modal-overlay" id="goalModal" onclick="if(event.target===this)closeAetModal('goalModal')">
   <div class="aet-modal">
     <div class="aet-modal-head">
-      <h3><i class="fas fa-bullseye" style="color:var(--primary)"></i> <span id="goalModalTitle">Nouvel objectif</span></h3>
+      <h3><i class="fas fa-bullseye" style="color:var(--primary)"></i> <span id="goalModalTitle" data-i18n="goal_new">Nouvel objectif</span></h3>
       <button class="aet-modal-close" onclick="closeAetModal('goalModal')"><i class="fas fa-xmark"></i></button>
     </div>
     <div class="aet-modal-body">
       <div class="aet-form-row">
-        <label>Icône / Emoji</label>
+        <label data-i18n="goal_icon">Icône / Emoji</label>
         <div class="avatar-grid" id="goalIconGrid"></div>
       </div>
       <div class="aet-form-row">
-        <label>Nom de l'objectif</label>
-        <input type="text" id="goalName" placeholder="ex: Achat terrain" />
+        <label data-i18n="goal_name">Nom de l'objectif</label>
+        <input type="text" id="goalName" data-i18n="goal_name_ph" placeholder="ex: Achat terrain" />
       </div>
       <div class="aet-form-row">
-        <label>Montant cible (FCFA)</label>
-        <input type="number" id="goalTarget" placeholder="5 000 000" />
+        <label data-i18n="goal_target_amount">Montant cible (FCFA)</label>
+        <input type="number" id="goalTarget" data-i18n="goal_target_ph" placeholder="5 000 000" />
       </div>
       <div class="aet-form-row">
-        <label>Montant déjà épargné</label>
+        <label data-i18n="goal_already_saved">Montant déjà épargné</label>
         <input type="number" id="goalSaved" placeholder="0" value="0" />
       </div>
       <div class="aet-form-row">
-        <label>Date limite (optionnel)</label>
+        <label data-i18n="goal_deadline_optional">Date limite (optionnel)</label>
         <input type="date" id="goalDeadline" />
       </div>
       <div class="aet-form-row">
-        <label>Description</label>
-        <textarea id="goalDesc" rows="2" placeholder="Détails de l'objectif..."></textarea>
+        <label data-i18n="goal_description">Description</label>
+        <textarea id="goalDesc" rows="2" data-i18n="goal_desc_ph" placeholder="Détails de l'objectif..."></textarea>
       </div>
       <button class="aet-btn-primary" onclick="saveGoal()">
-        <i class="fas fa-floppy-disk"></i> Enregistrer l'objectif
+        <i class="fas fa-floppy-disk"></i> <span data-i18n="goal_save">Enregistrer l'objectif</span>
       </button>
     </div>
   </div>
@@ -6200,54 +6276,54 @@ document.addEventListener('DOMContentLoaded', () => {
 <div class="aet-modal-overlay" id="tontineModal" onclick="if(event.target===this)closeAetModal('tontineModal')">
   <div class="aet-modal">
     <div class="aet-modal-head">
-      <h3><i class="fas fa-users" style="color:var(--primary)"></i> <span id="tontineModalTitle">Nouvelle tontine</span></h3>
+      <h3><i class="fas fa-users" style="color:var(--primary)"></i> <span id="tontineModalTitle" data-i18n="tont_new">Nouvelle tontine</span></h3>
       <button class="aet-modal-close" onclick="closeAetModal('tontineModal')"><i class="fas fa-xmark"></i></button>
     </div>
     <div class="aet-modal-body">
       <div class="aet-form-row">
-        <label>Nom de la tontine</label>
-        <input type="text" id="tontName" placeholder="ex: Tontine famille" />
+        <label data-i18n="tont_name">Nom de la tontine</label>
+        <input type="text" id="tontName" data-i18n="tont_name_ph" placeholder="ex: Tontine famille" />
       </div>
       <div class="aet-form-row">
-        <label>Type</label>
+        <label data-i18n="tont_type">Type</label>
         <select id="tontType">
-          <option value="famille">👨‍👩‍👧 Famille</option>
-          <option value="amis">👥 Amis</option>
-          <option value="travail">💼 Travail</option>
-          <option value="quartier">🏘️ Quartier</option>
-          <option value="autre">🤝 Autre</option>
+          <option value="famille" data-i18n="tont_type_famille">👨‍👩‍👧 Famille</option>
+          <option value="amis" data-i18n="tont_type_amis">👥 Amis</option>
+          <option value="travail" data-i18n="tont_type_travail">💼 Travail</option>
+          <option value="quartier" data-i18n="tont_type_quartier">🏘️ Quartier</option>
+          <option value="autre" data-i18n="tont_type_autre">🤝 Autre</option>
         </select>
       </div>
       <div class="aet-form-row">
-        <label>Nombre de participants</label>
-        <input type="number" id="tontMembers" placeholder="10" min="2" />
+        <label data-i18n="tont_members">Nombre de participants</label>
+        <input type="number" id="tontMembers" data-i18n="tont_members_ph" placeholder="10" min="2" />
       </div>
       <div class="aet-form-row">
-        <label>Montant de la cotisation (FCFA)</label>
-        <input type="number" id="tontAmount" placeholder="50 000" />
+        <label data-i18n="tont_amount">Montant de la cotisation (FCFA)</label>
+        <input type="number" id="tontAmount" data-i18n="tont_amount_ph" placeholder="50 000" />
       </div>
       <div class="aet-form-row">
-        <label>Fréquence</label>
+        <label data-i18n="tont_freq">Fréquence</label>
         <select id="tontFreq">
-          <option value="weekly">📅 Hebdomadaire</option>
-          <option value="biweekly">📅 Tous les 15 jours</option>
-          <option value="monthly" selected>📅 Mensuelle</option>
+          <option value="weekly" data-i18n="tont_freq_weekly">📅 Hebdomadaire</option>
+          <option value="biweekly" data-i18n="tont_freq_biweekly">📅 Tous les 15 jours</option>
+          <option value="monthly" selected data-i18n="tont_freq_monthly">📅 Mensuelle</option>
         </select>
       </div>
       <div class="aet-form-row">
-        <label>Date de début</label>
+        <label data-i18n="tont_start">Date de début</label>
         <input type="date" id="tontStart" />
       </div>
       <div class="aet-form-row">
-        <label>Position de tirage (sur N)</label>
-        <input type="number" id="tontPosition" placeholder="ex: 3" min="1" />
+        <label data-i18n="tont_position">Position de tirage (sur N)</label>
+        <input type="number" id="tontPosition" data-i18n="tont_position_ph" placeholder="ex: 3" min="1" />
       </div>
       <div class="aet-form-row">
-        <label>Description</label>
-        <textarea id="tontDesc" rows="2" placeholder="Détails sur la tontine..."></textarea>
+        <label data-i18n="tont_description">Description</label>
+        <textarea id="tontDesc" rows="2" data-i18n="tont_desc_ph" placeholder="Détails sur la tontine..."></textarea>
       </div>
       <button class="aet-btn-primary" onclick="saveTontine()">
-        <i class="fas fa-floppy-disk"></i> Créer la tontine
+        <i class="fas fa-floppy-disk"></i> <span data-i18n="tont_save">Créer la tontine</span>
       </button>
     </div>
   </div>
@@ -7073,7 +7149,7 @@ window.editGoal = (id) => {
   const g = userGoals.find(x => x.id===id);
   if (!g) return;
   goalEditId = id;
-  document.getElementById('goalModalTitle').textContent = 'Modifier l\'objectif';
+  document.getElementById('goalModalTitle').textContent = t('goal_edit');
   document.getElementById('goalName').value = g.name || '';
   document.getElementById('goalTarget').value = g.target || '';
   document.getElementById('goalSaved').value = g.saved || 0;
@@ -7090,8 +7166,8 @@ window.saveGoal = async () => {
   const deadline = document.getElementById('goalDeadline').value;
   const desc = document.getElementById('goalDesc').value.trim();
   const icon = document.querySelector('#goalIconGrid .avatar-choice.selected')?.dataset.icon || '🎯';
-  if (!name) { toast('Nom requis','error'); return; }
-  if (!target || target<=0) { toast('Montant cible invalide','error'); return; }
+  if (!name) { toast(t('goal_msg_name_required'),'error'); return; }
+  if (!target || target<=0) { toast(t('goal_msg_invalid_target'),'error'); return; }
   loader(true);
   try {
     const payload = { userId:_auth.currentUser.uid, name, target, saved, deadline, description:desc, icon, updatedAt:_ts() };
@@ -7102,30 +7178,30 @@ window.saveGoal = async () => {
       await _addDoc(_col(_db,'goals'), payload);
     }
     closeAetModal('goalModal');
-    showSuccess('Objectif enregistré !','Votre objectif est maintenant suivi.');
-  } catch(e) { toast('Erreur : '+e.message,'error'); }
+    showSuccess(t('goal_msg_saved_title'),t('goal_msg_saved_body'));
+  } catch(e) { toast(t('goal_msg_error')+' '+e.message,'error'); }
   loader(false);
 };
 window.addToGoal = async (id) => {
   const g = userGoals.find(x=>x.id===id);
   if (!g) return;
-  const amt = +prompt(`Ajouter combien à "${g.name}" ?\n\nDéjà épargné : ${formatMoneyXOF(g.saved||0)} / ${formatMoneyXOF(g.target)}`,'10000');
+  const amt = +prompt(t('goal_add_prompt',{name:g.name,saved:formatMoneyXOF(g.saved||0),target:formatMoneyXOF(g.target)}),'10000');
   if (!amt || amt<=0) return;
   loader(true);
   try {
     await _upDoc(_doc(_db,'goals',id), { saved:(g.saved||0)+amt, updatedAt:_ts() });
-    showSuccess('Épargne ajoutée !', formatMoneyXOF(amt)+' ajouté à "'+g.name+'"');
-  } catch(e) { toast('Erreur : '+e.message,'error'); }
+    showSuccess(t('goal_msg_added_title'), t('goal_msg_added_body',{amt:formatMoneyXOF(amt),name:g.name}));
+  } catch(e) { toast(t('goal_msg_error')+' '+e.message,'error'); }
   loader(false);
 };
 window.deleteGoal = async (id) => {
   const g = userGoals.find(x=>x.id===id);
   if (!g) return;
-  if (!confirm(`Supprimer l'objectif "${g.name}" ?`)) return;
+  if (!confirm(t('goal_confirm_delete',{name:g.name}))) return;
   loader(true);
   try {
     await _delDoc(_doc(_db,'goals',id));
-    toast('Objectif supprimé','info');
+    toast(t('goal_msg_deleted'),'info');
   } catch(e) { toast('Erreur : '+e.message,'error'); }
   loader(false);
 };
@@ -7148,46 +7224,46 @@ function renderTontinesList() {
   if (!userTontines.length) {
     el.innerHTML = `<div style="text-align:center;padding:50px 20px;color:var(--muted)">
       <i class="fas fa-users" style="font-size:48px;opacity:.3;margin-bottom:14px;display:block"></i>
-      <p style="font-size:14px;margin-bottom:6px">Aucune tontine pour l'instant</p>
-      <p style="font-size:12px">Créez votre première tontine ci-dessous</p>
+      <p style="font-size:14px;margin-bottom:6px">${t('tont_none_yet')}</p>
+      <p style="font-size:12px">${t('tont_create_first')}</p>
     </div>`;
     return;
   }
   const TYPE_ICONS = { famille:'👨‍👩‍👧', amis:'👥', travail:'💼', quartier:'🏘️', autre:'🤝' };
-  const FREQ_LABELS = { weekly:'Hebdo', biweekly:'Bi-mensuel', monthly:'Mensuel' };
-  el.innerHTML = userTontines.map(t => {
-    const total = (t.amount||0) * (t.members||1);
-    const pos = t.position || 1;
+  const FREQ_LABELS = { weekly:t('tont_freq_hebdo_short'), biweekly:t('tont_freq_bimensuel_short'), monthly:t('tont_freq_mensuel_short') };
+  el.innerHTML = userTontines.map(tn => {
+    const total = (tn.amount||0) * (tn.members||1);
+    const pos = tn.position || 1;
     return `<div class="tontine-card">
       <div class="tont-top">
         <div class="tont-avatars">
-          ${[...Array(Math.min(3, t.members||1))].map((_,i) => `<div class="tont-avatar">${TYPE_ICONS[t.type]||'👤'}</div>`).join('')}
+          ${[...Array(Math.min(3, tn.members||1))].map((_,i) => `<div class="tont-avatar">${TYPE_ICONS[tn.type]||'👤'}</div>`).join('')}
         </div>
         <div class="tont-info">
-          <h4>${escapeHtml(t.name)}</h4>
-          <div class="tont-meta">${t.members||1} membres · ${FREQ_LABELS[t.frequency]||'Mensuel'}</div>
+          <h4>${escapeHtml(tn.name)}</h4>
+          <div class="tont-meta">${tn.members||1} ${t('tont_members_suffix')} · ${FREQ_LABELS[tn.frequency]||t('tont_freq_mensuel_short')}</div>
         </div>
-        <div class="tont-amount">${formatMoneyXOF(t.amount)}</div>
+        <div class="tont-amount">${formatMoneyXOF(tn.amount)}</div>
       </div>
       <div class="tont-detail">
-        <div class="tont-detail-item"><div class="label">Cotisation</div><div class="val">${formatMoneyXOF(t.amount)}</div></div>
-        <div class="tont-detail-item"><div class="label">Total pot</div><div class="val">${formatMoneyXOF(total)}</div></div>
-        <div class="tont-detail-item"><div class="label">Ma position</div><div class="val">${pos}/${t.members||1}</div></div>
+        <div class="tont-detail-item"><div class="label">${t('tont_contribution')}</div><div class="val">${formatMoneyXOF(tn.amount)}</div></div>
+        <div class="tont-detail-item"><div class="label">${t('tont_total_pot')}</div><div class="val">${formatMoneyXOF(total)}</div></div>
+        <div class="tont-detail-item"><div class="label">${t('tont_my_position')}</div><div class="val">${pos}/${tn.members||1}</div></div>
       </div>
       <div class="tont-next">
         <i class="fas fa-calendar-check"></i>
-        Prochain tirage : ${t.start ? new Date(t.start).toLocaleDateString('fr-FR') : '—'}
+        ${t('tont_next_draw')} ${tn.start ? new Date(tn.start).toLocaleDateString(currentLang==='en'?'en-US':'fr-FR') : '—'}
       </div>
       <div class="tont-actions">
-        <button style="background:rgba(37,99,235,.1);color:var(--primary)" onclick="editTontine('${t.id}')"><i class="fas fa-pencil"></i> Modifier</button>
-        <button style="background:rgba(239,68,68,.08);color:var(--danger)" onclick="deleteTontine('${t.id}')"><i class="fas fa-trash"></i> Supprimer</button>
+        <button style="background:rgba(37,99,235,.1);color:var(--primary)" onclick="editTontine('${tn.id}')"><i class="fas fa-pencil"></i> ${t('tont_btn_edit')}</button>
+        <button style="background:rgba(239,68,68,.08);color:var(--danger)" onclick="deleteTontine('${tn.id}')"><i class="fas fa-trash"></i> ${t('tont_btn_delete')}</button>
       </div>
     </div>`;
   }).join('');
 }
 window.openTontineModal = () => {
   tontineEditId = null;
-  document.getElementById('tontineModalTitle').textContent = 'Nouvelle tontine';
+  document.getElementById('tontineModalTitle').textContent = t('tont_new');
   document.getElementById('tontName').value = '';
   document.getElementById('tontType').value = 'famille';
   document.getElementById('tontMembers').value = '';
@@ -7199,18 +7275,18 @@ window.openTontineModal = () => {
   openAetModal('tontineModal');
 };
 window.editTontine = (id) => {
-  const t = userTontines.find(x=>x.id===id);
-  if (!t) return;
+  const tn = userTontines.find(x=>x.id===id);
+  if (!tn) return;
   tontineEditId = id;
-  document.getElementById('tontineModalTitle').textContent = 'Modifier la tontine';
-  document.getElementById('tontName').value = t.name||'';
-  document.getElementById('tontType').value = t.type||'famille';
-  document.getElementById('tontMembers').value = t.members||'';
-  document.getElementById('tontAmount').value = t.amount||'';
-  document.getElementById('tontFreq').value = t.frequency||'monthly';
-  document.getElementById('tontStart').value = t.start||'';
-  document.getElementById('tontPosition').value = t.position||'';
-  document.getElementById('tontDesc').value = t.description||'';
+  document.getElementById('tontineModalTitle').textContent = t('tont_edit');
+  document.getElementById('tontName').value = tn.name||'';
+  document.getElementById('tontType').value = tn.type||'famille';
+  document.getElementById('tontMembers').value = tn.members||'';
+  document.getElementById('tontAmount').value = tn.amount||'';
+  document.getElementById('tontFreq').value = tn.frequency||'monthly';
+  document.getElementById('tontStart').value = tn.start||'';
+  document.getElementById('tontPosition').value = tn.position||'';
+  document.getElementById('tontDesc').value = tn.description||'';
   openAetModal('tontineModal');
 };
 window.saveTontine = async () => {
@@ -7218,9 +7294,9 @@ window.saveTontine = async () => {
   const name = document.getElementById('tontName').value.trim();
   const members = +document.getElementById('tontMembers').value;
   const amount = +document.getElementById('tontAmount').value;
-  if (!name) { toast('Nom requis','error'); return; }
-  if (!members || members<2) { toast('Au moins 2 membres','error'); return; }
-  if (!amount || amount<=0) { toast('Cotisation invalide','error'); return; }
+  if (!name) { toast(t('goal_msg_name_required'),'error'); return; }
+  if (!members || members<2) { toast(t('tont_msg_min_members'),'error'); return; }
+  if (!amount || amount<=0) { toast(t('tont_msg_invalid_amount'),'error'); return; }
   const payload = {
     userId: _auth.currentUser.uid,
     name,
@@ -7242,19 +7318,19 @@ window.saveTontine = async () => {
       await _addDoc(_col(_db,'tontines'), payload);
     }
     closeAetModal('tontineModal');
-    showSuccess('Tontine enregistrée !','Votre tontine est maintenant suivie.');
-  } catch(e) { alert('ERREUR TONTINE : ' + e.code + ' — ' + e.message); toast('Erreur : '+e.message,'error'); }
+    showSuccess(t('tont_msg_saved_title'),t('tont_msg_saved_body'));
+  } catch(e) { alert('ERREUR TONTINE : ' + e.code + ' — ' + e.message); toast(t('goal_msg_error')+' '+e.message,'error'); }
   loader(false);
 };
 window.deleteTontine = async (id) => {
-  const t = userTontines.find(x=>x.id===id);
-  if (!t) return;
-  if (!confirm(`Supprimer la tontine "${t.name}" ?`)) return;
+  const tn = userTontines.find(x=>x.id===id);
+  if (!tn) return;
+  if (!confirm(t('tont_confirm_delete',{name:tn.name}))) return;
   loader(true);
   try {
     await _delDoc(_doc(_db,'tontines',id));
-    toast('Tontine supprimée','info');
-  } catch(e) { toast('Erreur : '+e.message,'error'); }
+    toast(t('tont_msg_deleted'),'info');
+  } catch(e) { toast(t('goal_msg_error')+' '+e.message,'error'); }
   loader(false);
 };
 

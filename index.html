@@ -301,18 +301,51 @@ onAuthStateChanged(auth, user => {
     $('#app').style.display = 'none';
     const bn2 = document.getElementById('bottomNav');
     if (bn2) bn2.style.display = 'none';
-    // Afficher auth seulement si l'onboarding est terminé ou déjà vu
-    const _obDone = localStorage.getItem('aet_ob_done');
-    const _ob = document.getElementById('onboardingScreen');
-    const _as = document.getElementById('authScreen');
-    if (_obDone || !_ob) {
-      if (_as) _as.style.display = 'flex';
+    // Premier lancement : si la langue n'a jamais été choisie explicitement,
+    // on affiche cet écran avant tout le reste (onboarding ou connexion).
+    const _langChosen = localStorage.getItem('aet_lang_chosen');
+    const _ls = document.getElementById('langSelectScreen');
+    if (!_langChosen && _ls) {
+      _ls.style.display = 'flex';
+    } else {
+      // Afficher auth seulement si l'onboarding est terminé ou déjà vu
+      const _obDone = localStorage.getItem('aet_ob_done');
+      const _ob = document.getElementById('onboardingScreen');
+      const _as = document.getElementById('authScreen');
+      if (_obDone || !_ob) {
+        if (_as) _as.style.display = 'flex';
+      } else if (_ob) {
+        _ob.style.display = 'flex';
+      }
     }
     // Vérifier si c'est le mode admin
     checkAdminMode();
   }
 });
 
+// ──────── SÉLECTION DE LANGUE AU PREMIER LANCEMENT ────────
+// Distincte de 'aet_lang' (qui a toujours une valeur par défaut 'fr') :
+// 'aet_lang_chosen' n'existe que si la personne a explicitement validé
+// un choix sur cet écran, ce qui permet de savoir s'il faut l'afficher.
+window.chooseInitialLang = function(code) {
+  localStorage.setItem('aet_lang_chosen', '1');
+  if (typeof applyLang === 'function') applyLang(code, true);
+  const ls = document.getElementById('langSelectScreen');
+  if (ls) { ls.style.opacity = '0'; ls.style.transition = 'opacity .3s'; setTimeout(()=>{ ls.style.display = 'none'; showNextStartScreen(); }, 300); }
+};
+
+// Affiche l'écran suivant après la sélection de langue (onboarding si
+// jamais vu, sinon directement l'écran de connexion).
+function showNextStartScreen() {
+  const obDone = localStorage.getItem('aet_ob_done');
+  const ob = document.getElementById('onboardingScreen');
+  const as = document.getElementById('authScreen');
+  if (!obDone && ob) {
+    ob.style.display = 'flex';
+  } else if (as) {
+    as.style.display = 'flex';
+  }
+}
 // ──────── ONBOARDING ────────
 let _obSlide = 0;
 function obShowSlide(n) {
@@ -1037,7 +1070,7 @@ function renderSalaryPage() {
   setTxt('salSpent', fmt(spent));
   setTxt('salLeft',  fmt(left));
   setTxt('salPct',   pct+'%');
-  setTxt('salLeftStatus', left>=0 ? `✅ Il vous reste ${fmt(left)}` : `⚠️ Dépassement de ${fmt(Math.abs(left))}`);
+  setTxt('salLeftStatus', left>=0 ? t('sal_left_ok',{amt:fmt(left)}) : t('sal_overspent',{amt:fmt(Math.abs(left))}));
   const salBar = $('#salBar');
   if (salBar) { salBar.style.width=pct+'%'; salBar.className='bar-fill'+(pct>80?' bar-danger':''); }
 }
@@ -1395,6 +1428,10 @@ const LANGS = {
     nav_dashboard:'Tableau de bord', nav_revenus:'Revenus', nav_depenses:'Dépenses',
     nav_epargne:'Épargne', nav_budget:'Budget', nav_salaire:'Salaire',
     nav_historique:'Historique', nav_notes:'Notes', nav_plangestion:'Plan de Gestion',
+    nav_objectifs:'Objectifs', nav_tontines:'Tontines', nav_commerce:'Commerce', nav_conseils:'Conseils',
+    nav_settings:'Paramètres', nav_logout:'Déconnexion',
+    nav_sec_apercu:'Aperçu', nav_sec_gestion:'Gestion', nav_sec_ressources:'Ressources', nav_sec_compte:'Compte',
+    nav_menu:'Menu', nav_plangestion_short:'Plan Gestion',
     // Header
     app_title:'AET MonBudget', app_subtitle:'ALBAN ELOH TECHNOLOGY · Gestion financière · Franc CFA',
     btn_logout:'Déconnexion', btn_save:'Enregistrer', btn_add:'Ajouter', btn_cancel:'Annuler',
@@ -1425,6 +1462,9 @@ const LANGS = {
     sal_autres:'Autres revenus fixes (FCFA)', sal_payday:'Jour de paie (1-31)',
     sal_poste:'Poste / Fonction', sal_total:'Total mensuel calculé', sal_save:'Enregistrer la configuration',
     sal_repartition:'Répartition ce mois', sal_spent:'Dépensé', sal_remaining:'Restant',
+    sal_structure:'Structure de rémunération mensuelle', sal_total_configured:'Salaire total configuré',
+    sal_net_ph:'ex: 150 000', sal_prime_ph:'ex: 30 000', sal_autres_ph:'ex: 20 000', sal_poste_ph:'ex: Votre poste / fonction',
+    sal_left_ok:'✅ Il vous reste {amt}', sal_overspent:'⚠️ Dépassement de {amt}',
     // Plan Gestion
     pg_title:'Plan de Gestion Budgétaire', pg_subtitle:'Épargne · Stabilité financière · Coût de la vie au Togo',
     pg_situation:'Votre situation', pg_choose_salary:'Choisissez votre salaire mensuel',
@@ -1663,6 +1703,10 @@ const LANGS = {
     nav_dashboard:'Dashboard', nav_revenus:'Income', nav_depenses:'Expenses',
     nav_epargne:'Savings', nav_budget:'Budget', nav_salaire:'Salary',
     nav_historique:'History', nav_notes:'Notes', nav_plangestion:'Budget Plan',
+    nav_objectifs:'Goals', nav_tontines:'Savings Circles', nav_commerce:'Commerce', nav_conseils:'Tips',
+    nav_settings:'Settings', nav_logout:'Log out',
+    nav_sec_apercu:'Overview', nav_sec_gestion:'Management', nav_sec_ressources:'Resources', nav_sec_compte:'Account',
+    nav_menu:'Menu', nav_plangestion_short:'Budget Plan',
     app_title:'AET MonBudget', app_subtitle:'ALBAN ELOH TECHNOLOGY · Personal Finance · CFA Franc',
     btn_logout:'Log out', btn_save:'Save', btn_add:'Add', btn_cancel:'Cancel',
     btn_edit:'Edit', btn_delete:'Delete', btn_export:'Export CSV', btn_close:'Close',
@@ -1685,6 +1729,9 @@ const LANGS = {
     sal_autres:'Other fixed income (FCFA)', sal_payday:'Payday (1-31)',
     sal_poste:'Position / Job title', sal_total:'Calculated monthly total', sal_save:'Save configuration',
     sal_repartition:'This month\'s breakdown', sal_spent:'Spent', sal_remaining:'Remaining',
+    sal_structure:'Monthly compensation structure', sal_total_configured:'Total configured salary',
+    sal_net_ph:'e.g.: 150,000', sal_prime_ph:'e.g.: 30,000', sal_autres_ph:'e.g.: 20,000', sal_poste_ph:'e.g.: Your position / job title',
+    sal_left_ok:'✅ You have {amt} left', sal_overspent:'⚠️ Over budget by {amt}',
     pg_title:'Budget Management Plan', pg_subtitle:'Savings · Financial Stability · Cost of Living in Togo',
     pg_situation:'Your situation', pg_choose_salary:'Choose your monthly salary',
     pg_family:'Family situation', pg_housing:'Housing', pg_rented:'Renting', pg_owner:'Owner',
@@ -1916,6 +1963,10 @@ const LANGS = {
     nav_dashboard:'لوحة القيادة', nav_revenus:'الدخل', nav_depenses:'المصروفات',
     nav_epargne:'المدخرات', nav_budget:'الميزانية', nav_salaire:'الراتب',
     nav_historique:'السجل', nav_notes:'الملاحظات', nav_plangestion:'خطة الميزانية',
+    nav_objectifs:'الأهداف', nav_tontines:'جمعيات التوفير', nav_commerce:'التجارة', nav_conseils:'نصائح',
+    nav_settings:'الإعدادات', nav_logout:'تسجيل الخروج',
+    nav_sec_apercu:'نظرة عامة', nav_sec_gestion:'الإدارة', nav_sec_ressources:'الموارد', nav_sec_compte:'الحساب',
+    nav_menu:'القائمة', nav_plangestion_short:'خطة الميزانية',
     app_title:'AET MonBudget', app_subtitle:'ALBAN ELOH TECHNOLOGY · إدارة الأموال الشخصية · فرنك أفريقي',
     btn_logout:'خروج', btn_save:'حفظ', btn_add:'إضافة', btn_cancel:'إلغاء',
     btn_edit:'تعديل', btn_delete:'حذف', btn_export:'تصدير CSV', btn_close:'إغلاق',
@@ -1938,6 +1989,9 @@ const LANGS = {
     sal_autres:'دخل ثابت آخر (فرنك)', sal_payday:'يوم الدفع (1-31)',
     sal_poste:'المنصب / الوظيفة', sal_total:'إجمالي الراتب المحسوب', sal_save:'حفظ الإعدادات',
     sal_repartition:'توزيع الشهر', sal_spent:'المُنفق', sal_remaining:'المتبقي',
+    sal_structure:'هيكل الراتب الشهري', sal_total_configured:'إجمالي الراتب المُكوَّن',
+    sal_net_ph:'مثال: 150,000', sal_prime_ph:'مثال: 30,000', sal_autres_ph:'مثال: 20,000', sal_poste_ph:'مثال: وظيفتك',
+    sal_left_ok:'✅ المتبقي لك {amt}', sal_overspent:'⚠️ تجاوز بمقدار {amt}',
     pg_title:'خطة إدارة الميزانية', pg_subtitle:'مدخرات · الاستقرار المالي · تكلفة المعيشة في توغو',
     pg_situation:'وضعك الحالي', pg_choose_salary:'اختر راتبك الشهري',
     pg_family:'الوضع العائلي', pg_housing:'السكن', pg_rented:'مستأجر', pg_owner:'مالك',
@@ -1966,6 +2020,10 @@ const LANGS = {
     nav_dashboard:'Agbalẽ ŋutifafa', nav_revenus:'Ðɔxɔxɔ', nav_depenses:'Xɔxɔ',
     nav_epargne:'Dabɔbɔ', nav_budget:'Ðɔkpɔkpɔ', nav_salaire:'Dzɔdzɔe',
     nav_historique:'Nuzãzã', nav_notes:'Nuŋlɔŋlɔ', nav_plangestion:'Ðɔkpɔkpɔ Sesẽ',
+    nav_objectifs:'Tameɖoɖo', nav_tontines:'Ƒudodowo', nav_commerce:'Asitsatsa', nav_conseils:'Aɖaŋuɖoɖo',
+    nav_settings:'Ðoɖowo', nav_logout:'Do go',
+    nav_sec_apercu:'Akpɔkpɔ', nav_sec_gestion:'Dɔdzikpɔkpɔ', nav_sec_ressources:'Kpekpeɖeŋuwo', nav_sec_compte:'Akɔnta',
+    nav_menu:'Akɔnta dzesiwo', nav_plangestion_short:'Ðɔkpɔkpɔ',
     app_title:'AET MonBudget', app_subtitle:'ALBAN ELOH TECHNOLOGY · Ðɔ kpɔkpɔ sesẽ · Franc CFA',
     btn_logout:'Fle', btn_save:'Dzra', btn_add:'Tsɔ', btn_cancel:'Trɔ',
     btn_edit:'Trɔ alo', btn_delete:'Ɖe eme', btn_export:'Export CSV', btn_close:'Tu eme',
@@ -1988,6 +2046,9 @@ const LANGS = {
     sal_autres:'Ðɔ bubu (FCFA)', sal_payday:'Dzɔdzɔe ŋkeke',
     sal_poste:'Dɔwɔwɔ', sal_total:'Blibo', sal_save:'Dzra',
     sal_repartition:'Ƒoli sia ŋgɔpɔ', sal_spent:'Xɔxɔ', sal_remaining:'Si le',
+    sal_structure:'Ðɔxɔxɔ ƒe ɖoɖo ɣleti sia ɣleti', sal_total_configured:'Ðɔxɔxɔ katã si woɖo',
+    sal_net_ph:'kpɔɖeŋu: 150,000', sal_prime_ph:'kpɔɖeŋu: 30,000', sal_autres_ph:'kpɔɖeŋu: 20,000', sal_poste_ph:'kpɔɖeŋu: Wò dɔ',
+    sal_left_ok:'✅ {amt} susɔ na wò', sal_overspent:'⚠️ Wozã {amt} wu',
     pg_title:'Ðɔkpɔ Sesẽ', pg_subtitle:'Dabɔ · Ðɔ nyuie · Togo ŋu ŋɔnuti',
     pg_situation:'Wò ɖoɖo', pg_choose_salary:'Tia wò dzɔdzɔe',
     pg_family:'Fometo ɖoɖo', pg_housing:'Ʋuɖe', pg_rented:'Xɔ la', pg_owner:'Wò ʋuɖe le',
@@ -3578,6 +3639,29 @@ select.form-input option{background:var(--bg2)}
 </script>
 
 <!-- ════════════════ ONBOARDING ════════════════ -->
+<!-- ════════════════ SÉLECTION DE LANGUE (premier lancement) ════════════════ -->
+<div id="langSelectScreen" style="display:none;position:fixed;inset:0;z-index:99999;background:#fff;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px">
+  <div style="width:72px;height:72px;border-radius:20px;background:linear-gradient(135deg,#2563eb,#3b82f6);display:flex;align-items:center;justify-content:center;color:#fff;font-size:30px;margin-bottom:24px;box-shadow:0 10px 28px rgba(37,99,235,.3)">
+    <i class="fas fa-globe"></i>
+  </div>
+  <div style="font-size:20px;font-weight:800;color:#1e293b;margin-bottom:6px;text-align:center">Choisissez votre langue</div>
+  <div style="font-size:13px;color:#64748b;margin-bottom:32px;text-align:center">Choose your language</div>
+  <div style="width:100%;max-width:340px;display:flex;flex-direction:column;gap:12px">
+    <button onclick="chooseInitialLang('fr')" style="display:flex;align-items:center;gap:14px;padding:16px 18px;border:1.5px solid #e2e8f0;border-radius:14px;background:#fff;cursor:pointer;text-align:left;font-size:15px;font-weight:700;color:#1e293b;transition:all .15s" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='#e2e8f0'">
+      <span style="font-size:24px">🇫🇷</span> Français
+    </button>
+    <button onclick="chooseInitialLang('en')" style="display:flex;align-items:center;gap:14px;padding:16px 18px;border:1.5px solid #e2e8f0;border-radius:14px;background:#fff;cursor:pointer;text-align:left;font-size:15px;font-weight:700;color:#1e293b;transition:all .15s" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='#e2e8f0'">
+      <span style="font-size:24px">🇬🇧</span> English
+    </button>
+    <button onclick="chooseInitialLang('ar')" style="display:flex;align-items:center;gap:14px;padding:16px 18px;border:1.5px solid #e2e8f0;border-radius:14px;background:#fff;cursor:pointer;text-align:left;font-size:15px;font-weight:700;color:#1e293b;transition:all .15s" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='#e2e8f0'">
+      <span style="font-size:24px">🇲🇦</span> العربية
+    </button>
+    <button onclick="chooseInitialLang('ee')" style="display:flex;align-items:center;gap:14px;padding:16px 18px;border:1.5px solid #e2e8f0;border-radius:14px;background:#fff;cursor:pointer;text-align:left;font-size:15px;font-weight:700;color:#1e293b;transition:all .15s" onmouseover="this.style.borderColor='#2563eb'" onmouseout="this.style.borderColor='#e2e8f0'">
+      <span style="font-size:24px">🇹🇬</span> Eʋegbe
+    </button>
+  </div>
+</div>
+
 <div id="onboardingScreen">
   <div id="obSlides" class="ob-slides">
     <!-- Slide 1 -->
@@ -3757,57 +3841,57 @@ select.form-input option{background:var(--bg2)}
     </div>
 
     <div class="sb-scroll">
-      <div class="sb-section-label">Aperçu</div>
+      <div class="sb-section-label" data-i18n="nav_sec_apercu">Aperçu</div>
       <div class="sidebar-link active" id="sb-dashboard" onclick="switchTab('dashboard')" style="--sb-ic:var(--primary)">
-        <i class="fas fa-house"></i><span>Accueil</span>
+        <i class="fas fa-house"></i><span data-i18n="nav_dashboard">Accueil</span>
       </div>
       <div class="sidebar-link" id="sb-revenus" onclick="switchTab('revenus')" style="--sb-ic:var(--success)">
-        <i class="fas fa-arrow-down-to-bracket"></i><span>Revenus</span>
+        <i class="fas fa-arrow-down-to-bracket"></i><span data-i18n="nav_revenus">Revenus</span>
       </div>
       <div class="sidebar-link" id="sb-depenses" onclick="switchTab('depenses')" style="--sb-ic:var(--danger)">
-        <i class="fas fa-arrow-up-from-bracket"></i><span>Dépenses</span>
+        <i class="fas fa-arrow-up-from-bracket"></i><span data-i18n="nav_depenses">Dépenses</span>
       </div>
       <div class="sidebar-link" id="sb-epargne" onclick="switchTab('epargne')" style="--sb-ic:var(--success)">
-        <i class="fas fa-piggy-bank"></i><span>Épargne</span>
+        <i class="fas fa-piggy-bank"></i><span data-i18n="nav_epargne">Épargne</span>
       </div>
       <div class="sidebar-link" id="sb-budget" onclick="switchTab('budget')" style="--sb-ic:var(--warning)">
-        <i class="fas fa-bullseye"></i><span>Budget</span>
+        <i class="fas fa-bullseye"></i><span data-i18n="nav_budget">Budget</span>
       </div>
 
-      <div class="sb-section-label">Gestion</div>
+      <div class="sb-section-label" data-i18n="nav_sec_gestion">Gestion</div>
       <div class="sidebar-link" id="sb-salaire" onclick="switchTab('salaire')" style="--sb-ic:var(--primary)">
-        <i class="fas fa-briefcase"></i><span>Salaire</span>
+        <i class="fas fa-briefcase"></i><span data-i18n="nav_salaire">Salaire</span>
       </div>
       <div class="sidebar-link" id="sb-objectifs" onclick="bnavSwitchExt('objectifs')" style="--sb-ic:var(--warning)">
-        <i class="fas fa-flag"></i><span>Objectifs</span>
+        <i class="fas fa-flag"></i><span data-i18n="nav_objectifs">Objectifs</span>
       </div>
       <div class="sidebar-link" id="sb-tontines" onclick="bnavSwitchExt('tontines')" style="--sb-ic:#8b5cf6">
-        <i class="fas fa-people-group"></i><span>Tontines</span>
+        <i class="fas fa-people-group"></i><span data-i18n="nav_tontines">Tontines</span>
       </div>
       <div class="sidebar-link" id="sb-plangestion" onclick="switchTab('plangestion')" style="--sb-ic:#8b5cf6">
-        <i class="fas fa-map-signs"></i><span>Plan de Gestion</span>
+        <i class="fas fa-map-signs"></i><span data-i18n="nav_plangestion">Plan de Gestion</span>
       </div>
       <div class="sidebar-link" id="sb-historique" onclick="switchTab('historique')" style="--sb-ic:var(--muted)">
-        <i class="fas fa-clock-rotate-left"></i><span>Historique</span>
+        <i class="fas fa-clock-rotate-left"></i><span data-i18n="nav_historique">Historique</span>
       </div>
       <div class="sidebar-link" id="sb-notes" onclick="switchTab('notes')" style="--sb-ic:#06b6d4">
-        <i class="fas fa-calendar-pen"></i><span>Notes</span>
+        <i class="fas fa-calendar-pen"></i><span data-i18n="nav_notes">Notes</span>
       </div>
 
-      <div class="sb-section-label">Ressources</div>
+      <div class="sb-section-label" data-i18n="nav_sec_ressources">Ressources</div>
       <div class="sidebar-link" id="sb-commerce" onclick="switchTab('commerce')" style="--sb-ic:var(--success)">
-        <i class="fas fa-store"></i><span>Commerce</span>
+        <i class="fas fa-store"></i><span data-i18n="nav_commerce">Commerce</span>
       </div>
       <div class="sidebar-link" id="sb-conseils" onclick="switchTab('conseils')" style="--sb-ic:#06b6d4">
-        <i class="fas fa-graduation-cap"></i><span>Conseils</span>
+        <i class="fas fa-graduation-cap"></i><span data-i18n="nav_conseils">Conseils</span>
       </div>
 
-      <div class="sb-section-label">Compte</div>
+      <div class="sb-section-label" data-i18n="nav_sec_compte">Compte</div>
       <div class="sidebar-link" id="sb-profil" onclick="bnavSwitchExt('profil')" style="--sb-ic:var(--primary)">
-        <i class="fas fa-gear"></i><span>Paramètres</span>
+        <i class="fas fa-gear"></i><span data-i18n="nav_settings">Paramètres</span>
       </div>
       <div class="sidebar-link" id="sb-logout" onclick="doLogout()" style="--sb-ic:var(--danger)">
-        <i class="fas fa-right-from-bracket"></i><span>Déconnexion</span>
+        <i class="fas fa-right-from-bracket"></i><span data-i18n="nav_logout">Déconnexion</span>
       </div>
     </div>
 
@@ -3838,38 +3922,38 @@ select.form-input option{background:var(--bg2)}
     <!-- Ancien menu/drawer + breadcrumb : conservés hors-écran pour compatibilité avec mainMenuSwitch() utilisé ailleurs (cartes rapides, etc.) -->
     <div style="display:none">
       <div id="mainMenuDrawer">
-        <div class="main-menu-item active" id="mm-dashboard" onclick="mainMenuSwitch('dashboard','Tableau de bord','fa-chart-pie')">
-          <i class="fas fa-chart-pie"></i><span>Tableau de bord</span>
+        <div class="main-menu-item active" id="mm-dashboard" onclick="mainMenuSwitch('dashboard',t('nav_dashboard'),'fa-chart-pie')">
+          <i class="fas fa-chart-pie"></i><span data-i18n="nav_dashboard">Tableau de bord</span>
         </div>
-        <div class="main-menu-item" id="mm-revenus" onclick="mainMenuSwitch('revenus','Revenus','fa-arrow-down')">
-          <i class="fas fa-arrow-down"></i><span>Revenus</span>
+        <div class="main-menu-item" id="mm-revenus" onclick="mainMenuSwitch('revenus',t('nav_revenus'),'fa-arrow-down')">
+          <i class="fas fa-arrow-down"></i><span data-i18n="nav_revenus">Revenus</span>
         </div>
-        <div class="main-menu-item" id="mm-depenses" onclick="mainMenuSwitch('depenses','Dépenses','fa-arrow-up')">
-          <i class="fas fa-arrow-up-from-bracket"></i><span>Dépenses</span>
+        <div class="main-menu-item" id="mm-depenses" onclick="mainMenuSwitch('depenses',t('nav_depenses'),'fa-arrow-up')">
+          <i class="fas fa-arrow-up-from-bracket"></i><span data-i18n="nav_depenses">Dépenses</span>
         </div>
-        <div class="main-menu-item" id="mm-epargne" onclick="mainMenuSwitch('epargne','Épargne','fa-piggy-bank')">
-          <i class="fas fa-piggy-bank"></i><span>Épargne</span>
+        <div class="main-menu-item" id="mm-epargne" onclick="mainMenuSwitch('epargne',t('nav_epargne'),'fa-piggy-bank')">
+          <i class="fas fa-piggy-bank"></i><span data-i18n="nav_epargne">Épargne</span>
         </div>
-        <div class="main-menu-item" id="mm-budget" onclick="mainMenuSwitch('budget','Budget','fa-bullseye')">
-          <i class="fas fa-bullseye"></i><span>Budget</span>
+        <div class="main-menu-item" id="mm-budget" onclick="mainMenuSwitch('budget',t('nav_budget'),'fa-bullseye')">
+          <i class="fas fa-bullseye"></i><span data-i18n="nav_budget">Budget</span>
         </div>
-        <div class="main-menu-item" id="mm-salaire" onclick="mainMenuSwitch('salaire','Salaire','fa-briefcase')">
-          <i class="fas fa-briefcase"></i><span>Salaire</span>
+        <div class="main-menu-item" id="mm-salaire" onclick="mainMenuSwitch('salaire',t('nav_salaire'),'fa-briefcase')">
+          <i class="fas fa-briefcase"></i><span data-i18n="nav_salaire">Salaire</span>
         </div>
-        <div class="main-menu-item" id="mm-historique" onclick="mainMenuSwitch('historique','Historique','fa-clock-rotate-left')">
-          <i class="fas fa-clock-rotate-left"></i><span>Historique</span>
+        <div class="main-menu-item" id="mm-historique" onclick="mainMenuSwitch('historique',t('nav_historique'),'fa-clock-rotate-left')">
+          <i class="fas fa-clock-rotate-left"></i><span data-i18n="nav_historique">Historique</span>
         </div>
-        <div class="main-menu-item" id="mm-notes" onclick="mainMenuSwitch('notes','Notes','fa-calendar-pen')">
-          <i class="fas fa-calendar-pen"></i><span>Notes</span>
+        <div class="main-menu-item" id="mm-notes" onclick="mainMenuSwitch('notes',t('nav_notes'),'fa-calendar-pen')">
+          <i class="fas fa-calendar-pen"></i><span data-i18n="nav_notes">Notes</span>
         </div>
-        <div class="main-menu-item" id="mm-plangestion" onclick="mainMenuSwitch('plangestion','Plan de Gestion','fa-map-signs')">
-          <i class="fas fa-map-signs"></i><span>Plan de Gestion</span>
+        <div class="main-menu-item" id="mm-plangestion" onclick="mainMenuSwitch('plangestion',t('nav_plangestion'),'fa-map-signs')">
+          <i class="fas fa-map-signs"></i><span data-i18n="nav_plangestion">Plan de Gestion</span>
         </div>
-        <div class="main-menu-item" id="mm-conseils" onclick="mainMenuSwitch('conseils','Conseils Financiers','fa-graduation-cap')">
-          <i class="fas fa-graduation-cap"></i><span>Conseils</span>
+        <div class="main-menu-item" id="mm-conseils" onclick="mainMenuSwitch('conseils',t('nav_conseils'),'fa-graduation-cap')">
+          <i class="fas fa-graduation-cap"></i><span data-i18n="nav_conseils">Conseils</span>
         </div>
-        <div class="main-menu-item" id="mm-commerce" onclick="mainMenuSwitch('commerce','Commerce','fa-store')">
-          <i class="fas fa-store" style="color:#10b981"></i><span>Commerce</span>
+        <div class="main-menu-item" id="mm-commerce" onclick="mainMenuSwitch('commerce',t('nav_commerce'),'fa-store')">
+          <i class="fas fa-store" style="color:#10b981"></i><span data-i18n="nav_commerce">Commerce</span>
         </div>
       </div>
     </div>
@@ -3941,17 +4025,17 @@ select.form-input option{background:var(--bg2)}
 
         <!-- Quick stats grid 2x2 -->
         <div class="home-section-grid" style="margin-bottom:12px">
-          <div class="home-quick-card qc-income" onclick="mainMenuSwitch('revenus','Revenus','fa-arrow-down')">
+          <div class="home-quick-card qc-income" onclick="mainMenuSwitch('revenus',t('nav_revenus'),'fa-arrow-down')">
             <div class="hqc-icon">📥</div>
             <div class="hqc-label">Revenus</div>
             <div class="hqc-value pos" id="dIn">0 XOF</div>
           </div>
-          <div class="home-quick-card qc-expense" onclick="mainMenuSwitch('depenses','Dépenses','fa-arrow-up')">
+          <div class="home-quick-card qc-expense" onclick="mainMenuSwitch('depenses',t('nav_depenses'),'fa-arrow-up')">
             <div class="hqc-icon">📤</div>
             <div class="hqc-label">Dépenses</div>
             <div class="hqc-value neg" id="dOut">0 XOF</div>
           </div>
-          <div class="home-quick-card qc-save" onclick="mainMenuSwitch('epargne','Épargne','fa-piggy-bank')">
+          <div class="home-quick-card qc-save" onclick="mainMenuSwitch('epargne',t('nav_epargne'),'fa-piggy-bank')">
             <div class="hqc-icon">🏦</div>
             <div class="hqc-label">Épargne</div>
             <div class="hqc-value sav" id="dSave">0 XOF</div>
@@ -3980,7 +4064,7 @@ select.form-input option{background:var(--bg2)}
         </div>
 
         <!-- ═══ TUILE VEDETTE COMMERCE (écran d'accueil) ═══ -->
-        <div class="home-commerce-tile" onclick="mainMenuSwitch('commerce','Commerce','fa-store')"
+        <div class="home-commerce-tile" onclick="mainMenuSwitch('commerce',t('nav_commerce'),'fa-store')"
              style="position:relative;display:flex;align-items:center;gap:14px;padding:16px 16px;margin-bottom:16px;
                     background:linear-gradient(135deg,#10b981 0%,#059669 55%,#047857 100%);
                     border-radius:18px;cursor:pointer;overflow:hidden;
@@ -4031,7 +4115,7 @@ select.form-input option{background:var(--bg2)}
               <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#ef4444);display:flex;align-items:center;justify-content:center;font-size:18px">💰</div>
               <span style="font-size:10px;font-weight:700;color:var(--text);text-align:center;line-height:1.2">Tontines</span>
             </div>
-            <div onclick="mainMenuSwitch('commerce','Commerce','fa-store')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;background:var(--card);border:1px solid var(--border);border-radius:14px;cursor:pointer;transition:all .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+            <div onclick="mainMenuSwitch('commerce',t('nav_commerce'),'fa-store')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;background:var(--card);border:1px solid var(--border);border-radius:14px;cursor:pointer;transition:all .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
               <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#10b981,#047857);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff"><i class="fas fa-store"></i></div>
               <span style="font-size:10px;font-weight:700;color:var(--text);text-align:center;line-height:1.2">Commerce</span>
             </div>
@@ -4043,7 +4127,7 @@ select.form-input option{background:var(--bg2)}
               <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:18px">🎯</div>
               <span style="font-size:10px;font-weight:700;color:var(--text);text-align:center;line-height:1.2">Objectifs</span>
             </div>
-            <div onclick="mainMenuSwitch('budget','Budget','fa-bullseye')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;background:var(--card);border:1px solid var(--border);border-radius:14px;cursor:pointer;transition:all .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
+            <div onclick="mainMenuSwitch('budget',t('nav_budget'),'fa-bullseye')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;background:var(--card);border:1px solid var(--border);border-radius:14px;cursor:pointer;transition:all .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
               <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#06b6d4,#0891b2);display:flex;align-items:center;justify-content:center;font-size:18px">📋</div>
               <span style="font-size:10px;font-weight:700;color:var(--text);text-align:center;line-height:1.2">Budgets</span>
             </div>
@@ -4055,7 +4139,7 @@ select.form-input option{background:var(--bg2)}
         </div>
 
         <!-- Teaser Conseils -->
-        <div class="home-conseil-teaser" onclick="mainMenuSwitch('conseils','Conseils Financiers','fa-graduation-cap')">
+        <div class="home-conseil-teaser" onclick="mainMenuSwitch('conseils',t('cf_title'),'fa-graduation-cap')">
           <div class="home-conseil-teaser-title"><i class="fas fa-graduation-cap"></i> Conseil du moment</div>
           <div class="home-conseil-teaser-text">💡 <strong>Règle d'or :</strong> Revenus − Épargne = Dépenses autorisées. Pas l'inverse. Épargne d'abord, dépense ensuite.</div>
           <div class="home-conseil-teaser-link"><i class="fas fa-book-open"></i> Voir tous les conseils financiers</div>
@@ -4221,46 +4305,46 @@ select.form-input option{background:var(--bg2)}
 
     <!-- ══ SALAIRE CONFIG ══ -->
     <div id="tab-salaire" class="tab-content">
-      <h2 style="font-size:20px;font-weight:800;margin-bottom:18px">💼 Configuration salariale</h2>
+      <h2 style="font-size:20px;font-weight:800;margin-bottom:18px">💼 <span data-i18n="sal_title">Configuration salariale</span></h2>
       <div class="form-card" style="max-width:560px">
-        <div class="panel-title" style="margin-bottom:18px"><i class="fas fa-briefcase"></i> Structure de rémunération mensuelle</div>
+        <div class="panel-title" style="margin-bottom:18px"><i class="fas fa-briefcase"></i> <span data-i18n="sal_structure">Structure de rémunération mensuelle</span></div>
         <div class="form-grid-2">
           <div class="form-group">
-            <label class="form-label">💼 Salaire net (FCFA)</label>
-            <input class="form-input" type="number" id="salNet" placeholder="ex: 150 000"/>
+            <label class="form-label">💼 <span data-i18n="sal_net">Salaire net (FCFA)</span></label>
+            <input class="form-input" type="number" id="salNet" data-i18n="sal_net_ph" placeholder="ex: 150 000"/>
           </div>
           <div class="form-group">
-            <label class="form-label">🏅 Primes fixes (FCFA)</label>
-            <input class="form-input" type="number" id="salPrime" placeholder="ex: 30 000"/>
+            <label class="form-label">🏅 <span data-i18n="sal_prime">Primes fixes (FCFA)</span></label>
+            <input class="form-input" type="number" id="salPrime" data-i18n="sal_prime_ph" placeholder="ex: 30 000"/>
           </div>
           <div class="form-group">
-            <label class="form-label">📥 Autres revenus fixes (FCFA)</label>
-            <input class="form-input" type="number" id="salAutres" placeholder="ex: 20 000"/>
+            <label class="form-label">📥 <span data-i18n="sal_autres">Autres revenus fixes (FCFA)</span></label>
+            <input class="form-input" type="number" id="salAutres" data-i18n="sal_autres_ph" placeholder="ex: 20 000"/>
           </div>
           <div class="form-group">
-            <label class="form-label">📅 Jour de paie (1-31)</label>
+            <label class="form-label">📅 <span data-i18n="sal_payday">Jour de paie (1-31)</span></label>
             <input class="form-input" type="number" id="salPayday" placeholder="25" min="1" max="31"/>
           </div>
           <div class="form-group form-full">
-            <label class="form-label">🏷️ Poste / Fonction</label>
-            <input class="form-input" id="salPoste" placeholder="ex: Votre poste / fonction"/>
+            <label class="form-label">🏷️ <span data-i18n="sal_poste">Poste / Fonction</span></label>
+            <input class="form-input" id="salPoste" data-i18n="sal_poste_ph" placeholder="ex: Votre poste / fonction"/>
           </div>
         </div>
         <div class="form-group">
-          <label class="form-label">Total mensuel calculé</label>
+          <label class="form-label" data-i18n="sal_total">Total mensuel calculé</label>
           <div class="input-total-display" id="salTotalCalc">0 XOF</div>
         </div>
-        <button class="btn-sm btn-success-sm" style="width:100%;padding:14px;font-size:14px" onclick="saveSalary()"><i class="fas fa-save"></i> Enregistrer la configuration</button>
+        <button class="btn-sm btn-success-sm" style="width:100%;padding:14px;font-size:14px" onclick="saveSalary()"><i class="fas fa-save"></i> <span data-i18n="sal_save">Enregistrer la configuration</span></button>
       </div>
 
       <!-- Répartition -->
       <div class="panel" style="max-width:560px">
-        <div class="panel-head"><div class="panel-title"><i class="fas fa-chart-bar"></i> Répartition ce mois</div><span style="font-size:13px;font-family:'DM Mono',monospace;color:var(--muted)" id="salPct">—</span></div>
-        <div class="bar-labels"><span>Dépensé</span><span>Salaire total configuré</span></div>
+        <div class="panel-head"><div class="panel-title"><i class="fas fa-chart-bar"></i> <span data-i18n="sal_repartition">Répartition ce mois</span></div><span style="font-size:13px;font-family:'DM Mono',monospace;color:var(--muted)" id="salPct">—</span></div>
+        <div class="bar-labels"><span data-i18n="sal_spent">Dépensé</span><span data-i18n="sal_total_configured">Salaire total configuré</span></div>
         <div class="bar-track"><div class="bar-fill" id="salBar" style="width:0%"></div></div>
         <div style="display:flex;justify-content:space-between;margin-top:12px;font-family:'DM Mono',monospace;font-size:12px">
-          <span style="color:var(--danger-l)">Dépensé : <strong id="salSpent">—</strong></span>
-          <span style="color:var(--success-l)">Restant : <strong id="salLeft">—</strong></span>
+          <span style="color:var(--danger-l)"><span data-i18n="sal_spent">Dépensé</span> : <strong id="salSpent">—</strong></span>
+          <span style="color:var(--success-l)"><span data-i18n="sal_remaining">Restant</span> : <strong id="salLeft">—</strong></span>
         </div>
         <div style="margin-top:10px;font-size:13px;font-family:'DM Mono',monospace" id="salLeftStatus"></div>
       </div>
@@ -4702,31 +4786,31 @@ select.form-input option{background:var(--bg2)}
 <!-- Drawer "Plus" -->
 <div class="bnav-more-drawer" id="bnavDrawer">
   <div class="bnav-drawer-handle"></div>
-  <div style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;padding:0 4px">Menu</div>
+  <div style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;padding:0 4px" data-i18n="nav_menu">Menu</div>
   <div class="bnav-drawer-grid">
     <div class="bnav-drawer-item" id="bnd-revenus" onclick="bnavSwitch('revenus');closeBnavDrawer()">
-      <i class="fas fa-arrow-down"></i>Revenus
+      <i class="fas fa-arrow-down"></i><span data-i18n="nav_revenus">Revenus</span>
     </div>
     <div class="bnav-drawer-item" id="bnd-depenses" onclick="bnavSwitch('depenses');closeBnavDrawer()">
-      <i class="fas fa-arrow-up"></i>Dépenses
+      <i class="fas fa-arrow-up"></i><span data-i18n="nav_depenses">Dépenses</span>
     </div>
     <div class="bnav-drawer-item" id="bnd-budget" onclick="bnavSwitch('budget');closeBnavDrawer()">
-      <i class="fas fa-chart-pie"></i>Budget
+      <i class="fas fa-chart-pie"></i><span data-i18n="nav_budget">Budget</span>
     </div>
     <div class="bnav-drawer-item" id="bnd-salaire" onclick="bnavSwitch('salaire');closeBnavDrawer()">
-      <i class="fas fa-briefcase"></i>Salaire
+      <i class="fas fa-briefcase"></i><span data-i18n="nav_salaire">Salaire</span>
     </div>
     <div class="bnav-drawer-item" id="bnd-notes" onclick="bnavSwitch('notes');closeBnavDrawer()">
-      <i class="fas fa-calendar-pen"></i>Notes
+      <i class="fas fa-calendar-pen"></i><span data-i18n="nav_notes">Notes</span>
     </div>
     <div class="bnav-drawer-item" id="bnd-plangestion" onclick="bnavSwitch('plangestion');closeBnavDrawer()">
-      <i class="fas fa-map-signs"></i>Plan Gestion
+      <i class="fas fa-map-signs"></i><span data-i18n="nav_plangestion_short">Plan Gestion</span>
     </div>
     <div class="bnav-drawer-item" id="bnd-commerce" onclick="switchTab('commerce');closeBnavDrawer()">
-      <i class="fas fa-store" style="color:#10b981"></i>Commerce
+      <i class="fas fa-store" style="color:#10b981"></i><span data-i18n="nav_commerce">Commerce</span>
     </div>
     <div class="bnav-drawer-item" onclick="doLogout();closeBnavDrawer()" style="background:rgba(239,68,68,.05);border-color:rgba(239,68,68,.15);">
-      <i class="fas fa-right-from-bracket" style="color:var(--danger-l);"></i>Déconnexion
+      <i class="fas fa-right-from-bracket" style="color:var(--danger-l);"></i><span data-i18n="nav_logout">Déconnexion</span>
     </div>
   </div>
 </div>

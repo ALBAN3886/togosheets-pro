@@ -749,16 +749,6 @@ window.switchTab = (tab) => {
   activeTab = tab;
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab===tab));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id==='tab-'+tab));
-  // Bibliothèque financière (hors container principal)
-  const bibTab = document.getElementById('tab-bibliotheque');
-  if(bibTab){
-    if(tab==='bibliotheque'){
-      bibTab.style.display='block';
-      setTimeout(()=>{ if(typeof renderBibList==='function') renderBibList(BIB_ARTICLES); },100);
-    } else {
-      bibTab.style.display='none';
-    }
-  }
   // Conseils Financiers (hors container principal)
   const cfTab = document.getElementById('tab-conseils');
   if(cfTab){
@@ -1576,6 +1566,16 @@ const LANGS = {
     tont_msg_min_members:'Au moins 2 membres', tont_msg_invalid_amount:'Cotisation invalide',
     tont_msg_saved_title:'Tontine enregistrée !', tont_msg_saved_body:'Votre tontine est maintenant suivie.',
     tont_confirm_delete:'Supprimer la tontine "{name}" ?', tont_msg_deleted:'Tontine supprimée',
+    // ══ Module Conseils ══
+    cf_badge:'Mini-Livre Financier', cf_title:'Conseils Financiers',
+    cf_subtitle:'10 guides pratiques pour maîtriser<br>votre argent au quotidien',
+    cf_search_ph:'Rechercher un conseil...', cf_back:'Retour aux conseils',
+    cf_no_results:'Aucun résultat trouvé',
+    // ══ Module Profil ══
+    prof_user_default:'Utilisateur', prof_go_premium:'Passer Premium',
+    prof_personal_info:'Informations personnelles', prof_settings:'Paramètres',
+    prof_security:'Sécurité', prof_backup:'Sauvegarde et synchronisation',
+    prof_help:'Aide et support', prof_about:'À propos', prof_logout:'Déconnexion',
   },
   en: {
     code:'en', name:'English', flag:'🇬🇧', dir:'ltr', font:'Syne',
@@ -1738,6 +1738,16 @@ const LANGS = {
     tont_msg_min_members:'At least 2 members required', tont_msg_invalid_amount:'Invalid contribution amount',
     tont_msg_saved_title:'Savings circle saved!', tont_msg_saved_body:'Your savings circle is now being tracked.',
     tont_confirm_delete:'Delete savings circle "{name}"?', tont_msg_deleted:'Savings circle deleted',
+    // ══ Conseils module ══
+    cf_badge:'Financial Mini-Book', cf_title:'Financial Tips',
+    cf_subtitle:'10 practical guides to master<br>your money every day',
+    cf_search_ph:'Search a tip...', cf_back:'Back to tips',
+    cf_no_results:'No results found',
+    // ══ Profile module ══
+    prof_user_default:'User', prof_go_premium:'Go Premium',
+    prof_personal_info:'Personal information', prof_settings:'Settings',
+    prof_security:'Security', prof_backup:'Backup and sync',
+    prof_help:'Help and support', prof_about:'About', prof_logout:'Log out',
   },
   ar: {
     code:'ar', name:'العربية', flag:'🇲🇦', dir:'rtl', font:'Syne',
@@ -1882,6 +1892,14 @@ function applyLang(code) {
   // régénéré explicitement pour refléter la nouvelle langue tout de suite.
   if (typeof cmRenderAll === 'function' && typeof CM !== 'undefined' && CM.currentShopId) {
     try { cmRenderAll(); } catch(e) {}
+  }
+  // Re-rendre Conseils : son contenu (titres, articles bilingues) doit
+  // refléter la nouvelle langue immédiatement si l'onglet est déjà ouvert.
+  if (typeof renderCfList === 'function' && typeof CF_ARTICLES !== 'undefined') {
+    try {
+      renderCfList(CF_ARTICLES);
+      if (typeof cfCurrentId !== 'undefined' && cfCurrentId) cfOpenArticle(cfCurrentId);
+    } catch(e) {}
   }
   toast(t('lang_saved'), 'success');
 }
@@ -3604,9 +3622,6 @@ select.form-input option{background:var(--bg2)}
       <div class="sidebar-link" id="sb-commerce" onclick="switchTab('commerce')" style="--sb-ic:var(--success)">
         <i class="fas fa-store"></i><span>Commerce</span>
       </div>
-      <div class="sidebar-link" id="sb-bibliotheque" onclick="switchTab('bibliotheque')" style="--sb-ic:#06b6d4">
-        <i class="fas fa-book-open"></i><span>Bibliothèque</span>
-      </div>
       <div class="sidebar-link" id="sb-conseils" onclick="switchTab('conseils')" style="--sb-ic:#06b6d4">
         <i class="fas fa-graduation-cap"></i><span>Conseils</span>
       </div>
@@ -3673,9 +3688,6 @@ select.form-input option{background:var(--bg2)}
         </div>
         <div class="main-menu-item" id="mm-plangestion" onclick="mainMenuSwitch('plangestion','Plan de Gestion','fa-map-signs')">
           <i class="fas fa-map-signs"></i><span>Plan de Gestion</span>
-        </div>
-        <div class="main-menu-item" id="mm-bibliotheque" onclick="mainMenuSwitch('bibliotheque','Bibliothèque Financière','fa-book-open')">
-          <i class="fas fa-book-open"></i><span>Bibliothèque</span>
         </div>
         <div class="main-menu-item" id="mm-conseils" onclick="mainMenuSwitch('conseils','Conseils Financiers','fa-graduation-cap')">
           <i class="fas fa-graduation-cap"></i><span>Conseils</span>
@@ -4466,13 +4478,13 @@ select.form-input option{background:var(--bg2)}
 <!-- LISTE CONSEILS -->
 <div id="cf-list">
   <div class="cf-hero">
-    <div class="cf-hero-badge"><i class="fas fa-graduation-cap"></i> Mini-Livre Financier</div>
-    <h2>Conseils Financiers</h2>
-    <p>10 guides pratiques pour maîtriser<br>votre argent au quotidien</p>
+    <div class="cf-hero-badge"><i class="fas fa-graduation-cap"></i> <span data-i18n="cf_badge">Mini-Livre Financier</span></div>
+    <h2 data-i18n="cf_title">Conseils Financiers</h2>
+    <p data-i18n="cf_subtitle">10 guides pratiques pour maîtriser<br>votre argent au quotidien</p>
   </div>
   <div class="cf-search">
     <i class="fas fa-search"></i>
-    <input type="text" placeholder="Rechercher un conseil..." oninput="cfSearch(this.value)" />
+    <input type="text" data-i18n="cf_search_ph" placeholder="Rechercher un conseil..." oninput="cfSearch(this.value)" />
   </div>
   <div class="cf-grid" id="cfGrid"></div>
 </div>
@@ -4486,137 +4498,6 @@ select.form-input option{background:var(--bg2)}
   </div><!-- /container -->
 </div><!-- /app -->
 
-<!-- ════ BIBLIOTHÈQUE FINANCIÈRE ════ -->
-<div id="tab-bibliotheque" class="tab-content" style="display:none;padding:0 16px 100px;">
-
-<style>
-.bib-header{text-align:center;padding:28px 0 20px;}
-.bib-header h2{font-size:24px;font-weight:900;background:linear-gradient(135deg,var(--primary-l),#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px;}
-.bib-header p{font-size:13px;color:var(--dim);}
-.bib-search{
-  position:relative;margin-bottom:20px;
-}
-.bib-search input{
-  width:100%;padding:12px 16px 12px 40px;
-  background:rgba(255,255,255,0.05);
-  border:1px solid rgba(148,163,184,0.15);
-  border-radius:12px;color:var(--fg);font-size:14px;
-}
-.bib-search i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--dim);font-size:13px;}
-.bib-grid{display:flex;flex-direction:column;gap:16px;}
-.bib-card{
-  background:var(--card);
-  border:1px solid rgba(148,163,184,0.1);
-  border-radius:16px;
-  overflow:hidden;
-  cursor:pointer;
-  transition:transform 0.2s,box-shadow 0.2s;
-}
-.bib-card:active{transform:scale(0.98);}
-.bib-card-header{
-  padding:16px 18px;
-  display:flex;align-items:center;gap:14px;
-}
-.bib-icon{
-  width:46px;height:46px;border-radius:12px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:22px;flex-shrink:0;
-}
-.bib-card-title{font-size:15px;font-weight:800;color:var(--fg);margin-bottom:3px;}
-.bib-card-sub{font-size:11px;color:var(--dim);letter-spacing:0.5px;}
-.bib-card-preview{
-  padding:0 18px 16px;
-  font-size:13px;color:var(--dim);line-height:1.6;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
-}
-.bib-tag{
-  display:inline-block;padding:3px 10px;border-radius:20px;
-  font-size:10px;font-weight:700;letter-spacing:0.5px;margin-left:auto;flex-shrink:0;
-}
-
-/* ARTICLE DETAIL */
-.bib-detail{display:none;padding:0 0 100px;}
-.bib-detail.active{display:block;}
-.bib-detail-back{
-  display:flex;align-items:center;gap:10px;
-  padding:16px 0 20px;cursor:pointer;
-  font-size:14px;color:var(--primary-l);font-weight:600;
-}
-.bib-detail-icon{font-size:48px;text-align:center;margin-bottom:12px;}
-.bib-detail-title{
-  font-family:'Syne',sans-serif;
-  font-size:22px;font-weight:900;color:var(--fg);
-  line-height:1.2;margin-bottom:16px;
-}
-.bib-detail-body{font-size:14px;color:var(--dim);line-height:1.8;}
-.bib-detail-body p{margin-bottom:14px;}
-.bib-step{
-  display:flex;gap:14px;align-items:flex-start;
-  padding:14px;margin-bottom:10px;
-  background:rgba(255,255,255,0.04);
-  border-radius:12px;border-left:3px solid var(--primary-l);
-}
-.bib-step-num{
-  width:28px;height:28px;border-radius:50%;
-  background:linear-gradient(135deg,var(--primary-l),#a855f7);
-  display:flex;align-items:center;justify-content:center;
-  font-size:12px;font-weight:900;color:#fff;flex-shrink:0;
-}
-.bib-step-text{font-size:13px;color:var(--fg);line-height:1.6;}
-.bib-step-text strong{color:var(--primary-l);}
-.bib-quote{
-  padding:16px 18px;margin:16px 0;
-  background:rgba(79,142,247,0.08);
-  border-left:3px solid var(--primary-l);
-  border-radius:0 12px 12px 0;
-  font-size:14px;color:var(--fg);font-style:italic;line-height:1.6;
-}
-.bib-tip{
-  padding:14px 16px;margin:12px 0;
-  background:rgba(20,184,106,0.08);
-  border-radius:12px;border:1px solid rgba(20,184,106,0.2);
-  font-size:13px;color:var(--fg);line-height:1.6;
-}
-.bib-tip::before{content:'💡 ';font-style:normal;}
-.bib-warning{
-  padding:14px 16px;margin:12px 0;
-  background:rgba(245,158,11,0.08);
-  border-radius:12px;border:1px solid rgba(245,158,11,0.2);
-  font-size:13px;color:var(--fg);line-height:1.6;
-}
-.bib-warning::before{content:'⚠️ ';font-style:normal;}
-.bib-example{
-  padding:14px 16px;margin:12px 0;
-  background:rgba(168,85,247,0.08);
-  border-radius:12px;border:1px solid rgba(168,85,247,0.2);
-  font-size:13px;color:var(--fg);line-height:1.6;
-}
-.bib-example::before{content:'📌 Exemple : ';}
-.bib-section-title{
-  font-size:16px;font-weight:800;color:var(--fg);
-  margin:20px 0 10px;
-  display:flex;align-items:center;gap:8px;
-}
-</style>
-
-<!-- LISTE DES ARTICLES -->
-<div id="bib-list">
-  <div class="bib-header">
-    <h2>📚 Bibliothèque Financière</h2>
-    <p>10 guides pratiques pour maîtriser votre argent</p>
-  </div>
-  <div class="bib-search">
-    <i class="fas fa-search"></i>
-    <input type="text" placeholder="Rechercher un conseil..." oninput="bibSearch(this.value)" />
-  </div>
-  <div class="bib-grid" id="bibGrid"></div>
-</div>
-
-<!-- DÉTAIL ARTICLE -->
-<div id="bib-detail-view"></div>
-
-</div>
-<!-- ════ FIN BIBLIOTHÈQUE ════ -->
 
 <!-- ════ BOTTOM NAV MOBILE ════ -->
 <div class="bnav-overlay" id="bnavOverlay" onclick="closeBnavDrawer()"></div>
@@ -4665,9 +4546,6 @@ select.form-input option{background:var(--bg2)}
     <div class="bnav-drawer-item" id="bnd-plangestion" onclick="bnavSwitch('plangestion');closeBnavDrawer()">
       <i class="fas fa-map-signs"></i>Plan Gestion
     </div>
-    <div class="bnav-drawer-item" id="bnd-bibliotheque" onclick="switchTab('bibliotheque');closeBnavDrawer()">
-      <i class="fas fa-book-open"></i>Bibliothèque
-    </div>
     <div class="bnav-drawer-item" id="bnd-commerce" onclick="switchTab('commerce');closeBnavDrawer()">
       <i class="fas fa-store" style="color:#10b981"></i>Commerce
     </div>
@@ -4679,7 +4557,7 @@ select.form-input option{background:var(--bg2)}
 
 <script>
 // ══ MENU PRINCIPAL ══
-const ALL_MENU_TABS = ['dashboard','revenus','depenses','epargne','budget','salaire','historique','notes','plangestion','bibliotheque','conseils','commerce'];
+const ALL_MENU_TABS = ['dashboard','revenus','depenses','epargne','budget','salaire','historique','notes','plangestion','conseils','commerce'];
 window.ALL_MENU_TABS = ALL_MENU_TABS;
 
 window.toggleMainMenu = function() {
@@ -4808,8 +4686,8 @@ window.switchTab = function(tab) {
   if(moreBtn) moreBtn.classList.toggle('active',BNAV_DRAWER.includes(tab));
   // Sync main menu chips
   ALL_MENU_TABS.forEach(t => { const el=document.getElementById('mm-'+t); if(el) el.classList.toggle('active',t===tab); });
-  const _labels={dashboard:'Tableau de bord',revenus:'Revenus',depenses:'Dépenses',epargne:'Épargne',budget:'Budget',salaire:'Salaire',historique:'Historique',notes:'Notes',plangestion:'Plan de Gestion',bibliotheque:'Bibliothèque Financière',conseils:'Conseils Financiers',commerce:'Commerce'};
-  const _icons={dashboard:'fa-chart-pie',revenus:'fa-arrow-down',depenses:'fa-arrow-up-from-bracket',epargne:'fa-piggy-bank',budget:'fa-bullseye',salaire:'fa-briefcase',historique:'fa-clock-rotate-left',notes:'fa-calendar-pen',plangestion:'fa-map-signs',bibliotheque:'fa-book-open',conseils:'fa-graduation-cap',commerce:'fa-store'};
+  const _labels={dashboard:'Tableau de bord',revenus:'Revenus',depenses:'Dépenses',epargne:'Épargne',budget:'Budget',salaire:'Salaire',historique:'Historique',notes:'Notes',plangestion:'Plan de Gestion',conseils:'Conseils Financiers',commerce:'Commerce'};
+  const _icons={dashboard:'fa-chart-pie',revenus:'fa-arrow-down',depenses:'fa-arrow-up-from-bracket',epargne:'fa-piggy-bank',budget:'fa-bullseye',salaire:'fa-briefcase',historique:'fa-clock-rotate-left',notes:'fa-calendar-pen',plangestion:'fa-map-signs',conseils:'fa-graduation-cap',commerce:'fa-store'};
   const chip=document.getElementById('activeTabName');
   const chipI=document.getElementById('activeTabChip')?.querySelector('i');
   if(chip&&_labels[tab]) chip.textContent=_labels[tab];
@@ -5278,12 +5156,16 @@ const CF_ARTICLES = [
     icon: '🛡️',
     color: 'linear-gradient(135deg,#f59e0b,#d97706)',
     bg: 'rgba(245,158,11,0.12)',
-    tag: 'Essentiel',
+    tag: { fr:'Essentiel', en:'Essential' },
     tagColor: '#f59e0b',
-    title: 'Fonds d\'urgence : comment le construire',
-    sub: '6 étapes · Avec 100 000F ou moins',
-    preview: 'Un fonds d\'urgence c\'est de l\'argent mis de côté uniquement pour les imprévus. Voici le plan en 6 étapes.',
-    content: `
+    title: { fr:'Fonds d\'urgence : comment le construire', en:'Emergency fund: how to build it' },
+    sub: { fr:'6 étapes · Avec 100 000F ou moins', en:'6 steps · With 100,000F or less' },
+    preview: {
+      fr:'Un fonds d\'urgence c\'est de l\'argent mis de côté uniquement pour les imprévus. Voici le plan en 6 étapes.',
+      en:'An emergency fund is money set aside only for the unexpected. Here is the 6-step plan.'
+    },
+    content: {
+      fr: `
       <div class="cf-quote">
         Fonds d'urgence ? Avec mon salaire ?<br>
         <strong>Oui, même avec 100 000F. Voilà comment.</strong>
@@ -5302,19 +5184,44 @@ const CF_ARTICLES = [
         Avec un fonds d'urgence, les imprévus sont gérés <strong>sans stress et sans emprunter.</strong>
       </div>
       <div class="cf-tip">La différence entre ces deux réalités, c'est seulement <strong>5 000F par mois</strong>. Commence aujourd'hui.</div>
+    `,
+      en: `
+      <div class="cf-quote">
+        An emergency fund? On my salary?<br>
+        <strong>Yes, even with 100,000F. Here's how.</strong>
+      </div>
+      <p>An emergency fund is money set aside <strong>only for the unexpected</strong>: a breakdown, illness, repair, temporary job loss.</p>
+      <p>Not for outings. Not for wants. <strong>Only for real emergencies.</strong></p>
+      <div class="cf-section-title"><span>🗺️</span> The 6-step plan</div>
+      <div class="cf-step"><div class="cf-step-num">1</div><div class="cf-step-text"><strong>Set the target</strong> — at least 1 month of expenses, ideally 3 months.</div></div>
+      <div class="cf-step"><div class="cf-step-num">2</div><div class="cf-step-text"><strong>Start with 5,000F this month</strong> — not 50,000F. Not "when you have more." 2,000F, 5,000F now.</div></div>
+      <div class="cf-step"><div class="cf-step-num">3</div><div class="cf-step-text"><strong>Put that money in a separate account</strong> you don't use day to day.</div></div>
+      <div class="cf-step"><div class="cf-step-num">4</div><div class="cf-step-text"><strong>Increase by 1,000F to 2,000F each month.</strong> Slowly but steadily.</div></div>
+      <div class="cf-step"><div class="cf-step-num">5</div><div class="cf-step-text"><strong>If you dip into the fund</strong>, rebuild it first thing the following month.</div></div>
+      <div class="cf-step"><div class="cf-step-num">6</div><div class="cf-step-text"><strong>Build up gradually</strong> to 1 month, then 2 months, then 3 months.</div></div>
+      <div class="cf-quote" style="margin-top:20px">
+        Without an emergency fund, every surprise becomes debt.<br>
+        With an emergency fund, surprises are handled <strong>without stress and without borrowing.</strong>
+      </div>
+      <div class="cf-tip">The difference between these two realities is just <strong>5,000F a month</strong>. Start today.</div>
     `
+    }
   },
   {
     id: 'jour-de-paie',
     icon: '📊',
     color: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
     bg: 'rgba(99,102,241,0.12)',
-    tag: 'Priorité',
+    tag: { fr:'Priorité', en:'Priority' },
     tagColor: '#818cf8',
-    title: 'Gérer son salaire dès le jour de paie',
-    sub: 'La règle des premières 24 heures',
-    preview: 'Le jour de paie est le moment le plus important du mois. Ce que tu fais dans les premières heures détermine tout le reste.',
-    content: `
+    title: { fr:'Gérer son salaire dès le jour de paie', en:'Managing your salary from payday' },
+    sub: { fr:'La règle des premières 24 heures', en:'The first-24-hours rule' },
+    preview: {
+      fr:'Le jour de paie est le moment le plus important du mois. Ce que tu fais dans les premières heures détermine tout le reste.',
+      en:'Payday is the most important moment of the month. What you do in the first hours determines everything else.'
+    },
+    content: {
+      fr: `
       <div class="cf-quote">Le jour où tu reçois ton salaire, <strong>ne touche pas à cet argent avant d'avoir un plan.</strong></div>
       <div class="cf-section-title"><span>⚡</span> La règle des premières 24 heures</div>
       <div class="cf-step"><div class="cf-step-num">1</div><div class="cf-step-text"><strong>Note le montant exact reçu.</strong> Pas d'estimation. Regarde ton compte ou ton reçu.</div></div>
@@ -5335,19 +5242,46 @@ const CF_ARTICLES = [
       </div>
       <div class="cf-example">Salaire de 150 000F : 75 000F pour les besoins, 45 000F pour les envies, 30 000F d'épargne.</div>
       <div class="cf-tip">Si 20% d'épargne est trop difficile, commence par 5% ou même 2%. L'habitude compte plus que le montant.</div>
+    `,
+      en: `
+      <div class="cf-quote">The day you get paid, <strong>don't touch that money until you have a plan.</strong></div>
+      <div class="cf-section-title"><span>⚡</span> The first-24-hours rule</div>
+      <div class="cf-step"><div class="cf-step-num">1</div><div class="cf-step-text"><strong>Write down the exact amount received.</strong> No estimating. Check your account or your receipt.</div></div>
+      <div class="cf-step"><div class="cf-step-num">2</div><div class="cf-step-text"><strong>Pay the priorities right away:</strong> rent, electricity, urgent debts. These expenses can't wait.</div></div>
+      <div class="cf-step"><div class="cf-step-num">3</div><div class="cf-step-text"><strong>Set your savings aside.</strong> Not at the end of the month. Now, on day one.</div></div>
+      <div class="cf-step"><div class="cf-step-num">4</div><div class="cf-step-text"><strong>Calculate what's left.</strong> That amount is your living budget for the month.</div></div>
+      <div class="cf-step"><div class="cf-step-num">5</div><div class="cf-step-text"><strong>Divide by 4 weeks.</strong> Now you know how much you can spend per week.</div></div>
+      <div class="cf-section-title"><span>📐</span> The 50/30/20 method</div>
+      <p>A simple rule to split your salary:</p>
+      <div class="cf-progress-card">
+        <div class="cf-progress-title">Ideal salary breakdown</div>
+        <div class="cf-progress-row"><span>🏠 Essential needs (rent, food, transport)</span><span style="font-weight:800;color:#f59e0b">50%</span></div>
+        <div class="cf-progress-bar"><div class="cf-progress-fill" style="width:50%"></div></div>
+        <div class="cf-progress-row" style="margin-top:8px"><span>🎯 Wants and leisure</span><span style="font-weight:800;color:#818cf8">30%</span></div>
+        <div class="cf-progress-bar"><div class="cf-progress-fill" style="width:30%;background:linear-gradient(90deg,#818cf8,#6366f1)"></div></div>
+        <div class="cf-progress-row" style="margin-top:8px"><span>🏦 Savings and repayments</span><span style="font-weight:800;color:#34d399">20%</span></div>
+        <div class="cf-progress-bar"><div class="cf-progress-fill" style="width:20%;background:linear-gradient(90deg,#10b981,#34d399)"></div></div>
+      </div>
+      <div class="cf-example">Salary of 150,000F: 75,000F for needs, 45,000F for wants, 30,000F savings.</div>
+      <div class="cf-tip">If 20% savings is too hard, start with 5% or even 2%. The habit matters more than the amount.</div>
     `
+    }
   },
   {
     id: 'epargne-mensuelle',
     icon: '🏦',
     color: 'linear-gradient(135deg,#10b981,#059669)',
     bg: 'rgba(16,185,129,0.12)',
-    tag: 'Stratégie',
+    tag: { fr:'Stratégie', en:'Strategy' },
     tagColor: '#34d399',
-    title: 'Épargne : combien mettre de côté chaque mois',
-    sub: 'Le bon montant selon ton salaire',
-    preview: 'Beaucoup de gens attendent d\'avoir assez pour épargner. Erreur fatale. L\'épargne, ça se décide avant de dépenser.',
-    content: `
+    title: { fr:'Épargne : combien mettre de côté chaque mois', en:'Savings: how much to set aside each month' },
+    sub: { fr:'Le bon montant selon ton salaire', en:'The right amount based on your salary' },
+    preview: {
+      fr:'Beaucoup de gens attendent d\'avoir assez pour épargner. Erreur fatale. L\'épargne, ça se décide avant de dépenser.',
+      en:'Many people wait until they have enough to save. A fatal mistake. Saving is decided before you spend.'
+    },
+    content: {
+      fr: `
       <div class="cf-quote">L'épargne ne vient pas de ce qui reste. <strong>Elle vient de ce qu'on décide de garder avant tout.</strong></div>
       <div class="cf-section-title"><span>💰</span> Combien épargner selon ton salaire ?</div>
       <div class="cf-progress-card">
@@ -5365,19 +5299,43 @@ const CF_ARTICLES = [
       <div class="cf-step"><div class="cf-step-num">3</div><div class="cf-step-text"><strong>Poche Long terme</strong> — 20% pour ton avenir : retraite, terrain, investissement.</div></div>
       <div class="cf-tip">Utilise le Mobile Money (Flooz, T-Money) pour créer un compte séparé uniquement pour l'épargne. Ne mets pas l'app sur ton téléphone principal.</div>
       <div class="cf-warning">Ne touche jamais à ton épargne pour des plaisirs. Si c'est tentant, c'est que tu n'as pas de budget loisirs. Crée-en un.</div>
+    `,
+      en: `
+      <div class="cf-quote">Savings don't come from what's left over. <strong>They come from what you decide to keep first.</strong></div>
+      <div class="cf-section-title"><span>💰</span> How much to save based on your salary?</div>
+      <div class="cf-progress-card">
+        <div class="cf-progress-title">Guide based on monthly salary (FCFA)</div>
+        <div style="font-size:13px;display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06)"><span>Less than 75,000F</span><span style="color:#f59e0b;font-weight:700">2,000 – 5,000F / month</span></div>
+          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06)"><span>75,000 – 150,000F</span><span style="color:#f59e0b;font-weight:700">10,000 – 20,000F / month</span></div>
+          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.06)"><span>150,000 – 300,000F</span><span style="color:#34d399;font-weight:700">25,000 – 50,000F / month</span></div>
+          <div style="display:flex;justify-content:space-between;padding:10px 0"><span>More than 300,000F</span><span style="color:#34d399;font-weight:700">60,000F+ / month</span></div>
+        </div>
+      </div>
+      <div class="cf-section-title"><span>🎯</span> The 3 savings pockets</div>
+      <div class="cf-step"><div class="cf-step-num">1</div><div class="cf-step-text"><strong>Emergency pocket</strong> — 40% of your savings until you reach 3 months of expenses. Then you can reduce it.</div></div>
+      <div class="cf-step"><div class="cf-step-num">2</div><div class="cf-step-text"><strong>Projects pocket</strong> — 40% for your medium-term goals: motorbike, appliances, training.</div></div>
+      <div class="cf-step"><div class="cf-step-num">3</div><div class="cf-step-text"><strong>Long-term pocket</strong> — 20% for your future: retirement, land, investment.</div></div>
+      <div class="cf-tip">Use Mobile Money (Flooz, T-Money) to create a separate account just for savings. Don't put the app on your main phone.</div>
+      <div class="cf-warning">Never dip into your savings for pleasures. If it's tempting, it means you don't have a leisure budget. Create one.</div>
     `
+    }
   },
   {
     id: 'sortir-des-dettes',
     icon: '💳',
     color: 'linear-gradient(135deg,#ef4444,#dc2626)',
     bg: 'rgba(239,68,68,0.12)',
-    tag: 'Libération',
+    tag: { fr:'Libération', en:'Freedom' },
     tagColor: '#f87171',
-    title: 'Sortir des dettes progressivement',
-    sub: 'La méthode boule de neige',
-    preview: 'Les dettes ne disparaissent pas d\'elles-mêmes. Il faut un plan précis, des actions concrètes et surtout ne pas en créer de nouvelles.',
-    content: `
+    title: { fr:'Sortir des dettes progressivement', en:'Getting out of debt step by step' },
+    sub: { fr:'La méthode boule de neige', en:'The snowball method' },
+    preview: {
+      fr:'Les dettes ne disparaissent pas d\'elles-mêmes. Il faut un plan précis, des actions concrètes et surtout ne pas en créer de nouvelles.',
+      en:'Debts don\'t disappear on their own. You need a precise plan, concrete actions, and above all, no new debts.'
+    },
+    content: {
+      fr: `
       <div class="cf-quote">Être endetté, c'est normal. <strong>Y rester indéfiniment, c'est un choix.</strong></div>
       <div class="cf-section-title"><span>🗺️</span> Étape 1 : Fais l'inventaire</div>
       <p>Liste <strong>toutes</strong> tes dettes : qui tu dois, combien, et depuis combien de temps.</p>
@@ -5391,19 +5349,39 @@ const CF_ARTICLES = [
       <div class="cf-warning">Règle n°1 : ne crée pas de nouvelles dettes pendant que tu rembourses les anciennes. Sinon tu cours après ton ombre.</div>
       <div class="cf-section-title"><span>🚫</span> Les dettes à éviter absolument</div>
       <div class="cf-step"><div class="cf-step-num">!</div><div class="cf-step-text">Emprunter pour des dépenses de consommation (habits, fête, sorties). <strong>Si tu ne peux pas te le payer comptant, tu ne peux pas te le payer.</strong></div></div>
+    `,
+      en: `
+      <div class="cf-quote">Being in debt is normal. <strong>Staying in debt forever is a choice.</strong></div>
+      <div class="cf-section-title"><span>🗺️</span> Step 1: Take inventory</div>
+      <p>List <strong>all</strong> your debts: who you owe, how much, and for how long.</p>
+      <div class="cf-example">I owe 30,000F to Kofi (neighbor), 15,000F to the shop next door, 50,000F to my sister = Total: 95,000F</div>
+      <div class="cf-section-title"><span>⚡</span> The snowball method</div>
+      <div class="cf-step"><div class="cf-step-num">1</div><div class="cf-step-text"><strong>Sort by increasing amount.</strong> Start with the smallest debt.</div></div>
+      <div class="cf-step"><div class="cf-step-num">2</div><div class="cf-step-text"><strong>Pay the minimum on all of them.</strong> Focus any surplus only on the smallest one.</div></div>
+      <div class="cf-step"><div class="cf-step-num">3</div><div class="cf-step-text"><strong>Once the small one is paid off,</strong> take its entire payment and attack the next one.</div></div>
+      <div class="cf-step"><div class="cf-step-num">4</div><div class="cf-step-text"><strong>The snowball grows.</strong> Every debt paid off frees up money for the next one.</div></div>
+      <div class="cf-tip">Talk honestly to your creditors. Many prefer a regular repayment plan over nothing at all. Negotiate.</div>
+      <div class="cf-warning">Rule #1: don't create new debts while paying off old ones. Otherwise you're chasing your own shadow.</div>
+      <div class="cf-section-title"><span>🚫</span> Debts to absolutely avoid</div>
+      <div class="cf-step"><div class="cf-step-num">!</div><div class="cf-step-text">Borrowing for consumer spending (clothes, parties, outings). <strong>If you can't pay cash for it, you can't afford it.</strong></div></div>
     `
+    }
   },
   {
     id: 'reduire-depenses',
     icon: '🛒',
     color: 'linear-gradient(135deg,#f59e0b,#10b981)',
     bg: 'rgba(245,158,11,0.10)',
-    tag: 'Pratique',
+    tag: { fr:'Pratique', en:'Practical' },
     tagColor: '#fbbf24',
-    title: 'Réduire ses dépenses sans se priver',
-    sub: 'Les coupes intelligentes',
-    preview: 'Réduire ses dépenses ne veut pas dire se punir. Ça veut dire dépenser mieux, pour ce qui compte vraiment.',
-    content: `
+    title: { fr:'Réduire ses dépenses sans se priver', en:'Cutting expenses without depriving yourself' },
+    sub: { fr:'Les coupes intelligentes', en:'Smart cuts' },
+    preview: {
+      fr:'Réduire ses dépenses ne veut pas dire se punir. Ça veut dire dépenser mieux, pour ce qui compte vraiment.',
+      en:'Cutting expenses doesn\'t mean punishing yourself. It means spending better, on what really matters.'
+    },
+    content: {
+      fr: `
       <div class="cf-quote">La richesse ne vient pas d'un gros salaire.<br><strong>Elle vient de la différence entre ce qu'on gagne et ce qu'on dépense.</strong></div>
       <div class="cf-section-title"><span>✂️</span> Les 5 coupes sans douleur</div>
       <div class="cf-step"><div class="cf-step-num">1</div><div class="cf-step-text"><strong>Marché vs supermarché.</strong> Les légumes, féculents et produits locaux sont 30 à 50% moins chers au marché. Fixe tes achats hebdomadaires.</div></div>
@@ -5413,19 +5391,35 @@ const CF_ARTICLES = [
       <div class="cf-step"><div class="cf-step-num">5</div><div class="cf-step-text"><strong>Attends 48 heures.</strong> Pour tout achat non planifié au-dessus de 5 000F. Si tu y penses encore après 2 jours, c'est peut-être un vrai besoin.</div></div>
       <div class="cf-tip">Note chaque dépense pendant 1 mois. Tu vas être surpris. Beaucoup de gens découvrent 20 000 à 40 000F de dépenses invisibles par mois.</div>
       <div class="cf-example">Chaque jour : 1 000F de crédit téléphone "juste pour un peu" × 30 jours = 30 000F/mois = 360 000F/an. Sur 5 ans : 1,8 million.</div>
+    `,
+      en: `
+      <div class="cf-quote">Wealth doesn't come from a big salary.<br><strong>It comes from the gap between what you earn and what you spend.</strong></div>
+      <div class="cf-section-title"><span>✂️</span> The 5 painless cuts</div>
+      <div class="cf-step"><div class="cf-step-num">1</div><div class="cf-step-text"><strong>Market vs supermarket.</strong> Vegetables, staples and local products are 30 to 50% cheaper at the market. Plan your weekly shopping.</div></div>
+      <div class="cf-step"><div class="cf-step-num">2</div><div class="cf-step-text"><strong>Cooking at home.</strong> A meal at a food stall costs 2,000 to 4,000F. Cooking costs 500 – 800F per meal. The difference over a month = a week's salary.</div></div>
+      <div class="cf-step"><div class="cf-step-num">3</div><div class="cf-step-text"><strong>Phone top-ups: set a weekly budget.</strong> No spontaneous top-ups. Buy at the start of the week, that's it.</div></div>
+      <div class="cf-step"><div class="cf-step-num">4</div><div class="cf-step-text"><strong>Make a list before shopping.</strong> Going to the market without a list means spending 30% more. Always.</div></div>
+      <div class="cf-step"><div class="cf-step-num">5</div><div class="cf-step-text"><strong>Wait 48 hours.</strong> For any unplanned purchase above 5,000F. If you still think about it after 2 days, it might be a real need.</div></div>
+      <div class="cf-tip">Track every expense for 1 month. You'll be surprised. Many people discover 20,000 to 40,000F of invisible spending per month.</div>
+      <div class="cf-example">Every day: 1,000F of phone credit "just a little" × 30 days = 30,000F/month = 360,000F/year. Over 5 years: 1.8 million.</div>
     `
+    }
   },
   {
     id: 'objectifs-financiers',
     icon: '🎯',
     color: 'linear-gradient(135deg,#8b5cf6,#6366f1)',
     bg: 'rgba(139,92,246,0.12)',
-    tag: 'Vision',
+    tag: { fr:'Vision', en:'Vision' },
     tagColor: '#a78bfa',
-    title: 'Se fixer des objectifs financiers réalistes',
-    sub: 'La méthode SMART adaptée au Togo',
-    preview: 'Un rêve sans date de réalisation est juste un rêve. Un objectif avec un plan, c\'est une mission.',
-    content: `
+    title: { fr:'Se fixer des objectifs financiers réalistes', en:'Setting realistic financial goals' },
+    sub: { fr:'La méthode SMART adaptée au Togo', en:'The SMART method adapted for Togo' },
+    preview: {
+      fr:'Un rêve sans date de réalisation est juste un rêve. Un objectif avec un plan, c\'est une mission.',
+      en:'A dream without a target date is just a dream. A goal with a plan is a mission.'
+    },
+    content: {
+      fr: `
       <div class="cf-quote">Ton cerveau ne travaille pas pour des vœux.<br><strong>Il travaille pour des objectifs précis avec une date.</strong></div>
       <div class="cf-section-title"><span>🎯</span> La méthode SMART</div>
       <div class="cf-step"><div class="cf-step-num">S</div><div class="cf-step-text"><strong>Spécifique.</strong> Pas "économiser de l'argent". Mais "acheter une moto Jakarta 125cc à 600 000F".</div></div>
@@ -5443,19 +5437,43 @@ const CF_ARTICLES = [
         </div>
       </div>
       <div class="cf-tip">Écris tes objectifs. Les personnes qui écrivent leurs objectifs ont 42% plus de chances de les atteindre. Note-les dans la section Épargne de cette app.</div>
+    `,
+      en: `
+      <div class="cf-quote">Your brain doesn't work for wishes.<br><strong>It works for precise goals with a date.</strong></div>
+      <div class="cf-section-title"><span>🎯</span> The SMART method</div>
+      <div class="cf-step"><div class="cf-step-num">S</div><div class="cf-step-text"><strong>Specific.</strong> Not "save money." But "buy a Jakarta 125cc motorbike for 600,000F".</div></div>
+      <div class="cf-step"><div class="cf-step-num">M</div><div class="cf-step-text"><strong>Measurable.</strong> You should be able to say exactly how much you're missing at any time.</div></div>
+      <div class="cf-step"><div class="cf-step-num">A</div><div class="cf-step-text"><strong>Achievable.</strong> 12 months at 50,000F/month = 600,000F. That's doable. 6 months works too if you push.</div></div>
+      <div class="cf-step"><div class="cf-step-num">R</div><div class="cf-step-text"><strong>Realistic.</strong> With your current income, how much can you really set aside? Be honest.</div></div>
+      <div class="cf-step"><div class="cf-step-num">T</div><div class="cf-step-text"><strong>Time-bound.</strong> Set a date. "By December 2025." Not "soon."</div></div>
+      <div class="cf-section-title"><span>📋</span> Your 3 categories of goals</div>
+      <div class="cf-progress-card">
+        <div class="cf-progress-title">Time horizon of your goals</div>
+        <div style="font-size:13px;display:flex;flex-direction:column;gap:8px">
+          <div style="padding:10px 12px;background:rgba(245,158,11,0.1);border-radius:10px"><span style="color:#f59e0b;font-weight:700">Short term (0-3 months)</span>: emergency fund, urgent repair, essential purchase</div>
+          <div style="padding:10px 12px;background:rgba(99,102,241,0.1);border-radius:10px"><span style="color:#818cf8;font-weight:700">Medium term (3-18 months)</span>: motorbike, appliances, training, travel</div>
+          <div style="padding:10px 12px;background:rgba(16,185,129,0.1);border-radius:10px"><span style="color:#34d399;font-weight:700">Long term (1-5 years)</span>: land, house, business, retirement</div>
+        </div>
+      </div>
+      <div class="cf-tip">Write down your goals. People who write down their goals are 42% more likely to achieve them. Note them in the Savings section of this app.</div>
     `
+    }
   },
   {
     id: 'mobile-money',
     icon: '📱',
     color: 'linear-gradient(135deg,#06b6d4,#0891b2)',
     bg: 'rgba(6,182,212,0.12)',
-    tag: 'Tech',
+    tag: { fr:'Tech', en:'Tech' },
     tagColor: '#22d3ee',
-    title: 'Mobile money : l\'utiliser intelligemment',
-    sub: 'Flooz · T-Money · Wave au Togo',
-    preview: 'Le mobile money est l\'outil financier le plus puissant de l\'Afrique de l\'Ouest. Mais mal utilisé, c\'est une machine à dépenser.',
-    content: `
+    title: { fr:'Mobile money : l\'utiliser intelligemment', en:'Mobile money: using it wisely' },
+    sub: { fr:'Flooz · T-Money · Wave au Togo', en:'Flooz · T-Money · Wave in Togo' },
+    preview: {
+      fr:'Le mobile money est l\'outil financier le plus puissant de l\'Afrique de l\'Ouest. Mais mal utilisé, c\'est une machine à dépenser.',
+      en:'Mobile money is West Africa\'s most powerful financial tool. But used poorly, it\'s a spending machine.'
+    },
+    content: {
+      fr: `
       <div class="cf-quote">Au Togo, avoir Flooz ou T-Money, c'est avoir une banque dans sa poche.<br><strong>Le problème, c'est qu'on l'ouvre trop souvent.</strong></div>
       <div class="cf-section-title"><span>✅</span> Les bons usages</div>
       <div class="cf-step"><div class="cf-step-num">✓</div><div class="cf-step-text"><strong>Paiements et transferts.</strong> C'est rapide, sûr, traçable. Toujours mieux que l'argent liquide en poche.</div></div>
@@ -5467,19 +5485,37 @@ const CF_ARTICLES = [
       <div class="cf-warning">Méfie-toi des arnaques : faux SMS "tu as reçu X FCFA", faux appels d'agents. Ton code PIN ne se partage jamais.</div>
       <div class="cf-tip">Astuce : active les notifications de transaction sur ton téléphone. Chaque mouvement d'argent, tu le sais en temps réel.</div>
       <div class="cf-example">Stratégie 2 puces : puce principale pour les dépenses du quotidien (Togocel/Moov), puce secondaire uniquement pour l'épargne. Tu ne touches jamais à la puce épargne spontanément.</div>
+    `,
+      en: `
+      <div class="cf-quote">In Togo, having Flooz or T-Money means having a bank in your pocket.<br><strong>The problem is we open it too often.</strong></div>
+      <div class="cf-section-title"><span>✅</span> Good uses</div>
+      <div class="cf-step"><div class="cf-step-num">✓</div><div class="cf-step-text"><strong>Payments and transfers.</strong> It's fast, safe, traceable. Always better than cash in your pocket.</div></div>
+      <div class="cf-step"><div class="cf-step-num">✓</div><div class="cf-step-text"><strong>Automatic savings.</strong> Create a second number or use a separate SIM just for savings. Don't install the app on your main phone.</div></div>
+      <div class="cf-step"><div class="cf-step-num">✓</div><div class="cf-step-text"><strong>Bill payments.</strong> Electricity (CEET), water (TdE) directly from your phone = no travel, no lines.</div></div>
+      <div class="cf-step"><div class="cf-step-num">✓</div><div class="cf-step-text"><strong>Digital savings circle.</strong> Coordinate your savings circle via mobile money. Everything is tracked, no missed payments.</div></div>
+      <div class="cf-section-title"><span>⚠️</span> Pitfalls to avoid</div>
+      <div class="cf-warning">Don't keep large sums on mobile money. It's convenient, so it's tempting. A lost SIM card = lost money if you don't have the PUK code.</div>
+      <div class="cf-warning">Watch out for scams: fake SMS "you received X FCFA", fake agent calls. Never share your PIN code.</div>
+      <div class="cf-tip">Tip: turn on transaction notifications on your phone. You'll know about every money movement in real time.</div>
+      <div class="cf-example">2-SIM strategy: main SIM for daily spending (Togocel/Moov), secondary SIM just for savings. You never touch the savings SIM on impulse.</div>
     `
+    }
   },
   {
     id: 'finances-famille',
     icon: '👨‍👩‍👧',
     color: 'linear-gradient(135deg,#ec4899,#8b5cf6)',
     bg: 'rgba(236,72,153,0.10)',
-    tag: 'Famille',
+    tag: { fr:'Famille', en:'Family' },
     tagColor: '#f472b6',
-    title: 'Gérer les finances en famille',
-    sub: 'Transparence · Équilibre · Limites',
-    preview: 'L\'argent est la première cause de conflits familiaux. Pas parce qu\'il y en a pas assez. Parce qu\'il n\'y a pas de règles claires.',
-    content: `
+    title: { fr:'Gérer les finances en famille', en:'Managing family finances' },
+    sub: { fr:'Transparence · Équilibre · Limites', en:'Transparency · Balance · Boundaries' },
+    preview: {
+      fr:'L\'argent est la première cause de conflits familiaux. Pas parce qu\'il y en a pas assez. Parce qu\'il n\'y a pas de règles claires.',
+      en:'Money is the top cause of family conflicts. Not because there isn\'t enough. Because there are no clear rules.'
+    },
+    content: {
+      fr: `
       <div class="cf-quote">Une famille sans règles financières communes,<br><strong>c'est un bateau sans capitaine.</strong></div>
       <div class="cf-section-title"><span>🤝</span> Les règles de base du couple</div>
       <div class="cf-step"><div class="cf-step-num">1</div><div class="cf-step-text"><strong>Parlez des revenus.</strong> Pas de secrets. Si tu gagnes 150 000F et ton conjoint 100 000F, les deux savent. Tout part de là.</div></div>
@@ -5491,19 +5527,37 @@ const CF_ARTICLES = [
       <div class="cf-step"><div class="cf-step-num">✓</div><div class="cf-step-text"><strong>Fixe un budget "famille" mensuel.</strong> Un montant précis pour l'aide familiale : 10 000F, 15 000F. Quand c'est épuisé, c'est épuisé.</div></div>
       <div class="cf-step"><div class="cf-step-num">✓</div><div class="cf-step-text"><strong>Dis non sans culpabilité.</strong> Tu ne peux pas aider les autres si tu es toi-même dans le besoin. Aide-toi d'abord.</div></div>
       <div class="cf-tip">La meilleure façon d'aider ta famille sur le long terme, c'est d'être financièrement stable toi-même. Un noyé ne peut pas sauver un autre noyé.</div>
+    `,
+      en: `
+      <div class="cf-quote">A family without shared financial rules<br><strong>is a boat without a captain.</strong></div>
+      <div class="cf-section-title"><span>🤝</span> Basic rules for couples</div>
+      <div class="cf-step"><div class="cf-step-num">1</div><div class="cf-step-text"><strong>Talk about income.</strong> No secrets. If you earn 150,000F and your partner 100,000F, both know. Everything starts there.</div></div>
+      <div class="cf-step"><div class="cf-step-num">2</div><div class="cf-step-text"><strong>Decide shared expenses together.</strong> Rent, food, children's school. These are decided together, never solo.</div></div>
+      <div class="cf-step"><div class="cf-step-num">3</div><div class="cf-step-text"><strong>Each keeps personal money.</strong> Even as a couple, every adult has the right to a personal budget without having to justify it.</div></div>
+      <div class="cf-step"><div class="cf-step-num">4</div><div class="cf-step-text"><strong>Monthly finance meeting.</strong> 30 minutes a month to review together. What went well? What went off track?</div></div>
+      <div class="cf-section-title"><span>👨‍👩‍👧</span> The extended family</div>
+      <p>In Togo, family solidarity is a strong value. But it can also <strong>drain an entire budget.</strong></p>
+      <div class="cf-step"><div class="cf-step-num">✓</div><div class="cf-step-text"><strong>Set a monthly "family" budget.</strong> A specific amount for family support: 10,000F, 15,000F. When it's gone, it's gone.</div></div>
+      <div class="cf-step"><div class="cf-step-num">✓</div><div class="cf-step-text"><strong>Say no without guilt.</strong> You can't help others if you're in need yourself. Help yourself first.</div></div>
+      <div class="cf-tip">The best way to help your family long-term is to be financially stable yourself. A drowning person can't save another drowning person.</div>
     `
+    }
   },
   {
     id: 'investir-togo',
     icon: '🚀',
     color: 'linear-gradient(135deg,#10b981,#6366f1)',
     bg: 'rgba(16,185,129,0.10)',
-    tag: 'Croissance',
+    tag: { fr:'Croissance', en:'Growth' },
     tagColor: '#34d399',
-    title: 'Investir avec un petit capital au Togo',
-    sub: 'Options concrètes dès 25 000F',
-    preview: 'On croit que pour investir, il faut être riche. Faux. Il faut surtout commencer. Et le Togo offre plus d\'options qu\'on ne croit.',
-    content: `
+    title: { fr:'Investir avec un petit capital au Togo', en:'Investing with a small capital in Togo' },
+    sub: { fr:'Options concrètes dès 25 000F', en:'Concrete options starting at 25,000F' },
+    preview: {
+      fr:'On croit que pour investir, il faut être riche. Faux. Il faut surtout commencer. Et le Togo offre plus d\'options qu\'on ne croit.',
+      en:'People think you need to be rich to invest. Wrong. You mostly need to start. And Togo offers more options than you\'d think.'
+    },
+    content: {
+      fr: `
       <div class="cf-quote">Le meilleur moment pour investir, c'était hier.<br><strong>Le deuxième meilleur moment, c'est maintenant.</strong></div>
       <div class="cf-section-title"><span>💡</span> Avant d'investir : les 3 conditions</div>
       <div class="cf-step"><div class="cf-step-num">1</div><div class="cf-step-text"><strong>Fonds d'urgence constitué.</strong> Sans ça, le premier imprévu détruira ton investissement.</div></div>
@@ -5520,19 +5574,42 @@ const CF_ARTICLES = [
       </div>
       <div class="cf-tip">Le meilleur investissement reste : investir en toi-même. Une formation de 30 000F qui te permet d'augmenter ton revenu de 20 000F/mois = rentabilisée en 1,5 mois.</div>
       <div class="cf-warning">Méfie-toi des systèmes "double ton argent en 2 semaines". Au Togo comme partout, si c'est trop beau pour être vrai, c'est une arnaque.</div>
+    `,
+      en: `
+      <div class="cf-quote">The best time to invest was yesterday.<br><strong>The second best time is now.</strong></div>
+      <div class="cf-section-title"><span>💡</span> Before investing: the 3 conditions</div>
+      <div class="cf-step"><div class="cf-step-num">1</div><div class="cf-step-text"><strong>Emergency fund built up.</strong> Without it, the first surprise will wipe out your investment.</div></div>
+      <div class="cf-step"><div class="cf-step-num">2</div><div class="cf-step-text"><strong>Consumer debts paid off.</strong> Investing at an 8% return while a debt costs you 15% means losing money.</div></div>
+      <div class="cf-step"><div class="cf-step-num">3</div><div class="cf-step-text"><strong>You won't need this money in the next 12 months.</strong> A short-term liquid investment quickly turns into a loss.</div></div>
+      <div class="cf-section-title"><span>🇹🇬</span> Concrete options in Togo</div>
+      <div class="cf-progress-card">
+        <div class="cf-progress-title">Where to invest based on your available capital</div>
+        <div style="font-size:13px;display:flex;flex-direction:column;gap:8px">
+          <div style="padding:10px 12px;background:rgba(16,185,129,0.1);border-radius:10px"><span style="color:#34d399;font-weight:700">25,000 – 100,000F</span>: Savings circle, BTCI/UTB savings account, stock restock for resale</div>
+          <div style="padding:10px 12px;background:rgba(99,102,241,0.1);border-radius:10px"><span style="color:#818cf8;font-weight:700">100,000 – 500,000F</span>: Micro-business, product stock, monetizable training</div>
+          <div style="padding:10px 12px;background:rgba(245,158,11,0.1);border-radius:10px"><span style="color:#f59e0b;font-weight:700">500,000F and above</span>: Land on the outskirts of Lomé, a shop, a food franchise</div>
+        </div>
+      </div>
+      <div class="cf-tip">The best investment remains: investing in yourself. A 30,000F training that boosts your income by 20,000F/month pays for itself in 1.5 months.</div>
+      <div class="cf-warning">Beware of "double your money in 2 weeks" schemes. In Togo as everywhere, if it's too good to be true, it's a scam.</div>
     `
+    }
   },
   {
     id: 'erreurs-financieres',
     icon: '📉',
     color: 'linear-gradient(135deg,#f87171,#f59e0b)',
     bg: 'rgba(248,113,113,0.10)',
-    tag: 'Attention',
+    tag: { fr:'Attention', en:'Caution' },
     tagColor: '#fca5a5',
-    title: 'Les erreurs financières à éviter absolument',
-    sub: 'Les 8 pièges les plus courants',
-    preview: 'Ces erreurs ne sont pas des fautes morales. Ce sont des habitudes apprises. Et tout ce qui s\'apprend peut se désapprendre.',
-    content: `
+    title: { fr:'Les erreurs financières à éviter absolument', en:'Financial mistakes to absolutely avoid' },
+    sub: { fr:'Les 8 pièges les plus courants', en:'The 8 most common traps' },
+    preview: {
+      fr:'Ces erreurs ne sont pas des fautes morales. Ce sont des habitudes apprises. Et tout ce qui s\'apprend peut se désapprendre.',
+      en:'These mistakes aren\'t moral failings. They\'re learned habits. And anything learned can be unlearned.'
+    },
+    content: {
+      fr: `
       <div class="cf-quote">Les erreurs financières ne détruisent pas ta vie en une fois.<br><strong>Elles le font doucement, mois après mois, sans qu'on s'en rende compte.</strong></div>
       <div class="cf-section-title"><span>🚫</span> Les 8 erreurs fatales</div>
       <div class="cf-step"><div class="cf-step-num">1</div><div class="cf-step-text"><strong>Vivre sans budget.</strong> Si tu ne sais pas exactement où part ton argent, il part tout seul. Un budget n'est pas une prison, c'est une carte.</div></div>
@@ -5547,17 +5624,42 @@ const CF_ARTICLES = [
         La différence entre une personne financièrement stable et une personne qui galère n'est pas le salaire.<br>
         <strong>C'est ce qu'elle fait avec ce salaire.</strong>
       </div>
+    `,
+      en: `
+      <div class="cf-quote">Financial mistakes don't destroy your life all at once.<br><strong>They do it slowly, month after month, without you noticing.</strong></div>
+      <div class="cf-section-title"><span>🚫</span> The 8 fatal mistakes</div>
+      <div class="cf-step"><div class="cf-step-num">1</div><div class="cf-step-text"><strong>Living without a budget.</strong> If you don't know exactly where your money goes, it goes on its own. A budget isn't a prison, it's a map.</div></div>
+      <div class="cf-step"><div class="cf-step-num">2</div><div class="cf-step-text"><strong>Saving what's left over.</strong> There's never anything left if you don't save first. Remember: income - savings = allowed spending.</div></div>
+      <div class="cf-step"><div class="cf-step-num">3</div><div class="cf-step-text"><strong>Borrowing to consume.</strong> Eating, dressing, partying with money you don't have. Every franc spent on credit actually costs 1.2F to 1.5F.</div></div>
+      <div class="cf-step"><div class="cf-step-num">4</div><div class="cf-step-text"><strong>Keeping too much cash at home.</strong> Money at home doesn't work for you and disappears easily. Use a bank or mobile money.</div></div>
+      <div class="cf-step"><div class="cf-step-num">5</div><div class="cf-step-text"><strong>Not investing in training.</strong> The cost of training is tiny compared to the extra income it generates over 10 years.</div></div>
+      <div class="cf-step"><div class="cf-step-num">6</div><div class="cf-step-text"><strong>Chasing others' status spending.</strong> Buying what you can't afford to impress people who don't care.</div></div>
+      <div class="cf-step"><div class="cf-step-num">7</div><div class="cf-step-text"><strong>Ignoring small expenses.</strong> 500F here, 1,000F there. These "small" expenses often add up to 30% of the total budget.</div></div>
+      <div class="cf-step"><div class="cf-step-num">8</div><div class="cf-step-text"><strong>Waiting for the "right moment" to start.</strong> There is no right moment. There's now, or never.</div></div>
+      <div class="cf-quote" style="margin-top:20px">
+        The difference between someone financially stable and someone struggling isn't the salary.<br>
+        <strong>It's what they do with that salary.</strong>
+      </div>
     `
+    }
   }
 ];
 
 let cfCurrentId = null;
 
+// Retourne le champ bilingue d'un article dans la langue courante,
+// avec repli sur le français si la traduction manque pour une langue.
+function cfL(field) {
+  if (typeof field === 'string') return field; // compat anciens champs non bilingues
+  const lang = (typeof currentLang !== 'undefined' && currentLang === 'en') ? 'en' : 'fr';
+  return field[lang] || field.fr || '';
+}
+
 function renderCfList(articles) {
   const grid = document.getElementById('cfGrid');
   if (!grid) return;
   if (!articles.length) {
-    grid.innerHTML = '<div style="text-align:center;padding:40px;color:var(--muted);font-size:14px">Aucun résultat trouvé</div>';
+    grid.innerHTML = `<div style="text-align:center;padding:40px;color:var(--muted);font-size:14px">${t('cf_no_results')}</div>`;
     return;
   }
   grid.innerHTML = articles.map(a => `
@@ -5565,15 +5667,15 @@ function renderCfList(articles) {
       <div class="cf-card-inner">
         <div class="cf-icon" style="background:${a.bg}">${a.icon}</div>
         <div class="cf-card-body">
-          <div class="cf-card-title">${a.title}</div>
+          <div class="cf-card-title">${cfL(a.title)}</div>
           <div class="cf-card-sub">
-            <span style="display:inline-block;padding:2px 8px;border-radius:20px;background:${a.bg};color:${a.tagColor};font-size:10px;font-weight:700">${a.tag}</span>
-            <span>${a.sub}</span>
+            <span style="display:inline-block;padding:2px 8px;border-radius:20px;background:${a.bg};color:${a.tagColor};font-size:10px;font-weight:700">${cfL(a.tag)}</span>
+            <span>${cfL(a.sub)}</span>
           </div>
         </div>
         <i class="fas fa-chevron-right cf-card-arrow"></i>
       </div>
-      <div class="cf-card-preview">${a.preview}</div>
+      <div class="cf-card-preview">${cfL(a.preview)}</div>
     </div>
   `).join('');
 }
@@ -5589,16 +5691,16 @@ window.cfOpenArticle = function(id) {
     detail.innerHTML = `
       <div class="cf-detail active">
         <div class="cf-detail-back" onclick="cfBackToList()">
-          <i class="fas fa-arrow-left"></i> Retour aux conseils
+          <i class="fas fa-arrow-left"></i> ${t('cf_back')}
         </div>
         <div class="cf-detail-icon">${a.icon}</div>
-        <div class="cf-detail-title">${a.title}</div>
+        <div class="cf-detail-title">${cfL(a.title)}</div>
         <div class="cf-detail-meta">
-          <span style="display:inline-block;padding:3px 10px;border-radius:20px;background:${a.bg};color:${a.tagColor};font-size:11px;font-weight:700">${a.tag}</span>
+          <span style="display:inline-block;padding:3px 10px;border-radius:20px;background:${a.bg};color:${a.tagColor};font-size:11px;font-weight:700">${cfL(a.tag)}</span>
           <span style="color:var(--muted)">·</span>
-          <span style="color:var(--muted)">${a.sub}</span>
+          <span style="color:var(--muted)">${cfL(a.sub)}</span>
         </div>
-        <div class="cf-detail-body">${a.content}</div>
+        <div class="cf-detail-body">${cfL(a.content)}</div>
       </div>
     `;
     detail.style.display = 'block';
@@ -5621,9 +5723,9 @@ window.cfSearch = function(q) {
   const term = q.toLowerCase().trim();
   if (!term) { renderCfList(CF_ARTICLES); return; }
   const filtered = CF_ARTICLES.filter(a =>
-    a.title.toLowerCase().includes(term) ||
-    a.preview.toLowerCase().includes(term) ||
-    a.tag.toLowerCase().includes(term)
+    cfL(a.title).toLowerCase().includes(term) ||
+    cfL(a.preview).toLowerCase().includes(term) ||
+    cfL(a.tag).toLowerCase().includes(term)
   );
   renderCfList(filtered);
 };
@@ -5633,7 +5735,7 @@ const _origSwitchTabCf = window.switchTab;
 window.switchTab = function(tab) {
   _origSwitchTabCf(tab);
   // Labels/icons sync for conseils
-  const _labelsExt = { conseils:'Conseils Financiers' };
+  const _labelsExt = { conseils: t('cf_title') };
   const _iconsExt  = { conseils:'fa-graduation-cap' };
   const chip  = document.getElementById('activeTabName');
   const chipI = document.getElementById('activeTabChip')?.querySelector('i');
@@ -5831,7 +5933,7 @@ document.addEventListener('DOMContentLoaded', () => {
       <img id="profileAvatarImg" style="display:none;width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;border-radius:50%;" />
       <div class="edit-pencil"><i class="fas fa-pencil"></i></div>
     </div>
-    <div class="profile-name" id="profileNameBig">Utilisateur</div>
+    <div class="profile-name" id="profileNameBig" data-i18n="prof_user_default">Utilisateur</div>
     <div class="profile-phone" id="profilePhoneBig">—</div>
     <div class="premium-badge" id="premiumBadge"><i class="fas fa-crown"></i> PREMIUM</div>
   </div>
@@ -5839,43 +5941,43 @@ document.addEventListener('DOMContentLoaded', () => {
   <div class="profile-menu">
     <div class="profile-menu-item" onclick="openPremiumModal()">
       <div class="profile-menu-icon pmi-premium" id="premiumMenuIcon"><i class="fas fa-crown"></i></div>
-      <div class="profile-menu-label" id="premiumMenuLabel">Passer Premium</div>
+      <div class="profile-menu-label" id="premiumMenuLabel" data-i18n="prof_go_premium">Passer Premium</div>
       <i class="fas fa-chevron-right profile-menu-chev"></i>
     </div>
     <div class="profile-menu-item" onclick="openProfileEdit()">
       <div class="profile-menu-icon pmi-info"><i class="fas fa-user"></i></div>
-      <div class="profile-menu-label">Informations personnelles</div>
+      <div class="profile-menu-label" data-i18n="prof_personal_info">Informations personnelles</div>
       <i class="fas fa-chevron-right profile-menu-chev"></i>
     </div>
     <div class="profile-menu-item" onclick="openSettings()">
       <div class="profile-menu-icon pmi-params"><i class="fas fa-gear"></i></div>
-      <div class="profile-menu-label">Paramètres</div>
+      <div class="profile-menu-label" data-i18n="prof_settings">Paramètres</div>
       <i class="fas fa-chevron-right profile-menu-chev"></i>
     </div>
     <div class="profile-menu-item" onclick="openSecurity()">
       <div class="profile-menu-icon pmi-secu"><i class="fas fa-lock"></i></div>
-      <div class="profile-menu-label">Sécurité</div>
+      <div class="profile-menu-label" data-i18n="prof_security">Sécurité</div>
       <i class="fas fa-chevron-right profile-menu-chev"></i>
     </div>
     <div class="profile-menu-item" onclick="openBackup()">
       <div class="profile-menu-icon pmi-sync"><i class="fas fa-cloud"></i></div>
-      <div class="profile-menu-label">Sauvegarde et synchronisation</div>
+      <div class="profile-menu-label" data-i18n="prof_backup">Sauvegarde et synchronisation</div>
       <i class="fas fa-chevron-right profile-menu-chev"></i>
     </div>
     <div class="profile-menu-item" onclick="openHelp()">
       <div class="profile-menu-icon pmi-help"><i class="fas fa-circle-question"></i></div>
-      <div class="profile-menu-label">Aide et support</div>
+      <div class="profile-menu-label" data-i18n="prof_help">Aide et support</div>
       <i class="fas fa-chevron-right profile-menu-chev"></i>
     </div>
     <div class="profile-menu-item" onclick="openAbout()">
       <div class="profile-menu-icon pmi-about"><i class="fas fa-circle-info"></i></div>
-      <div class="profile-menu-label">À propos</div>
+      <div class="profile-menu-label" data-i18n="prof_about">À propos</div>
       <i class="fas fa-chevron-right profile-menu-chev"></i>
     </div>
   </div>
 
   <button class="btn-logout-profile" onclick="doLogout()">
-    <i class="fas fa-right-from-bracket"></i> Déconnexion
+    <i class="fas fa-right-from-bracket"></i> <span data-i18n="prof_logout">Déconnexion</span>
   </button>
 </div>
 
@@ -5900,7 +6002,6 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="premium-feature-item"><i class="fas fa-check-circle"></i> Objectifs financiers illimités</div>
         <div class="premium-feature-item"><i class="fas fa-check-circle"></i> Export PDF / Excel des rapports</div>
         <div class="premium-feature-item"><i class="fas fa-check-circle"></i> Sauvegarde et synchronisation multi-appareils</div>
-        <div class="premium-feature-item"><i class="fas fa-check-circle"></i> Accès complet à la Bibliothèque Financière</div>
       </div>
       <button class="aet-btn-primary" id="premiumSubscribeBtn" onclick="requestPremiumActivation()" style="width:100%">
         <i class="fas fa-crown"></i> S'abonner — 500 FCFA/mois
@@ -9339,13 +9440,13 @@ window.CM_DEBUG = CM;
   const SB_ICONS = {
     dashboard:'fa-house', revenus:'fa-arrow-down-to-bracket', depenses:'fa-arrow-up-from-bracket',
     epargne:'fa-piggy-bank', budget:'fa-bullseye', salaire:'fa-briefcase', historique:'fa-clock-rotate-left',
-    notes:'fa-calendar-pen', plangestion:'fa-map-signs', bibliotheque:'fa-book-open', conseils:'fa-graduation-cap',
+    notes:'fa-calendar-pen', plangestion:'fa-map-signs', conseils:'fa-graduation-cap',
     commerce:'fa-store', objectifs:'fa-flag', tontines:'fa-people-group', profil:'fa-gear'
   };
   const SB_LABELS = {
     dashboard:'Accueil', revenus:'Revenus', depenses:'Dépenses', epargne:'Épargne', budget:'Budget',
     salaire:'Salaire', historique:'Historique', notes:'Notes', plangestion:'Plan de Gestion',
-    bibliotheque:'Bibliothèque', conseils:'Conseils', commerce:'Commerce', objectifs:'Objectifs',
+    conseils:'Conseils', commerce:'Commerce', objectifs:'Objectifs',
     tontines:'Tontines', profil:'Paramètres'
   };
 

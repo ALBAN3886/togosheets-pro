@@ -1656,6 +1656,7 @@ const LANGS = {
     delete_all_contact_support:'Pour des raisons de sécurité, contactez le support pour la suppression complète.',
     fb_whatsapp_greeting_with:'Bonjour AET MonBudget, voici ma suggestion/bug :',
     fb_whatsapp_greeting_empty:'Bonjour AET MonBudget,',
+    fp_prompt_title:'Déverrouiller AET MonBudget',
   },
   en: {
     code:'en', name:'English', flag:'🇬🇧', dir:'ltr', font:'Syne',
@@ -1908,6 +1909,7 @@ const LANGS = {
     delete_all_contact_support:'For security reasons, please contact support for full deletion.',
     fb_whatsapp_greeting_with:'Hello AET MonBudget, here is my suggestion/bug report:',
     fb_whatsapp_greeting_empty:'Hello AET MonBudget,',
+    fp_prompt_title:'Unlock AET MonBudget',
   },
   ar: {
     code:'ar', name:'العربية', flag:'🇲🇦', dir:'rtl', font:'Syne',
@@ -7018,6 +7020,7 @@ window.toggleSet = (el, key) => {
       el.classList.remove('on');
       userSettings.fingerprint = false;
       localStorage.removeItem('aet_fp_credential');
+      localStorage.removeItem('aet_fp_native');
       saveSettingsLocal();
       toast(t('fp_deactivated'),'info');
     }
@@ -7029,13 +7032,31 @@ window.toggleSet = (el, key) => {
   toast(`${key} : ${userSettings[key]?t('set_generic_activated'):t('set_generic_deactivated')}`,'info');
 };
 
-// ──────── EMPREINTE DIGITALE (WebAuthn) ────────
+// ──────── EMPREINTE DIGITALE ────────
+// Deux chemins possibles :
+// 1) Dans l'APK : window.AndroidBiometric est injecté par MainActivity.java
+//    et utilise le vrai BiometricPrompt natif Android (empreinte/visage).
+// 2) Dans Chrome (ou tout navigateur) : on utilise WebAuthn comme avant.
+function hasNativeBiometric() {
+  return !!(window.AndroidBiometric && typeof window.AndroidBiometric.isAvailable === 'function');
+}
+
 async function registerFingerprint() {
+  if (hasNativeBiometric()) {
+    // Dans l'APK : pas d'« enregistrement » séparé nécessaire — Android
+    // gère déjà ses propres empreintes enregistrées au niveau système.
+    // On vérifie juste qu'un capteur configuré existe, puis on marque
+    // l'empreinte comme activée pour cette app.
+    if (!window.AndroidBiometric.isAvailable()) { toast(t('fp_no_sensor'),'error'); return false; }
+    localStorage.setItem('aet_fp_native', '1');
+    return true;
+  }
+
   if (!window.PublicKeyCredential) {
-    // La WebView native de l'APK Android ne supporte pas l'API WebAuthn
-    // (contrairement à Chrome). C'est une limitation de la WebView, pas
-    // un problème de configuration côté utilisateur — on l'explique
-    // clairement et on oriente vers une alternative utilisable partout.
+    // La WebView native de l'APK (sans pont biométrique) ne supporte pas
+    // l'API WebAuthn (contrairement à Chrome). C'est une limitation de
+    // la WebView, pas un problème de configuration côté utilisateur — on
+    // l'explique clairement et on oriente vers une alternative utilisable.
     toast(t('fp_not_supported_webview'), 'error');
     return false;
   }
@@ -7068,6 +7089,22 @@ async function registerFingerprint() {
 }
 
 window.useFingerprintUnlock = async () => {
+  if (hasNativeBiometric()) {
+    if (!window.AndroidBiometric.isAvailable()) { toast(t('fp_not_supported_device'),'error'); return; }
+    // Le résultat arrive de façon asynchrone via le callback natif
+    // window.onBiometricResult (appelé depuis MainActivity.java).
+    window.onBiometricResult = function(success, message){
+      if (success) {
+        document.getElementById('pinOverlay').classList.remove('show');
+        toast(t('fp_unlocked'),'success');
+      } else {
+        toast(t('fp_not_recognized'),'error');
+      }
+    };
+    window.AndroidBiometric.authenticate(t('fp_prompt_title'));
+    return;
+  }
+
   if (!window.PublicKeyCredential) { toast(t('fp_not_supported_device'),'error'); return; }
   const credId = localStorage.getItem('aet_fp_credential');
   if (!credId) { toast(t('fp_not_configured_short'),'error'); return; }
@@ -7235,7 +7272,9 @@ async function loadSessions() {
 // ──────── PIN LOCK ────────
 window.checkPinAtStart = () => {
   loadSettingsFromLocal();
-  const hasCred = !!localStorage.getItem('aet_fp_credential');
+  // hasCred est vrai soit avec une credential WebAuthn (Chrome), soit
+  // avec le flag natif posé par le pont AndroidBiometric (APK).
+  const hasCred = !!localStorage.getItem('aet_fp_credential') || !!localStorage.getItem('aet_fp_native');
   const fpOnly = userSettings.fingerprint && hasCred && !userSettings.pinEnabled;
   const pinOk  = userSettings.pinEnabled && userSettings.pin && userSettings.pin.length === 4;
 

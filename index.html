@@ -1587,6 +1587,18 @@ const LANGS = {
     cm_exit_session:'Changer de session',
     cm_msg_permission_denied:'Action non autorisée pour votre rôle',
     cm_manage_employees:'Gérer les employés',
+    cm_doc_receipt_title:'Reçu', cm_doc_quote_title:'Devis',
+    cm_doc_receipt_sale:'Reçu de vente', cm_doc_receipt_purchase:'Reçu d\'achat',
+    cm_doc_share:'Partager', cm_doc_print:'Imprimer',
+    cm_doc_no:'N°', cm_doc_date:'Date', cm_doc_client:'Client', cm_doc_supplier:'Fournisseur',
+    cm_doc_article:'Article', cm_doc_qty:'Quantité', cm_doc_unit_price:'Prix unitaire', cm_doc_total:'Total',
+    cm_doc_thanks:'Merci de votre confiance !',
+    cm_doc_valid_until:'Valable jusqu\'au', cm_doc_quote_disclaimer:'Ce devis n\'est pas une facture et n\'affecte pas le stock.',
+    cm_new_quote:'Nouveau devis', cm_quote_client:'Nom du client', cm_quote_client_ph:'ex: Ami Koffi',
+    cm_quote_article:'Article *', cm_quote_qty:'Quantité', cm_quote_price:'Prix unitaire proposé',
+    cm_quote_validity:'Valable jusqu\'au (optionnel)', cm_quote_generate:'Générer le devis',
+    cm_msg_quote_created:'Devis créé',
+    cm_history_receipts:'Reçus & devis', cm_view_receipt:'Voir le reçu', cm_no_receipt:'Aucun reçu pour ce mouvement',
     // ══ Module Objectifs ══
     goal_title:'Objectifs', goal_tab_active:'Actifs', goal_tab_done:'Terminés',
     goal_none_active:'Aucun objectif actif', goal_none_done:'Aucun objectif terminé',
@@ -1866,6 +1878,18 @@ const LANGS = {
     cm_exit_session:'Switch session',
     cm_msg_permission_denied:'Action not allowed for your role',
     cm_manage_employees:'Manage employees',
+    cm_doc_receipt_title:'Receipt', cm_doc_quote_title:'Quote',
+    cm_doc_receipt_sale:'Sales receipt', cm_doc_receipt_purchase:'Purchase receipt',
+    cm_doc_share:'Share', cm_doc_print:'Print',
+    cm_doc_no:'No.', cm_doc_date:'Date', cm_doc_client:'Customer', cm_doc_supplier:'Supplier',
+    cm_doc_article:'Item', cm_doc_qty:'Quantity', cm_doc_unit_price:'Unit price', cm_doc_total:'Total',
+    cm_doc_thanks:'Thank you for your business!',
+    cm_doc_valid_until:'Valid until', cm_doc_quote_disclaimer:'This quote is not an invoice and does not affect stock.',
+    cm_new_quote:'New quote', cm_quote_client:'Customer name', cm_quote_client_ph:'e.g.: John Smith',
+    cm_quote_article:'Item *', cm_quote_qty:'Quantity', cm_quote_price:'Proposed unit price',
+    cm_quote_validity:'Valid until (optional)', cm_quote_generate:'Generate quote',
+    cm_msg_quote_created:'Quote created',
+    cm_history_receipts:'Receipts & quotes', cm_view_receipt:'View receipt', cm_no_receipt:'No receipt for this transaction',
     // ══ Goals module ══
     goal_title:'Goals', goal_tab_active:'Active', goal_tab_done:'Completed',
     goal_none_active:'No active goals', goal_none_done:'No completed goals',
@@ -8013,17 +8037,30 @@ if ('serviceWorker' in navigator) {
 
 /* ── Étiquettes imprimables ── */
 #cmPrintLabels{display:none}
+#cmDocPrintSheet{display:none}
 @media print{
   body *{ visibility:hidden; }
   #cmPrintLabels, #cmPrintLabels *{ visibility:visible; }
   #cmPrintLabels{ display:block !important; position:absolute; top:0; left:0; width:100%; }
   .cm-label{ break-inside:avoid; }
+  #cmDocPrintSheet, #cmDocPrintSheet *{ visibility:visible; }
+  #cmDocPrintSheet{ display:block !important; position:absolute; top:0; left:0; width:100%; }
 }
 .cm-label-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:10px}
 .cm-label{border:1px dashed #999;border-radius:8px;padding:8px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:4px}
 .cm-label img,.cm-label canvas{width:90px;height:90px}
 .cm-label .lbl-name{font-size:11px;font-weight:700;color:#000}
 .cm-label .lbl-price{font-size:12px;font-weight:800;color:#000}
+/* ── Reçu / Devis ── */
+.cm-doc-preview, .cm-doc-sheet{font-family:'DM Mono',monospace;background:#fff;color:#111;padding:20px;border-radius:10px;border:1px solid #e2e8f0}
+.cm-doc-sheet{max-width:380px;margin:20px auto;border:1px dashed #999}
+.cm-doc-head{text-align:center;border-bottom:2px dashed #999;padding-bottom:10px;margin-bottom:10px}
+.cm-doc-shop{font-size:15px;font-weight:800}
+.cm-doc-type{font-size:12px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-top:2px}
+.cm-doc-num{font-size:11px;color:#666;margin-top:4px}
+.cm-doc-row{display:flex;justify-content:space-between;font-size:12.5px;padding:4px 0}
+.cm-doc-row.cm-doc-total{border-top:2px dashed #999;margin-top:8px;padding-top:8px;font-weight:800;font-size:14px}
+.cm-doc-foot{text-align:center;font-size:10.5px;color:#666;margin-top:14px;border-top:1px dashed #ccc;padding-top:8px}
 .cm-label .lbl-shop{font-size:9px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.3px}
 
 .cm-mvt-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;}
@@ -8223,6 +8260,9 @@ if ('serviceWorker' in navigator) {
     </button>
     <button style="width:100%;padding:14px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:12px;font-weight:800;cursor:pointer;margin-top:8px;" onclick="cmOpenMvtModal()">
       <i class="fas fa-plus"></i> <span data-i18n="cm_new_mvt">Nouveau mouvement</span>
+    </button>
+    <button data-cm-role-restrict="edit_article" style="width:100%;padding:14px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:12px;font-weight:800;cursor:pointer;margin-top:8px;" onclick="cmOpenQuoteModal()">
+      <i class="fas fa-file-invoice"></i> <span data-i18n="cm_new_quote">Nouveau devis</span>
     </button>
   </div>
 
@@ -8427,6 +8467,53 @@ if ('serviceWorker' in navigator) {
   </div>
 </div>
 
+<!-- ═══ Modal : Nouveau devis ═══ -->
+<div class="modal-overlay" id="cmQuoteModal">
+  <div class="modal-box" style="max-width:420px">
+    <div class="modal-header">
+      <h3><i class="fas fa-file-invoice" style="color:#10b981;margin-right:8px"></i><span data-i18n="cm_new_quote">Nouveau devis</span></h3>
+      <button class="modal-close" onclick="closeModal('cmQuoteModal')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <label class="cm-modal-label" data-i18n="cm_quote_article">Article *</label>
+      <div class="cm-search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" id="cmQuoteArtSearch" data-i18n="cm_search_article_short" placeholder="Rechercher article…" oninput="cmRenderQuotePicker()">
+      </div>
+      <div class="cm-art-picker" id="cmQuoteArtPicker"></div>
+
+      <div class="cm-modal-row">
+        <div>
+          <label class="cm-modal-label" data-i18n="cm_quote_qty">Quantité</label>
+          <input type="number" id="cmQuoteQte" class="cm-modal-input" step="0.01" min="0.01" value="1" oninput="cmUpdateQuoteTotal()">
+        </div>
+        <div>
+          <label class="cm-modal-label" data-i18n="cm_quote_price">Prix unitaire proposé</label>
+          <input type="number" id="cmQuotePrix" class="cm-modal-input" step="0.01" min="0" oninput="cmUpdateQuoteTotal()">
+        </div>
+      </div>
+
+      <div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:12px;padding:12px;margin-bottom:10px;text-align:center;">
+        <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.6px" data-i18n="cm_mvt_total">Total</div>
+        <div id="cmQuoteTotal" style="font-size:22px;font-weight:900;color:#10b981;margin-top:2px;">0</div>
+      </div>
+
+      <label class="cm-modal-label" data-i18n="cm_quote_client">Nom du client</label>
+      <input type="text" id="cmQuoteClient" class="cm-modal-input" data-i18n="cm_quote_client_ph" placeholder="ex: Ami Koffi">
+
+      <label class="cm-modal-label" data-i18n="cm_quote_validity">Valable jusqu'au (optionnel)</label>
+      <input type="date" id="cmQuoteValidUntil" class="cm-modal-input">
+
+      <label class="cm-modal-label" data-i18n="cm_mvt_note">Note (optionnel)</label>
+      <textarea id="cmQuoteNote" class="cm-modal-input" rows="2" placeholder="—"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('cmQuoteModal')" data-i18n="btn_cancel">Annuler</button>
+      <button class="btn-save" onclick="cmGenerateQuote()" style="background:linear-gradient(135deg,#10b981,#059669);" data-i18n="cm_quote_generate">Générer le devis</button>
+    </div>
+  </div>
+</div>
+
 <!-- ═══ Modal QR Code d'un article ═══ -->
 <div class="modal-overlay" id="cmQrModal">
   <div class="modal-content" style="max-width:340px">
@@ -8503,6 +8590,27 @@ if ('serviceWorker' in navigator) {
     </div>
   </div>
 </div>
+
+<!-- ═══ Modal : Reçu / Devis ═══ -->
+<div class="modal-overlay" id="cmDocModal">
+  <div class="modal-box" style="max-width:380px">
+    <div class="modal-header">
+      <h3><i class="fas fa-receipt" style="color:#2563eb;margin-right:8px"></i><span id="cmDocModalTitle">Reçu</span></h3>
+      <button class="modal-close" onclick="closeModal('cmDocModal')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div id="cmDocPreview" class="cm-doc-preview"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('cmDocModal')" data-i18n="btn_close">Fermer</button>
+      <button class="btn-save" onclick="cmShareCurrentDoc()" style="background:linear-gradient(135deg,#10b981,#059669);"><i class="fas fa-share-nodes"></i> <span data-i18n="cm_doc_share">Partager</span></button>
+      <button class="btn-save" onclick="cmPrintCurrentDoc()" style="background:linear-gradient(135deg,#2563eb,#3b82f6);"><i class="fas fa-print"></i> <span data-i18n="cm_doc_print">Imprimer</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Feuille d'impression dédiée au reçu/devis (cachée à l'écran) ═══ -->
+<div id="cmDocPrintSheet"></div>
 
 <!-- ═══ Scanner caméra (plein écran) ═══ -->
 <div id="cmScanModal">
@@ -9395,9 +9503,121 @@ window.cmRenderArticles = function(){
   }).join('');
 };
 
-/* ── Modal Article ── */
+/* ── Reçus & Devis ──
+   Un mouvement (vente ou achat) génère un reçu numéroté (REC-0001...).
+   Un devis (DEV-0001...) est un document à part qui ne touche jamais le
+   stock — c'est juste une proposition de prix à un client. */
+function cmNextDocNumber(prefix){
+  const shop = cmGetShop();
+  if(!shop) return prefix + '-0001';
+  if(!shop.docCounters) shop.docCounters = {};
+  const n = (shop.docCounters[prefix]||0) + 1;
+  shop.docCounters[prefix] = n;
+  return prefix + '-' + String(n).padStart(4,'0');
+}
 
-// ══ QR CODE : génération unique, affichage, impression ══
+// Construit l'objet reçu attaché à un mouvement déjà enregistré.
+function cmBuildReceipt(mvt, article){
+  const shop = cmGetShop();
+  return {
+    docNumber: mvt.receiptNum,
+    type: mvt.type, // 'vente' | 'achat'
+    shopName: shop ? shop.name : '',
+    articleName: mvt.artName,
+    unit: article ? (article.unit||'') : '',
+    qte: mvt.qte, prix: mvt.prix, total: mvt.total,
+    person: mvt.person, note: mvt.note, date: mvt.date,
+    createdAt: mvt.createdAt,
+  };
+}
+
+// Construit un devis autonome (ne référence pas un mouvement réel).
+function cmBuildQuote({ articleName, unit, qte, prix, person, validUntil, note }){
+  const shop = cmGetShop();
+  return {
+    docNumber: cmNextDocNumber('DEV'),
+    shopName: shop ? shop.name : '',
+    articleName, unit, qte, prix, total: qte*prix,
+    person, validUntil, note,
+    createdAt: Date.now(),
+  };
+}
+
+// Document actuellement affiché dans cmDocModal (reçu ou devis), gardé en
+// mémoire pour que les boutons Imprimer/Partager sachent quoi traiter.
+let CM_currentDoc = null;
+
+window.cmShowReceipt = function(receipt){
+  CM_currentDoc = { kind:'receipt', data: receipt };
+  document.getElementById('cmDocModalTitle').textContent =
+    receipt.type === 'achat' ? t('cm_doc_receipt_purchase') : t('cm_doc_receipt_sale');
+  cmRenderDocPreview();
+  if (window.openModal) window.openModal('cmDocModal');
+};
+
+window.cmShowQuote = function(quote){
+  CM_currentDoc = { kind:'quote', data: quote };
+  document.getElementById('cmDocModalTitle').textContent = t('cm_doc_quote_title');
+  cmRenderDocPreview();
+  if (window.openModal) window.openModal('cmDocModal');
+};
+
+function cmDocHTML(doc){
+  const isQuote = doc.kind === 'quote';
+  const d = doc.data;
+  const dateStr = new Date(d.createdAt).toLocaleDateString(currentLang==='en'?'en-US':'fr-FR');
+  const personLabel = isQuote ? t('cm_doc_client') : (d.type==='achat' ? t('cm_doc_supplier') : t('cm_doc_client'));
+  return `
+    <div class="cm-doc-head">
+      <div class="cm-doc-shop">${d.shopName||''}</div>
+      <div class="cm-doc-type">${isQuote ? t('cm_doc_quote_title') : (d.type==='achat'?t('cm_doc_receipt_purchase'):t('cm_doc_receipt_sale'))}</div>
+      <div class="cm-doc-num">${t('cm_doc_no')} ${d.docNumber} — ${t('cm_doc_date')} ${dateStr}</div>
+    </div>
+    ${d.person ? `<div class="cm-doc-row"><span>${personLabel}</span><span>${d.person}</span></div>` : ''}
+    <div class="cm-doc-row"><span>${t('cm_doc_article')}</span><span>${d.articleName}</span></div>
+    <div class="cm-doc-row"><span>${t('cm_doc_qty')}</span><span>${cmFmt(d.qte)} ${d.unit||''}</span></div>
+    <div class="cm-doc-row"><span>${t('cm_doc_unit_price')}</span><span>${cmAmt(d.prix)}</span></div>
+    <div class="cm-doc-row cm-doc-total"><span>${t('cm_doc_total')}</span><span>${cmAmt(d.total)}</span></div>
+    ${isQuote && d.validUntil ? `<div class="cm-doc-row"><span>${t('cm_doc_valid_until')}</span><span>${new Date(d.validUntil).toLocaleDateString(currentLang==='en'?'en-US':'fr-FR')}</span></div>` : ''}
+    ${d.note ? `<div class="cm-doc-row"><span colspan="2" style="color:#666">${d.note}</span></div>` : ''}
+    <div class="cm-doc-foot">${isQuote ? t('cm_doc_quote_disclaimer') : t('cm_doc_thanks')}</div>
+  `;
+}
+
+function cmRenderDocPreview(){
+  if (!CM_currentDoc) return;
+  document.getElementById('cmDocPreview').innerHTML = cmDocHTML(CM_currentDoc);
+}
+
+window.cmPrintCurrentDoc = function(){
+  if (!CM_currentDoc) return;
+  const sheet = document.getElementById('cmDocPrintSheet');
+  sheet.innerHTML = `<div class="cm-doc-sheet">${cmDocHTML(CM_currentDoc)}</div>`;
+  setTimeout(()=>window.print(), 100);
+};
+
+window.cmShareCurrentDoc = async function(){
+  if (!CM_currentDoc) return;
+  const d = CM_currentDoc.data;
+  const isQuote = CM_currentDoc.kind === 'quote';
+  const lines = [
+    `${d.shopName||''}`,
+    isQuote ? t('cm_doc_quote_title') : (d.type==='achat'?t('cm_doc_receipt_purchase'):t('cm_doc_receipt_sale')),
+    `${t('cm_doc_no')} ${d.docNumber}`,
+    `${t('cm_doc_article')}: ${d.articleName}`,
+    `${t('cm_doc_qty')}: ${cmFmt(d.qte)} ${d.unit||''}`,
+    `${t('cm_doc_unit_price')}: ${cmAmt(d.prix)}`,
+    `${t('cm_doc_total')}: ${cmAmt(d.total)}`,
+  ].join('\n');
+  if (navigator.share) {
+    try { await navigator.share({ title: d.docNumber, text: lines }); return; } catch(e) { /* annulé ou non supporté, on retombe sur le clipboard */ }
+  }
+  try {
+    await navigator.clipboard.writeText(lines);
+    cmToast(t('set_saved'), 'success'); // réutilise un message générique "enregistré/copié"
+  } catch(e) { /* silencieux : pas de fallback supplémentaire nécessaire */ }
+};
+
 function cmGenArticleCode(){
   // Code court, lisible, quasi-unique : timestamp base36 + 3 chars aléatoires
   return (Date.now().toString(36) + Math.random().toString(36).slice(2,5)).toUpperCase();
@@ -9670,7 +9890,8 @@ window.cmConfirmScanSale = function(){
   cmToast(t('cm_msg_sold_prefix') + ' ' + res.article.name + ' — ' + cmAmt(res.article.prixV), 'success');
   // Paiement validé : on ferme complètement la caméra pour éviter tout
   // double-scan accidentel. Il faudra réappuyer sur le bouton pour le
-  // client suivant.
+  // client suivant. Le reçu reste accessible depuis l'historique des
+  // mouvements (bouton 🧾) pour ne pas ralentir la cadence de la caisse.
   window.cmCloseScanner();
 };
 
@@ -9848,10 +10069,18 @@ function cmRenderMvts(){
         <div class="cm-mvt-title">${m.artName} <span style="color:var(--muted);font-weight:500">×${cmFmt(m.qte)}</span></div>
         <div class="cm-mvt-sub">${m.date}${m.person?' • '+m.person:''}${m.note?' • '+m.note:''}</div>
       </div>
+      ${m.receiptNum ? `<button onclick="event.stopPropagation();cmViewMvtReceipt('${m.id}')" title="${t('cm_view_receipt')}" style="flex-shrink:0;width:30px;height:30px;border-radius:8px;border:none;background:rgba(37,99,235,.08);color:var(--primary);cursor:pointer;margin-right:6px"><i class="fas fa-receipt" style="font-size:12px"></i></button>` : ''}
       <div class="cm-mvt-amt ${m.type}">${sign}${cmAmt(m.total)}</div>
     </div>`;
   }).join('');
 }
+
+window.cmViewMvtReceipt = function(mvtId){
+  const m = CM.mouvements.find(x=>x.id===mvtId);
+  if(!m || !m.receiptNum){ cmToast(t('cm_no_receipt'),'error'); return; }
+  const a = CM.articles.find(x=>x.id===m.artId);
+  cmShowReceipt(cmBuildReceipt(m, a));
+};
 
 window.cmDeleteMvt = function(id){
   const m = CM.mouvements.find(x=>x.id===id);
@@ -9938,6 +10167,86 @@ window.cmUpdateMvtTotal = function(){
   document.getElementById('cmMvtTotal').textContent = cmAmt(qte*prix);
 };
 
+// ── Devis : document autonome, ne touche jamais le stock ──
+let CM_quoteArtId = null;
+
+window.cmOpenQuoteModal = function(){
+  if (!cmCan('edit_article')) { cmToast(t('cm_msg_permission_denied'),'error'); return; }
+  if(!cmGetShop()){ cmToast(t('cm_msg_create_shop_first'),'error'); return; }
+  if(cmGetShopArticles().length===0){ cmToast(t('cm_msg_create_article_first'),'error'); return; }
+  CM_quoteArtId = null;
+  document.getElementById('cmQuoteArtSearch').value = '';
+  document.getElementById('cmQuoteQte').value = '1';
+  document.getElementById('cmQuotePrix').value = '';
+  document.getElementById('cmQuoteClient').value = '';
+  document.getElementById('cmQuoteValidUntil').value = '';
+  document.getElementById('cmQuoteNote').value = '';
+  cmRenderQuotePicker();
+  cmUpdateQuoteTotal();
+  if(window.openModal) window.openModal('cmQuoteModal');
+};
+
+window.cmRenderQuotePicker = function(){
+  const c = document.getElementById('cmQuoteArtPicker');
+  const s = (document.getElementById('cmQuoteArtSearch').value||'').toLowerCase();
+  let arts = cmGetShopArticles();
+  if(s) arts = arts.filter(a=>a.name.toLowerCase().includes(s) || (a.code||'').toLowerCase().includes(s));
+  arts.sort((a,b)=>a.name.localeCompare(b.name));
+  if(arts.length===0){
+    c.innerHTML = `<div class="cm-empty" style="padding:20px 10px"><i class="fas fa-box-open"></i>${t('cm_no_article')}</div>`;
+    return;
+  }
+  c.innerHTML = arts.map(a=>{
+    const sel = a.id===CM_quoteArtId?'selected':'';
+    return `<div class="cm-art-picker-item ${sel}" onclick="cmPickQuoteArt('${a.id}')">
+      <div>
+        <div style="font-weight:700;font-size:13px;">${a.name}</div>
+        <div style="font-size:11px;color:var(--muted)">${cmCatLabel(a.cat)} • ${t('cm_scan_stock_label')} ${cmFmt(a.stock||0)} ${a.unit||''}</div>
+      </div>
+      <div style="font-weight:700;color:#10b981;font-size:13px;">${cmAmt(a.prixV)}</div>
+    </div>`;
+  }).join('');
+};
+
+window.cmPickQuoteArt = function(id){
+  CM_quoteArtId = id;
+  const a = CM.articles.find(x=>x.id===id);
+  if(a){
+    document.getElementById('cmQuotePrix').value = a.prixV||'';
+    cmUpdateQuoteTotal();
+  }
+  cmRenderQuotePicker();
+};
+
+window.cmUpdateQuoteTotal = function(){
+  const qte = parseFloat(document.getElementById('cmQuoteQte').value)||0;
+  const prix = parseFloat(document.getElementById('cmQuotePrix').value)||0;
+  document.getElementById('cmQuoteTotal').textContent = cmAmt(qte*prix);
+};
+
+window.cmGenerateQuote = function(){
+  if (!cmCan('edit_article')) { cmToast(t('cm_msg_permission_denied'),'error'); return; }
+  if(!CM_quoteArtId){ cmToast(t('cm_msg_choose_article'),'error'); return; }
+  const a = CM.articles.find(x=>x.id===CM_quoteArtId);
+  if(!a){ cmToast(t('cm_msg_article_not_found'),'error'); return; }
+  const qte = parseFloat(document.getElementById('cmQuoteQte').value)||0;
+  const prix = parseFloat(document.getElementById('cmQuotePrix').value)||0;
+  if(qte<=0){ cmToast(t('cm_msg_invalid_qty'),'error'); return; }
+  if(prix<0){ cmToast(t('cm_msg_invalid_price'),'error'); return; }
+  const client = document.getElementById('cmQuoteClient').value.trim();
+  const validUntil = document.getElementById('cmQuoteValidUntil').value;
+  const note = document.getElementById('cmQuoteNote').value.trim();
+
+  const quote = cmBuildQuote({
+    articleName: a.name, unit: a.unit||'', qte, prix,
+    person: client, validUntil, note
+  });
+  cmSave(); // cmNextDocNumber a modifié shop.docCounters, on persiste
+  if(window.closeModal) window.closeModal('cmQuoteModal');
+  cmToast(t('cm_msg_quote_created'),'success');
+  cmShowQuote(quote);
+};
+
 window.cmSaveMvt = function(){
   const requiredPerm = CM.currentMvtType === 'achat' ? 'buy' : 'sell';
   if (!cmCan(requiredPerm)) { cmToast(t('cm_msg_permission_denied'),'error'); return; }
@@ -9964,10 +10273,11 @@ window.cmSaveMvt = function(){
   // Si achat : mettre à jour prix d'achat moyen
   if(CM.currentMvtType==='achat' && prix>0) a.prixA = prix;
 
+  const receiptNum = cmNextDocNumber('REC');
   CM.mouvements.push({
     id: cmUID(), shopId: CM.currentShopId, artId: a.id, artName: a.name,
     type: CM.currentMvtType, qte, prix, total: qte*prix,
-    date, person, note, createdAt: Date.now()
+    date, person, note, createdAt: Date.now(), receiptNum
   });
 
   CM.currentMvtArtId = null;
@@ -9975,6 +10285,9 @@ window.cmSaveMvt = function(){
   if(window.closeModal) window.closeModal('cmMvtModal');
   cmRenderAll();
   cmToast(CM.currentMvtType==='vente'?t('cm_msg_sale_recorded'):t('cm_msg_purchase_recorded'),'success');
+  // Propose immédiatement le reçu correspondant (vente ou achat).
+  const mvt = CM.mouvements[CM.mouvements.length-1];
+  cmShowReceipt(cmBuildReceipt(mvt, a));
 };
 
 // ══ VENTE RAPIDE (caisse) : enregistre directement 1 unité vendue ══
@@ -9999,15 +10312,16 @@ function cmQuickSale(articleId, qte, unitQrId){
   a.stock = (a.stock||0) - qte;
   if(unit) unit.sold = true;
 
+  const receiptNum = cmNextDocNumber('REC');
   CM.mouvements.push({
     id: cmUID(), shopId: CM.currentShopId, artId: a.id, artName: a.name,
     type: 'vente', qte, prix: a.prixV||0, total: qte*(a.prixV||0),
     date: cmToday(), person:'', note: unit ? t('cm_note_quick_sale_unit',{num:unit.num}) : t('cm_note_quick_sale'),
-    createdAt: Date.now()
+    createdAt: Date.now(), receiptNum
   });
   cmSave();
   cmRenderAll();
-  return { ok:true, article:a, qte, unit };
+  return { ok:true, article:a, qte, unit, mvt: CM.mouvements[CM.mouvements.length-1] };
 }
 
 /* ── Stock ── */

@@ -1434,7 +1434,7 @@ const LANGS = {
     nav_menu:'Menu', nav_plangestion_short:'Plan Gestion',
     // Header
     app_title:'AET MonBudget', app_subtitle:'ALBAN ELOH TECHNOLOGY · Gestion financière · Franc CFA',
-    btn_logout:'Déconnexion', btn_save:'Enregistrer', btn_add:'Ajouter', btn_cancel:'Annuler',
+    btn_logout:'Déconnexion', btn_save:'Enregistrer', btn_add:'Ajouter', btn_cancel:'Annuler', btn_confirm:'Confirmer',
     btn_edit:'Modifier', btn_delete:'Supprimer', btn_export:'Exporter CSV', btn_close:'Fermer',
     // Auth
     auth_login:'Connexion', auth_signup:'Créer un compte', auth_email:'Email',
@@ -1568,6 +1568,25 @@ const LANGS = {
     cm_units_sold_suffix:'unités vendues', cm_stock_seuil_line:'Stock: {stock} {unit} (seuil: {seuil})',
     cm_msg_unit_already_sold:'Cette unité (#{num}) a déjà été vendue',
     cm_msg_insufficient_stock:'Stock insuffisant ({stock} {unit} restant)',
+    cm_role_patron:'Patron', cm_role_manager:'Manager', cm_role_employee:'Employé',
+    cm_who_are_you:'Qui êtes-vous ?', cm_login_as_patron:'Se connecter en tant que Patron',
+    cm_enter_employee_pin:'Entrez votre code PIN', cm_select_your_name:'Sélectionnez votre nom',
+    cm_employees:'Employés', cm_new_employee:'Nouvel employé', cm_edit_employee:'Modifier employé',
+    cm_employee_name:'Nom de l\'employé', cm_employee_name_ph:'ex: Koffi Mensah',
+    cm_employee_role:'Rôle', cm_employee_pin:'Code PIN (4 chiffres)', cm_employee_pin_ph:'1234',
+    cm_no_employees:'Aucun employé pour cette boutique',
+    cm_role_manager_desc:'Gère cette boutique (articles, ventes, achats)',
+    cm_role_employee_desc:'Vente et consultation du stock uniquement',
+    cm_msg_employee_saved:'Employé enregistré', cm_msg_employee_deleted:'Employé supprimé',
+    cm_msg_pin_taken:'Ce code PIN est déjà utilisé par un autre employé',
+    cm_msg_pin_4digits:'Le code PIN doit contenir exactement 4 chiffres',
+    cm_msg_employee_name_required:'Nom requis',
+    cm_confirm_delete_employee:'Supprimer l\'employé "{name}" ?',
+    cm_msg_wrong_pin:'Code PIN incorrect',
+    cm_session_active_as:'Connecté en tant que',
+    cm_exit_session:'Changer de session',
+    cm_msg_permission_denied:'Action non autorisée pour votre rôle',
+    cm_manage_employees:'Gérer les employés',
     // ══ Module Objectifs ══
     goal_title:'Objectifs', goal_tab_active:'Actifs', goal_tab_done:'Terminés',
     goal_none_active:'Aucun objectif actif', goal_none_done:'Aucun objectif terminé',
@@ -1708,7 +1727,7 @@ const LANGS = {
     nav_sec_apercu:'Overview', nav_sec_gestion:'Management', nav_sec_ressources:'Resources', nav_sec_compte:'Account',
     nav_menu:'Menu', nav_plangestion_short:'Budget Plan',
     app_title:'AET MonBudget', app_subtitle:'ALBAN ELOH TECHNOLOGY · Personal Finance · CFA Franc',
-    btn_logout:'Log out', btn_save:'Save', btn_add:'Add', btn_cancel:'Cancel',
+    btn_logout:'Log out', btn_save:'Save', btn_add:'Add', btn_cancel:'Cancel', btn_confirm:'Confirm',
     btn_edit:'Edit', btn_delete:'Delete', btn_export:'Export CSV', btn_close:'Close',
     auth_login:'Sign In', auth_signup:'Create Account', auth_email:'Email',
     auth_password:'Password', auth_name:'Full Name', auth_confirm:'Confirm',
@@ -1828,6 +1847,25 @@ const LANGS = {
     cm_units_sold_suffix:'units sold', cm_stock_seuil_line:'Stock: {stock} {unit} (threshold: {seuil})',
     cm_msg_unit_already_sold:'This unit (#{num}) has already been sold',
     cm_msg_insufficient_stock:'Insufficient stock ({stock} {unit} left)',
+    cm_role_patron:'Owner', cm_role_manager:'Manager', cm_role_employee:'Employee',
+    cm_who_are_you:'Who are you?', cm_login_as_patron:'Log in as Owner',
+    cm_enter_employee_pin:'Enter your PIN code', cm_select_your_name:'Select your name',
+    cm_employees:'Employees', cm_new_employee:'New employee', cm_edit_employee:'Edit employee',
+    cm_employee_name:'Employee name', cm_employee_name_ph:'e.g.: John Smith',
+    cm_employee_role:'Role', cm_employee_pin:'PIN code (4 digits)', cm_employee_pin_ph:'1234',
+    cm_no_employees:'No employees for this shop',
+    cm_role_manager_desc:'Manages this shop (items, sales, purchases)',
+    cm_role_employee_desc:'Sales and stock viewing only',
+    cm_msg_employee_saved:'Employee saved', cm_msg_employee_deleted:'Employee deleted',
+    cm_msg_pin_taken:'This PIN code is already used by another employee',
+    cm_msg_pin_4digits:'PIN code must be exactly 4 digits',
+    cm_msg_employee_name_required:'Name required',
+    cm_confirm_delete_employee:'Delete employee "{name}"?',
+    cm_msg_wrong_pin:'Incorrect PIN code',
+    cm_session_active_as:'Logged in as',
+    cm_exit_session:'Switch session',
+    cm_msg_permission_denied:'Action not allowed for your role',
+    cm_manage_employees:'Manage employees',
     // ══ Goals module ══
     goal_title:'Goals', goal_tab_active:'Active', goal_tab_done:'Completed',
     goal_none_active:'No active goals', goal_none_done:'No completed goals',
@@ -8095,11 +8133,19 @@ if ('serviceWorker' in navigator) {
   </div>
 
   <!-- Barre boutique -->
+  <!-- Badge de session active (visible uniquement si manager/employé) -->
+  <div id="cmRoleBadge" style="display:none;align-items:center;gap:8px;background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.2);border-radius:12px;padding:8px 12px;margin-bottom:10px;font-size:12.5px;font-weight:700;color:var(--primary)">
+    <i class="fas fa-user-shield"></i>
+    <span data-i18n="cm_session_active_as">Connecté en tant que</span>&nbsp;<span class="cm-role-name">—</span>
+    <button onclick="cmOpenIdentitySwitch()" style="margin-left:auto;background:transparent;border:none;color:var(--primary);font-weight:700;font-size:11.5px;text-decoration:underline;cursor:pointer" data-i18n="cm_exit_session">Changer de session</button>
+  </div>
+
   <div class="cm-shop-bar">
     <i class="fas fa-shop" style="color:#10b981"></i>
-    <select id="cmShopSelect" onchange="cmSelectShop(this.value)"></select>
-    <button class="cm-shop-edit" onclick="cmOpenShopModal()" data-i18n-title="cm_manage_shops" title="Gérer boutiques"><i class="fas fa-cog"></i></button>
-    <button onclick="cmOpenShopModal(true)" data-i18n-title="cm_new_shop" title="Nouvelle boutique"><i class="fas fa-plus"></i></button>
+    <select id="cmShopSelect" onchange="cmSelectShop(this.value)" data-cm-role-restrict="lock-shop"></select>
+    <button class="cm-shop-edit" onclick="cmOpenShopModal()" data-i18n-title="cm_manage_shops" title="Gérer boutiques" data-cm-role-restrict="manage_shop"><i class="fas fa-cog"></i></button>
+    <button onclick="cmOpenEmployeesModal()" data-i18n-title="cm_manage_employees" title="Gérer les employés" data-cm-role-restrict="manage_employees" style="background:rgba(139,92,246,.12);color:#8b5cf6"><i class="fas fa-users-gear"></i></button>
+    <button onclick="cmOpenShopModal(true)" data-i18n-title="cm_new_shop" title="Nouvelle boutique" data-cm-role-restrict="manage_shop"><i class="fas fa-plus"></i></button>
   </div>
 
   <!-- Onglets internes -->
@@ -8155,10 +8201,10 @@ if ('serviceWorker' in navigator) {
     <div class="cm-filter-bar" id="cmCatFilter"></div>
     <div id="cmArticlesList"></div>
     <div style="display:flex;gap:8px;margin-top:8px">
-      <button style="flex:1;padding:14px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:12px;font-weight:800;cursor:pointer;" onclick="cmOpenArticleModal()">
+      <button data-cm-role-restrict="edit_article" style="flex:1;padding:14px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:12px;font-weight:800;cursor:pointer;" onclick="cmOpenArticleModal()">
         <i class="fas fa-plus"></i> <span data-i18n="cm_new_article">Nouvel article</span>
       </button>
-      <button style="flex-shrink:0;padding:14px 16px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:12px;font-weight:800;cursor:pointer;" onclick="cmPrintAllLabels()" data-i18n-title="cm_print_all_labels" title="Imprimer toutes les étiquettes QR">
+      <button data-cm-role-restrict="print_qr" style="flex-shrink:0;padding:14px 16px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:12px;font-weight:800;cursor:pointer;" onclick="cmPrintAllLabels()" data-i18n-title="cm_print_all_labels" title="Imprimer toutes les étiquettes QR">
         <i class="fas fa-print"></i>
       </button>
     </div>
@@ -8169,7 +8215,7 @@ if ('serviceWorker' in navigator) {
     <div class="cm-filter-bar">
       <div class="cm-filter-chip active" data-mvt="all" onclick="cmFilterMvt('all',this)" data-i18n="cm_filter_all">Tous</div>
       <div class="cm-filter-chip" data-mvt="vente" onclick="cmFilterMvt('vente',this)" data-i18n="cm_filter_ventes">Ventes</div>
-      <div class="cm-filter-chip" data-mvt="achat" onclick="cmFilterMvt('achat',this)" data-i18n="cm_filter_achats">Achats</div>
+      <div class="cm-filter-chip" data-cm-role-restrict="buy" data-mvt="achat" onclick="cmFilterMvt('achat',this)" data-i18n="cm_filter_achats">Achats</div>
     </div>
     <div id="cmMvtList"></div>
     <button style="width:100%;padding:14px;background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff;border:none;border-radius:12px;font-weight:800;cursor:pointer;margin-top:8px;" onclick="cmScanForQuickSale()">
@@ -8336,7 +8382,7 @@ if ('serviceWorker' in navigator) {
     <div class="modal-body">
       <div class="cm-type-pills">
         <button class="cm-type-pill vente active" id="cmMvtPillV" onclick="cmSetMvtType('vente')"><i class="fas fa-cash-register"></i> <span data-i18n="cm_filter_ventes_sing">Vente</span></button>
-        <button class="cm-type-pill achat" id="cmMvtPillA" onclick="cmSetMvtType('achat')"><i class="fas fa-truck-ramp-box"></i> <span data-i18n="cm_filter_achats_sing">Achat</span></button>
+        <button class="cm-type-pill achat" id="cmMvtPillA" data-cm-role-restrict="buy" onclick="cmSetMvtType('achat')"><i class="fas fa-truck-ramp-box"></i> <span data-i18n="cm_filter_achats_sing">Achat</span></button>
       </div>
 
       <label class="cm-modal-label" data-i18n="cm_mvt_article">Article *</label>
@@ -8398,6 +8444,62 @@ if ('serviceWorker' in navigator) {
     <div class="modal-footer">
       <button class="btn-cancel" onclick="closeModal('cmQrModal')" data-i18n="btn_close">Fermer</button>
       <button class="btn-save" onclick="cmPrintCurrentQr()" style="background:linear-gradient(135deg,#2563eb,#3b82f6);"><i class="fas fa-print"></i> <span data-i18n="cm_qr_print">Imprimer</span></button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Modal : Qui êtes-vous ? (identification employé/patron) ═══ -->
+<div class="modal-overlay" id="cmIdentityModal">
+  <div class="modal-box" style="max-width:380px;text-align:center">
+    <div class="modal-header" style="justify-content:center;border-bottom:none">
+      <h3><i class="fas fa-user-shield" style="color:#2563eb;margin-right:8px"></i><span data-i18n="cm_who_are_you">Qui êtes-vous ?</span></h3>
+    </div>
+    <div class="modal-body">
+      <div id="cmIdentityPeopleList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px"></div>
+      <button onclick="cmShowPatronPinEntry()" style="width:100%;padding:12px;border:1.5px dashed var(--border);border-radius:12px;background:transparent;color:var(--muted);font-weight:600;font-size:13px;cursor:pointer">
+        <i class="fas fa-crown"></i> <span data-i18n="cm_login_as_patron">Se connecter en tant que Patron</span>
+      </button>
+      <div id="cmIdentityPinEntry" style="display:none;margin-top:14px">
+        <input type="password" id="cmIdentityPinInput" maxlength="4" inputmode="numeric" placeholder="••••" style="width:100%;text-align:center;font-size:24px;letter-spacing:14px;padding:14px;border:1.5px solid var(--border);border-radius:12px;font-weight:700">
+        <button class="btn-save" style="width:100%;margin-top:10px;background:linear-gradient(135deg,#2563eb,#3b82f6)" onclick="cmSubmitIdentityPin()"><span data-i18n="btn_confirm">Confirmer</span></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Modal : Gestion des employés (Patron uniquement) ═══ -->
+<div class="modal-overlay" id="cmEmployeesModal">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-header">
+      <h3><i class="fas fa-users-gear" style="color:#2563eb;margin-right:8px"></i><span data-i18n="cm_employees">Employés</span></h3>
+      <button class="modal-close" onclick="closeModal('cmEmployeesModal')"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div id="cmEmployeesList" style="margin-bottom:14px"></div>
+      <button style="width:100%;padding:12px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:12px;font-weight:700;cursor:pointer" onclick="cmOpenEmployeeForm()">
+        <i class="fas fa-plus"></i> <span data-i18n="cm_new_employee">Nouvel employé</span>
+      </button>
+      <div id="cmEmployeeForm" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+        <label class="cm-modal-label" data-i18n="cm_employee_name">Nom de l'employé</label>
+        <input type="text" id="cmEmpName" class="cm-modal-input" data-i18n="cm_employee_name_ph" placeholder="ex: Koffi Mensah">
+        <label class="cm-modal-label" data-i18n="cm_employee_role">Rôle</label>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <button type="button" class="cm-cat-chip active" id="cmEmpRoleManager" onclick="cmPickEmpRole('manager')" style="flex:1">
+            <div style="font-weight:700">👔 <span data-i18n="cm_role_manager">Manager</span></div>
+            <div style="font-size:10.5px;opacity:.8;font-weight:400" data-i18n="cm_role_manager_desc">Gère cette boutique (articles, ventes, achats)</div>
+          </button>
+          <button type="button" class="cm-cat-chip" id="cmEmpRoleEmployee" onclick="cmPickEmpRole('employee')" style="flex:1">
+            <div style="font-weight:700">🧑‍💼 <span data-i18n="cm_role_employee">Employé</span></div>
+            <div style="font-size:10.5px;opacity:.8;font-weight:400" data-i18n="cm_role_employee_desc">Vente et consultation du stock uniquement</div>
+          </button>
+        </div>
+        <label class="cm-modal-label" data-i18n="cm_employee_pin">Code PIN (4 chiffres)</label>
+        <input type="password" id="cmEmpPin" class="cm-modal-input" maxlength="4" inputmode="numeric" data-i18n="cm_employee_pin_ph" placeholder="1234">
+        <div style="display:flex;gap:8px;margin-top:14px">
+          <button class="btn-cancel" style="flex:1" onclick="cmCloseEmployeeForm()" data-i18n="btn_cancel">Annuler</button>
+          <button class="btn-save" style="flex:1;background:linear-gradient(135deg,#10b981,#059669)" onclick="cmSaveEmployee()" data-i18n="btn_save">Enregistrer</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -8561,7 +8663,7 @@ let cmRemoteSaveTimer = null;
 
 /* ── État ── */
 let CM = {
-  shops: [],           // {id,name,type,addr,seuil,createdAt}
+  shops: [],           // {id,name,type,addr,seuil,createdAt,employees:[{id,name,pin,role,createdAt}]}
   articles: [],        // {id,shopId,name,cat,prixA,prixV,stock,unit,seuil,code,note,createdAt}
   mouvements: [],      // {id,shopId,artId,artName,type,qte,prix,total,date,person,note,createdAt}
   currentShopId: null,
@@ -8572,9 +8674,269 @@ let CM = {
   currentCatFilter: 'all',
   editingArtId: null,
   editingShopId: null,
+  // ── Rôles & permissions ──
+  // activeRole : 'patron' (par défaut, propriétaire du compte) | 'manager' | 'employee'
+  // activeEmployee : référence à l'employé identifié (null si patron)
+  // Cette session est volontairement EN MÉMOIRE UNIQUEMENT (jamais persistée
+  // dans localStorage/Firestore) : elle se réinitialise en quittant Commerce
+  // ou en rechargeant l'app, pour qu'un employé ne reste jamais connecté
+  // par erreur après avoir rendu le téléphone au patron.
+  activeRole: 'patron',
+  activeEmployee: null,
+  editingEmployeeId: null,
 };
 
-/* ── Persistance locale + cloud ── */
+/* ── Rôles & permissions ──
+   Trois rôles : patron (tout), manager (sa boutique, sans suppression ni
+   gestion des employés), employee (vente + lecture stock uniquement).
+   Toute action sensible de Commerce doit passer par cmCan(perm) avant de
+   s'exécuter, pour qu'une restriction ne dépende jamais uniquement de
+   l'UI (bouton caché) mais aussi de la logique. */
+const CM_PERMS = {
+  patron:   new Set(['view','sell','buy','edit_article','delete_article','manage_shop','delete_shop','manage_employees','print_qr']),
+  manager:  new Set(['view','sell','buy','edit_article','delete_article','print_qr']),
+  employee: new Set(['view','sell']),
+};
+
+function cmCan(perm){
+  const role = CM.activeRole || 'patron';
+  const set = CM_PERMS[role] || CM_PERMS.employee;
+  return set.has(perm);
+}
+
+// Boutique courante verrouillée pour un manager/employé : ils ne peuvent
+// jamais changer de boutique tant que leur session est active.
+function cmIsShopLocked(){
+  return CM.activeRole !== 'patron' && !!CM.activeEmployee;
+}
+
+function cmCurrentEmployeeLabel(){
+  if (CM.activeRole === 'patron') return t('cm_role_patron');
+  if (CM.activeEmployee) return CM.activeEmployee.name + ' (' + (CM.activeRole==='manager'?t('cm_role_manager'):t('cm_role_employee')) + ')';
+  return '';
+}
+
+// Réinitialise la session de rôle (retour au patron). Appelé en quittant
+// l'onglet Commerce ou en se déconnectant de l'app.
+window.cmExitEmployeeSession = function(){
+  CM.activeRole = 'patron';
+  CM.activeEmployee = null;
+  cmRenderAll();
+  cmUpdateRoleBadge();
+};
+
+function cmUpdateRoleBadge(){
+  const el = document.getElementById('cmRoleBadge');
+  if (el) {
+    if (CM.activeRole === 'patron') { el.style.display = 'none'; }
+    else { el.style.display = 'flex'; el.querySelector('.cm-role-name').textContent = cmCurrentEmployeeLabel(); }
+  }
+  cmApplyRoleRestrictions();
+}
+
+// Balaie tous les éléments marqués data-cm-role-restrict et les
+// active/désactive selon la permission requise pour le rôle courant.
+// "lock-shop" est un cas spécial : verrouille le sélecteur de boutique
+// (manager/employé ne peuvent jamais changer de boutique).
+function cmApplyRoleRestrictions(){
+  document.querySelectorAll('[data-cm-role-restrict]').forEach(el => {
+    const need = el.dataset.cmRoleRestrict;
+    if (need === 'lock-shop') {
+      el.disabled = cmIsShopLocked();
+      return;
+    }
+    const allowed = cmCan(need);
+    el.style.display = allowed ? '' : 'none';
+  });
+}
+
+// Permet de rouvrir manuellement l'écran d'identification (bouton
+// "Changer de session"), par exemple pour qu'un employé rende la main
+// au patron, ou pour qu'un autre employé prenne le relais sur la caisse.
+window.cmOpenIdentitySwitch = function(){
+  _cmIdentityPromptedThisVisit = false;
+  cmRenderIdentityModal();
+  if (window.openModal) window.openModal('cmIdentityModal');
+};
+
+// Liste tous les employés de toutes les boutiques du compte (le PIN est
+// unique sur tout le compte, pas seulement par boutique).
+function cmAllEmployees(){
+  const out = [];
+  CM.shops.forEach(s => (s.employees||[]).forEach(e => out.push({ ...e, shopId: s.id, shopName: s.name })));
+  return out;
+}
+
+let _cmIdentityPromptedThisVisit = false;
+
+// Affiche l'écran "Qui êtes-vous ?" en entrant dans Commerce, uniquement
+// si au moins un employé existe sur une boutique. Le patron peut toujours
+// passer par le bouton "Se connecter en tant que Patron".
+function cmMaybePromptIdentity(){
+  if (_cmIdentityPromptedThisVisit) return;
+  const employees = cmAllEmployees();
+  if (employees.length === 0) { _cmIdentityPromptedThisVisit = true; return; }
+  _cmIdentityPromptedThisVisit = true;
+  cmRenderIdentityModal();
+  if (window.openModal) window.openModal('cmIdentityModal');
+}
+
+function cmRenderIdentityModal(){
+  const list = document.getElementById('cmIdentityPeopleList');
+  const employees = cmAllEmployees();
+  list.innerHTML = employees.map(e => `
+    <button onclick="cmSelectIdentityPerson('${e.id}')" style="width:100%;display:flex;align-items:center;gap:10px;padding:12px;border:1.5px solid var(--border);border-radius:12px;background:#fff;cursor:pointer;text-align:left">
+      <div style="width:38px;height:38px;border-radius:50%;background:${e.role==='manager'?'rgba(37,99,235,.1)':'rgba(16,185,129,.1)'};display:flex;align-items:center;justify-content:center;font-size:16px">${e.role==='manager'?'👔':'🧑‍💼'}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:14px;color:var(--text)">${e.name}</div>
+        <div style="font-size:11.5px;color:var(--muted)">${e.role==='manager'?t('cm_role_manager'):t('cm_role_employee')} — ${e.shopName}</div>
+      </div>
+    </button>
+  `).join('');
+  document.getElementById('cmIdentityPinEntry').style.display = 'none';
+  document.getElementById('cmIdentityPinInput').value = '';
+  CM._pendingIdentitySelection = null;
+}
+
+window.cmSelectIdentityPerson = function(employeeId){
+  CM._pendingIdentitySelection = { type:'employee', employeeId };
+  document.getElementById('cmIdentityPeopleList').style.display = 'none';
+  document.querySelector('#cmIdentityModal button[onclick="cmShowPatronPinEntry()"]').style.display = 'none';
+  document.getElementById('cmIdentityPinEntry').style.display = 'block';
+  document.getElementById('cmIdentityPinInput').focus();
+};
+
+window.cmShowPatronPinEntry = function(){
+  // Le patron est déjà authentifié par son compte Firebase ; on lui
+  // redonne simplement la main sans PIN supplémentaire.
+  CM.activeRole = 'patron';
+  CM.activeEmployee = null;
+  if (window.closeModal) window.closeModal('cmIdentityModal');
+  cmUpdateRoleBadge();
+  cmRenderAll();
+};
+
+window.cmSubmitIdentityPin = function(){
+  const pin = document.getElementById('cmIdentityPinInput').value.trim();
+  const sel = CM._pendingIdentitySelection;
+  if (!sel || sel.type !== 'employee') return;
+  const employees = cmAllEmployees();
+  const emp = employees.find(e => e.id === sel.employeeId);
+  if (!emp || emp.pin !== pin) {
+    cmToast(t('cm_msg_wrong_pin'), 'error');
+    document.getElementById('cmIdentityPinInput').value = '';
+    return;
+  }
+  // Identité confirmée : on active la session restreinte, verrouillée
+  // sur la boutique de cet employé.
+  CM.activeRole = emp.role;
+  CM.activeEmployee = { id: emp.id, name: emp.name, role: emp.role };
+  CM.currentShopId = emp.shopId;
+  if (window.closeModal) window.closeModal('cmIdentityModal');
+  cmUpdateRoleBadge();
+  cmRenderAll();
+  cmToast(t('cm_session_active_as') + ' ' + emp.name, 'success');
+};
+
+// ── Gestion des employés (patron uniquement) ──
+window.cmOpenEmployeesModal = function(){
+  if (!cmCan('manage_employees')) { cmToast(t('cm_msg_permission_denied'),'error'); return; }
+  cmRenderEmployeesList();
+  document.getElementById('cmEmployeeForm').style.display = 'none';
+  if (window.openModal) window.openModal('cmEmployeesModal');
+};
+
+function cmRenderEmployeesList(){
+  const shop = cmGetShop();
+  const el = document.getElementById('cmEmployeesList');
+  if (!shop) { el.innerHTML = ''; return; }
+  const employees = shop.employees || [];
+  if (employees.length === 0) {
+    el.innerHTML = `<div class="cm-empty" style="padding:16px 10px"><i class="fas fa-user-group"></i>${t('cm_no_employees')}</div>`;
+    return;
+  }
+  el.innerHTML = employees.map(e => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px">
+      <div style="width:34px;height:34px;border-radius:50%;background:${e.role==='manager'?'rgba(37,99,235,.1)':'rgba(16,185,129,.1)'};display:flex;align-items:center;justify-content:center;font-size:14px">${e.role==='manager'?'👔':'🧑‍💼'}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:13px">${e.name}</div>
+        <div style="font-size:11px;color:var(--muted)">${e.role==='manager'?t('cm_role_manager'):t('cm_role_employee')} · PIN ••••</div>
+      </div>
+      <button onclick="cmOpenEmployeeForm('${e.id}')" style="width:32px;height:32px;border-radius:8px;border:none;background:rgba(37,99,235,.08);color:var(--primary);cursor:pointer"><i class="fas fa-pencil" style="font-size:12px"></i></button>
+      <button onclick="cmDeleteEmployee('${e.id}')" style="width:32px;height:32px;border-radius:8px;border:none;background:rgba(239,68,68,.08);color:#ef4444;cursor:pointer"><i class="fas fa-trash" style="font-size:12px"></i></button>
+    </div>
+  `).join('');
+}
+
+window.cmOpenEmployeeForm = function(employeeId){
+  CM.editingEmployeeId = employeeId || null;
+  const form = document.getElementById('cmEmployeeForm');
+  form.style.display = 'block';
+  if (employeeId) {
+    const shop = cmGetShop();
+    const emp = (shop.employees||[]).find(e => e.id === employeeId);
+    if (emp) {
+      document.getElementById('cmEmpName').value = emp.name;
+      document.getElementById('cmEmpPin').value = emp.pin;
+      cmPickEmpRole(emp.role);
+    }
+  } else {
+    document.getElementById('cmEmpName').value = '';
+    document.getElementById('cmEmpPin').value = '';
+    cmPickEmpRole('manager');
+  }
+};
+
+window.cmCloseEmployeeForm = function(){
+  document.getElementById('cmEmployeeForm').style.display = 'none';
+  CM.editingEmployeeId = null;
+};
+
+window.cmPickEmpRole = function(role){
+  document.getElementById('cmEmpRoleManager').classList.toggle('active', role==='manager');
+  document.getElementById('cmEmpRoleEmployee').classList.toggle('active', role==='employee');
+  CM._pendingEmpRole = role;
+};
+
+window.cmSaveEmployee = function(){
+  const shop = cmGetShop();
+  if (!shop) return;
+  const name = document.getElementById('cmEmpName').value.trim();
+  const pin = document.getElementById('cmEmpPin').value.trim();
+  const role = CM._pendingEmpRole || 'manager';
+  if (!name) { cmToast(t('cm_msg_employee_name_required'),'error'); return; }
+  if (!/^\d{4}$/.test(pin)) { cmToast(t('cm_msg_pin_4digits'),'error'); return; }
+
+  // Le PIN doit être unique sur TOUT le compte (toutes boutiques confondues).
+  const taken = cmAllEmployees().some(e => e.pin === pin && e.id !== CM.editingEmployeeId);
+  if (taken) { cmToast(t('cm_msg_pin_taken'),'error'); return; }
+
+  if (!Array.isArray(shop.employees)) shop.employees = [];
+
+  if (CM.editingEmployeeId) {
+    const emp = shop.employees.find(e => e.id === CM.editingEmployeeId);
+    if (emp) Object.assign(emp, { name, pin, role });
+  } else {
+    shop.employees.push({ id: cmUID(), name, pin, role, createdAt: Date.now() });
+  }
+  cmSave();
+  cmRenderEmployeesList();
+  window.cmCloseEmployeeForm();
+  cmToast(t('cm_msg_employee_saved'),'success');
+};
+
+window.cmDeleteEmployee = function(employeeId){
+  const shop = cmGetShop();
+  if (!shop) return;
+  const emp = (shop.employees||[]).find(e => e.id === employeeId);
+  if (!emp) return;
+  if (!confirm(t('cm_confirm_delete_employee',{name:emp.name}))) return;
+  shop.employees = shop.employees.filter(e => e.id !== employeeId);
+  cmSave();
+  cmRenderEmployeesList();
+  cmToast(t('cm_msg_employee_deleted'),'success');
+};
+
 function cmKey(){
   const uid = (window.currentUser && window.currentUser.uid) || 'guest';
   return 'aet_commerce_' + uid;
@@ -8777,6 +9139,13 @@ function cmRenderShopSelect(){
 }
 
 window.cmSelectShop = function(id){
+  if (cmIsShopLocked()) {
+    // Sécurité de fond : même si le sélecteur est désactivé dans l'UI,
+    // on bloque aussi ici tout changement de boutique pour une session
+    // manager/employé verrouillée.
+    cmRenderShopSelect();
+    return;
+  }
   CM.currentShopId = id;
   cmSave();
   cmRenderAll();
@@ -8834,6 +9203,7 @@ window.cmEditShop = async function(id){
 };
 
 window.cmDeleteShop = function(id){
+  if (!cmCan('delete_shop')) { cmToast(t('cm_msg_permission_denied'),'error'); return; }
   const s = CM.shops.find(x=>x.id===id);
   if(!s) return;
   const nArt = CM.articles.filter(a=>a.shopId===id).length;
@@ -9360,8 +9730,19 @@ window.cmEditArticle = function(id){
   document.getElementById('cmArtSeuil').value = a.seuil!==undefined?a.seuil:5;
   document.getElementById('cmArtCode').value = a.code||'';
   document.getElementById('cmArtNote').value = a.note||'';
-  document.getElementById('cmArtDelBtn').style.display = '';
+  document.getElementById('cmArtDelBtn').style.display = cmCan('delete_article') ? '' : 'none';
   cmRenderArtCatGrid(a.cat);
+  // Si l'utilisateur n'a pas le droit de modifier les articles (employé),
+  // le formulaire reste consultable mais verrouillé en lecture seule —
+  // plus clair que de laisser modifier visuellement pour finalement
+  // bloquer seulement à l'enregistrement.
+  const readOnly = !cmCan('edit_article');
+  ['cmArtName','cmArtPrixA','cmArtPrixV','cmArtStock','cmArtUnit','cmArtSeuil','cmArtCode','cmArtNote'].forEach(id=>{
+    const el = document.getElementById(id);
+    if (el) { el.disabled = readOnly; }
+  });
+  const saveBtn = document.querySelector('#cmArticleModal .btn-save');
+  if (saveBtn) saveBtn.style.display = readOnly ? 'none' : '';
   if(window.openModal) window.openModal('cmArticleModal');
 };
 
@@ -9380,6 +9761,7 @@ window.cmPickArtCat = function(btn){
 };
 
 window.cmSaveArticle = function(){
+  if (!cmCan('edit_article')) { cmToast(t('cm_msg_permission_denied'),'error'); return; }
   const name = document.getElementById('cmArtName').value.trim();
   const catEl = document.querySelector('#cmArtCatGrid .cm-cat-chip.active');
   const cat = catEl ? catEl.dataset.cat : '';
@@ -9426,6 +9808,7 @@ window.cmSaveArticle = function(){
 };
 
 window.cmDeleteArticle = function(){
+  if (!cmCan('delete_article')) { cmToast(t('cm_msg_permission_denied'),'error'); return; }
   if(!CM.editingArtId) return;
   const a = CM.articles.find(x=>x.id===CM.editingArtId);
   if(!a) return;
@@ -9502,15 +9885,16 @@ window.cmOpenMvtModal = function(){
   if(window.openModal) window.openModal('cmMvtModal');
 };
 
-window.cmSetMvtType = function(t){
-  CM.currentMvtType = t;
-  document.getElementById('cmMvtPillV').classList.toggle('active', t==='vente');
-  document.getElementById('cmMvtPillA').classList.toggle('active', t==='achat');
+window.cmSetMvtType = function(type){
+  if (type === 'achat' && !cmCan('buy')) { cmToast(t('cm_msg_permission_denied'),'error'); type = 'vente'; }
+  CM.currentMvtType = type;
+  document.getElementById('cmMvtPillV').classList.toggle('active', type==='vente');
+  document.getElementById('cmMvtPillA').classList.toggle('active', type==='achat');
   // Mettre à jour prix par défaut
   if(CM.currentMvtArtId){
     const a = CM.articles.find(x=>x.id===CM.currentMvtArtId);
     if(a){
-      document.getElementById('cmMvtPrix').value = t==='vente'?(a.prixV||''):(a.prixA||a.prixV||'');
+      document.getElementById('cmMvtPrix').value = type==='vente'?(a.prixV||''):(a.prixA||a.prixV||'');
       cmUpdateMvtTotal();
     }
   }
@@ -9555,6 +9939,8 @@ window.cmUpdateMvtTotal = function(){
 };
 
 window.cmSaveMvt = function(){
+  const requiredPerm = CM.currentMvtType === 'achat' ? 'buy' : 'sell';
+  if (!cmCan(requiredPerm)) { cmToast(t('cm_msg_permission_denied'),'error'); return; }
   if(!CM.currentMvtArtId){ cmToast(t('cm_msg_choose_article'),'error'); return; }
   const a = CM.articles.find(x=>x.id===CM.currentMvtArtId);
   if(!a){ cmToast(t('cm_msg_article_not_found'),'error'); return; }
@@ -9662,6 +10048,7 @@ window.cmRenderStock = cmRenderStock;
 function cmRenderAll(){
   cmRenderShopSelect();
   cmRenderSection();
+  cmUpdateRoleBadge();
   const intro = document.getElementById('cmFeaturesIntro');
   if (intro) intro.style.display = cmGetShop() ? 'none' : 'block';
 }
@@ -9693,20 +10080,28 @@ function cmHookSwitchTab(){
   if(typeof orig !== 'function') return;
   window.switchTab = function(tab){
     orig.apply(this, arguments);
-    const t = document.getElementById('tab-commerce');
-    if(t){
+    const cmTabEl = document.getElementById('tab-commerce');
+    if(cmTabEl){
       if(tab==='commerce'){
-        t.classList.add('active');
-        t.style.display = 'block';
+        cmTabEl.classList.add('active');
+        cmTabEl.style.display = 'block';
         // Cacher les autres tab-content au cas où
         document.querySelectorAll('.tab-content').forEach(c=>{
           if(c.id!=='tab-commerce') c.classList.remove('active');
         });
         // Cacher le filtre mois et résumé global s'ils sont visibles
         cmRenderAll();
+        cmUpdateRoleBadge();
+        // Si la boutique a des employés enregistrés et qu'aucune session
+        // de rôle n'est encore active pour cette visite, on demande
+        // "Qui êtes-vous ?" avant de laisser interagir avec Commerce.
+        cmMaybePromptIdentity();
       } else {
-        t.classList.remove('active');
-        t.style.display = '';
+        cmTabEl.classList.remove('active');
+        cmTabEl.style.display = '';
+        // Quitter Commerce referme la session employé restreinte : le
+        // patron reprend automatiquement la main au prochain passage.
+        if (tab !== 'commerce') window.cmExitEmployeeSession();
       }
     }
     // Sync drawer item

@@ -18,6 +18,24 @@
   'use strict';
 
   /* ═══════════════════════════════════════════════════════════
+   * 0-PRE. SÉCURITÉ SCOPE — window.cmUID
+   *
+   * cmUID() est défini dans le module CM natif (index.html) et exposé
+   * via window.cmUID = cmUID APRÈS la fermeture de la IIFE CM.
+   * Si aet-commerce-pro.js ou un script asynchrone appelle cmUID()
+   * avant que le module CM soit complètement initialisé, on obtient :
+   *   ReferenceError: cmUID is not defined
+   *
+   * Solution : on garantit que window.cmUID existe TOUJOURS avec un
+   * fallback identique à l'implémentation CM native.
+   * ═══════════════════════════════════════════════════════════ */
+  if (typeof window.cmUID !== 'function') {
+    window.cmUID = function () {
+      return 'cm_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+    };
+  }
+
+  /* ═══════════════════════════════════════════════════════════
    * 0. VERROU IMMÉDIAT AU CHARGEMENT
    *
    * CM natif garde activeRole EN MÉMOIRE UNIQUEMENT (reset au reload).

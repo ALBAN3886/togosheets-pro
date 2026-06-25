@@ -10475,6 +10475,13 @@ if(document.readyState==='loading'){
   setTimeout(cmInit, 100);
 }
 
+// Exposer certaines fonctions au scope global pour les scripts complémentaires
+window.cmUID = cmUID;
+window.cmToast = cmToast;
+window.cmSave = cmSave;
+window.cmAllEmployees = cmAllEmployees;
+window.cmRenderEmployeesList = cmRenderEmployeesList;
+
 // Exposer pour debug
 window.CM_DEBUG = CM;
 
@@ -10886,41 +10893,41 @@ window.cmCreateAndGenerateEmployeeLink = function() {
   const role = window._cmPendingGenRole || 'employee';
   const expiryCfg = window.cmGetLinkExpiryConfig();
 
-  if (!name) { cmToast('Entrez le nom de l\'employé.', 'error'); return; }
-  if (!shopId) { cmToast('Choisissez une boutique.', 'error'); return; }
+  if (!name) { window.cmToast('Entrez le nom de l\'employé.', 'error'); return; }
+  if (!shopId) { window.cmToast('Choisissez une boutique.', 'error'); return; }
   if (!pin) pin = window.cmAutofillGeneratePin();
-  if (!/^\d{4}$/.test(pin)) { cmToast('Le PIN doit contenir 4 chiffres.', 'error'); return; }
+  if (!/^\d{4}$/.test(pin)) { window.cmToast('Le PIN doit contenir 4 chiffres.', 'error'); return; }
 
   const shops = Array.isArray(window.CM_DEBUG?.shops) ? window.CM_DEBUG.shops : [];
   const shop = shops.find(s => String(s.id) === String(shopId));
-  if (!shop) { cmToast('Boutique introuvable.', 'error'); return; }
+  if (!shop) { window.cmToast('Boutique introuvable.', 'error'); return; }
   if (!Array.isArray(shop.employees)) shop.employees = [];
 
   let emp = window.cmFindEmployeeByNameAndShop(name, shopId);
-  const pinTaken = (typeof cmAllEmployees === 'function' ? cmAllEmployees() : []).some(e => e.pin === pin && (!emp || e.id !== emp.id));
-  if (pinTaken) { cmToast('Ce PIN est déjà utilisé par un autre employé.', 'error'); return; }
+  const pinTaken = (typeof window.cmAllEmployees === 'function' ? window.cmAllEmployees() : []).some(e => e.pin === pin && (!emp || e.id !== emp.id));
+  if (pinTaken) { window.cmToast('Ce PIN est déjà utilisé par un autre employé.', 'error'); return; }
 
   if (emp) {
     Object.assign(emp, { name, pin, role, whatsapp, updatedAt: Date.now() });
   } else {
-    emp = { id: cmUID(), name, pin, role, whatsapp, createdAt: Date.now() };
+    emp = { id: window.cmUID(), name, pin, role, whatsapp, createdAt: Date.now() };
     shop.employees.push(emp);
   }
 
   emp.accessLink = window.cmBuildEmployeeLinkMeta(expiryCfg);
   if (window.CM_DEBUG) window.CM_DEBUG.currentShopId = shop.id;
-  if (typeof cmSave === 'function') cmSave();
-  if (typeof cmRenderEmployeesList === 'function') cmRenderEmployeesList();
+  if (typeof window.cmSave === 'function') window.cmSave();
+  if (typeof window.cmRenderEmployeesList === 'function') window.cmRenderEmployeesList();
   window.cmRenderGenerateLinkExistingEmployees();
   window.cmGenerateLinkForEmp(emp.id, shop.id, emp.name, emp.role, emp.pin, emp.whatsapp || '');
-  cmToast('Lien prêt pour ' + emp.name + ' ✓', 'success');
+  window.cmToast('Lien prêt pour ' + emp.name + ' ✓', 'success');
 };
 
 window.cmGenerateLinkForEmp = function(empId, shopId, name, role, pin, whatsapp) {
   const uid = window.currentUser ? window.currentUser.uid : '';
   const record = window.cmFindEmployeeRecord(empId, shopId);
   const emp = record.employee;
-  if (!record.shop || !emp) { cmToast('Employé introuvable.', 'error'); return; }
+  if (!record.shop || !emp) { window.cmToast('Employé introuvable.', 'error'); return; }
 
   const expiryCfg = window.cmGetLinkExpiryConfig();
   if (whatsapp) emp.whatsapp = window.cmNormalizeWhatsapp(whatsapp);
@@ -10946,8 +10953,8 @@ window.cmGenerateLinkForEmp = function(empId, shopId, name, role, pin, whatsapp)
     sentTo: emp.whatsapp || ''
   });
 
-  if (typeof cmSave === 'function') cmSave();
-  if (typeof cmRenderEmployeesList === 'function') cmRenderEmployeesList();
+  if (typeof window.cmSave === 'function') window.cmSave();
+  if (typeof window.cmRenderEmployeesList === 'function') window.cmRenderEmployeesList();
 
   const input = document.getElementById('cmGenLinkInput');
   if (input) input.value = link;
@@ -10978,15 +10985,15 @@ window.cmDisableEmployeeLink = function(empId, shopId) {
   const record = window.cmFindEmployeeRecord(empId, shopId);
   const emp = record.employee;
   if (!emp || !emp.accessLink || !emp.accessLink.token) {
-    cmToast('Aucun lien actif à désactiver.', 'info');
+    window.cmToast('Aucun lien actif à désactiver.', 'info');
     return;
   }
   emp.accessLink.disabledAt = Date.now();
   if (Array.isArray(emp.accessLinkHistory) && emp.accessLinkHistory.length) {
     emp.accessLinkHistory[0].disabledAt = emp.accessLink.disabledAt;
   }
-  if (typeof cmSave === 'function') cmSave();
-  if (typeof cmRenderEmployeesList === 'function') cmRenderEmployeesList();
+  if (typeof window.cmSave === 'function') window.cmSave();
+  if (typeof window.cmRenderEmployeesList === 'function') window.cmRenderEmployeesList();
   window.cmRenderGenerateLinkExistingEmployees();
 
   if (window._cmCurrentGenEmpId === empId && window._cmCurrentGenShopId === shopId) {
@@ -10997,12 +11004,12 @@ window.cmDisableEmployeeLink = function(empId, shopId) {
     }
     window.cmRenderEmployeeLinkHistory(emp);
   }
-  cmToast('Lien désactivé.', 'success');
+  window.cmToast('Lien désactivé.', 'success');
 };
 
 window.cmDisableCurrentEmployeeLink = function() {
   if (!window._cmCurrentGenEmpId || !window._cmCurrentGenShopId) {
-    cmToast('Aucun lien sélectionné.', 'info');
+    window.cmToast('Aucun lien sélectionné.', 'info');
     return;
   }
   window.cmDisableEmployeeLink(window._cmCurrentGenEmpId, window._cmCurrentGenShopId);

@@ -972,9 +972,23 @@ import { getMessaging, getToken, onMessage, isSupported as messagingIsSupported 
  * AUTO-CHARGEMENT : AET Commerce Pro — index.html non modifié
  * ═══════════════════════════════════════════════════════════════ */
 (function injectCommerceProScript() {
-  if (document.getElementById('aet-commerce-pro-script')) return;
+  // Cache-bust : forcer le rechargement à chaque déploiement
+  const CP_VERSION = '3.6.0'; // ← Incrémenter à chaque mise à jour
+  const existing = document.getElementById('aet-commerce-pro-script');
+  if (existing) {
+    // Si mauvaise version → supprimer et recharger
+    if (existing.dataset.cpv === CP_VERSION) return;
+    existing.remove();
+  }
+  // Vider le cache Service Worker pour ce fichier
+  if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+    navigator.serviceWorker.getRegistrations().then(regs => {
+      regs.forEach(reg => reg.update());
+    });
+  }
   const script = document.createElement('script');
-  script.id    = 'aet-commerce-pro-script';
-  script.src   = 'assets/js/aet-commerce-pro.js';
+  script.id        = 'aet-commerce-pro-script';
+  script.dataset.cpv = CP_VERSION;
+  script.src       = 'assets/js/aet-commerce-pro.js?v=' + CP_VERSION;
   document.head.appendChild(script);
 })();

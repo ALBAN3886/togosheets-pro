@@ -48,12 +48,19 @@ window.__EMP_DB__   = db;
 window.__EMP_FS__   = { doc, getDoc, setDoc, onSnapshot, serverTimestamp };
 
 // ── Écouter l'état d'authentification ──
+// ── Lire l'UID patron depuis l'URL ──
+const _urlParams = new URLSearchParams(window.location.search);
+const _uidFromUrl = _urlParams.get('uid');
+window.__EMP_UID_FROM_URL__ = _uidFromUrl;
+
 onAuthStateChanged(auth, user => {
   window.__EMP_USER__ = user;
-  if (user) {
+  if (_uidFromUrl) {
+    // Lien avec UID patron : chargement direct sans login
+    window.empLoadOwnerData(_uidFromUrl);
+  } else if (user) {
     window.empLoadOwnerData(user.uid);
   } else {
-    // Pas connecté → afficher le login
     window.empShowScreen('login');
   }
 });

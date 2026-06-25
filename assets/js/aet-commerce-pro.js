@@ -326,11 +326,13 @@
     if (!name) { CP.toast("Nom de l'employe requis", "error"); return; }
     if (!shopId) { CP.toast('Sélectionnez une boutique', 'error'); return; }
 
-    // Générer un token simple (non cryptographique, juste pour identification)
+    // UID du patron encodé dans le lien (permet multi-comptes)
+    const uid   = CP.uid_user() || '';
     const token = btoa(name + ':' + shopId + ':' + Date.now()).replace(/=/g,'');
 
-    const base  = window.location.origin + window.location.pathname;
-    const link  = `${base}?mode=employee&shop=${encodeURIComponent(shopId)}&name=${encodeURIComponent(name)}&role=${role}&token=${token}`;
+    // Lien vers la page dédiée employés (employe.html) avec l'UID patron
+    const base  = window.location.origin + window.location.pathname.replace(/[^/]*$/, '') + 'employe.html';
+    const link  = `${base}?uid=${encodeURIComponent(uid)}&shop=${encodeURIComponent(shopId)}&name=${encodeURIComponent(name)}&role=${role}&token=${token}`;
 
     const resultInput = document.getElementById('cpLinkResult');
     if (resultInput) resultInput.value = link;

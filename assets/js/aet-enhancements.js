@@ -969,14 +969,12 @@ import { getMessaging, getToken, onMessage, isSupported as messagingIsSupported 
 })();
 
 /* ═══════════════════════════════════════════════════════════════
- * AUTO-CHARGEMENT : AET Commerce Pro
- * Injecté depuis aet-enhancements.js — index.html non modifié
+ * AUTO-CHARGEMENT : AET Commerce Pro — index.html non modifié
  * ═══════════════════════════════════════════════════════════════ */
 (function injectCommerceProScript() {
   if (document.getElementById('aet-commerce-pro-script')) return;
   const script = document.createElement('script');
-  script.id  = 'aet-commerce-pro-script';
-  script.src = 'assets/js/aet-commerce-pro.js';
-  script.defer = true;
+  script.id    = 'aet-commerce-pro-script';
+  script.src   = 'assets/js/aet-commerce-pro.js';
   document.head.appendChild(script);
 })();

@@ -13,8 +13,63 @@
  * ═══════════════════════════════════════════════════════════════
  */
 
+
 (function () {
   'use strict';
+
+  /* ═══════════════════════════════════════════════════════════
+   * 0. VERROU IMMÉDIAT AU CHARGEMENT
+   *
+   * CM natif garde activeRole EN MÉMOIRE UNIQUEMENT (reset au reload).
+   * Solution : on persiste la session employé dans localStorage et on
+   * applique le CSS de verrou IMMÉDIATEMENT avant tout rendu UI.
+   * ═══════════════════════════════════════════════════════════ */
+  const CP_SESSION_KEY  = 'aet_cp_employee_session';
+  const CP_LOCK_STYLE_ID = 'cp-early-lock-style';
+
+  function cpReadSession()  { try { return JSON.parse(localStorage.getItem(CP_SESSION_KEY)||'null'); } catch(e){ return null; } }
+  function cpWriteSession(d){ try { localStorage.setItem(CP_SESSION_KEY, JSON.stringify(d)); } catch(e){} }
+  function cpClearSession() { try { localStorage.removeItem(CP_SESSION_KEY); } catch(e){} }
+
+  function cpInjectEarlyLock() {
+    if (document.getElementById(CP_LOCK_STYLE_ID)) return;
+    const s = document.createElement('style');
+    s.id = CP_LOCK_STYLE_ID;
+    s.textContent = `
+      body.cp-locked-early #sidebar .sidebar-link:not(#sb-commerce),
+      body.cp-locked-early .sidebar  .sidebar-link:not(#sb-commerce) {
+        opacity:.18!important; pointer-events:none!important; filter:grayscale(1)!important;
+      }
+      body.cp-locked-early #bnav-dashboard,
+      body.cp-locked-early #bnav-historique,
+      body.cp-locked-early #bnav-epargne,
+      body.cp-locked-early #bnav-more {
+        opacity:.18!important; pointer-events:none!important; filter:grayscale(1)!important;
+      }
+      body.cp-locked-early .tab-btn:not([data-tab="commerce"]) {
+        opacity:.18!important; pointer-events:none!important;
+      }
+      body.cp-locked-early .bnav-drawer-item:not(#bnd-commerce) {
+        opacity:.18!important; pointer-events:none!important;
+      }
+    `;
+    (document.head || document.documentElement).appendChild(s);
+  }
+
+  function cpApplyEarlyLockClass() {
+    document.body.classList.add('cp-locked-early','cp-employee-mode');
+  }
+
+  // ► Appliquer immédiatement si session employé trouvée
+  const _earlySession = cpReadSession();
+  if (_earlySession && _earlySession.role && _earlySession.role !== 'patron') {
+    cpInjectEarlyLock();
+    if (document.body) {
+      cpApplyEarlyLockClass();
+    } else {
+      document.addEventListener('DOMContentLoaded', cpApplyEarlyLockClass, { once: true });
+    }
+  }
 
   /* ═══════════════════════════════════════════════════════════
    * 1. ATTENTE DU MODULE CM DE BASE
@@ -113,6 +168,265 @@
     cpSaveLocal();
     clearTimeout(_cpSaveTimer);
     _cpSaveTimer = setTimeout(cpSaveRemote, 400);
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+   * 2B. GÉNÉRATEUR DE LIENS EMPLOYÉS
+   *
+   * Accessible via l'onglet Paramètres Commerce (bouton ajouté
+   * automatiquement dans la section Résumé pour le Patron).
+   * Génère un lien avec token unique, copiable ou partageable.
+   * ═══════════════════════════════════════════════════════════ */
+
+  function injectEmployeeLinkGenerator() {
+    // Injecter le modal de génération de lien
+    if (document.getElementById('cpLinkGenModal')) return;
+    document.body.insertAdjacentHTML('beforeend', `
+      <div class="modal-overlay" id="cpLinkGenModal">
+        <div class="modal-box" style="max-width:480px">
+          <div class="modal-header">
+            <h3><i class="fas fa-link" style="color:#10b981;margin-right:8px"></i>Générer un lien Employé</h3>
+            <button class="modal-close" onclick="closeModal('cpLinkGenModal')"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="modal-body">
+            <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
+              Partagez ce lien avec votre employé. Il ouvrira l'app directement sur Commerce, sans accès aux autres modules.
+            </p>
+            <div class="cp-form-group">
+              <label class="cp-label">Nom de l'employé</label>
+              <input type="text" id="cpLinkName" class="cp-input" placeholder="Ex: Koffi">
+            </div>
+            <div class="cp-form-row">
+              <div class="cp-form-group">
+                <label class="cp-label">Rôle</label>
+                <select id="cpLinkRole" class="cp-select">
+                  <option value="employee">Employé</option>
+                  <option value="manager">Manager</option>
+                  <option value="caissier">Caissier</option>
+                </select>
+              </div>
+              <div class="cp-form-group">
+                <label class="cp-label">Boutique</label>
+                <select id="cpLinkShop" class="cp-select"></select>
+              </div>
+            </div>
+            <div class="cp-form-group" id="cpLinkResultBox" style="display:none">
+              <label class="cp-label">🔗 Lien généré</label>
+              <div style="display:flex;gap:8px">
+                <input type="text" id="cpLinkResult" class="cp-input" readonly
+                  style="font-size:11px;flex:1;color:var(--muted)">
+                <button onclick="cpCopyLink()" class="cp-btn green" style="flex-shrink:0;padding:10px 14px">
+                  <i class="fas fa-copy"></i>
+                </button>
+              </div>
+              <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
+                <button onclick="cpShareLink()" class="cp-btn blue" style="flex:1">
+                  <i class="fas fa-share-nodes"></i> Partager
+                </button>
+                <button onclick="cpOpenQRLink()" class="cp-btn soft" style="flex:1">
+                  <i class="fas fa-qrcode"></i> QR Code
+                </button>
+              </div>
+            </div>
+            <!-- QR Code affiché ici -->
+            <div id="cpLinkQR" style="display:none;text-align:center;margin-top:12px">
+              <div id="cpLinkQRCanvas" style="display:inline-block;background:#fff;padding:12px;border-radius:12px;border:1px solid var(--border)"></div>
+              <div style="font-size:11px;color:var(--muted);margin-top:8px">Scanner ce QR code pour accéder directement</div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeModal('cpLinkGenModal')">Fermer</button>
+            <button class="btn-save" onclick="cpGenerateEmployeeLink()" style="background:linear-gradient(135deg,#10b981,#059669)">
+              <i class="fas fa-link"></i> Générer le lien
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal PWA Install Guide -->
+      <div class="modal-overlay" id="cpInstallGuideModal">
+        <div class="modal-box" style="max-width:440px">
+          <div class="modal-header">
+            <h3><i class="fas fa-mobile-screen" style="color:#2563eb;margin-right:8px"></i>Installer l'application</h3>
+            <button class="modal-close" onclick="closeModal('cpInstallGuideModal')"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="modal-body">
+            <!-- Bouton install direct si disponible -->
+            <div id="cpInstallDirectBtn" style="display:none;margin-bottom:16px">
+              <button onclick="cpTriggerInstall();closeModal('cpInstallGuideModal')" style="width:100%;padding:14px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:13px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit">
+                <i class="fas fa-download"></i> Installer maintenant (1 clic)
+              </button>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <!-- Android Chrome -->
+              <div style="background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2);border-radius:12px;padding:12px">
+                <div style="font-weight:800;font-size:13px;margin-bottom:6px"><i class="fab fa-android" style="color:#10b981"></i> Android (Chrome)</div>
+                <div style="font-size:12.5px;color:var(--muted);line-height:1.7">
+                  1. Ouvrez le lien dans <strong>Chrome</strong><br>
+                  2. Tapez les <strong>3 points</strong> ⋮ en haut à droite<br>
+                  3. Sélectionnez <strong>"Ajouter à l'écran d'accueil"</strong><br>
+                  4. Confirmez → L'icône apparaît sur votre écran
+                </div>
+              </div>
+              <!-- iOS Safari -->
+              <div style="background:rgba(37,99,235,.07);border:1px solid rgba(37,99,235,.2);border-radius:12px;padding:12px">
+                <div style="font-weight:800;font-size:13px;margin-bottom:6px"><i class="fab fa-apple" style="color:#2563eb"></i> iPhone / iPad (Safari)</div>
+                <div style="font-size:12.5px;color:var(--muted);line-height:1.7">
+                  1. Ouvrez le lien dans <strong>Safari</strong><br>
+                  2. Tapez l'icône <strong>Partager</strong> 
+                  3. Sélectionnez <strong>"Sur l'écran d'accueil"</strong><br>
+                  4. Confirmez → L'icône apparaît sur votre écran
+                </div>
+              </div>
+              <!-- PC -->
+              <div style="background:rgba(139,92,246,.07);border:1px solid rgba(139,92,246,.2);border-radius:12px;padding:12px">
+                <div style="font-weight:800;font-size:13px;margin-bottom:6px"><i class="fas fa-desktop" style="color:#8b5cf6"></i> PC (Chrome / Edge)</div>
+                <div style="font-size:12.5px;color:var(--muted);line-height:1.7">
+                  1. Ouvrez le lien dans <strong>Chrome ou Edge</strong><br>
+                  2. Cliquez sur l'icône <strong>⊕</strong> dans la barre d'adresse<br>
+                  3. Cliquez <strong>"Installer"</strong><br>
+                  4. L'app s'ouvre comme un programme natif
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn-cancel" onclick="closeModal('cpInstallGuideModal')">Fermer</button>
+          </div>
+        </div>
+      </div>
+    `);
+
+    // Peupler le select boutiques
+    cpRefreshLinkShopSelect();
+  }
+
+  function cpRefreshLinkShopSelect() {
+    const sel = document.getElementById('cpLinkShop');
+    if (!sel) return;
+    const cm = window.CM_DEBUG;
+    if (!cm) return;
+    sel.innerHTML = cm.shops.map(s =>
+      `<option value="${s.id}">${s.name}</option>`
+    ).join('');
+  }
+
+  window.cpOpenLinkGenerator = function () {
+    cpRefreshLinkShopSelect();
+    document.getElementById('cpLinkResultBox').style.display = 'none';
+    document.getElementById('cpLinkQR').style.display = 'none';
+    document.getElementById('cpLinkName').value = '';
+    if (window.openModal) window.openModal('cpLinkGenModal');
+  };
+
+  window.cpGenerateEmployeeLink = function () {
+    const name  = document.getElementById('cpLinkName')?.value.trim();
+    const role  = document.getElementById('cpLinkRole')?.value || 'employee';
+    const shopId= document.getElementById('cpLinkShop')?.value;
+    if (!name) { CP.toast("Nom de l'employe requis", "error"); return; }
+    if (!shopId) { CP.toast('Sélectionnez une boutique', 'error'); return; }
+
+    // Générer un token simple (non cryptographique, juste pour identification)
+    const token = btoa(name + ':' + shopId + ':' + Date.now()).replace(/=/g,'');
+
+    const base  = window.location.origin + window.location.pathname;
+    const link  = `${base}?mode=employee&shop=${encodeURIComponent(shopId)}&name=${encodeURIComponent(name)}&role=${role}&token=${token}`;
+
+    const resultInput = document.getElementById('cpLinkResult');
+    if (resultInput) resultInput.value = link;
+    document.getElementById('cpLinkResultBox').style.display = 'block';
+    document.getElementById('cpLinkQR').style.display = 'none';
+
+    // Sauvegarder dans les données Pro (historique des liens)
+    const shopId2 = CP.getCM()?.currentShopId;
+    if (!CPData.employeeLinks) CPData.employeeLinks = [];
+    CPData.employeeLinks.push({ name, role, shopId, token, link, createdAt: Date.now() });
+    cpSave();
+
+    CP.toast('Lien généré ✓', 'success');
+  };
+
+  window.cpCopyLink = function () {
+    const val = document.getElementById('cpLinkResult')?.value;
+    if (!val) return;
+    navigator.clipboard?.writeText(val).then(() => {
+      CP.toast("Lien copie !", 'success');
+    }).catch(() => {
+      // Fallback
+      const el = document.getElementById('cpLinkResult');
+      el.select(); document.execCommand('copy');
+      CP.toast("Lien copie !", 'success');
+    });
+  };
+
+  window.cpShareLink = function () {
+    const val   = document.getElementById('cpLinkResult')?.value;
+    const name  = document.getElementById('cpLinkName')?.value || 'Employé';
+    if (!val) return;
+    if (navigator.share) {
+      navigator.share({
+        title: "Acces Commerce - " + name,
+        text:  "Lien acces Commerce pour " + name,
+        url:   val,
+      }).catch(() => {});
+    } else {
+      cpCopyLink();
+      CP.toast("Lien copie - partagez-le par WhatsApp ou SMS", 'info');
+    }
+  };
+
+  window.cpOpenQRLink = function () {
+    const val = document.getElementById('cpLinkResult')?.value;
+    if (!val) return;
+    const qrDiv = document.getElementById('cpLinkQR');
+    const canvas = document.getElementById('cpLinkQRCanvas');
+    if (!qrDiv || !canvas) return;
+
+    // Utiliser QRCode.js si disponible, sinon API externe
+    if (typeof QRCode !== 'undefined') {
+      canvas.innerHTML = '';
+      new QRCode(canvas, { text: val, width: 180, height: 180, colorDark: '#0f172a', colorLight: '#ffffff' });
+    } else {
+      // API Google Charts (fallback sans lib)
+      canvas.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(val)}" style="border-radius:6px" alt="QR Code">`;
+    }
+    qrDiv.style.display = 'block';
+  };
+
+  window.cpOpenInstallGuide = function () {
+    // Vérifier si le prompt natif est disponible
+    const btn = document.getElementById('cpInstallDirectBtn');
+    if (btn) btn.style.display = _cpDeferredInstallPrompt ? 'block' : 'none';
+    if (window.openModal) window.openModal('cpInstallGuideModal');
+  };
+
+  /* Ajouter le bouton "Générer lien employé" dans le dashboard Résumé */
+  function injectLinkBtnInDashboard() {
+    const resumeSec = document.getElementById('cm-sec-resume');
+    if (!resumeSec || resumeSec.dataset.cpLinkBtn) return;
+    resumeSec.dataset.cpLinkBtn = '1';
+
+    const btnBar = document.createElement('div');
+    btnBar.style.cssText = 'display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap';
+    btnBar.innerHTML = `
+      <button onclick="cpOpenLinkGenerator()" id="cpLinkGenBtn" style="display:none;flex:1;padding:11px 14px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:12px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:7px;justify-content:center">
+        <i class="fas fa-link"></i> Lien Employé
+      </button>
+      <button onclick="cpOpenInstallGuide()" style="padding:11px 14px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:12px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:7px">
+        <i class="fas fa-download" style="color:#2563eb"></i> Installer l'app
+      </button>
+    `;
+    resumeSec.insertBefore(btnBar, resumeSec.firstChild);
+
+    // Afficher le bouton lien uniquement pour le Patron
+    function syncLinkBtn() {
+      const btn = document.getElementById('cpLinkGenBtn');
+      if (!btn) return;
+      const isPatron = !cpIsEmployeeSession();
+      btn.style.display = isPatron ? 'flex' : 'none';
+    }
+    syncLinkBtn();
+    setInterval(syncLinkBtn, 1500);
   }
 
   /* ═══════════════════════════════════════════════════════════
@@ -727,6 +1041,7 @@ body.dark #cpSearchBox, html[data-theme=dark] #cpSearchBox { background: #111827
     const resumeSec = document.getElementById('cm-sec-resume');
     if (!resumeSec || resumeSec.dataset.cpImproved) return;
     resumeSec.dataset.cpImproved = '1';
+    injectLinkBtnInDashboard(); // ← boutons Lien employé + Installer
 
     // Injecter les KPI Pro au début
     const kpiDiv = document.createElement('div');
@@ -2611,13 +2926,26 @@ body.cp-employee-mode { padding-top: 42px; }
       el.classList.add('cp-nav-blocked');
     });
 
+    // ► Persister la session pour survie au rechargement
+    cpWriteSession({
+      role: cm.activeRole,
+      employeeName: emp ? emp.name : 'Employé',
+      employeeId:   emp ? emp.id   : null,
+      shopName:     shop ? shop.name : '',
+      shopId:       cm.currentShopId || null,
+      lockedAt:     Date.now(),
+    });
+
     // Forcer Commerce
     cpGoToCommerce();
   }
 
   /* Désactive le mode employé */
   function cpDeactivateEmployeeMode() {
-    document.body.classList.remove('cp-employee-mode');
+    // ► Effacer la session persistée
+    cpClearSession();
+
+    document.body.classList.remove('cp-employee-mode','cp-locked-early');
     document.getElementById('cpEmployeeBanner')?.classList.remove('show');
     document.getElementById('cpLockOverlay')?.classList.remove('show');
 
@@ -2709,6 +3037,36 @@ body.cp-employee-mode { padding-top: 42px; }
   }
 
   /* ── Hook cmSubmitIdentityPin : activer le verrou après login employé ── */
+  /* Restaure la session CM depuis localStorage ou URL après rechargement */
+  function cpRestoreSessionInCM() {
+    const sess = cpReadSession();
+    if (!sess || !sess.role || sess.role === 'patron') return;
+    const cm = window.CM_DEBUG;
+    if (!cm) return;
+
+    // Si la session vient d'un lien, trouver la boutique par ID
+    if (sess.fromLink && sess.shopId) {
+      const shop = cm.shops.find(s => s.id === sess.shopId);
+      if (shop) {
+        cm.currentShopId = sess.shopId;
+        sess.shopName = shop.name;
+        cpWriteSession(sess); // Mettre à jour avec le vrai nom
+      }
+    }
+
+    cm.activeRole = sess.role;
+    cm.activeEmployee = {
+      id:   sess.employeeId || 'link_emp',
+      name: sess.employeeName || 'Employé',
+      role: sess.role,
+    };
+    if (typeof window.cmUpdateRoleBadge === 'function') window.cmUpdateRoleBadge();
+    cpActivateEmployeeMode();
+
+    // Afficher le bouton d'installation PWA si disponible
+    if (_cpDeferredInstallPrompt) cpShowInstallBtn();
+  }
+
   function hookCmIdentityPin() {
     const orig = window.cmSubmitIdentityPin;
     if (typeof orig !== 'function' || orig._cpHooked) return;
@@ -3009,6 +3367,7 @@ body.cp-employee-mode #authScreen { margin-top:38px; }
       if (document.getElementById('tab-commerce')) {
         injectTabs();
         injectSections();
+        injectEmployeeLinkGenerator(); // ← Générateur de lien employé
         hookCmSwitch();
         hookGlobalSwitchTab();
         hookSwitchTabForLock();       // ← Bloquer nav hors Commerce
@@ -3019,10 +3378,8 @@ body.cp-employee-mode #authScreen { margin-top:38px; }
         syncFabVisibility();
         watchEmployeeRole();          // ← Surveillance rôle temps réel
 
-        // Si déjà en session employé au chargement
-        if (cpIsEmployeeSession()) {
-          setTimeout(cpActivateEmployeeMode, 400);
-        }
+        // ► Restaurer session depuis localStorage (survie rechargement/lien)
+        cpRestoreSessionInCM();
 
         if (CP.uid_user()) {
           cpLoadRemote().then(() => cpRenderDashboard());
@@ -3070,6 +3427,125 @@ body.cp-employee-mode #authScreen { margin-top:38px; }
     changePatronPin: () => { injectPatronPinModal(); window.cpSetupPatronPin(); },
   };
 
-  console.log('[AET Commerce Pro v3.2.0] ✓ | PIN Patron + Verrou employé actifs');
+  console.log('[AET Commerce Pro v3.4.0] ✓ | Lien employé + PWA install actifs');
+
+  /* ═══════════════════════════════════════════════════════════
+   * 0B. LIEN EMPLOYÉ — URL params + mode kiosque
+   *
+   * Format du lien :
+   *   https://alban3886.github.io/togosheets-pro/
+   *     ?mode=employee
+   *     &shop=SHOP_ID
+   *     &name=Koffi
+   *     &role=employee          (ou manager)
+   *     &token=TOKEN_SECRET
+   *
+   * Généré par le Patron depuis le module Commerce.
+   * Quand ce lien est ouvert :
+   *  1. Le CSS de verrou est appliqué immédiatement
+   *  2. Après auth Firebase, la session employé est injectée dans CM
+   *  3. L'app s'ouvre directement sur Commerce, sidebar verrouillée
+   *  4. Le bouton "Installer" (PWA) est proposé automatiquement
+   * ═══════════════════════════════════════════════════════════ */
+
+  const CP_URL_PARAMS = (function() {
+    try {
+      const p = new URLSearchParams(window.location.search);
+      return {
+        mode:   p.get('mode')   || null,   // 'employee'
+        shop:   p.get('shop')   || null,   // shopId
+        name:   p.get('name')   || null,   // nom employé
+        role:   p.get('role')   || 'employee',
+        token:  p.get('token')  || null,   // token de validation
+      };
+    } catch(e) { return {}; }
+  })();
+
+  const CP_IS_EMPLOYEE_LINK = CP_URL_PARAMS.mode === 'employee' && !!CP_URL_PARAMS.shop;
+
+  // Si lien employé détecté → verrouiller immédiatement
+  if (CP_IS_EMPLOYEE_LINK) {
+    cpInjectEarlyLock();
+    if (document.body) {
+      document.body.classList.add('cp-locked-early', 'cp-employee-mode');
+    } else {
+      document.addEventListener('DOMContentLoaded', () => {
+        document.body.classList.add('cp-locked-early', 'cp-employee-mode');
+      }, { once: true });
+    }
+    // Sauvegarder la session depuis l'URL
+    cpWriteSession({
+      role:         CP_URL_PARAMS.role,
+      employeeName: CP_URL_PARAMS.name || 'Employé',
+      employeeId:   'link_' + (CP_URL_PARAMS.name || 'emp'),
+      shopId:       CP_URL_PARAMS.shop,
+      shopName:     '',
+      fromLink:     true,
+      token:        CP_URL_PARAMS.token,
+      lockedAt:     Date.now(),
+    });
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+   * 0C. PWA INSTALL — Bouton d'installation Android/PC
+   * ═══════════════════════════════════════════════════════════ */
+  let _cpDeferredInstallPrompt = null;
+  let _cpInstallBtnInjected    = false;
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    _cpDeferredInstallPrompt = e;
+    // Afficher le bouton d'installation si on est en mode employé ou dans Commerce
+    cpShowInstallBtn();
+  });
+
+  window.addEventListener('appinstalled', () => {
+    _cpDeferredInstallPrompt = null;
+    const btn = document.getElementById('cpInstallBanner');
+    if (btn) btn.remove();
+  });
+
+  function cpShowInstallBtn() {
+    if (_cpInstallBtnInjected || !_cpDeferredInstallPrompt) return;
+    _cpInstallBtnInjected = true;
+
+    // Injecter le bandeau d'installation
+    const banner = document.createElement('div');
+    banner.id = 'cpInstallBanner';
+    banner.style.cssText = `
+      position:fixed; bottom:72px; left:12px; right:12px;
+      background:linear-gradient(135deg,#1d4ed8,#2563eb);
+      color:#fff; border-radius:16px; padding:14px 16px;
+      display:flex; align-items:center; gap:12px;
+      box-shadow:0 8px 28px rgba(37,99,235,.45);
+      z-index:9990; animation:cpSlideIn .3s ease;
+      font-family:inherit;
+    `;
+    banner.innerHTML = `
+      <div style="font-size:26px">📲</div>
+      <div style="flex:1">
+        <div style="font-weight:800;font-size:13.5px">Installer l'application</div>
+        <div style="font-size:11.5px;opacity:.85;margin-top:2px">Accès rapide depuis l'écran d'accueil</div>
+      </div>
+      <button onclick="cpTriggerInstall()" style="background:rgba(255,255,255,.2);border:none;border-radius:10px;color:#fff;padding:8px 14px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;flex-shrink:0">
+        Installer
+      </button>
+      <button onclick="document.getElementById('cpInstallBanner').remove()" style="background:transparent;border:none;color:rgba(255,255,255,.6);font-size:18px;cursor:pointer;padding:4px;flex-shrink:0">✕</button>
+    `;
+    document.body.appendChild(banner);
+    // Auto-fermeture après 12s si pas d'action
+    setTimeout(() => banner.remove(), 12000);
+  }
+
+  window.cpTriggerInstall = async function () {
+    if (!_cpDeferredInstallPrompt) return;
+    _cpDeferredInstallPrompt.prompt();
+    const { outcome } = await _cpDeferredInstallPrompt.userChoice;
+    _cpDeferredInstallPrompt = null;
+    document.getElementById('cpInstallBanner')?.remove();
+    if (outcome === 'accepted') {
+      CP.toast('Application installée avec succès ! 🎉', 'success');
+    }
+  };
 
 })();

@@ -1530,5 +1530,421 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw-employe.js').catch(() => {});
 }
 </script>
+
+<style id="emp-patch-v2">
+.profile-shell{display:grid;gap:12px}
+.profile-hero{background:linear-gradient(135deg,#ecfdf5,#eff6ff);border:1px solid rgba(16,185,129,.16);border-radius:20px;padding:16px;display:flex;gap:12px;align-items:center;margin-bottom:12px}
+.profile-avatar{width:58px;height:58px;border-radius:18px;background:linear-gradient(135deg,#10b981,#2563eb);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;box-shadow:0 12px 30px rgba(37,99,235,.18)}
+.profile-hero h3{font-size:16px;font-weight:800;color:var(--text);margin-bottom:3px}
+.profile-hero p{font-size:12px;color:var(--muted);line-height:1.5}
+.profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.profile-card{background:#fff;border:1px solid var(--border);border-radius:18px;padding:14px;box-shadow:0 10px 28px rgba(15,23,42,.04)}
+.profile-card.full{grid-column:1/-1}
+.profile-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:4px}
+.profile-soft-btn{flex:1;min-width:120px;padding:12px 14px;border-radius:13px;background:#eef2ff;color:#1d4ed8;font-weight:800;font-size:13px}
+.profile-soft-btn.secondary{background:#f0fdf9;color:#047857}
+.form-hint{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.45}
+.form-textarea{width:100%;padding:13px 14px;border:1.5px solid #e2e8f0;border-radius:12px;font-size:14px;font-weight:500;color:var(--text);background:#f8fafc;transition:border-color .2s;min-height:96px;resize:vertical}
+.form-textarea:focus{border-color:var(--green);background:#fff}
+.receipt-modal .modal-sheet{max-width:560px;border-radius:24px 24px 0 0}
+.receipt-preview{background:#fff;border:1px dashed rgba(16,185,129,.28);border-radius:18px;padding:16px;margin-bottom:14px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.8),0 10px 30px rgba(15,23,42,.04)}
+.receipt-brand{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:12px}
+.receipt-brand h3{font-size:18px;font-weight:900;color:var(--text)}
+.receipt-badge{padding:7px 10px;border-radius:999px;background:#ecfdf5;color:#047857;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.receipt-meta{font-size:11px;color:var(--muted);line-height:1.55}
+.receipt-divider{height:1px;background:linear-gradient(90deg,transparent,#d1fae5,#dbeafe,transparent);margin:12px 0}
+.receipt-row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;font-size:13px}
+.receipt-row span:first-child{color:var(--muted);font-weight:600}
+.receipt-row span:last-child{font-weight:800;color:var(--text);text-align:right}
+.receipt-total{margin-top:6px;padding-top:12px;border-top:1px dashed #cbd5e1}
+.receipt-total span:last-child{color:var(--green2);font-size:18px}
+.receipt-note{margin-top:12px;background:#f8fafc;border-radius:14px;padding:12px 13px;font-size:12px;color:var(--muted);line-height:1.6}
+.receipt-actions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.receipt-actions button{flex:1;min-width:130px;padding:13px 14px;border-radius:14px;font-weight:800;font-size:14px}
+.receipt-btn-share{background:linear-gradient(135deg,#2563eb,#3b82f6);color:#fff}
+.receipt-btn-print{background:#f8fafc;color:var(--text);border:1px solid #e2e8f0}
+.item-actions{display:flex;justify-content:flex-end;margin-top:8px}
+.item-mini-btn{padding:7px 10px;border-radius:999px;background:#eff6ff;color:#2563eb;font-size:11px;font-weight:800;border:1px solid rgba(37,99,235,.16)}
+.item-mini-btn.green{background:#ecfdf5;color:#047857;border-color:rgba(16,185,129,.16)}
+.quick-scan-card{margin-bottom:14px}
+.emp-role-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:rgba(16,185,129,.10);color:#047857;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;margin-top:6px}
+.emp-role-chip.manager{background:rgba(37,99,235,.10);color:#1d4ed8}
+.tabs-bar,.bottom-nav{scroll-padding-inline:12px}
+@media (max-width:420px){.profile-grid{grid-template-columns:1fr}.receipt-actions button,.profile-soft-btn{min-width:unset}}
+</style>
+<script id="emp-patch-v2-script">
+(function(){
+  if(window.__EMP_PATCH_V2__) return;
+  window.__EMP_PATCH_V2__ = true;
+
+  const tabsBar = document.getElementById('tabsBar');
+  if (tabsBar && !tabsBar.querySelector('[data-tab="profile"]')) {
+    tabsBar.insertAdjacentHTML('beforeend', `
+      <button class="tab-btn" data-tab="profile" onclick="empSwitchTab('profile')">
+        <i class="fas fa-id-card"></i> Profil
+      </button>
+    `);
+  }
+
+  const bnav = document.querySelector('.bottom-nav');
+  if (bnav && !bnav.querySelector('[data-tab="profile"]')) {
+    bnav.insertAdjacentHTML('beforeend', `
+      <button class="bnav-btn" data-tab="profile" onclick="empSwitchTab('profile')">
+        <i class="fas fa-id-card"></i> Profil
+      </button>
+    `);
+  }
+
+  const vendreTab = document.getElementById('tab-vendre');
+  if (vendreTab && !document.getElementById('empQuickScanCard')) {
+    vendreTab.insertAdjacentHTML('afterbegin', `
+      <div class="quick-scan-card" id="empQuickScanCard">
+        <div class="quick-scan-title"><i class="fas fa-qrcode" style="color:var(--blue)"></i> Vente rapide</div>
+        <div class="quick-scan-sub">Scannez un QR code ou code-barres pour ouvrir immédiatement la fiche de vente de l'article et confirmer plus vite en caisse.</div>
+        <button class="quick-scan-btn" type="button" onclick="empScanForQuickSale()"><i class="fas fa-camera"></i> Scanner pour vendre</button>
+      </div>
+    `);
+  }
+
+  const histTab = document.getElementById('tab-historique');
+  if (histTab && !document.getElementById('tab-profile')) {
+    histTab.insertAdjacentHTML('afterend', `
+      <div class="tab-content" id="tab-profile">
+        <div class="sec-title"><i class="fas fa-id-card-clip"></i> Informations personnelles</div>
+        <div id="profileContent"></div>
+      </div>
+    `);
+  }
+
+  const scanModal = document.getElementById('empScanModal');
+  if (scanModal && !document.getElementById('receiptModal')) {
+    scanModal.insertAdjacentHTML('afterend', `
+      <div class="modal-bg receipt-modal" id="receiptModal">
+        <div class="modal-sheet">
+          <div class="modal-handle"></div>
+          <div class="modal-title"><i class="fas fa-receipt" style="color:var(--green)"></i> Reçu de vente</div>
+          <div id="receiptPreview" class="receipt-preview"></div>
+          <div class="receipt-actions">
+            <button class="receipt-btn-share" type="button" onclick="empShareCurrentReceipt()"><i class="fas fa-share-nodes"></i> Partager</button>
+            <button class="receipt-btn-print" type="button" onclick="empPrintCurrentReceipt()"><i class="fas fa-print"></i> Imprimer</button>
+          </div>
+          <button class="btn-cancel-modal" type="button" onclick="empCloseReceipt()">Fermer</button>
+        </div>
+      </div>
+    `);
+  }
+
+  function empHtml(v){
+    return String(v == null ? '' : v).replace(/[&<>\"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','\\"':'&quot;','\'':'&#39;'}[s] || s));
+  }
+  function empDateTime(ts){
+    const d = new Date(ts || Date.now());
+    try { return d.toLocaleString('fr-FR', { dateStyle:'medium', timeStyle:'short' }); }
+    catch(_) { return d.toISOString().slice(0,16).replace('T',' '); }
+  }
+  function empMovementName(m){ return m?.artName || m?.artNom || m?.lignes?.[0]?.artName || m?.lignes?.[0]?.artNom || 'Article'; }
+  function empMovementQty(m){ return Number(m?.qte ?? m?.qty ?? m?.lignes?.[0]?.qte ?? m?.lignes?.[0]?.qty ?? 1); }
+  function empMovementPrice(m){
+    const inline = Number(m?.prix ?? m?.prixUnit ?? m?.lignes?.[0]?.prix ?? m?.lignes?.[0]?.prixUnit ?? 0);
+    if (inline > 0) return inline;
+    const art = empGetArticles().find(a => a.id === m?.artId);
+    return art ? empGetSellPrice(art) : 0;
+  }
+  function empMovementSeller(m){ return m?.sellerName || m?.employeeName || m?.employee?.name || ''; }
+  function empGetProfileRef(target){
+    if (!target) return null;
+    if (!target.personalData || typeof target.personalData !== 'object') target.personalData = {};
+    const p = target.personalData;
+    if (!p.fullName) p.fullName = target.name || '';
+    if (!p.position) p.position = (target.role === 'manager' ? 'Manager' : 'Employé');
+    if (!p.createdAt) p.createdAt = Date.now();
+    return p;
+  }
+  function empSyncCurrentEmployeeRecord(){
+    if (!EMP?.shop || !EMP?.employee || !Array.isArray(EMP.shop.employees)) return null;
+    const idx = EMP.shop.employees.findIndex(e => e.id === EMP.employee.id);
+    if (idx < 0) return null;
+    const ref = EMP.shop.employees[idx];
+    EMP.employee = ref;
+    return ref;
+  }
+  function empApplyHeaderProfile(){
+    if (!EMP?.employee) return;
+    const p = empGetProfileRef(EMP.employee) || {};
+    const sub = document.getElementById('empNameHeader');
+    if (sub) {
+      const bits = [EMP.employee.name || '', p.position || ''];
+      if (p.phone) bits.push(p.phone);
+      sub.textContent = bits.filter(Boolean).join(' · ');
+    }
+  }
+  function empNextDocNumber(prefix){
+    prefix = prefix || 'REC';
+    const shop = EMP?.shop || null;
+    if (!shop) return prefix + '-0001';
+    if (!shop.docCounters || typeof shop.docCounters !== 'object') shop.docCounters = {};
+    const next = Number(shop.docCounters[prefix] || 0) + 1;
+    shop.docCounters[prefix] = next;
+    return prefix + '-' + String(next).padStart(4,'0');
+  }
+  function empBuildReceipt(mvt){
+    const art = empGetArticles().find(a => a.id === mvt?.artId) || null;
+    const qty = empMovementQty(mvt);
+    const prix = empMovementPrice(mvt);
+    return {
+      docNumber: mvt?.receiptNum || empNextDocNumber('REC'),
+      shopName: EMP?.shop?.name || 'Commerce',
+      articleName: empMovementName(mvt),
+      qte: qty,
+      prix: prix,
+      total: Number(mvt?.total ?? (qty * prix) ?? 0),
+      date: mvt?.date || empToday(),
+      createdAt: mvt?.createdAt || Date.now(),
+      sellerName: empMovementSeller(mvt) || EMP?.employee?.name || '',
+      sellerRole: EMP?.role === 'manager' ? 'Manager' : 'Employé',
+      note: mvt?.note || '',
+      unit: art?.unit || 'unité(s)'
+    };
+  }
+  function empReceiptHTML(r){
+    return `
+      <div class="receipt-brand">
+        <div>
+          <div class="receipt-meta">${empHtml(r.shopName || '')}</div>
+          <h3>${empHtml(r.articleName || 'Article')}</h3>
+        </div>
+        <div class="receipt-badge">Reçu ${empHtml(r.docNumber || '')}</div>
+      </div>
+      <div class="receipt-meta">Date : ${empHtml(empDateTime(r.createdAt))}</div>
+      <div class="receipt-divider"></div>
+      <div class="receipt-row"><span>Article</span><span>${empHtml(r.articleName)}</span></div>
+      <div class="receipt-row"><span>Quantité</span><span>${empHtml(String(r.qte))} ${empHtml(r.unit || '')}</span></div>
+      <div class="receipt-row"><span>Prix unitaire</span><span>${empHtml(empFmt(r.prix || 0))}</span></div>
+      <div class="receipt-row"><span>Vendu par</span><span>${empHtml(r.sellerName || '—')}</span></div>
+      <div class="receipt-row"><span>Fonction</span><span>${empHtml(r.sellerRole || 'Employé')}</span></div>
+      <div class="receipt-row receipt-total"><span>Total</span><span>${empHtml(empFmt(r.total || 0))}</span></div>
+      ${r.note ? `<div class="receipt-note">${empHtml(r.note)}</div>` : '<div class="receipt-note">Merci pour votre achat. Ce reçu peut être partagé ou imprimé.</div>'}
+    `;
+  }
+
+  window.empOpenReceipt = function(receipt){
+    EMP.lastReceipt = receipt;
+    const preview = document.getElementById('receiptPreview');
+    if (preview) preview.innerHTML = empReceiptHTML(receipt || {});
+    document.getElementById('receiptModal')?.classList.add('open');
+  };
+  window.empCloseReceipt = function(){ document.getElementById('receiptModal')?.classList.remove('open'); };
+  window.empPrintCurrentReceipt = function(){
+    if (!EMP?.lastReceipt) return;
+    const html = `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Reçu ${empHtml(EMP.lastReceipt.docNumber || '')}</title><style>body{font-family:Poppins,Arial,sans-serif;padding:24px;color:#0f172a}.sheet{max-width:420px;margin:0 auto;border:1px solid #d1d5db;border-radius:18px;padding:20px}.row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;font-size:14px}.row span:first-child{color:#64748b}.row strong{font-size:18px;color:#059669}.note{margin-top:12px;background:#f8fafc;border-radius:14px;padding:12px;color:#475569;font-size:12px}</style></head><body><div class="sheet">${empReceiptHTML(EMP.lastReceipt)}</div></body></html>`;
+    const popup = window.open('', '_blank', 'width=480,height=720');
+    if (!popup) { empToast('Autorisez les fenêtres pop-up pour imprimer le reçu.', 'info'); return; }
+    popup.document.open(); popup.document.write(html); popup.document.close(); popup.focus();
+    setTimeout(() => { try { popup.print(); } catch(_) {} }, 250);
+  };
+  window.empShareCurrentReceipt = async function(){
+    if (!EMP?.lastReceipt) return;
+    const r = EMP.lastReceipt;
+    const text = [
+      `${r.shopName}`,
+      `Reçu ${r.docNumber}`,
+      `Article : ${r.articleName}`,
+      `Quantité : ${r.qte} ${r.unit || ''}`,
+      `Prix unitaire : ${empFmt(r.prix || 0)}`,
+      `Total : ${empFmt(r.total || 0)}`,
+      `Vendu par : ${r.sellerName || '—'}`
+    ].join('\n');
+    if (navigator.share) {
+      try { await navigator.share({ title: `Reçu ${r.docNumber}`, text }); return; }
+      catch(_) {}
+    }
+    try {
+      await navigator.clipboard.writeText(text);
+      empToast('Reçu copié dans le presse-papiers.', 'success');
+    } catch(_) {
+      empToast('Partage indisponible sur cet appareil.', 'error');
+    }
+  };
+
+  window.empRenderProfile = function(){
+    const holder = document.getElementById('profileContent');
+    if (!holder || !EMP?.employee) return;
+    const ref = empSyncCurrentEmployeeRecord() || EMP.employee;
+    const p = empGetProfileRef(ref) || {};
+    const initials = String((ref.name || 'E').split(/\s+/).slice(0,2).map(x => x[0] || '').join('').toUpperCase() || 'E');
+    holder.innerHTML = `
+      <div class="profile-shell">
+        <div class="profile-hero">
+          <div class="profile-avatar">${empHtml(initials)}</div>
+          <div>
+            <h3>${empHtml(ref.name || 'Employé')}</h3>
+            <p>Complétez vos informations personnelles pour faciliter l'identification après vente, la gestion d'équipe et l'édition des reçus.</p>
+            <div class="emp-role-chip ${ref.role === 'manager' ? 'manager' : ''}">${ref.role === 'manager' ? 'Manager' : 'Employé'}</div>
+          </div>
+        </div>
+        <div class="profile-grid">
+          <div class="profile-card">
+            <div class="form-group"><label class="form-label">Nom complet</label><input id="empProfileName" class="form-input" value="${empHtml(p.fullName || ref.name || '')}" placeholder="Nom et prénom"></div>
+            <div class="form-group"><label class="form-label">Téléphone</label><input id="empProfilePhone" class="form-input" value="${empHtml(p.phone || '')}" placeholder="+228 90 00 00 00" inputmode="tel"></div>
+            <div class="form-group" style="margin-bottom:0"><label class="form-label">Email</label><input id="empProfileEmail" class="form-input" value="${empHtml(p.email || '')}" placeholder="nom@exemple.com" inputmode="email"></div>
+          </div>
+          <div class="profile-card">
+            <div class="form-group"><label class="form-label">Poste</label><input id="empProfilePosition" class="form-input" value="${empHtml(p.position || '')}" placeholder="Caissier, vendeur, responsable…"></div>
+            <div class="form-group"><label class="form-label">Date d'embauche</label><input id="empProfileHireDate" class="form-input" type="date" value="${empHtml(p.hireDate || '')}"></div>
+            <div class="form-group" style="margin-bottom:0"><label class="form-label">Contact d'urgence</label><input id="empProfileEmergency" class="form-input" value="${empHtml(p.emergencyContact || '')}" placeholder="Nom + téléphone"></div>
+          </div>
+          <div class="profile-card full">
+            <div class="form-group"><label class="form-label">Adresse</label><input id="empProfileAddress" class="form-input" value="${empHtml(p.address || '')}" placeholder="Quartier, ville, repère"></div>
+            <div class="form-group" style="margin-bottom:0"><label class="form-label">Notes</label><textarea id="empProfileNotes" class="form-textarea" placeholder="Informations complémentaires utiles pour le patron ou la caisse">${empHtml(p.notes || '')}</textarea><div class="form-hint">Ces informations sont synchronisées dans l'espace Commerce du patron.</div></div>
+          </div>
+        </div>
+        <div class="profile-actions">
+          <button class="profile-soft-btn secondary" type="button" onclick="empScanForQuickSale()"><i class="fas fa-qrcode"></i> Vente rapide</button>
+          <button class="btn-primary" type="button" onclick="empSaveProfile()"><i class="fas fa-floppy-disk"></i> Enregistrer mes informations</button>
+        </div>
+      </div>
+    `;
+  };
+
+  window.empSaveProfile = function(){
+    if (!EMP?.employee || !EMP?.cmData) return;
+    const ref = empSyncCurrentEmployeeRecord();
+    if (!ref) { empToast('Employé introuvable.', 'error'); return; }
+    const profile = empGetProfileRef(ref) || {};
+    const name = (document.getElementById('empProfileName')?.value || '').trim();
+    const phone = (document.getElementById('empProfilePhone')?.value || '').trim();
+    const email = (document.getElementById('empProfileEmail')?.value || '').trim();
+    const position = (document.getElementById('empProfilePosition')?.value || '').trim();
+    const hireDate = (document.getElementById('empProfileHireDate')?.value || '').trim();
+    const emergency = (document.getElementById('empProfileEmergency')?.value || '').trim();
+    const address = (document.getElementById('empProfileAddress')?.value || '').trim();
+    const notes = (document.getElementById('empProfileNotes')?.value || '').trim();
+    ref.personalData = Object.assign({}, profile, {
+      fullName: name || ref.name || '',
+      phone, email, position: position || profile.position || (ref.role === 'manager' ? 'Manager' : 'Employé'),
+      hireDate, emergencyContact: emergency, address, notes, updatedAt: Date.now()
+    });
+    if (name) ref.name = name;
+    EMP.employee = ref;
+    try { localStorage.setItem('aet_commerce_' + EMP.user.uid, JSON.stringify(EMP.cmData)); } catch(_) {}
+    empApplyHeaderProfile();
+    if (typeof empSaveToFirestore === 'function') empSaveToFirestore();
+    if (typeof empRenderIdentityList === 'function') { try { empRenderIdentityList(); } catch(_) {} }
+    empToast('Informations personnelles mises à jour.', 'success');
+    window.empRenderProfile();
+  };
+
+  const _empRenderTab = empRenderTab;
+  empRenderTab = function(tab){
+    if (tab === 'profile') return window.empRenderProfile();
+    return _empRenderTab(tab);
+  };
+
+  const _empStartSession = empStartSession;
+  empStartSession = function(){
+    empGetProfileRef(EMP?.employee);
+    _empStartSession();
+    empApplyHeaderProfile();
+  };
+
+  const _empRefreshSessionRefs = empRefreshSessionRefs;
+  empRefreshSessionRefs = function(){
+    _empRefreshSessionRefs();
+    if (EMP?.employee) {
+      empGetProfileRef(EMP.employee);
+      empApplyHeaderProfile();
+      if (EMP.currentTab === 'profile') window.empRenderProfile();
+    }
+  };
+
+  const _empRenderIdentityList = empRenderIdentityList;
+  empRenderIdentityList = function(){
+    _empRenderIdentityList();
+    document.querySelectorAll('#identityList .emp-btn').forEach(btn => {
+      const roleEl = btn.querySelector('.emp-role');
+      if (!roleEl || btn.querySelector('.emp-role-chip')) return;
+      const isManager = /Manager/i.test(roleEl.textContent || '');
+      roleEl.insertAdjacentHTML('beforeend', ` <span class="emp-role-chip ${isManager ? 'manager' : ''}">${isManager ? 'Manager' : 'Employé'}</span>`);
+    });
+  };
+
+  empRenderHistorique = function(){
+    const mvts = empGetMvts().filter(m => m.type === 'vente').sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,50);
+    const el = document.getElementById('historiqueList');
+    if (!el) return;
+    if (mvts.length === 0) {
+      el.innerHTML = '<div class="empty-state"><i class="fas fa-clock-rotate-left"></i><p>Aucune vente enregistrée</p></div>';
+      return;
+    }
+    el.innerHTML = mvts.map(m => {
+      const qty = empMovementQty(m);
+      const seller = empMovementSeller(m) || '—';
+      return `
+        <div class="item-card">
+          <div class="item-icon"><i class="fas fa-receipt"></i></div>
+          <div class="item-body">
+            <div class="item-name">${empHtml(empMovementName(m))}</div>
+            <div class="item-meta">${empHtml(m.date || '—')} · Qté : ${empHtml(String(qty))}</div>
+            <div class="item-meta">Vendu par : ${empHtml(seller)}</div>
+          </div>
+          <div class="item-right">
+            <div class="item-price" style="color:var(--green)">${empHtml(empFmt(m.total || 0))}</div>
+            <span class="mvt-tag vente">Vente</span>
+            ${m.receiptNum ? `<div class="item-actions"><button class="item-mini-btn green" type="button" onclick="event.stopPropagation();empOpenReceipt(empBuildReceipt((EMP.cmData.mouvements||[]).find(x=>x.id==='${empHtml(m.id)}')||{}))"><i class="fas fa-receipt"></i> Reçu</button></div>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+  };
+
+  window.empConfirmSell = function(){
+    const art = EMP.sellArticle;
+    if (!art || !EMP.cmData || !EMP.shop || !EMP.employee) return;
+    const qty = EMP.sellQty;
+    const prixUnit = empGetSellPrice(art);
+    const total = prixUnit * qty;
+    const artIdx = EMP.cmData.articles.findIndex(a => a.id === art.id);
+    if (artIdx === -1) { empToast('Article introuvable', 'error'); return; }
+    const currentStock = Number(EMP.cmData.articles[artIdx].stock || 0);
+    if (currentStock < qty) { empToast('Stock insuffisant pour cette vente', 'error'); return; }
+    EMP.cmData.articles[artIdx].stock = Math.max(0, currentStock - qty);
+    const receiptNum = empNextDocNumber('REC');
+    const mvt = {
+      id: empUID(),
+      shopId: EMP.shop.id,
+      type: 'vente',
+      artId: art.id,
+      artName: empGetArticleName(art),
+      artNom: empGetArticleName(art),
+      qty, qte: qty,
+      prix: prixUnit,
+      prixUnit: prixUnit,
+      total,
+      date: empToday(),
+      person: '',
+      note: 'Vente enregistrée depuis l\'espace employé',
+      sellerId: EMP.employee.id,
+      sellerName: EMP.employee.name,
+      employeeId: EMP.employee.id,
+      employeeName: EMP.employee.name,
+      createdAt: Date.now(),
+      receiptNum
+    };
+    if (!Array.isArray(EMP.cmData.mouvements)) EMP.cmData.mouvements = [];
+    EMP.cmData.mouvements.push(mvt);
+    try { localStorage.setItem('aet_commerce_' + EMP.user.uid, JSON.stringify(EMP.cmData)); } catch(_) {}
+    if (typeof empSaveToFirestore === 'function') empSaveToFirestore();
+    empCloseSellModal();
+    empToast(`Vente enregistrée — ${empFmt(total)} ✓`, 'success');
+    empRenderAll();
+    empSwitchTab('historique');
+    empOpenReceipt(empBuildReceipt(mvt));
+  };
+
+  document.getElementById('receiptModal')?.addEventListener('click', e => {
+    if (e.target === document.getElementById('receiptModal')) window.empCloseReceipt();
+  });
+})();
+</script>
+
 </body>
 </html>

@@ -11079,4 +11079,115 @@ window.cmShowGenLinkQR = function() {
   qrDiv.style.display = 'block';
 };
 </script>
+
+<script id="aet-index-patch-v2">
+(function(){
+  if(window.__AET_INDEX_PATCH_V2__) return;
+  window.__AET_INDEX_PATCH_V2__ = true;
+  function normM(m){
+    const qte = Number(m?.qte ?? m?.qty ?? m?.lignes?.[0]?.qte ?? m?.lignes?.[0]?.qty ?? 0);
+    const prix = Number(m?.prix ?? m?.prixUnit ?? m?.lignes?.[0]?.prix ?? m?.lignes?.[0]?.prixUnit ?? 0);
+    const total = Number(m?.total ?? (qte * prix) ?? 0);
+    const artName = m?.artName || m?.artNom || m?.lignes?.[0]?.artName || m?.lignes?.[0]?.artNom || 'Article';
+    const sellerName = m?.sellerName || m?.employeeName || m?.employee?.name || '';
+    return Object.assign({}, m || {}, { artName, qte, prix, total, sellerName, person: m?.person || '', note: m?.note || '' });
+  }
+
+  cmBuildReceipt = function(mvt, article){
+    const mm = normM(mvt || {});
+    const shop = typeof cmGetShop === 'function' ? cmGetShop() : null;
+    return {
+      docNumber: mm.receiptNum || mm.docNumber || '',
+      type: mm.type || 'vente',
+      shopName: shop ? shop.name : '',
+      articleName: mm.artName,
+      unit: article ? (article.unit || '') : '',
+      qte: mm.qte,
+      prix: mm.prix,
+      total: mm.total,
+      person: mm.person,
+      sellerName: mm.sellerName,
+      note: mm.note,
+      date: mm.date,
+      createdAt: mm.createdAt || Date.now(),
+    };
+  };
+
+  cmDocHTML = function(doc){
+    const isQuote = doc.kind === 'quote';
+    const d = doc.data || {};
+    const dateStr = new Date(d.createdAt || Date.now()).toLocaleDateString(currentLang==='en'?'en-US':'fr-FR');
+    const personLabel = isQuote ? t('cm_doc_client') : (d.type==='achat' ? t('cm_doc_supplier') : t('cm_doc_client'));
+    const sellerLabel = currentLang === 'en' ? 'Seller' : 'Vendu par';
+    return `
+      <div class="cm-doc-head">
+        <div class="cm-doc-shop">${d.shopName||''}</div>
+        <div class="cm-doc-type">${isQuote ? t('cm_doc_quote_title') : (d.type==='achat'?t('cm_doc_receipt_purchase'):t('cm_doc_receipt_sale'))}</div>
+        <div class="cm-doc-num">${t('cm_doc_no')} ${d.docNumber} — ${t('cm_doc_date')} ${dateStr}</div>
+      </div>
+      ${d.person ? `<div class="cm-doc-row"><span>${personLabel}</span><span>${d.person}</span></div>` : ''}
+      ${d.sellerName ? `<div class="cm-doc-row"><span>${sellerLabel}</span><span>${d.sellerName}</span></div>` : ''}
+      <div class="cm-doc-row"><span>${t('cm_doc_article')}</span><span>${d.articleName || 'Article'}</span></div>
+      <div class="cm-doc-row"><span>${t('cm_doc_qty')}</span><span>${cmFmt(d.qte||0)} ${d.unit||''}</span></div>
+      <div class="cm-doc-row"><span>${t('cm_doc_unit_price')}</span><span>${cmAmt(d.prix||0)}</span></div>
+      <div class="cm-doc-row cm-doc-total"><span>${t('cm_doc_total')}</span><span>${cmAmt(d.total||0)}</span></div>
+      ${isQuote && d.validUntil ? `<div class="cm-doc-row"><span>${t('cm_doc_valid_until')}</span><span>${new Date(d.validUntil).toLocaleDateString(currentLang==='en'?'en-US':'fr-FR')}</span></div>` : ''}
+      ${d.note ? `<div class="cm-doc-row"><span colspan="2" style="color:#666">${d.note}</span></div>` : ''}
+      <div class="cm-doc-foot">${isQuote ? t('cm_doc_quote_disclaimer') : t('cm_doc_thanks')}</div>
+    `;
+  };
+
+  cmRenderMvts = function(){
+    const c = document.getElementById('cmMvtList');
+    if(!c) return;
+    let mvts = cmGetShopMvts().slice();
+    if(CM.currentMvtFilter!=='all') mvts = mvts.filter(m=>m.type===CM.currentMvtFilter);
+    mvts = mvts.map(normM).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    if(mvts.length===0){
+      c.innerHTML = `<div class="cm-empty"><i class="fas fa-right-left"></i>${t('cm_no_movement')}<br><small>${t('cm_no_movement_sub')}</small></div>`;
+      return;
+    }
+    c.innerHTML = mvts.map(m=>{
+      const ic = m.type==='vente'?'fa-cash-register':'fa-truck-ramp-box';
+      const sign = m.type==='vente'?'+':'−';
+      const sellerLine = m.sellerName ? ` • ${currentLang==='en' ? 'Seller' : 'Vendu par'} ${m.sellerName}` : '';
+      return `<div class="cm-mvt-card" onclick="cmDeleteMvt('${m.id}')">
+        <div class="cm-mvt-icon ${m.type}"><i class="fas ${ic}"></i></div>
+        <div class="cm-mvt-body">
+          <div class="cm-mvt-title">${m.artName} <span style="color:var(--muted);font-weight:500">×${cmFmt(m.qte)}</span></div>
+          <div class="cm-mvt-sub">${m.date || '—'}${m.person?' • '+m.person:''}${sellerLine}${m.note?' • '+m.note:''}</div>
+        </div>
+        ${m.receiptNum ? `<button onclick="event.stopPropagation();cmViewMvtReceipt('${m.id}')" title="${t('cm_view_receipt')}" style="flex-shrink:0;width:30px;height:30px;border-radius:8px;border:none;background:rgba(37,99,235,.08);color:var(--primary);cursor:pointer;margin-right:6px"><i class="fas fa-receipt" style="font-size:12px"></i></button>` : ''}
+        <div class="cm-mvt-amt ${m.type}">${sign}${cmAmt(m.total)}</div>
+      </div>`;
+    }).join('');
+  };
+  window.cmRenderMvts = cmRenderMvts;
+
+  window.cmViewMvtReceipt = function(mvtId){
+    const raw = CM.mouvements.find(x=>x.id===mvtId);
+    if(!raw || !raw.receiptNum){ cmToast(t('cm_no_receipt'),'error'); return; }
+    const m = normM(raw);
+    const a = CM.articles.find(x=>x.id===m.artId);
+    cmShowReceipt(cmBuildReceipt(m, a));
+  };
+
+  window.cmDeleteMvt = function(id){
+    const raw = CM.mouvements.find(x=>x.id===id);
+    if(!raw) return;
+    const m = normM(raw);
+    if(!confirm(t('cm_confirm_delete_mvt',{type:(m.type==='vente'?t('cm_filter_ventes_sing'):t('cm_filter_achats_sing')),name:m.artName,qte:m.qte}))) return;
+    const art = CM.articles.find(a=>a.id===m.artId);
+    if(art){
+      if(m.type==='vente') art.stock = (art.stock||0) + (m.qte||0);
+      else art.stock = (art.stock||0) - (m.qte||0);
+    }
+    CM.mouvements = CM.mouvements.filter(x=>x.id!==id);
+    cmSave();
+    cmRenderAll();
+    cmToast(t('cm_msg_mvt_deleted'),'success');
+  };
+})();
+</script>
+
 </body>

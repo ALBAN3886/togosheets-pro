@@ -66,6 +66,9 @@ window.__EMP_LINK_CTX__ = {
   token: _tokenFromUrl
 };
 
+// ── Clé de stockage de l'UID patron ──
+const PATRON_UID_KEY = 'aet_employe_patron_uid';
+
 function empQueueOwnerLoad(uid) {
   if (!uid) return;
   if (typeof window.empLoadOwnerData === 'function') {
@@ -78,12 +81,20 @@ function empQueueOwnerLoad(uid) {
 onAuthStateChanged(auth, user => {
   window.__EMP_USER__ = user;
   if (_uidFromUrl) {
-    // Lien avec UID patron : chargement direct sans login
+    // Lien avec UID patron : on mémorise l'UID patron pour les prochains accès
+    localStorage.setItem(PATRON_UID_KEY, _uidFromUrl);
     empQueueOwnerLoad(_uidFromUrl);
-  } else if (user) {
-    empQueueOwnerLoad(user.uid);
-  } else if (typeof window.empShowScreen === 'function') {
-    window.empShowScreen('login');
+  } else {
+    // Pas de paramètre URL → chercher l'UID patron mémorisé
+    const savedPatronUid = localStorage.getItem(PATRON_UID_KEY);
+    if (savedPatronUid) {
+      empQueueOwnerLoad(savedPatronUid);
+    } else if (user) {
+      // Fallback legacy : utiliser l'UID de l'utilisateur connecté
+      empQueueOwnerLoad(user.uid);
+    } else if (typeof window.empShowScreen === 'function') {
+      window.empShowScreen('login');
+    }
   }
 });
 </script>
@@ -469,27 +480,19 @@ input  { font-family: inherit; outline: none; }
 <div class="screen" id="identityScreen">
   <div class="identity-card">
     <div class="identity-title">
-      <i class="fas fa-user-circle" style="color:var(--green)"></i> Connexion Employé
+      <i class="fas fa-user-circle" style="color:var(--green)"></i> Qui êtes-vous ?
     </div>
-    <div class="form-group">
-      <label class="form-label">Nom de l'employé</label>
-      <input type="text" id="empNameInput" class="form-input" placeholder="Votre prénom ou nom"
-        autocomplete="off" autocorrect="off" spellcheck="false"
-        onkeydown="if(event.key==='Enter')document.getElementById('pinInputDirect').focus()"/>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Code PIN</label>
-      <input type="password" inputmode="numeric" maxlength="6" id="pinInputDirect" class="pin-input"
-        placeholder="••••" onkeydown="if(event.key==='Enter')empSubmitDirect()"/>
-    </div>
-    <div class="pin-error" id="pinError">❌ Nom ou code PIN incorrect</div>
-    <button class="btn-pin-ok" onclick="empSubmitDirect()">
-      <i class="fas fa-unlock"></i> Se connecter
-    </button>
-    <!-- Champs cachés pour compatibilité -->
-    <div id="identityList" style="display:none"></div>
-    <div class="pin-section" id="pinSection" style="display:none">
-      <input type="password" id="pinInput" style="display:none"/>
+    <div id="identityList"></div>
+    <!-- Section PIN -->
+    <div class="pin-section" id="pinSection">
+      <div class="pin-label" id="pinLabel">Entrez votre code PIN</div>
+      <input type="password" inputmode="numeric" maxlength="4" id="pinInput" class="pin-input" placeholder="••••"
+        onkeydown="if(event.key==='Enter')empSubmitPin()"/>
+      <div class="pin-error" id="pinError">❌ Code PIN incorrect</div>
+      <button class="btn-pin-ok" onclick="empSubmitPin()">
+        <i class="fas fa-unlock"></i> Valider
+      </button>
+      <button class="btn-back" onclick="empBackToList()">← Retour</button>
     </div>
   </div>
 </div>
@@ -724,7 +727,10 @@ window.empDoLogin = async function() {
 
 /* ── Chargement des données du patron ── */
 window.empLoadOwnerData = function(uid) {
+  // uid ici est toujours l'UID du PATRON (pas l'employé)
   EMP.user = { uid };
+  // Mémoriser l'UID patron pour les prochains accès directs
+  localStorage.setItem('aet_employe_patron_uid', uid);
 
   // 1. Lire depuis localStorage (même clé que l'app principale)
   const cmKey = 'aet_commerce_' + uid;
@@ -871,14 +877,37 @@ function empRenderIdentityList() {
     empShowError(validation.message);
     return;
   }
-  // Réinitialiser le formulaire direct
-  const nameInput = document.getElementById('empNameInput');
-  const pinDirect = document.getElementById('pinInputDirect');
-  const errEl     = document.getElementById('pinError');
-  if (nameInput) nameInput.value = '';
-  if (pinDirect) pinDirect.value = '';
-  if (errEl)     errEl.style.display = 'none';
-  setTimeout(() => { if (nameInput) nameInput.focus(); }, 100);
+  const employees = empGetLinkedEmployees();
+  const list = document.getElementById('identityList');
+  document.getElementById('pinSection').style.display = 'none';
+
+  if (employees.length === 0) {
+    list.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">
+      <i class="fas fa-user-slash" style="font-size:30px;margin-bottom:10px;display:block;opacity:.4"></i>
+      Aucun employé enregistré.<br>Demandez au patron d'ajouter des employés dans Commerce.
+      <br><br>
+      <button onclick="empResetPatronLink()" style="font-size:11px;color:var(--muted);background:none;border:1px solid #e2e8f0;border-radius:8px;padding:6px 12px;cursor:pointer">
+        <i class="fas fa-rotate-right"></i> Utiliser un autre lien
+      </button>
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = employees.map(e => `
+    <button class="emp-btn" onclick="empSelectEmployee('${e.id}')">
+      <div class="emp-avatar ${e.role === 'manager' ? 'manager' : ''}">
+        ${e.role === 'manager' ? '👔' : '🧑‍💼'}
+      </div>
+      <div>
+        <div class="emp-name">${e.name}</div>
+        <div class="emp-role">${e.role === 'manager' ? 'Manager' : 'Employé'} — ${e.shopName}</div>
+      </div>
+    </button>
+  `).join('');
+
+  if (employees.length === 1) {
+    requestAnimationFrame(() => window.empSelectEmployee(employees[0].id));
+  }
 }
 
 window.empSelectEmployee = function(employeeId) {
@@ -918,38 +947,6 @@ window.empSubmitPin = function() {
   empStartSession();
 };
 
-/* ── Connexion directe par nom + PIN ── */
-window.empSubmitDirect = function() {
-  const nameVal = (document.getElementById('empNameInput')?.value || '').trim().toLowerCase();
-  const pinVal  = (document.getElementById('pinInputDirect')?.value || '').trim();
-  const errEl   = document.getElementById('pinError');
-  errEl.style.display = 'none';
-
-  if (!nameVal || !pinVal) {
-    errEl.textContent = '⚠️ Entrez votre nom et votre code PIN.';
-    errEl.style.display = 'block';
-    return;
-  }
-
-  const employees = empAllEmployees();
-  // Recherche par nom insensible à la casse + PIN
-  const emp = employees.find(e =>
-    e.name.trim().toLowerCase() === nameVal && String(e.pin) === pinVal
-  );
-
-  if (!emp) {
-    errEl.textContent = '❌ Nom ou code PIN incorrect.';
-    errEl.style.display = 'block';
-    document.getElementById('pinInputDirect').value = '';
-    return;
-  }
-
-  EMP.employee = emp;
-  EMP.role = emp.role;
-  EMP.shop = (EMP.cmData?.shops || []).find(s => s.id === emp.shopId) || null;
-  empStartSession();
-};
-
 function empStartSession() {
   // Mettre à jour le header
   document.getElementById('shopNameHeader').textContent = EMP.shop?.name || 'Commerce';
@@ -973,6 +970,16 @@ window.empChangeUser = function() {
   EMP.role = null;
   empRenderIdentityList();
   document.getElementById('identityScreen').style.display = 'flex';
+};
+
+/* ── Réinitialiser le lien patron (changer de boutique) ── */
+window.empResetPatronLink = function() {
+  if (!confirm('Cela effacera le lien vers cette boutique. Vous devrez scanner un nouveau lien employé. Continuer ?')) return;
+  localStorage.removeItem('aet_employe_patron_uid');
+  // Supprimer aussi les données mises en cache
+  const keys = Object.keys(localStorage).filter(k => k.startsWith('aet_commerce_'));
+  keys.forEach(k => localStorage.removeItem(k));
+  window.location.href = window.location.pathname; // Recharger sans paramètres URL
 };
 
 /* ── Navigation tabs ── */
@@ -1213,7 +1220,8 @@ window.empConfirmSell = function() {
 async function empSaveToFirestore() {
   const db = window.__EMP_DB__;
   const fs = window.__EMP_FS__;
-  const uid = EMP.user?.uid;
+  // Toujours utiliser l'UID patron (pas l'UID Firebase de session)
+  const uid = EMP.user?.uid || localStorage.getItem('aet_employe_patron_uid');
   if (!db || !fs || !uid) return;
   try {
     await fs.setDoc(fs.doc(db, 'commerce_data', uid), {

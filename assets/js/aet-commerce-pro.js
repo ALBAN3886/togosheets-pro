@@ -406,27 +406,13 @@
     if (!resumeSec || resumeSec.dataset.cpLinkBtn) return;
     resumeSec.dataset.cpLinkBtn = '1';
 
-    const btnBar = document.createElement('div');
-    btnBar.style.cssText = 'display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap';
-    btnBar.innerHTML = `
-      <button onclick="cpOpenLinkGenerator()" id="cpLinkGenBtn" style="display:none;flex:1;padding:11px 14px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:12px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:7px;justify-content:center">
-        <i class="fas fa-link"></i> Lien Employé
-      </button>
-      <button onclick="cpOpenInstallGuide()" style="padding:11px 14px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:12px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:7px">
-        <i class="fas fa-download" style="color:#2563eb"></i> Installer l'app
-      </button>
-    `;
-    resumeSec.insertBefore(btnBar, resumeSec.firstChild);
-
-    // Afficher le bouton lien uniquement pour le Patron
-    function syncLinkBtn() {
-      const btn = document.getElementById('cpLinkGenBtn');
-      if (!btn) return;
-      const isPatron = !cpIsEmployeeSession();
-      btn.style.display = isPatron ? 'flex' : 'none';
-    }
-    syncLinkBtn();
-    setInterval(syncLinkBtn, 1500);
+    // Bouton Installer l'app (visible pour tous)
+    const installBtn = document.createElement('button');
+    installBtn.id = 'cpInstallAppBtn';
+    installBtn.onclick = window.cpOpenInstallGuide;
+    installBtn.style.cssText = 'width:100%;padding:11px 14px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:12px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px;margin-bottom:10px';
+    installBtn.innerHTML = '<i class="fas fa-download" style="color:#2563eb"></i> Installer comme application (Android / PC)';
+    resumeSec.insertBefore(installBtn, resumeSec.firstChild);
   }
 
   /* ═══════════════════════════════════════════════════════════
@@ -3181,6 +3167,94 @@ body.cp-employee-mode { padding-top: 42px; }
     cpDeactivateEmployeeMode();
   };
 
+  /* ── Hook cmRenderEmployeesList : ajouter bouton Lien sur chaque employé ── */
+  function hookCmRenderEmployeesList() {
+    const orig = window.cmRenderEmployeesList;
+    if (typeof orig !== 'function' || orig._cpHooked) return;
+    window.cmRenderEmployeesList = function () {
+      orig.apply(this, arguments);
+      // Après le render natif, ajouter le bouton Lien sur chaque carte employé
+      setTimeout(cpInjectLinkBtnsOnEmployees, 50);
+    };
+    window.cmRenderEmployeesList._cpHooked = true;
+  }
+
+  function cpInjectLinkBtnsOnEmployees() {
+    // Ne pas afficher si on est en session employé
+    if (cpIsEmployeeSession()) return;
+    const shop = window.CM_DEBUG ? window.CM_DEBUG.shops.find(s => s.id === window.CM_DEBUG.currentShopId) : null;
+    if (!shop || !shop.employees) return;
+
+    const listEl = document.getElementById('cmEmployeesList');
+    if (!listEl) return;
+
+    // Ajouter le bouton Lien sur chaque carte employé
+    const cards = listEl.querySelectorAll('div[style*="border-radius:10px"]');
+    cards.forEach((card, i) => {
+      if (card.dataset.cpLinkAdded) return;
+      card.dataset.cpLinkAdded = '1';
+      const emp = shop.employees[i];
+      if (!emp) return;
+
+      // Créer le bouton lien
+      const linkBtn = document.createElement('button');
+      linkBtn.title = 'Générer un lien pour ' + emp.name;
+      linkBtn.style.cssText = 'width:32px;height:32px;border-radius:8px;border:none;background:rgba(16,185,129,.1);color:#10b981;cursor:pointer;flex-shrink:0';
+      linkBtn.innerHTML = '<i class="fas fa-link" style="font-size:12px"></i>';
+      linkBtn.onclick = (e) => {
+        e.stopPropagation();
+        cpOpenLinkGeneratorForEmployee(emp);
+      };
+
+      // Insérer avant le bouton crayon (avant-dernier enfant)
+      const pencilBtn = card.querySelector('button[onclick*="cmOpenEmployeeForm"]');
+      if (pencilBtn) {
+        card.insertBefore(linkBtn, pencilBtn);
+      } else {
+        card.appendChild(linkBtn);
+      }
+    });
+
+    // Ajouter aussi un bouton global en haut du modal employés
+    const modal = document.getElementById('cmEmployeesModal');
+    if (modal && !modal.dataset.cpInstallBtn) {
+      modal.dataset.cpInstallBtn = '1';
+      const footer = modal.querySelector('.modal-footer') || modal.querySelector('.modal-body');
+      if (footer) {
+        const installDiv = document.createElement('div');
+        installDiv.style.cssText = 'padding:12px 16px 0;border-top:1px solid var(--border);margin-top:8px';
+        installDiv.innerHTML = `
+          <button onclick="cpOpenInstallGuide()" style="width:100%;padding:10px;background:rgba(37,99,235,.08);border:1px solid rgba(37,99,235,.2);color:#2563eb;border-radius:10px;font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:7px">
+            <i class="fas fa-download"></i> Installer l'application (Android / PC)
+          </button>
+        `;
+        modal.querySelector('.modal-body').appendChild(installDiv);
+      }
+    }
+  }
+
+  window.cpOpenLinkGeneratorForEmployee = function (emp) {
+    injectEmployeeLinkGenerator();
+    cpRefreshLinkShopSelect();
+
+    // Pré-remplir avec les infos de l'employé
+    const nameInput = document.getElementById('cpLinkName');
+    const roleInput = document.getElementById('cpLinkRole');
+    const shopInput = document.getElementById('cpLinkShop');
+
+    if (nameInput) nameInput.value = emp.name || '';
+    if (roleInput) roleInput.value = emp.role || 'employee';
+    if (shopInput && window.CM_DEBUG) shopInput.value = window.CM_DEBUG.currentShopId || '';
+
+    // Masquer le résultat précédent
+    const resultBox = document.getElementById('cpLinkResultBox');
+    const qrBox = document.getElementById('cpLinkQR');
+    if (resultBox) resultBox.style.display = 'none';
+    if (qrBox) qrBox.style.display = 'none';
+
+    if (window.openModal) window.openModal('cpLinkGenModal');
+  };
+
   function hookCmShowPatronPinEntry() {
     const orig = window.cmShowPatronPinEntry;
     if (typeof orig !== 'function' || orig._cpHooked) return;
@@ -3368,6 +3442,7 @@ body.cp-employee-mode #authScreen { margin-top:38px; }
         injectTabs();
         injectSections();
         injectEmployeeLinkGenerator(); // ← Générateur de lien employé
+        hookCmRenderEmployeesList();   // ← Bouton Lien sur chaque employé
         hookCmSwitch();
         hookGlobalSwitchTab();
         hookSwitchTabForLock();       // ← Bloquer nav hors Commerce

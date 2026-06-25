@@ -469,19 +469,27 @@ input  { font-family: inherit; outline: none; }
 <div class="screen" id="identityScreen">
   <div class="identity-card">
     <div class="identity-title">
-      <i class="fas fa-user-circle" style="color:var(--green)"></i> Qui êtes-vous ?
+      <i class="fas fa-user-circle" style="color:var(--green)"></i> Connexion Employé
     </div>
-    <div id="identityList"></div>
-    <!-- Section PIN -->
-    <div class="pin-section" id="pinSection">
-      <div class="pin-label" id="pinLabel">Entrez votre code PIN</div>
-      <input type="password" inputmode="numeric" maxlength="4" id="pinInput" class="pin-input" placeholder="••••"
-        onkeydown="if(event.key==='Enter')empSubmitPin()"/>
-      <div class="pin-error" id="pinError">❌ Code PIN incorrect</div>
-      <button class="btn-pin-ok" onclick="empSubmitPin()">
-        <i class="fas fa-unlock"></i> Valider
-      </button>
-      <button class="btn-back" onclick="empBackToList()">← Retour</button>
+    <div class="form-group">
+      <label class="form-label">Nom de l'employé</label>
+      <input type="text" id="empNameInput" class="form-input" placeholder="Votre prénom ou nom"
+        autocomplete="off" autocorrect="off" spellcheck="false"
+        onkeydown="if(event.key==='Enter')document.getElementById('pinInputDirect').focus()"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Code PIN</label>
+      <input type="password" inputmode="numeric" maxlength="6" id="pinInputDirect" class="pin-input"
+        placeholder="••••" onkeydown="if(event.key==='Enter')empSubmitDirect()"/>
+    </div>
+    <div class="pin-error" id="pinError">❌ Nom ou code PIN incorrect</div>
+    <button class="btn-pin-ok" onclick="empSubmitDirect()">
+      <i class="fas fa-unlock"></i> Se connecter
+    </button>
+    <!-- Champs cachés pour compatibilité -->
+    <div id="identityList" style="display:none"></div>
+    <div class="pin-section" id="pinSection" style="display:none">
+      <input type="password" id="pinInput" style="display:none"/>
     </div>
   </div>
 </div>
@@ -863,33 +871,14 @@ function empRenderIdentityList() {
     empShowError(validation.message);
     return;
   }
-  const employees = empGetLinkedEmployees();
-  const list = document.getElementById('identityList');
-  document.getElementById('pinSection').style.display = 'none';
-
-  if (employees.length === 0) {
-    list.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">
-      <i class="fas fa-user-slash" style="font-size:30px;margin-bottom:10px;display:block;opacity:.4"></i>
-      Aucun employé enregistré.<br>Demandez au patron d'ajouter des employés dans Commerce.
-    </div>`;
-    return;
-  }
-
-  list.innerHTML = employees.map(e => `
-    <button class="emp-btn" onclick="empSelectEmployee('${e.id}')">
-      <div class="emp-avatar ${e.role === 'manager' ? 'manager' : ''}">
-        ${e.role === 'manager' ? '👔' : '🧑‍💼'}
-      </div>
-      <div>
-        <div class="emp-name">${e.name}</div>
-        <div class="emp-role">${e.role === 'manager' ? 'Manager' : 'Employé'} — ${e.shopName}</div>
-      </div>
-    </button>
-  `).join('');
-
-  if (employees.length === 1) {
-    requestAnimationFrame(() => window.empSelectEmployee(employees[0].id));
-  }
+  // Réinitialiser le formulaire direct
+  const nameInput = document.getElementById('empNameInput');
+  const pinDirect = document.getElementById('pinInputDirect');
+  const errEl     = document.getElementById('pinError');
+  if (nameInput) nameInput.value = '';
+  if (pinDirect) pinDirect.value = '';
+  if (errEl)     errEl.style.display = 'none';
+  setTimeout(() => { if (nameInput) nameInput.focus(); }, 100);
 }
 
 window.empSelectEmployee = function(employeeId) {
@@ -923,6 +912,38 @@ window.empSubmitPin = function() {
     return;
   }
   // PIN correct → session active
+  EMP.employee = emp;
+  EMP.role = emp.role;
+  EMP.shop = (EMP.cmData?.shops || []).find(s => s.id === emp.shopId) || null;
+  empStartSession();
+};
+
+/* ── Connexion directe par nom + PIN ── */
+window.empSubmitDirect = function() {
+  const nameVal = (document.getElementById('empNameInput')?.value || '').trim().toLowerCase();
+  const pinVal  = (document.getElementById('pinInputDirect')?.value || '').trim();
+  const errEl   = document.getElementById('pinError');
+  errEl.style.display = 'none';
+
+  if (!nameVal || !pinVal) {
+    errEl.textContent = '⚠️ Entrez votre nom et votre code PIN.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const employees = empAllEmployees();
+  // Recherche par nom insensible à la casse + PIN
+  const emp = employees.find(e =>
+    e.name.trim().toLowerCase() === nameVal && String(e.pin) === pinVal
+  );
+
+  if (!emp) {
+    errEl.textContent = '❌ Nom ou code PIN incorrect.';
+    errEl.style.display = 'block';
+    document.getElementById('pinInputDirect').value = '';
+    return;
+  }
+
   EMP.employee = emp;
   EMP.role = emp.role;
   EMP.shop = (EMP.cmData?.shops || []).find(s => s.id === emp.shopId) || null;

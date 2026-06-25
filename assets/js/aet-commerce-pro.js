@@ -2459,23 +2459,296 @@ body.dark #cpSearchBox, html[data-theme=dark] #cpSearchBox { background: #111827
   }
 
   /* ═══════════════════════════════════════════════════════════
-   * 24. INIT PRINCIPAL
+   * 24. VERROUILLAGE EMPLOYÉ — Accès Commerce uniquement
+   *
+   * Quand un employé/manager est en session active (CM.activeRole
+   * !== 'patron'), on bloque toute navigation hors de Commerce :
+   *  - Bottom nav : seul Commerce reste cliquable
+   *  - Sidebar désactivée pour les autres onglets
+   *  - Drawer "Plus" verrouillé
+   *  - Tentative de navigation → overlay de blocage
+   *  - Bandeau en haut affichant nom + rôle + boutique
+   * ═══════════════════════════════════════════════════════════ */
+
+  function cpIsEmployeeSession() {
+    const cm = window.CM_DEBUG;
+    return cm && cm.activeRole && cm.activeRole !== 'patron';
+  }
+
+  function injectLockCSS() {
+    if (document.getElementById('cp-lock-css')) return;
+    const s = document.createElement('style');
+    s.id = 'cp-lock-css';
+    s.textContent = `
+/* ── Mode employé : navigation verrouillée ── */
+body.cp-employee-mode #bnav-dashboard,
+body.cp-employee-mode #bnav-revenus,
+body.cp-employee-mode #bnav-depenses,
+body.cp-employee-mode #bnav-epargne,
+body.cp-employee-mode #bnav-more {
+  opacity:.28 !important;
+  pointer-events:none !important;
+  filter:grayscale(1);
+}
+body.cp-employee-mode .sidebar-link:not(#sb-commerce) {
+  opacity:.28 !important;
+  pointer-events:none !important;
+  filter:grayscale(1);
+}
+body.cp-employee-mode .tab-btn:not([data-tab="commerce"]) {
+  opacity:.28 !important;
+  pointer-events:none !important;
+}
+/* Bandeau session employé */
+#cpEmployeeBanner {
+  display:none;
+  position:fixed;
+  top:0;left:0;right:0;
+  z-index:3000;
+  background:linear-gradient(135deg,#1d4ed8,#2563eb);
+  color:#fff;
+  padding:9px 14px;
+  font-size:12.5px;
+  font-weight:700;
+  align-items:center;
+  gap:8px;
+  box-shadow:0 2px 14px rgba(37,99,235,.45);
+}
+#cpEmployeeBanner.show { display:flex; }
+#cpBannerName { flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+#cpBannerShop { font-size:11px; opacity:.8; flex-shrink:0; }
+.cp-banner-exit {
+  background:rgba(255,255,255,.18);
+  border:none;border-radius:8px;
+  color:#fff;padding:5px 11px;
+  font-size:11.5px;font-weight:700;
+  cursor:pointer;font-family:inherit;
+  flex-shrink:0;
+  transition:background .15s;
+}
+.cp-banner-exit:hover { background:rgba(255,255,255,.3); }
+/* Décaler l'app pour ne pas être sous le bandeau */
+body.cp-employee-mode #app,
+body.cp-employee-mode #authScreen { margin-top:38px; }
+/* Overlay blocage */
+#cpLockOverlay {
+  display:none;
+  position:fixed;inset:0;
+  z-index:2500;
+  background:rgba(15,23,42,.65);
+  align-items:center;justify-content:center;
+  backdrop-filter:blur(5px);
+}
+#cpLockOverlay.show { display:flex; }
+#cpLockOverlayBox {
+  background:var(--card,#fff);
+  border-radius:22px;padding:28px 22px;
+  max-width:300px;width:88%;
+  text-align:center;
+  box-shadow:0 20px 60px rgba(0,0,0,.28);
+  animation:cpSlideIn .25s ease;
+}
+#cpLockOverlayBox .cp-lo-icon { font-size:44px;margin-bottom:10px; }
+#cpLockOverlayBox h3 { margin:0 0 7px;font-size:17px;font-weight:800;color:var(--text); }
+#cpLockOverlayBox p  { margin:0 0 18px;font-size:13px;color:var(--muted);line-height:1.55; }
+    `;
+    document.head.appendChild(s);
+  }
+
+  function injectLockElements() {
+    if (!document.getElementById('cpEmployeeBanner')) {
+      document.body.insertAdjacentHTML('afterbegin', `
+        <div id="cpEmployeeBanner">
+          <i class="fas fa-user-shield"></i>
+          <span id="cpBannerName">Session employé</span>
+          <span id="cpBannerShop"></span>
+          <button class="cp-banner-exit" onclick="cpExitEmployeeMode()">
+            <i class="fas fa-right-from-bracket"></i> Quitter
+          </button>
+        </div>
+      `);
+    }
+    if (!document.getElementById('cpLockOverlay')) {
+      document.body.insertAdjacentHTML('beforeend', `
+        <div id="cpLockOverlay" onclick="document.getElementById('cpLockOverlay').classList.remove('show')">
+          <div id="cpLockOverlayBox">
+            <div class="cp-lo-icon">🔒</div>
+            <h3>Accès restreint</h3>
+            <p>Vous êtes connecté en tant qu'<strong>employé</strong>.<br>
+               Seul le module <strong>Commerce</strong> est accessible.</p>
+            <button onclick="cpGoToCommerce()" style="width:100%;padding:13px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:13px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;">
+              <i class="fas fa-store"></i> Retourner au Commerce
+            </button>
+          </div>
+        </div>
+      `);
+    }
+  }
+
+  function cpActivateEmployeeMode() {
+    const cm = window.CM_DEBUG;
+    if (!cm || cm.activeRole === 'patron') return;
+    injectLockCSS();
+    injectLockElements();
+    document.body.classList.add('cp-employee-mode');
+
+    // Bandeau
+    const banner   = document.getElementById('cpEmployeeBanner');
+    const nameEl   = document.getElementById('cpBannerName');
+    const shopEl   = document.getElementById('cpBannerShop');
+    if (banner) banner.classList.add('show');
+    const emp  = cm.activeEmployee;
+    const shop = CP.getShop();
+    if (nameEl && emp) {
+      nameEl.textContent = emp.name + ' · ' + (cm.activeRole === 'manager' ? 'Manager' : 'Employé');
+    }
+    if (shopEl && shop) shopEl.textContent = '— ' + shop.name;
+
+    // Forcer Commerce
+    cpGoToCommerce();
+    // Verrouiller nav
+    cpLockNav();
+  }
+
+  function cpDeactivateEmployeeMode() {
+    document.body.classList.remove('cp-employee-mode');
+    const banner  = document.getElementById('cpEmployeeBanner');
+    const overlay = document.getElementById('cpLockOverlay');
+    if (banner)  banner.classList.remove('show');
+    if (overlay) overlay.classList.remove('show');
+    cpUnlockNav();
+  }
+
+  function cpLockNav() {
+    // Bottom nav
+    ['bnav-dashboard','bnav-revenus','bnav-depenses','bnav-epargne','bnav-more'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && !el.dataset.cpNavLocked) {
+        el.dataset.cpNavLocked = '1';
+        el.addEventListener('click', cpBlockNavClick, true);
+      }
+    });
+    // Sidebar links
+    document.querySelectorAll('.sidebar-link').forEach(el => {
+      const tab = el.dataset.tab || el.id.replace('sb-','');
+      if (tab === 'commerce') return;
+      if (!el.dataset.cpNavLocked) {
+        el.dataset.cpNavLocked = '1';
+        el.addEventListener('click', cpBlockNavClick, true);
+      }
+    });
+    // Onglets desktop
+    document.querySelectorAll('.tab-btn').forEach(el => {
+      if ((el.dataset.tab || '') === 'commerce') return;
+      if (!el.dataset.cpNavLocked) {
+        el.dataset.cpNavLocked = '1';
+        el.addEventListener('click', cpBlockNavClick, true);
+      }
+    });
+  }
+
+  function cpUnlockNav() {
+    document.querySelectorAll('[data-cp-nav-locked]').forEach(el => {
+      el.removeEventListener('click', cpBlockNavClick, true);
+      delete el.dataset.cpNavLocked;
+    });
+  }
+
+  function cpBlockNavClick(e) {
+    if (!cpIsEmployeeSession()) { cpUnlockNav(); return; }
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    cpShowLockOverlay();
+  }
+
+  function cpShowLockOverlay() {
+    const o = document.getElementById('cpLockOverlay');
+    if (o) {
+      o.classList.add('show');
+      // Auto-fermeture après 3s
+      clearTimeout(cpShowLockOverlay._t);
+      cpShowLockOverlay._t = setTimeout(() => o.classList.remove('show'), 3000);
+    }
+  }
+
+  window.cpGoToCommerce = function () {
+    document.getElementById('cpLockOverlay')?.classList.remove('show');
+    // Utiliser l'original non-hooké pour éviter la récursion
+    const orig = window.switchTab?._cpOrigForLock || window.switchTab;
+    if (typeof orig === 'function') orig.call(window, 'commerce');
+  };
+
+  window.cpExitEmployeeMode = function () {
+    if (typeof window.cmExitEmployeeSession === 'function') window.cmExitEmployeeSession();
+    cpDeactivateEmployeeMode();
+    CP.toast('Session terminée — Bienvenue Patron 👑', 'success');
+  };
+
+  // Surveille les changements de rôle toutes les 700ms
+  function watchEmployeeRole() {
+    let _last = 'patron';
+    setInterval(() => {
+      const cm = window.CM_DEBUG;
+      if (!cm) return;
+      const role = cm.activeRole || 'patron';
+      if (role === _last) return;
+      _last = role;
+      if (role !== 'patron') {
+        setTimeout(cpActivateEmployeeMode, 350);
+      } else {
+        cpDeactivateEmployeeMode();
+      }
+    }, 700);
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+   * 25. HOOK switchTab — Bloquer navigation hors Commerce
+   *     quand une session employé est active
+   * ═══════════════════════════════════════════════════════════ */
+  function hookSwitchTabForLock() {
+    const orig = window.switchTab;
+    if (typeof orig !== 'function' || orig._cpLockHooked) return;
+
+    // Sauvegarder l'original pour cpGoToCommerce (sans hook)
+    window.switchTab._cpOrigForLock = orig;
+
+    window.switchTab = function (tab) {
+      // Si session employé active et tab !== commerce → bloquer
+      if (cpIsEmployeeSession() && tab !== 'commerce') {
+        cpShowLockOverlay();
+        return; // Ne pas laisser passer
+      }
+      orig.apply(this, arguments);
+    };
+    window.switchTab._cpLockHooked = true;
+    window.switchTab._cpOrigForLock = orig;
+  }
+
+  /* ═══════════════════════════════════════════════════════════
+   * 26. INIT PRINCIPAL
    * ═══════════════════════════════════════════════════════════ */
   function cpInit() {
     cpLoad();
     injectCSS();
 
-    // Attendre que le DOM Commerce soit prêt
+    // Attendre que le DOM soit prêt
     const tryInject = (attempt = 0) => {
       if (document.getElementById('tab-commerce')) {
         injectTabs();
         injectSections();
         hookCmSwitch();
         hookGlobalSwitchTab();
+        hookSwitchTabForLock();   // ← Hook verrouillage employé
         injectSearchBtn();
         syncFabVisibility();
+        watchEmployeeRole();      // ← Surveillance rôle en temps réel
 
-        // Charger données remote si utilisateur connecté
+        // Si déjà en session employé au chargement
+        if (cpIsEmployeeSession()) {
+          setTimeout(cpActivateEmployeeMode, 500);
+        }
+
+        // Charger données remote
         if (CP.uid_user()) {
           cpLoadRemote().then(() => cpRenderDashboard());
         }
@@ -2492,7 +2765,7 @@ body.dark #cpSearchBox, html[data-theme=dark] #cpSearchBox { background: #111827
     tryInject();
   }
 
-  // Re-init quand l'utilisateur change
+  // Re-init quand l'utilisateur Firebase change
   let _cpLastUid = null;
   setInterval(() => {
     const uid = CP.uid_user();
@@ -2512,13 +2785,17 @@ body.dark #cpSearchBox, html[data-theme=dark] #cpSearchBox { background: #111827
 
   // Exposer l'API Pro globalement
   window.AET_COMMERCE_PRO = {
-    version: '3.0.0',
+    version: '3.1.0',
     data: CPData,
     reload: () => { cpLoad(); cpRenderDashboard(); },
     openSearch: () => window.cpOpenSearch(),
     switchTo: (sec) => window.cpSwitchPro(sec),
+    // Méthodes verrouillage employé
+    lockEmployee:   () => cpActivateEmployeeMode(),
+    unlockEmployee: () => cpDeactivateEmployeeMode(),
+    isEmployee:     () => cpIsEmployeeSession(),
   };
 
-  console.log('[AET Commerce Pro v3.0.0] Module chargé avec succès ✓');
+  console.log('[AET Commerce Pro v3.1.0] Module chargé ✓ | Verrouillage employé actif');
 
 })();

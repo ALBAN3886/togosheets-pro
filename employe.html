@@ -51,16 +51,38 @@ window.__EMP_FS__   = { doc, getDoc, setDoc, onSnapshot, serverTimestamp };
 // ── Lire l'UID patron depuis l'URL ──
 const _urlParams = new URLSearchParams(window.location.search);
 const _uidFromUrl = _urlParams.get('uid');
+const _shopFromUrl = _urlParams.get('shop');
+const _nameFromUrl = _urlParams.get('name');
+const _roleFromUrl = _urlParams.get('role');
+const _empIdFromUrl = _urlParams.get('empId');
+const _tokenFromUrl = _urlParams.get('token');
 window.__EMP_UID_FROM_URL__ = _uidFromUrl;
+window.__EMP_LINK_CTX__ = {
+  uid: _uidFromUrl,
+  shopId: _shopFromUrl,
+  name: _nameFromUrl,
+  role: _roleFromUrl,
+  empId: _empIdFromUrl,
+  token: _tokenFromUrl
+};
+
+function empQueueOwnerLoad(uid) {
+  if (!uid) return;
+  if (typeof window.empLoadOwnerData === 'function') {
+    window.empLoadOwnerData(uid);
+  } else {
+    window.__EMP_PENDING_OWNER_UID__ = uid;
+  }
+}
 
 onAuthStateChanged(auth, user => {
   window.__EMP_USER__ = user;
   if (_uidFromUrl) {
     // Lien avec UID patron : chargement direct sans login
-    window.empLoadOwnerData(_uidFromUrl);
+    empQueueOwnerLoad(_uidFromUrl);
   } else if (user) {
-    window.empLoadOwnerData(user.uid);
-  } else {
+    empQueueOwnerLoad(user.uid);
+  } else if (typeof window.empShowScreen === 'function') {
     window.empShowScreen('login');
   }
 });
@@ -713,6 +735,12 @@ window.empLoadOwnerData = function(uid) {
   }
 };
 
+if (window.__EMP_PENDING_OWNER_UID__) {
+  const pendingUid = window.__EMP_PENDING_OWNER_UID__;
+  window.__EMP_PENDING_OWNER_UID__ = null;
+  window.empLoadOwnerData(pendingUid);
+}
+
 async function empLoadFromFirestore(uid) {
   const db = window.__EMP_DB__;
   const fs = window.__EMP_FS__;
@@ -747,6 +775,10 @@ function empShowIdentityScreen() {
   empShowScreen('identity');
 }
 
+function empNorm(v) {
+  return String(v || '').trim().toLowerCase();
+}
+
 function empAllEmployees() {
   const out = [];
   (EMP.cmData?.shops || []).forEach(s => {
@@ -755,8 +787,83 @@ function empAllEmployees() {
   return out;
 }
 
-function empRenderIdentityList() {
+function empFindTargetEmployeeForLink() {
   const employees = empAllEmployees();
+  const ctx = window.__EMP_LINK_CTX__ || {};
+  if (!employees.length) return null;
+
+  let filtered = employees.slice();
+
+  if (ctx.empId) {
+    const exactById = filtered.filter(e => String(e.id) === String(ctx.empId));
+    if (exactById.length) filtered = exactById;
+  }
+
+  if (ctx.shopId) {
+    const byShop = filtered.filter(e => String(e.shopId) === String(ctx.shopId));
+    if (byShop.length) filtered = byShop;
+  }
+
+  if (ctx.name) {
+    const exactName = filtered.filter(e => empNorm(e.name) === empNorm(ctx.name));
+    if (exactName.length) filtered = exactName;
+  }
+
+  if (ctx.role) {
+    const roleMatched = filtered.filter(e => String(e.role || '') === String(ctx.role));
+    if (roleMatched.length) filtered = roleMatched;
+  }
+
+  return filtered[0] || null;
+}
+
+function empValidateDirectLink() {
+  const ctx = window.__EMP_LINK_CTX__ || {};
+  if (!ctx.uid) return { ok: true, employee: null };
+
+  const emp = empFindTargetEmployeeForLink();
+  if (!emp) {
+    return { ok: false, message: 'Ce lien employé ne correspond à aucun employé enregistré.' };
+  }
+
+  if (!ctx.token) {
+    return { ok: true, employee: emp, legacy: true };
+  }
+
+  const link = emp.accessLink || {};
+  if (!link.token || String(link.token) !== String(ctx.token)) {
+    return { ok: false, message: 'Ce lien employé est invalide ou a été remplacé.' };
+  }
+  if (link.disabledAt) {
+    return { ok: false, message: 'Ce lien employé a été désactivé par le patron.' };
+  }
+  if (link.expiresAtMs && Date.now() > Number(link.expiresAtMs)) {
+    return { ok: false, message: 'Ce lien employé a expiré. Demandez un nouveau lien.' };
+  }
+  return { ok: true, employee: emp };
+}
+
+function empGetLinkedEmployees() {
+  const employees = empAllEmployees();
+  const ctx = window.__EMP_LINK_CTX__ || {};
+  if (!employees.length) return [];
+
+  if (ctx.uid) {
+    const validation = empValidateDirectLink();
+    if (!validation.ok || !validation.employee) return [];
+    return [validation.employee];
+  }
+
+  return employees;
+}
+
+function empRenderIdentityList() {
+  const validation = empValidateDirectLink();
+  if (!validation.ok) {
+    empShowError(validation.message);
+    return;
+  }
+  const employees = empGetLinkedEmployees();
   const list = document.getElementById('identityList');
   document.getElementById('pinSection').style.display = 'none';
 
@@ -779,6 +886,10 @@ function empRenderIdentityList() {
       </div>
     </button>
   `).join('');
+
+  if (employees.length === 1) {
+    requestAnimationFrame(() => window.empSelectEmployee(employees[0].id));
+  }
 }
 
 window.empSelectEmployee = function(employeeId) {
@@ -804,6 +915,8 @@ window.empSubmitPin = function() {
   const pin = document.getElementById('pinInput').value.trim();
   const employees = empAllEmployees();
   const emp = employees.find(e => e.id === EMP.pendingEmployeeId);
+  const validation = empValidateDirectLink();
+  if (!validation.ok) { empShowError(validation.message); return; }
   if (!emp || emp.pin !== pin) {
     document.getElementById('pinError').style.display = 'block';
     document.getElementById('pinInput').value = '';

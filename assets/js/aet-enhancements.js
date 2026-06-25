@@ -967,3 +967,16 @@ import { getMessaging, getToken, onMessage, isSupported as messagingIsSupported 
   const savedTheme = localStorage.getItem('aetx_theme');
   if (savedTheme) window.aetxSetTheme(savedTheme);
 })();
+
+/* ═══════════════════════════════════════════════════════════════
+ * AUTO-CHARGEMENT : AET Commerce Pro
+ * Injecté depuis aet-enhancements.js — index.html non modifié
+ * ═══════════════════════════════════════════════════════════════ */
+(function injectCommerceProScript() {
+  if (document.getElementById('aet-commerce-pro-script')) return;
+  const script = document.createElement('script');
+  script.id  = 'aet-commerce-pro-script';
+  script.src = 'assets/js/aet-commerce-pro.js';
+  script.defer = true;
+  document.head.appendChild(script);
+})();

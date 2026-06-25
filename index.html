@@ -17,9 +17,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
 <link rel="stylesheet" href="assets/css/aet-enhancements.css"/>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js" crossorigin="anonymous"></script>
 
 <!-- ═══════════════ FIREBASE ═══════════════ -->
 <script type="module">
@@ -812,30 +812,38 @@ window.setMonthFilter = (m) => {
   renderAll();
 };
 
-// ══ DEBUG : afficher les erreurs JS à l'écran (diagnostic mobile) ══
+// ══ DEBUG : diagnostics visibles uniquement en mode debug explicite ══
+const AET_DEBUG_VISIBLE = /[?&](debug|devtools)=1(?:&|$)/.test(location.search) || /^(localhost|127\.0\.0\.1)$/i.test(location.hostname);
+window.__AET_DEBUG_VISIBLE__ = AET_DEBUG_VISIBLE;
+
+function aetDebugIsSameOrigin(url){
+  try { return new URL(url, location.href).origin === location.origin; }
+  catch(_) { return false; }
+}
+function aetAppendDebugLine(label, detail){
+  try{
+    let box = document.getElementById('cmDebugBox');
+    if(!box){
+      box = document.createElement('div');
+      box.id = 'cmDebugBox';
+      box.style.cssText = 'position:fixed;bottom:0;left:0;right:0;max-height:40vh;overflow:auto;background:#1a0000;color:#ffb4b4;font-size:11px;font-family:monospace;padding:10px;z-index:999999;white-space:pre-wrap;border-top:3px solid #ef4444';
+      document.body.appendChild(box);
+    }
+    box.textContent += `[${label}] ${detail}\n\n`;
+  }catch(_){}
+}
 window.addEventListener('error', function(e){
-  try{
-    let box = document.getElementById('cmDebugBox');
-    if(!box){
-      box = document.createElement('div');
-      box.id = 'cmDebugBox';
-      box.style.cssText = 'position:fixed;bottom:0;left:0;right:0;max-height:40vh;overflow:auto;background:#1a0000;color:#ff8888;font-size:11px;font-family:monospace;padding:10px;z-index:999999;white-space:pre-wrap;border-top:3px solid red';
-      document.body.appendChild(box);
-    }
-    box.textContent += '[ERREUR] ' + e.message + '\n  → ' + (e.filename||'') + ':' + e.lineno + ':' + e.colno + '\n\n';
-  }catch(_){}
-});
+  const msg = String(e.message || '').trim();
+  const file = e.filename || '';
+  const isGenericCrossOrigin = !msg || msg === 'Script error.';
+  const isThirdParty = !!file && !aetDebugIsSameOrigin(file);
+  if (!AET_DEBUG_VISIBLE || isGenericCrossOrigin || isThirdParty) return;
+  aetAppendDebugLine('ERREUR', `${msg}\n  → ${file}:${e.lineno || 0}:${e.colno || 0}`);
+}, true);
 window.addEventListener('unhandledrejection', function(e){
-  try{
-    let box = document.getElementById('cmDebugBox');
-    if(!box){
-      box = document.createElement('div');
-      box.id = 'cmDebugBox';
-      box.style.cssText = 'position:fixed;bottom:0;left:0;right:0;max-height:40vh;overflow:auto;background:#1a0000;color:#ff8888;font-size:11px;font-family:monospace;padding:10px;z-index:999999;white-space:pre-wrap;border-top:3px solid red';
-      document.body.appendChild(box);
-    }
-    box.textContent += '[PROMESSE REJETÉE] ' + (e.reason && e.reason.message ? e.reason.message : e.reason) + '\n\n';
-  }catch(_){}
+  if (!AET_DEBUG_VISIBLE) return;
+  const reason = e.reason && e.reason.message ? e.reason.message : String(e.reason || 'Promesse rejetée');
+  aetAppendDebugLine('PROMESSE REJETÉE', reason);
 });
 
 // ══ MODALS ══
@@ -10551,7 +10559,6 @@ window.CM_DEBUG = CM;
   }
 })();
 </script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 <script type="module" src="assets/js/aet-enhancements.js"></script>
 <script src="assets/js/aet-ai-chat.js"></script>
 

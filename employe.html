@@ -16,7 +16,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js" crossorigin="anonymous"></script>
 
 <!-- ══════════════════ FIREBASE ══════════════════ -->
 <script type="module">
@@ -384,6 +385,34 @@ input  { font-family: inherit; outline: none; }
   font-weight: 700; font-size: 14px; margin-top: 6px;
 }
 
+/* ── Scanner vente rapide ── */
+.quick-scan-card {
+  background: linear-gradient(135deg, rgba(37,99,235,.08), rgba(16,185,129,.08));
+  border: 1px solid rgba(37,99,235,.14); border-radius: 16px; padding: 14px; margin-bottom: 12px;
+}
+.quick-scan-title { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:800; color: var(--text); }
+.quick-scan-sub { font-size:11px; color: var(--muted); margin: 6px 0 12px; line-height: 1.45; }
+.quick-scan-btn {
+  width: 100%; padding: 13px 14px; border: none; border-radius: 13px;
+  background: linear-gradient(135deg, var(--blue), #3b82f6); color: #fff;
+  font-size: 14px; font-weight: 800; box-shadow: 0 8px 24px rgba(37,99,235,.22);
+}
+#empScanModal { position: fixed; inset: 0; background: #000; z-index: 450; display: none; flex-direction: column; }
+#empScanModal.open { display: flex; }
+#empScanTopbar { display:flex; align-items:center; justify-content:space-between; padding: 16px 16px 10px; color:#fff; }
+#empScanTopbar button { background: rgba(255,255,255,.12); color:#fff; border:none; border-radius: 12px; width: 40px; height: 40px; font-size: 18px; }
+#empScanVideo { width: 100%; height: calc(100dvh - 84px); object-fit: cover; background: #000; }
+#empScanHint { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(78vw, 320px); height: min(78vw, 320px); border: 3px solid rgba(255,255,255,.88); border-radius: 24px; box-shadow: 0 0 0 9999px rgba(0,0,0,.32); display:flex; align-items:flex-end; justify-content:center; pointer-events:none; }
+#empScanHint span { margin-bottom: -56px; background: rgba(15,23,42,.78); color:#fff; padding: 10px 14px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+#empScanSaleCard { position:absolute; left:14px; right:14px; bottom: calc(18px + env(safe-area-inset-bottom)); background:#fff; border-radius:22px; padding:16px; box-shadow:0 20px 60px rgba(0,0,0,.32); display:none; }
+#empScanSaleCard h3 { font-size: 17px; color: var(--text); margin-bottom: 4px; }
+#empScanSaleCard .meta { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+#empScanSaleCard .price { font-size: 24px; font-weight: 900; color: var(--green); margin-bottom: 14px; }
+#empScanSaleActions { display:flex; gap:10px; }
+#empScanSaleActions button { flex:1; padding: 13px 14px; border-radius: 14px; font-weight: 800; font-size: 14px; }
+#empScanCancelBtn { background:#fff; color: var(--text); border: 1px solid #e2e8f0; }
+#empScanConfirmBtn { background: linear-gradient(135deg, var(--green), var(--green2)); color:#fff; border:none; }
+
 /* ── Ventes list ── */
 .mvt-tag {
   display: inline-flex; align-items: center; gap: 4px;
@@ -634,6 +663,28 @@ input  { font-family: inherit; outline: none; }
   </div>
 </div>
 
+
+<!-- ════ SCANNER VENTE RAPIDE ════ -->
+<div id="empScanModal">
+  <div id="empScanTopbar">
+    <div style="font-weight:800;font-size:14px;display:flex;align-items:center;gap:8px"><i class="fas fa-qrcode"></i> Scanner un article</div>
+    <button type="button" onclick="empCloseScanner()"><i class="fas fa-xmark"></i></button>
+  </div>
+  <div style="position:relative;flex:1">
+    <video id="empScanVideo" playsinline muted></video>
+    <div id="empScanHint"><span>Cadre le QR ou le code-barres</span></div>
+    <div id="empScanSaleCard">
+      <h3 id="empScanSaleName">Article</h3>
+      <div class="meta" id="empScanSaleStock">Stock</div>
+      <div class="price" id="empScanSalePrice">0 XOF</div>
+      <div id="empScanSaleActions">
+        <button id="empScanCancelBtn" type="button" onclick="empCancelScanSale()">Annuler</button>
+        <button id="empScanConfirmBtn" type="button" onclick="empConfirmScanSale()"><i class="fas fa-check"></i> Vendre 1 unité</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Toast -->
 <div id="empToast"></div>
 
@@ -651,9 +702,22 @@ let EMP = {
   pendingEmployeeId: null,
   sellArticle: null,
   sellQty: 1,
+  currentTab: 'resume',
+  remoteUnsub: null,
+  scanDetected: false,
+  scanSaleArtId: null,
+  scanSaleUnitId: null,
 };
 
 let _installPrompt = null;
+let empScanStream = null;
+let empScanRAF = null;
+const EMP_BARCODE_FORMATS = ['qr_code','ean_13','ean_8','code_128','upc_a','upc_e'];
+let empBarcodeDetector = null;
+if ('BarcodeDetector' in window) {
+  try { empBarcodeDetector = new BarcodeDetector({ formats: EMP_BARCODE_FORMATS }); }
+  catch(_) { empBarcodeDetector = null; }
+}
 
 /* ── Utilitaires ── */
 function empShowScreen(name) {
@@ -731,6 +795,7 @@ window.empLoadOwnerData = function(uid) {
   EMP.user = { uid };
   // Mémoriser l'UID patron pour les prochains accès directs
   localStorage.setItem('aet_employe_patron_uid', uid);
+  empWatchOwnerData(uid);
 
   // 1. Lire depuis localStorage (même clé que l'app principale)
   const cmKey = 'aet_commerce_' + uid;
@@ -741,7 +806,7 @@ window.empLoadOwnerData = function(uid) {
   } catch(e) {}
 
   if (cmData && Array.isArray(cmData.shops) && cmData.shops.length > 0) {
-    EMP.cmData = cmData;
+    empApplyFreshData(cmData, { silent: true });
     empShowIdentityScreen();
   } else {
     // 2. Essayer de charger depuis Firestore si pas en local
@@ -762,8 +827,7 @@ async function empLoadFromFirestore(uid) {
   try {
     const snap = await fs.getDoc(fs.doc(db, 'commerce_data', uid));
     if (snap.exists()) {
-      EMP.cmData = snap.data();
-      localStorage.setItem('aet_commerce_' + uid, JSON.stringify(EMP.cmData));
+      empApplyFreshData(snap.data(), { silent: true });
       empShowIdentityScreen();
     } else {
       empShowError('Aucune boutique trouvée. Demandez au patron de configurer Commerce d\'abord.');
@@ -771,6 +835,59 @@ async function empLoadFromFirestore(uid) {
   } catch(e) {
     empShowError('Impossible de charger les données. Vérifiez votre connexion.');
   }
+}
+
+function empRefreshSessionRefs() {
+  if (!EMP.employee || !EMP.cmData) return;
+  const nextShop = (EMP.cmData.shops || []).find(s => s.id === EMP.shop?.id) || null;
+  const nextEmployee = nextShop ? (nextShop.employees || []).find(e => e.id === EMP.employee.id) || null : null;
+  if (!nextShop || !nextEmployee) {
+    EMP.employee = null;
+    EMP.role = null;
+    EMP.shop = null;
+    EMP.sellArticle = null;
+    empShowIdentityScreen();
+    empToast('La session employé a été réinitialisée. Reconnectez-vous.', 'error');
+    return;
+  }
+  EMP.shop = nextShop;
+  EMP.employee = nextEmployee;
+  EMP.role = nextEmployee.role || EMP.role || 'employee';
+  const shopName = document.getElementById('shopNameHeader');
+  const empName = document.getElementById('empNameHeader');
+  const roleTxt = document.getElementById('roleBadgeTxt');
+  if (shopName) shopName.textContent = EMP.shop?.name || 'Commerce';
+  if (empName) empName.textContent = EMP.employee?.name || '';
+  if (roleTxt) roleTxt.textContent = EMP.role === 'manager' ? 'Manager' : 'Employé';
+}
+
+function empApplyFreshData(cmData, opts = {}) {
+  if (!cmData) return;
+  EMP.cmData = cmData;
+  const uid = EMP.user?.uid || localStorage.getItem('aet_employe_patron_uid');
+  if (uid) {
+    try { localStorage.setItem('aet_commerce_' + uid, JSON.stringify(cmData)); } catch(_) {}
+  }
+  empRefreshSessionRefs();
+  if (!opts.silent && EMP.employee) {
+    empRenderAll();
+    empSwitchTab(EMP.currentTab || 'resume');
+  }
+}
+
+function empWatchOwnerData(uid) {
+  const db = window.__EMP_DB__;
+  const fs = window.__EMP_FS__;
+  if (!db || !fs || !uid) return;
+  if (typeof EMP.remoteUnsub === 'function') {
+    try { EMP.remoteUnsub(); } catch(_) {}
+  }
+  EMP.remoteUnsub = fs.onSnapshot(fs.doc(db, 'commerce_data', uid), snap => {
+    if (!snap.exists()) return;
+    empApplyFreshData(snap.data(), { silent: !EMP.employee });
+  }, err => {
+    console.warn('[EMP] sync', err);
+  });
 }
 
 function empShowError(msg) {
@@ -984,6 +1101,7 @@ window.empResetPatronLink = function() {
 
 /* ── Navigation tabs ── */
 window.empSwitchTab = function(tab) {
+  EMP.currentTab = tab;
   document.querySelectorAll('.tab-btn, .bnav-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.tab === tab);
   });
@@ -994,7 +1112,8 @@ window.empSwitchTab = function(tab) {
 };
 
 function empRenderAll() {
-  empRenderTab('resume');
+  empRenderResume();
+  if (EMP.currentTab && EMP.currentTab !== 'resume') empRenderTab(EMP.currentTab);
 }
 
 function empRenderTab(tab) {
@@ -1013,6 +1132,41 @@ function empGetArticles() {
 function empGetMvts() {
   if (!EMP.shop || !EMP.cmData) return [];
   return (EMP.cmData.mouvements || []).filter(m => m.shopId === EMP.shop.id);
+}
+
+function empGetArticleName(article) {
+  return article?.name || article?.nom || 'Article';
+}
+
+function empGetSellPrice(article) {
+  return Number(article?.prixV ?? article?.prixVente ?? article?.prix ?? 0);
+}
+
+function empGetMovementName(mvt) {
+  return mvt?.artName || mvt?.artNom || mvt?.lignes?.[0]?.artName || mvt?.lignes?.[0]?.artNom || 'Vente';
+}
+
+function empGetMovementQty(mvt) {
+  return Number(mvt?.qte ?? mvt?.qty ?? mvt?.lignes?.[0]?.qte ?? mvt?.lignes?.[0]?.qty ?? 1);
+}
+
+function empFindArticleByPayload(payload) {
+  const txt = String(payload || '').trim();
+  if (!txt) return null;
+  const articles = empGetArticles();
+  if (txt.startsWith('AETCM|')) {
+    const parts = txt.split('|');
+    const artId = parts[2];
+    const qrId  = parts[3];
+    const found = articles.find(a => a.id === artId);
+    if (found) {
+      const units = Array.isArray(found.units) ? found.units : [];
+      const unit = units.find(u => u.qrId === qrId) || null;
+      return { article: found, unit };
+    }
+  }
+  const byCode = articles.find(a => String(a.code || '').trim() === txt);
+  return byCode ? { article: byCode, unit: null } : null;
 }
 
 /* ── Résumé ── */
@@ -1038,7 +1192,7 @@ function empRenderResume() {
   // Top articles
   const salesMap = {};
   mvts.filter(m => m.type === 'vente').forEach(m => {
-    (m.lignes || [{ artId: m.artId, artNom: m.artNom, qty: m.qty, total: m.total }]).forEach(l => {
+    (m.lignes || [{ artId: m.artId, artNom: empGetMovementName(m), qty: empGetMovementQty(m), total: m.total }]).forEach(l => {
       if (!l.artId) return;
       if (!salesMap[l.artId]) salesMap[l.artId] = { nom: l.artNom || '?', qty: 0, total: 0 };
       salesMap[l.artId].qty   += l.qty || 1;
@@ -1079,11 +1233,11 @@ function empRenderVendre() {
         <i class="fas fa-tag"></i>
       </div>
       <div class="item-body">
-        <div class="item-name">${a.name || a.nom}</div>
+        <div class="item-name">${empGetArticleName(a)}</div>
         <div class="item-meta">Stock : ${a.stock || 0} unité(s)</div>
       </div>
       <div class="item-right">
-        <div class="item-price">${empFmt(a.prixVente || a.prix || 0)}</div>
+        <div class="item-price">${empFmt(empGetSellPrice(a))}</div>
         <div class="item-stock">/ unité</div>
       </div>
     </div>`).join('');
@@ -1108,8 +1262,8 @@ function empRenderStock() {
         <i class="fas fa-${zero ? 'ban' : low ? 'triangle-exclamation' : 'check'}"></i>
       </div>
       <div class="item-body">
-        <div class="item-name">${a.name || a.nom}</div>
-        <div class="item-meta">Prix : ${empFmt(a.prixVente || a.prix || 0)}</div>
+        <div class="item-name">${empGetArticleName(a)}</div>
+        <div class="item-meta">Prix : ${empFmt(empGetSellPrice(a))}</div>
       </div>
       <div class="item-right">
         <div class="item-price" style="color:${zero ? 'var(--red)' : low ? 'var(--amber)' : 'var(--green)'}">
@@ -1135,8 +1289,8 @@ function empRenderHistorique() {
     <div class="item-card">
       <div class="item-icon"><i class="fas fa-receipt"></i></div>
       <div class="item-body">
-        <div class="item-name">${m.artNom || m.lignes?.[0]?.artNom || 'Vente'}</div>
-        <div class="item-meta">${m.date || '—'} · Qté : ${m.qty || 1}</div>
+        <div class="item-name">${empGetMovementName(m)}</div>
+        <div class="item-meta">${m.date || '—'} · Qté : ${empGetMovementQty(m)}</div>
       </div>
       <div class="item-right">
         <div class="item-price" style="color:var(--green)">${empFmt(m.total || 0)}</div>
@@ -1152,7 +1306,7 @@ window.empOpenSell = function(artId) {
   if (!art) return;
   EMP.sellArticle = art;
   EMP.sellQty = 1;
-  document.getElementById('sellModalTitle').textContent = art.name || art.nom;
+  document.getElementById('sellModalTitle').textContent = empGetArticleName(art);
   empUpdateSellTotal();
   document.getElementById('sellModal').classList.add('open');
 };
@@ -1173,19 +1327,21 @@ window.empChangeQty = function(delta) {
 function empUpdateSellTotal() {
   const art = EMP.sellArticle;
   document.getElementById('sellQty').textContent = EMP.sellQty;
-  document.getElementById('sellTotal').textContent = empFmt((art?.prixVente || art?.prix || 0) * EMP.sellQty);
+  document.getElementById('sellTotal').textContent = empFmt(empGetSellPrice(art) * EMP.sellQty);
 }
 
 window.empConfirmSell = function() {
   const art = EMP.sellArticle;
   if (!art || !EMP.cmData) return;
   const qty   = EMP.sellQty;
-  const total = (art.prixVente || art.prix || 0) * qty;
+  const total = empGetSellPrice(art) * qty;
 
   // Décrémenter stock
   const artIdx = EMP.cmData.articles.findIndex(a => a.id === art.id);
   if (artIdx === -1) { empToast('Article introuvable', 'error'); return; }
-  EMP.cmData.articles[artIdx].stock = Math.max(0, (EMP.cmData.articles[artIdx].stock || 0) - qty);
+  const currentStock = Number(EMP.cmData.articles[artIdx].stock || 0);
+  if (currentStock < qty) { empToast('Stock insuffisant pour cette vente', 'error'); return; }
+  EMP.cmData.articles[artIdx].stock = Math.max(0, currentStock - qty);
 
   // Créer mouvement
   const mvt = {
@@ -1193,9 +1349,11 @@ window.empConfirmSell = function() {
     shopId: EMP.shop.id,
     type: 'vente',
     artId: art.id,
-    artNom: art.name || art.nom,
+    artName: empGetArticleName(art),
+    artNom: empGetArticleName(art),
     qty,
-    prixUnit: art.prixVente || art.prix || 0,
+    qte: qty,
+    prixUnit: empGetSellPrice(art),
     total,
     date: empToday(),
     employeeId: EMP.employee.id,
@@ -1231,6 +1389,113 @@ async function empSaveToFirestore() {
   } catch(e) { console.warn('[EMP] save', e); }
 }
 
+
+async function empDecodeScanPayload(video) {
+  if (empBarcodeDetector) {
+    try {
+      const codes = await empBarcodeDetector.detect(video);
+      const raw = codes && codes[0] && (codes[0].rawValue || codes[0].rawData);
+      if (raw) return String(raw);
+    } catch(_) {}
+  }
+  if (!window.jsQR || !video.videoWidth || !video.videoHeight) return null;
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const result = jsQR(img.data, img.width, img.height);
+  return result && result.data ? result.data : null;
+}
+
+async function empScanLoop() {
+  const video = document.getElementById('empScanVideo');
+  if (!video || EMP.scanDetected) return;
+  if (video.readyState < video.HAVE_ENOUGH_DATA) {
+    empScanRAF = requestAnimationFrame(empScanLoop);
+    return;
+  }
+  const payload = await empDecodeScanPayload(video);
+  if (payload) {
+    const found = empFindArticleByPayload(payload);
+    if (found && found.article) {
+      empShowScanSaleCard(found.article, found.unit);
+      return;
+    }
+  }
+  empScanRAF = requestAnimationFrame(empScanLoop);
+}
+
+function empShowScanSaleCard(article, unit) {
+  EMP.scanDetected = true;
+  EMP.scanSaleArtId = article.id;
+  EMP.scanSaleUnitId = unit ? unit.qrId : null;
+  document.getElementById('empScanSaleName').textContent = empGetArticleName(article) + (unit ? ` (unité #${unit.num || '?'})` : '');
+  document.getElementById('empScanSaleStock').textContent = `Stock : ${article.stock || 0} ${article.unit || 'unité(s)'}`;
+  document.getElementById('empScanSalePrice').textContent = empFmt(empGetSellPrice(article));
+  document.getElementById('empScanSaleCard').style.display = 'block';
+}
+
+window.empCancelScanSale = function() {
+  EMP.scanDetected = false;
+  EMP.scanSaleArtId = null;
+  EMP.scanSaleUnitId = null;
+  document.getElementById('empScanSaleCard').style.display = 'none';
+  if (!empScanRAF) empScanRAF = requestAnimationFrame(empScanLoop);
+};
+
+window.empConfirmScanSale = function() {
+  if (!EMP.scanSaleArtId) return;
+  empOpenSell(EMP.scanSaleArtId);
+  empCloseScanner();
+};
+
+window.empScanForQuickSale = async function() {
+  if (!EMP.shop) { empToast('Aucune boutique active', 'error'); return; }
+  if (empGetArticles().length === 0) { empToast('Aucun article disponible', 'error'); return; }
+  const modal = document.getElementById('empScanModal');
+  const video = document.getElementById('empScanVideo');
+  if (!modal || !video || !navigator.mediaDevices?.getUserMedia) {
+    empToast('Caméra non disponible sur cet appareil', 'error');
+    return;
+  }
+  EMP.scanDetected = false;
+  EMP.scanSaleArtId = null;
+  EMP.scanSaleUnitId = null;
+  document.getElementById('empScanSaleCard').style.display = 'none';
+  modal.classList.add('open');
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } }, audio: false });
+    empScanStream = stream;
+    video.srcObject = stream;
+    await video.play();
+    empScanRAF = requestAnimationFrame(empScanLoop);
+  } catch(_) {
+    empToast('Accès caméra refusé', 'error');
+    empCloseScanner();
+  }
+};
+
+window.empCloseScanner = function() {
+  if (empScanRAF) cancelAnimationFrame(empScanRAF);
+  empScanRAF = null;
+  EMP.scanDetected = false;
+  EMP.scanSaleArtId = null;
+  EMP.scanSaleUnitId = null;
+  document.getElementById('empScanSaleCard').style.display = 'none';
+  document.getElementById('empScanModal').classList.remove('open');
+  const video = document.getElementById('empScanVideo');
+  if (video) {
+    try { video.pause(); } catch(_) {}
+    video.srcObject = null;
+  }
+  if (empScanStream) {
+    try { empScanStream.getTracks().forEach(t => t.stop()); } catch(_) {}
+    empScanStream = null;
+  }
+};
+
 /* ── PWA Install ── */
 window.addEventListener('beforeinstallprompt', e => {
   e.preventDefault();
@@ -1255,6 +1520,9 @@ window.empTriggerInstall = async function() {
 /* ── Fermer modal en cliquant dehors ── */
 document.getElementById('sellModal').addEventListener('click', e => {
   if (e.target === document.getElementById('sellModal')) empCloseSellModal();
+});
+document.getElementById('empScanModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('empScanModal')) empCloseScanner();
 });
 
 /* ── Service Worker (PWA offline) ── */

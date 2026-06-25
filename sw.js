@@ -1,10 +1,14 @@
-const CACHE_NAME = 'aet-monbudget-v3';
+const CACHE_NAME = 'aet-monbudget-v4';
 const OFFLINE_ASSETS = [
   './',
   './index.html',
   './manifest.json',
+  './icon-192.png',
+  './icon-512.png',
   './assets/css/aet-enhancements.css',
-  './assets/js/aet-enhancements.js'
+  './assets/js/aet-enhancements.js',
+  './assets/js/aet-commerce-pro.js',
+  './assets/js/aet-ai-chat.js'
 ];
 
 self.addEventListener('install', event => {

@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════
  * AET Commerce Employé — Service Worker PWA
  * ═══════════════════════════════════════════════ */
-const CACHE_NAME = 'aet-employe-v4';
+const CACHE_NAME = 'aet-employe-v5';
 const URLS_TO_CACHE = [
   'employe.html',
   'manifest-employe.json',
@@ -10,6 +10,7 @@ const URLS_TO_CACHE = [
   'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css',
   'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js',
+  'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js',
 ];
 
 self.addEventListener('install', event => {

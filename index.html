@@ -8555,93 +8555,6 @@ if ('serviceWorker' in navigator) {
 </div>
 
 <!-- ═══ Modal : Gestion des employés (Patron uniquement) ═══ -->
-<script>
-// ════ GÉNÉRATION LIEN EMPLOYÉ ════
-window.cmOpenGenerateLinkModal = function() {
-  var el = document.getElementById('cmGenLinkEmpList');
-  var result = document.getElementById('cmGenLinkResult');
-  var qr = document.getElementById('cmGenLinkQR');
-  if (result) result.style.display = 'none';
-  if (qr) qr.style.display = 'none';
-
-  var employees = [];
-  if (window.CM_DEBUG) {
-    window.CM_DEBUG.shops.forEach(function(s) {
-      (s.employees || []).forEach(function(e) {
-        employees.push(Object.assign({}, e, { shopId: s.id, shopName: s.name }));
-      });
-    });
-  }
-
-  if (!el) return;
-  if (employees.length === 0) {
-    el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px"><i class="fas fa-user-slash" style="font-size:28px;margin-bottom:8px;display:block;opacity:.4"></i>Aucun employé. Ajoutez-en d abord.</div>';
-  } else {
-    el.innerHTML = employees.map(function(e) {
-      return '<div onclick="cmGenerateLinkForEmp('' + e.id + '','' + e.shopId + '','' + e.name + '','' + e.role + '')" style="display:flex;align-items:center;gap:10px;padding:12px;border:1.5px solid var(--border);border-radius:12px;margin-bottom:8px;cursor:pointer" onmouseenter="this.style.borderColor=' #10b981'" onmouseleave="this.style.borderColor='var(--border)'">' +
-        '<div style="width:38px;height:38px;border-radius:50%;background:' + (e.role==='manager'?'rgba(37,99,235,.1)':'rgba(16,185,129,.1)') + ';display:flex;align-items:center;justify-content:center;font-size:16px">' + (e.role==='manager'?'👔':'🧑') + '</div>' +
-        '<div style="flex:1"><div style="font-weight:700;font-size:14px">' + e.name + '</div><div style="font-size:11.5px;color:var(--muted)">' + (e.role==='manager'?'Manager':'Employé') + ' — ' + e.shopName + '</div></div>' +
-        '<i class="fas fa-link" style="color:#2563eb;font-size:14px"></i></div>';
-    }).join('');
-  }
-
-  if (window.openModal) window.openModal('cmGenLinkModal');
-  if (window.closeModal) window.closeModal('cmEmployeesModal');
-};
-
-window.cmGenerateLinkForEmp = function(empId, shopId, name, role) {
-  var uid = window.currentUser ? window.currentUser.uid : '';
-  var token = btoa(name + ':' + shopId + ':' + Date.now()).replace(/=/g,'');
-  var base = window.location.origin + window.location.pathname.replace(/[^\/]*$/, '') + 'employe.html';
-  var link = base + '?uid=' + encodeURIComponent(uid) + '&shop=' + encodeURIComponent(shopId) + '&name=' + encodeURIComponent(name) + '&role=' + role + '&token=' + token;
-  var input = document.getElementById('cmGenLinkInput');
-  if (input) input.value = link;
-  window._cmCurrentGenLink = link;
-  window._cmCurrentGenName = name;
-  document.getElementById('cmGenLinkResult').style.display = 'block';
-  document.getElementById('cmGenLinkQR').style.display = 'none';
-  if (window.toast) window.toast('Lien généré pour ' + name + ' ✓', 'success');
-};
-
-window.cmCopyGenLink = function() {
-  var val = window._cmCurrentGenLink;
-  if (!val) return;
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(val).then(function(){ if (window.toast) window.toast('Lien copié !', 'success'); });
-  } else {
-    var el = document.getElementById('cmGenLinkInput');
-    if (el) { el.select(); document.execCommand('copy'); }
-    if (window.toast) window.toast('Lien copié !', 'success');
-  }
-};
-
-window.cmShareGenLink = function() {
-  var val = window._cmCurrentGenLink;
-  var name = window._cmCurrentGenName || 'Employé';
-  if (!val) return;
-  if (navigator.share) {
-    navigator.share({ title: 'Accès Commerce — ' + name, text: 'Voici ton lien accès Commerce AET', url: val }).catch(function(){});
-  } else {
-    window.cmCopyGenLink();
-    if (window.toast) window.toast('Lien copié — partagez par WhatsApp ou SMS', 'info');
-  }
-};
-
-window.cmShowGenLinkQR = function() {
-  var val = window._cmCurrentGenLink;
-  if (!val) return;
-  var qrDiv = document.getElementById('cmGenLinkQR');
-  var canvas = document.getElementById('cmGenLinkQRCanvas');
-  if (!qrDiv || !canvas) return;
-  if (typeof QRCode !== 'undefined') {
-    canvas.innerHTML = '';
-    new QRCode(canvas, { text: val, width: 180, height: 180, colorDark: '#0f172a', colorLight: '#ffffff' });
-  } else {
-    canvas.innerHTML = '<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=' + encodeURIComponent(val) + '" style="border-radius:6px" alt="QR">';
-  }
-  qrDiv.style.display = 'block';
-};
-</script>
 <div class="modal-overlay" id="cmEmployeesModal">
   <div class="modal-box" style="max-width:480px">
     <div class="modal-header">
@@ -8672,6 +8585,8 @@ window.cmShowGenLinkQR = function() {
         </div>
         <label class="cm-modal-label" data-i18n="cm_employee_pin">Code PIN (4 chiffres)</label>
         <input type="password" id="cmEmpPin" class="cm-modal-input" maxlength="4" inputmode="numeric" data-i18n="cm_employee_pin_ph" placeholder="1234">
+        <label class="cm-modal-label">Numéro WhatsApp</label>
+        <input type="tel" id="cmEmpWhatsapp" class="cm-modal-input" placeholder="ex: +228 90 12 34 56">
         <div style="display:flex;gap:8px;margin-top:14px">
           <button class="btn-cancel" style="flex:1" onclick="cmCloseEmployeeForm()" data-i18n="btn_cancel">Annuler</button>
           <button class="btn-save" style="flex:1;background:linear-gradient(135deg,#10b981,#059669)" onclick="cmSaveEmployee()" data-i18n="btn_save">Enregistrer</button>
@@ -9053,18 +8968,29 @@ function cmRenderEmployeesList(){
     el.innerHTML = `<div class="cm-empty" style="padding:16px 10px"><i class="fas fa-user-group"></i>${t('cm_no_employees')}</div>`;
     return;
   }
-  el.innerHTML = employees.map(e => `
+  el.innerHTML = employees.map(e => {
+    const histCount = Array.isArray(e.accessLinkHistory) ? e.accessLinkHistory.length : 0;
+    const lastItem = histCount ? e.accessLinkHistory[0] : null;
+    const lastTxt = lastItem?.generatedAt ? new Date(lastItem.generatedAt).toLocaleString('fr-FR', { dateStyle:'short', timeStyle:'short' }) : 'Jamais';
+    return `
     <div style="display:flex;align-items:center;gap:10px;padding:10px;border:1px solid var(--border);border-radius:10px;margin-bottom:8px">
       <div style="width:34px;height:34px;border-radius:50%;background:${e.role==='manager'?'rgba(37,99,235,.1)':'rgba(16,185,129,.1)'};display:flex;align-items:center;justify-content:center;font-size:14px">${e.role==='manager'?'👔':'🧑‍💼'}</div>
       <div style="flex:1;min-width:0">
         <div style="font-weight:700;font-size:13px">${e.name}</div>
         <div style="font-size:11px;color:var(--muted)">${e.role==='manager'?t('cm_role_manager'):t('cm_role_employee')} · PIN ••••</div>
+        <div style="font-size:10.5px;color:var(--muted)">${e.whatsapp ? 'WhatsApp: ' + e.whatsapp : 'WhatsApp non défini'} · ${histCount} lien(s) · dernier: ${lastTxt}</div>
       </div>
       <button onclick="cmOpenEmployeeForm('${e.id}')" style="width:32px;height:32px;border-radius:8px;border:none;background:rgba(37,99,235,.08);color:var(--primary);cursor:pointer"><i class="fas fa-pencil" style="font-size:12px"></i></button>
       <button onclick="cmDeleteEmployee('${e.id}')" style="width:32px;height:32px;border-radius:8px;border:none;background:rgba(239,68,68,.08);color:#ef4444;cursor:pointer"><i class="fas fa-trash" style="font-size:12px"></i></button>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
 }
+
+window.cmNormalizeWhatsapp = function(raw){
+  const clean = String(raw || '').trim();
+  if (!clean) return '';
+  return clean.replace(/[^\d+]/g,'');
+};
 
 window.cmOpenEmployeeForm = function(employeeId){
   CM.editingEmployeeId = employeeId || null;
@@ -9076,11 +9002,13 @@ window.cmOpenEmployeeForm = function(employeeId){
     if (emp) {
       document.getElementById('cmEmpName').value = emp.name;
       document.getElementById('cmEmpPin').value = emp.pin;
+      document.getElementById('cmEmpWhatsapp').value = emp.whatsapp || '';
       cmPickEmpRole(emp.role);
     }
   } else {
     document.getElementById('cmEmpName').value = '';
     document.getElementById('cmEmpPin').value = '';
+    document.getElementById('cmEmpWhatsapp').value = '';
     cmPickEmpRole('manager');
   }
 };
@@ -9101,11 +9029,11 @@ window.cmSaveEmployee = function(){
   if (!shop) return;
   const name = document.getElementById('cmEmpName').value.trim();
   const pin = document.getElementById('cmEmpPin').value.trim();
+  const whatsapp = window.cmNormalizeWhatsapp(document.getElementById('cmEmpWhatsapp').value);
   const role = CM._pendingEmpRole || 'manager';
   if (!name) { cmToast(t('cm_msg_employee_name_required'),'error'); return; }
   if (!/^\d{4}$/.test(pin)) { cmToast(t('cm_msg_pin_4digits'),'error'); return; }
 
-  // Le PIN doit être unique sur TOUT le compte (toutes boutiques confondues).
   const taken = cmAllEmployees().some(e => e.pin === pin && e.id !== CM.editingEmployeeId);
   if (taken) { cmToast(t('cm_msg_pin_taken'),'error'); return; }
 
@@ -9113,9 +9041,9 @@ window.cmSaveEmployee = function(){
 
   if (CM.editingEmployeeId) {
     const emp = shop.employees.find(e => e.id === CM.editingEmployeeId);
-    if (emp) Object.assign(emp, { name, pin, role });
+    if (emp) Object.assign(emp, { name, pin, role, whatsapp });
   } else {
-    shop.employees.push({ id: cmUID(), name, pin, role, createdAt: Date.now() });
+    shop.employees.push({ id: cmUID(), name, pin, role, whatsapp, createdAt: Date.now() });
   }
   cmSave();
   cmRenderEmployeesList();
@@ -10622,26 +10550,78 @@ window.CM_DEBUG = CM;
 
 <!-- ═══ Modal : Générer lien employé ═══ -->
 <div class="modal-overlay" id="cmGenLinkModal">
-  <div class="modal-box" style="max-width:480px">
+  <div class="modal-box" style="max-width:560px">
     <div class="modal-header">
       <h3><i class="fas fa-link" style="color:#2563eb;margin-right:8px"></i>Lien Employé</h3>
       <button class="modal-close" onclick="closeModal('cmGenLinkModal')"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body">
       <p style="font-size:13px;color:var(--muted);margin-bottom:16px">
-        Choisissez un employé pour générer son lien d'accès personnel. Il pourra l'ouvrir et l'installer comme application.
+        Créez un accès personnel avec lien sécurisé, PIN automatique, envoi WhatsApp prérempli et historique des liens.
       </p>
+
+      <div style="padding:14px;border:1px solid var(--border);border-radius:16px;background:linear-gradient(180deg,#f8fffc,#ffffff);margin-bottom:14px">
+        <div style="font-size:12px;font-weight:800;color:var(--text);margin-bottom:12px;text-transform:uppercase;letter-spacing:.04em">⚡ Génération rapide</div>
+
+        <label class="cm-modal-label">Nom de l'employé</label>
+        <input type="text" id="cmGenLinkName" class="cm-modal-input" placeholder="ex: Koffi Mensah">
+
+        <label class="cm-modal-label">Boutique</label>
+        <select id="cmGenLinkShop" class="cm-modal-input"></select>
+
+        <label class="cm-modal-label">Rôle</label>
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+          <button type="button" class="cm-cat-chip" id="cmGenRoleEmployee" onclick="cmSetGenerateRole('employee')" style="flex:1">
+            <div style="font-weight:700">🧑‍💼 Employé</div>
+            <div style="font-size:10.5px;opacity:.8;font-weight:400">Vente et consultation du stock</div>
+          </button>
+          <button type="button" class="cm-cat-chip" id="cmGenRoleManager" onclick="cmSetGenerateRole('manager')" style="flex:1">
+            <div style="font-weight:700">👔 Manager</div>
+            <div style="font-size:10.5px;opacity:.8;font-weight:400">Gère la boutique et les achats</div>
+          </button>
+        </div>
+
+        <label class="cm-modal-label">Numéro WhatsApp</label>
+        <input type="tel" id="cmGenLinkWhatsapp" class="cm-modal-input" placeholder="ex: +228 90 12 34 56">
+
+        <label class="cm-modal-label">PIN d'accès (4 chiffres)</label>
+        <div style="display:flex;gap:8px;align-items:center">
+          <input type="password" id="cmGenLinkPin" class="cm-modal-input" maxlength="4" inputmode="numeric" placeholder="1234" style="margin-bottom:0">
+          <button type="button" onclick="cmAutofillGeneratePin()" style="padding:12px 14px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.16);color:#059669;border-radius:12px;font-weight:800;white-space:nowrap">PIN auto</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:6px">Le PIN proposé est unique sur tout le compte.</div>
+
+        <label class="cm-modal-label" style="margin-top:12px">Expiration du lien</label>
+        <select id="cmGenLinkExpiry" class="cm-modal-input">
+          <option value="24h">24 heures</option>
+          <option value="7d" selected>7 jours</option>
+          <option value="30d">30 jours</option>
+          <option value="never">Jamais</option>
+        </select>
+
+        <button onclick="cmCreateAndGenerateEmployeeLink()" style="width:100%;padding:12px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:12px;font-weight:800;cursor:pointer;margin-top:6px;font-family:inherit">
+          <i class="fas fa-bolt"></i> Créer et générer le lien
+        </button>
+      </div>
+
+      <div style="font-size:12px;font-weight:800;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.04em">Employés existants</div>
       <div id="cmGenLinkEmpList"></div>
+
       <div id="cmGenLinkResult" style="display:none;margin-top:14px">
         <div style="font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;text-transform:uppercase">🔗 Lien généré</div>
         <div style="display:flex;gap:8px">
           <input type="text" id="cmGenLinkInput" readonly style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:11px;color:var(--muted);background:var(--bg);font-family:inherit">
           <button onclick="cmCopyGenLink()" style="padding:10px 14px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer"><i class="fas fa-copy"></i></button>
         </div>
-        <div style="display:flex;gap:8px;margin-top:10px">
-          <button onclick="cmShareGenLink()" style="flex:1;padding:11px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-family:inherit"><i class="fas fa-share-nodes"></i> Partager</button>
-          <button onclick="cmShowGenLinkQR()" style="flex:1;padding:11px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:10px;font-weight:700;cursor:pointer;font-family:inherit"><i class="fas fa-qrcode"></i> QR Code</button>
+        <div id="cmGenLinkMeta" style="display:none;margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(37,99,235,.06);border:1px solid rgba(37,99,235,.12);font-size:12px;color:var(--text)"></div>
+        <div id="cmGenLinkPinHint" style="display:none;margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.15);font-size:12px;color:var(--text)"></div>
+        <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px">
+          <button onclick="cmShareGenLink()" style="padding:11px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-family:inherit"><i class="fas fa-share-nodes"></i> Partager</button>
+          <button onclick="cmShareGenLinkWhatsApp()" style="padding:11px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-family:inherit"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+          <button onclick="cmShowGenLinkQR()" style="padding:11px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:10px;font-weight:700;cursor:pointer;font-family:inherit"><i class="fas fa-qrcode"></i> QR Code</button>
+          <button onclick="cmDisableCurrentEmployeeLink()" style="padding:11px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#dc2626;border-radius:10px;font-weight:700;cursor:pointer;font-family:inherit"><i class="fas fa-link-slash"></i> Désactiver</button>
         </div>
+        <div id="cmGenLinkHistory" style="display:none;margin-top:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#fff"></div>
         <div id="cmGenLinkQR" style="display:none;text-align:center;margin-top:12px">
           <div id="cmGenLinkQRCanvas" style="display:inline-block;background:#fff;padding:12px;border-radius:12px;border:1px solid var(--border)"></div>
           <div style="font-size:11px;color:var(--muted);margin-top:6px">Scanner pour accéder directement</div>
@@ -10655,82 +10635,418 @@ window.CM_DEBUG = CM;
 </div>
 
 <script>
-// ════ GÉNÉRATION LIEN EMPLOYÉ ════
-window.cmOpenGenerateLinkModal = function() {
-  const shop = cmGetShop ? cmGetShop() : null;
-  const el = document.getElementById('cmGenLinkEmpList');
-  const result = document.getElementById('cmGenLinkResult');
-  const qr = document.getElementById('cmGenLinkQR');
-  if (result) result.style.display = 'none';
-  if (qr) qr.style.display = 'none';
-
-  const employees = [];
-  if (window.CM_DEBUG) {
-    window.CM_DEBUG.shops.forEach(s => {
-      (s.employees || []).forEach(e => employees.push({ ...e, shopId: s.id, shopName: s.name }));
-    });
-  }
-
-  if (!el) return;
-  if (employees.length === 0) {
-    el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px"><i class="fas fa-user-slash" style="font-size:28px;margin-bottom:8px;display:block;opacity:.4"></i>Aucun employé. Ajoutez-en d'abord.</div>';
-  } else {
-    el.innerHTML = employees.map(e => `
-      <div onclick="cmGenerateLinkForEmp('${e.id}','${e.shopId}','${e.name}','${e.role}')"
-        style="display:flex;align-items:center;gap:10px;padding:12px;border:1.5px solid var(--border);border-radius:12px;margin-bottom:8px;cursor:pointer;transition:border-color .2s"
-        onmouseenter="this.style.borderColor='#10b981'" onmouseleave="this.style.borderColor='var(--border)'">
-        <div style="width:38px;height:38px;border-radius:50%;background:${e.role==='manager'?'rgba(37,99,235,.1)':'rgba(16,185,129,.1)'};display:flex;align-items:center;justify-content:center;font-size:16px">${e.role==='manager'?'👔':'🧑‍💼'}</div>
-        <div style="flex:1">
-          <div style="font-weight:700;font-size:14px">${e.name}</div>
-          <div style="font-size:11.5px;color:var(--muted)">${e.role==='manager'?'Manager':'Employé'} — ${e.shopName}</div>
-        </div>
-        <i class="fas fa-link" style="color:#2563eb;font-size:14px"></i>
-      </div>
-    `).join('');
-  }
-
-  if (window.openModal) window.openModal('cmGenLinkModal');
-  if (window.closeModal) window.closeModal('cmEmployeesModal');
+// ════ GÉNÉRATION LIEN EMPLOYÉ — WhatsApp + historique ════
+window.cmEscapeHtmlAttr = function(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 };
 
-window.cmGenerateLinkForEmp = function(empId, shopId, name, role) {
+window.cmNormText = function(value) {
+  return String(value || '').trim().toLowerCase();
+};
+
+window.cmSetGenerateRole = function(role) {
+  role = role === 'manager' ? 'manager' : 'employee';
+  window._cmPendingGenRole = role;
+  document.getElementById('cmGenRoleEmployee')?.classList.toggle('active', role === 'employee');
+  document.getElementById('cmGenRoleManager')?.classList.toggle('active', role === 'manager');
+};
+
+window.cmGenerateUniquePin = function() {
+  const used = new Set((typeof cmAllEmployees === 'function' ? cmAllEmployees() : []).map(e => String(e.pin || '')));
+  for (let i = 0; i < 200; i++) {
+    const candidate = String(Math.floor(1000 + Math.random() * 9000));
+    if (!used.has(candidate)) return candidate;
+  }
+  return String(Math.floor(1000 + Math.random() * 9000));
+};
+
+window.cmAutofillGeneratePin = function() {
+  const pin = window.cmGenerateUniquePin();
+  const el = document.getElementById('cmGenLinkPin');
+  if (el) el.value = pin;
+  return pin;
+};
+
+window.cmNormalizePhoneForWa = function(raw) {
+  return String(raw || '').replace(/\D/g,'');
+};
+
+window.cmPopulateGenerateLinkShops = function(selectedShopId) {
+  const select = document.getElementById('cmGenLinkShop');
+  if (!select) return;
+  const shops = Array.isArray(window.CM_DEBUG?.shops) ? window.CM_DEBUG.shops : [];
+  if (!shops.length) {
+    select.innerHTML = '<option value="">Aucune boutique disponible</option>';
+    select.disabled = true;
+    return;
+  }
+  select.disabled = false;
+  select.innerHTML = shops.map(s => `<option value="${window.cmEscapeHtmlAttr(s.id)}" ${String(s.id) === String(selectedShopId) ? 'selected' : ''}>${s.name}</option>`).join('');
+};
+
+window.cmGetLinkExpiryConfig = function() {
+  const val = document.getElementById('cmGenLinkExpiry')?.value || '7d';
+  if (val === '24h') return { key: val, label: '24 heures', ms: 24 * 60 * 60 * 1000 };
+  if (val === '30d') return { key: val, label: '30 jours', ms: 30 * 24 * 60 * 60 * 1000 };
+  if (val === 'never') return { key: val, label: 'Jamais', ms: null };
+  return { key: '7d', label: '7 jours', ms: 7 * 24 * 60 * 60 * 1000 };
+};
+
+window.cmFormatDateTime = function(ts) {
+  if (!ts) return '—';
+  try {
+    return new Date(ts).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' });
+  } catch (e) {
+    return '—';
+  }
+};
+
+window.cmGetEmployeeLinkState = function(emp) {
+  const link = emp?.accessLink || null;
+  if (!link || !link.token) return { code: 'none', label: 'Aucun lien', color: '#64748b', bg: 'rgba(100,116,139,.08)' };
+  if (link.disabledAt) return { code: 'disabled', label: 'Lien désactivé', color: '#dc2626', bg: 'rgba(239,68,68,.08)' };
+  if (link.expiresAtMs && Date.now() > Number(link.expiresAtMs)) return { code: 'expired', label: 'Lien expiré', color: '#d97706', bg: 'rgba(245,158,11,.12)' };
+  return { code: 'active', label: 'Lien actif', color: '#059669', bg: 'rgba(16,185,129,.10)' };
+};
+
+window.cmResetGenerateLinkResult = function() {
+  const result = document.getElementById('cmGenLinkResult');
+  const qr = document.getElementById('cmGenLinkQR');
+  const pinHint = document.getElementById('cmGenLinkPinHint');
+  const meta = document.getElementById('cmGenLinkMeta');
+  const hist = document.getElementById('cmGenLinkHistory');
+  if (result) result.style.display = 'none';
+  if (qr) qr.style.display = 'none';
+  if (pinHint) {
+    pinHint.style.display = 'none';
+    pinHint.textContent = '';
+  }
+  if (meta) {
+    meta.style.display = 'none';
+    meta.textContent = '';
+  }
+  if (hist) {
+    hist.style.display = 'none';
+    hist.innerHTML = '';
+  }
+  window._cmCurrentGenLink = '';
+  window._cmCurrentGenName = '';
+  window._cmCurrentGenEmpId = '';
+  window._cmCurrentGenPin = '';
+  window._cmCurrentGenWhatsapp = '';
+};
+
+window.cmPrefillGenerateLinkForm = function() {
+  const currentShopId = window.CM_DEBUG?.currentShopId || '';
+  window.cmPopulateGenerateLinkShops(currentShopId);
+  const nameEl = document.getElementById('cmGenLinkName');
+  const waEl = document.getElementById('cmGenLinkWhatsapp');
+  if (nameEl) nameEl.value = '';
+  if (waEl) waEl.value = '';
+  window.cmAutofillGeneratePin();
+  const expiry = document.getElementById('cmGenLinkExpiry');
+  if (expiry) expiry.value = '7d';
+  window.cmSetGenerateRole('employee');
+  window.cmResetGenerateLinkResult();
+};
+
+window.cmRenderGenerateLinkExistingEmployees = function() {
+  const el = document.getElementById('cmGenLinkEmpList');
+  if (!el) return;
+  const employees = (typeof cmAllEmployees === 'function') ? cmAllEmployees() : [];
+  if (!employees.length) {
+    el.innerHTML = `<div style="text-align:center;padding:16px;color:var(--muted);font-size:13px"><i class="fas fa-user-slash" style="font-size:28px;margin-bottom:8px;display:block;opacity:.4"></i>Aucun employé enregistré pour le moment.</div>`;
+    return;
+  }
+  el.innerHTML = employees.map(e => {
+    const state = window.cmGetEmployeeLinkState(e);
+    const disabled = state.code === 'disabled';
+    const historyCount = Array.isArray(e.accessLinkHistory) ? e.accessLinkHistory.length : 0;
+    const lastHistory = historyCount ? e.accessLinkHistory[0] : null;
+    const lastText = lastHistory?.generatedAt ? window.cmFormatDateTime(lastHistory.generatedAt) : 'Jamais';
+    return `
+      <div style="border:1px solid var(--border);border-radius:14px;padding:12px;background:#fff;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:38px;height:38px;border-radius:50%;background:${e.role === 'manager' ? 'rgba(37,99,235,.1)' : 'rgba(16,185,129,.1)'};display:flex;align-items:center;justify-content:center;font-size:16px">${e.role === 'manager' ? '👔' : '🧑‍💼'}</div>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:700;font-size:14px">${e.name}</div>
+            <div style="font-size:11.5px;color:var(--muted)">${e.role === 'manager' ? 'Manager' : 'Employé'} — ${e.shopName}</div>
+            <div style="font-size:10.5px;color:var(--muted)">${e.whatsapp ? 'WhatsApp: ' + e.whatsapp : 'WhatsApp non défini'} · ${historyCount} lien(s) · dernier: ${lastText}</div>
+          </div>
+          <div style="padding:5px 8px;border-radius:999px;background:${state.bg};color:${state.color};font-size:10.5px;font-weight:800;white-space:nowrap">${state.label}</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button type="button" onclick="cmGenerateLinkFromCard(this)"
+            data-emp-id="${window.cmEscapeHtmlAttr(e.id)}"
+            data-shop-id="${window.cmEscapeHtmlAttr(e.shopId)}"
+            data-emp-name="${window.cmEscapeHtmlAttr(e.name)}"
+            data-role="${window.cmEscapeHtmlAttr(e.role || 'employee')}"
+            data-pin="${window.cmEscapeHtmlAttr(e.pin || '')}"
+            data-whatsapp="${window.cmEscapeHtmlAttr(e.whatsapp || '')}"
+            style="flex:1;padding:10px 12px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;font-family:inherit">
+            <i class="fas fa-link"></i> Générer
+          </button>
+          <button type="button" onclick="cmDisableEmployeeLink('${window.cmEscapeHtmlAttr(e.id)}','${window.cmEscapeHtmlAttr(e.shopId)}')"
+            ${disabled ? 'disabled' : ''}
+            style="padding:10px 12px;background:${disabled ? '#f8fafc' : 'rgba(239,68,68,.1)'};border:1px solid ${disabled ? 'rgba(148,163,184,.2)' : 'rgba(239,68,68,.2)'};color:${disabled ? '#94a3b8' : '#dc2626'};border-radius:10px;font-weight:700;cursor:${disabled ? 'not-allowed' : 'pointer'};font-family:inherit">
+            <i class="fas fa-link-slash"></i>
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+};
+
+window.cmOpenGenerateLinkModal = function() {
+  window.cmPrefillGenerateLinkForm();
+  window.cmRenderGenerateLinkExistingEmployees();
+  if (window.closeModal) window.closeModal('cmEmployeesModal');
+  if (window.openModal) window.openModal('cmGenLinkModal');
+};
+
+window.cmGenerateLinkFromCard = function(el) {
+  if (!el) return;
+  const waEl = document.getElementById('cmGenLinkWhatsapp');
+  if (waEl) waEl.value = el.dataset.whatsapp || '';
+  return window.cmGenerateLinkForEmp(
+    el.dataset.empId || '',
+    el.dataset.shopId || '',
+    el.dataset.empName || '',
+    el.dataset.role || 'employee',
+    el.dataset.pin || '',
+    el.dataset.whatsapp || ''
+  );
+};
+
+window.cmFindEmployeeRecord = function(empId, shopId) {
+  const shop = (window.CM_DEBUG?.shops || []).find(s => String(s.id) === String(shopId));
+  if (!shop) return { shop: null, employee: null };
+  const employee = (shop.employees || []).find(e => String(e.id) === String(empId)) || null;
+  return { shop, employee };
+};
+
+window.cmFindEmployeeByNameAndShop = function(name, shopId) {
+  const shop = (window.CM_DEBUG?.shops || []).find(s => String(s.id) === String(shopId));
+  if (!shop) return null;
+  return (shop.employees || []).find(e => window.cmNormText(e.name) === window.cmNormText(name)) || null;
+};
+
+window.cmBuildEmployeeLinkMeta = function(expiryCfg) {
+  const now = Date.now();
+  const raw = btoa(now + ':' + Math.random() + ':' + navigator.userAgent.slice(0, 24)).replace(/=/g, '');
+  return {
+    token: raw,
+    generatedAt: now,
+    expiresAtMs: expiryCfg.ms ? now + expiryCfg.ms : null,
+    expiresLabel: expiryCfg.label,
+    disabledAt: null
+  };
+};
+
+window.cmPushEmployeeLinkHistory = function(emp, payload) {
+  if (!Array.isArray(emp.accessLinkHistory)) emp.accessLinkHistory = [];
+  emp.accessLinkHistory.unshift(payload);
+  emp.accessLinkHistory = emp.accessLinkHistory.slice(0, 10);
+};
+
+window.cmRenderGeneratedMeta = function(emp) {
+  const meta = document.getElementById('cmGenLinkMeta');
+  if (!meta || !emp) return;
+  const link = emp.accessLink || {};
+  const expiryText = link.expiresAtMs ? window.cmFormatDateTime(link.expiresAtMs) : 'Jamais';
+  meta.style.display = 'block';
+  meta.innerHTML = `<strong>Boutique :</strong> ${emp.shopName || '—'}<br><strong>Expiration :</strong> ${expiryText}<br><strong>WhatsApp :</strong> ${emp.whatsapp || 'Non défini'}`;
+};
+
+window.cmRenderEmployeeLinkHistory = function(emp) {
+  const box = document.getElementById('cmGenLinkHistory');
+  if (!box) return;
+  const items = Array.isArray(emp?.accessLinkHistory) ? emp.accessLinkHistory : [];
+  if (!items.length) {
+    box.style.display = 'none';
+    box.innerHTML = '';
+    return;
+  }
+  box.style.display = 'block';
+  box.innerHTML = '<div style="font-size:12px;font-weight:800;color:var(--muted);margin-bottom:8px;text-transform:uppercase">Historique des liens</div>' + items.map((item, idx) => {
+    const exp = item.expiresAtMs ? window.cmFormatDateTime(item.expiresAtMs) : 'Jamais';
+    return `<div style="padding:8px 0;${idx ? 'border-top:1px solid var(--border);' : ''}"><div style="font-size:12px;font-weight:700;color:var(--text)">Lien ${idx + 1} — ${window.cmFormatDateTime(item.generatedAt)}</div><div style="font-size:11px;color:var(--muted)">Expiration: ${exp}${item.sentTo ? ' · WhatsApp: ' + item.sentTo : ''}</div></div>`;
+  }).join('');
+};
+
+window.cmCreateAndGenerateEmployeeLink = function() {
+  const name = document.getElementById('cmGenLinkName')?.value.trim() || '';
+  const shopId = document.getElementById('cmGenLinkShop')?.value || '';
+  let pin = document.getElementById('cmGenLinkPin')?.value.trim() || '';
+  const whatsapp = window.cmNormalizeWhatsapp(document.getElementById('cmGenLinkWhatsapp')?.value || '');
+  const role = window._cmPendingGenRole || 'employee';
+  const expiryCfg = window.cmGetLinkExpiryConfig();
+
+  if (!name) { cmToast('Entrez le nom de l\'employé.', 'error'); return; }
+  if (!shopId) { cmToast('Choisissez une boutique.', 'error'); return; }
+  if (!pin) pin = window.cmAutofillGeneratePin();
+  if (!/^\d{4}$/.test(pin)) { cmToast('Le PIN doit contenir 4 chiffres.', 'error'); return; }
+
+  const shops = Array.isArray(window.CM_DEBUG?.shops) ? window.CM_DEBUG.shops : [];
+  const shop = shops.find(s => String(s.id) === String(shopId));
+  if (!shop) { cmToast('Boutique introuvable.', 'error'); return; }
+  if (!Array.isArray(shop.employees)) shop.employees = [];
+
+  let emp = window.cmFindEmployeeByNameAndShop(name, shopId);
+  const pinTaken = (typeof cmAllEmployees === 'function' ? cmAllEmployees() : []).some(e => e.pin === pin && (!emp || e.id !== emp.id));
+  if (pinTaken) { cmToast('Ce PIN est déjà utilisé par un autre employé.', 'error'); return; }
+
+  if (emp) {
+    Object.assign(emp, { name, pin, role, whatsapp, updatedAt: Date.now() });
+  } else {
+    emp = { id: cmUID(), name, pin, role, whatsapp, createdAt: Date.now() };
+    shop.employees.push(emp);
+  }
+
+  emp.accessLink = window.cmBuildEmployeeLinkMeta(expiryCfg);
+  if (window.CM_DEBUG) window.CM_DEBUG.currentShopId = shop.id;
+  if (typeof cmSave === 'function') cmSave();
+  if (typeof cmRenderEmployeesList === 'function') cmRenderEmployeesList();
+  window.cmRenderGenerateLinkExistingEmployees();
+  window.cmGenerateLinkForEmp(emp.id, shop.id, emp.name, emp.role, emp.pin, emp.whatsapp || '');
+  cmToast('Lien prêt pour ' + emp.name + ' ✓', 'success');
+};
+
+window.cmGenerateLinkForEmp = function(empId, shopId, name, role, pin, whatsapp) {
   const uid = window.currentUser ? window.currentUser.uid : '';
-  const token = btoa(name + ':' + shopId + ':' + Date.now()).replace(/=/g,'');
+  const record = window.cmFindEmployeeRecord(empId, shopId);
+  const emp = record.employee;
+  if (!record.shop || !emp) { cmToast('Employé introuvable.', 'error'); return; }
+
+  const expiryCfg = window.cmGetLinkExpiryConfig();
+  if (whatsapp) emp.whatsapp = window.cmNormalizeWhatsapp(whatsapp);
+  if (!emp.accessLink || !emp.accessLink.token || emp.accessLink.disabledAt) {
+    emp.accessLink = window.cmBuildEmployeeLinkMeta(expiryCfg);
+  }
+
+  const token = emp.accessLink.token;
   const base = window.location.origin + window.location.pathname.replace(/[^/]*$/, '') + 'employe.html';
-  const link = base + '?uid=' + encodeURIComponent(uid) + '&shop=' + encodeURIComponent(shopId) + '&name=' + encodeURIComponent(name) + '&role=' + role + '&token=' + token;
+  const link = base
+    + '?uid=' + encodeURIComponent(uid)
+    + '&shop=' + encodeURIComponent(shopId)
+    + '&name=' + encodeURIComponent(name)
+    + '&role=' + encodeURIComponent(role || 'employee')
+    + '&empId=' + encodeURIComponent(empId || '')
+    + '&token=' + encodeURIComponent(token);
+
+  window.cmPushEmployeeLinkHistory(emp, {
+    generatedAt: Date.now(),
+    expiresAtMs: emp.accessLink.expiresAtMs || null,
+    token,
+    url: link,
+    sentTo: emp.whatsapp || ''
+  });
+
+  if (typeof cmSave === 'function') cmSave();
+  if (typeof cmRenderEmployeesList === 'function') cmRenderEmployeesList();
 
   const input = document.getElementById('cmGenLinkInput');
   if (input) input.value = link;
   window._cmCurrentGenLink = link;
   window._cmCurrentGenName = name;
+  window._cmCurrentGenEmpId = empId;
+  window._cmCurrentGenShopId = shopId;
+  window._cmCurrentGenPin = pin || emp.pin || '';
+  window._cmCurrentGenWhatsapp = emp.whatsapp || '';
 
-  document.getElementById('cmGenLinkResult').style.display = 'block';
-  document.getElementById('cmGenLinkQR').style.display = 'none';
+  const result = document.getElementById('cmGenLinkResult');
+  const qr = document.getElementById('cmGenLinkQR');
+  const pinHint = document.getElementById('cmGenLinkPinHint');
+  if (result) result.style.display = 'block';
+  if (qr) qr.style.display = 'none';
+  if (pinHint) {
+    pinHint.style.display = 'block';
+    pinHint.innerHTML = '<strong>PIN à transmettre :</strong> ' + (window._cmCurrentGenPin || '—');
+  }
+
+  window.cmRenderGeneratedMeta({ ...emp, shopName: record.shop.name });
+  window.cmRenderEmployeeLinkHistory(emp);
+  window.cmRenderGenerateLinkExistingEmployees();
   if (window.toast) window.toast('Lien généré pour ' + name + ' ✓', 'success');
+};
+
+window.cmDisableEmployeeLink = function(empId, shopId) {
+  const record = window.cmFindEmployeeRecord(empId, shopId);
+  const emp = record.employee;
+  if (!emp || !emp.accessLink || !emp.accessLink.token) {
+    cmToast('Aucun lien actif à désactiver.', 'info');
+    return;
+  }
+  emp.accessLink.disabledAt = Date.now();
+  if (Array.isArray(emp.accessLinkHistory) && emp.accessLinkHistory.length) {
+    emp.accessLinkHistory[0].disabledAt = emp.accessLink.disabledAt;
+  }
+  if (typeof cmSave === 'function') cmSave();
+  if (typeof cmRenderEmployeesList === 'function') cmRenderEmployeesList();
+  window.cmRenderGenerateLinkExistingEmployees();
+
+  if (window._cmCurrentGenEmpId === empId && window._cmCurrentGenShopId === shopId) {
+    const meta = document.getElementById('cmGenLinkMeta');
+    if (meta) {
+      meta.style.display = 'block';
+      meta.innerHTML = '<strong>Statut :</strong> Lien désactivé';
+    }
+    window.cmRenderEmployeeLinkHistory(emp);
+  }
+  cmToast('Lien désactivé.', 'success');
+};
+
+window.cmDisableCurrentEmployeeLink = function() {
+  if (!window._cmCurrentGenEmpId || !window._cmCurrentGenShopId) {
+    cmToast('Aucun lien sélectionné.', 'info');
+    return;
+  }
+  window.cmDisableEmployeeLink(window._cmCurrentGenEmpId, window._cmCurrentGenShopId);
 };
 
 window.cmCopyGenLink = function() {
   const val = window._cmCurrentGenLink;
   if (!val) return;
-  navigator.clipboard?.writeText(val).then(() => {
-    if (window.toast) window.toast('Lien copié !', 'success');
-  }).catch(() => {
+  const fallback = function() {
     const el = document.getElementById('cmGenLinkInput');
-    if (el) { el.select(); document.execCommand('copy'); }
+    if (el) { el.focus(); el.select(); document.execCommand('copy'); }
     if (window.toast) window.toast('Lien copié !', 'success');
-  });
+  };
+
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(val).then(() => {
+      if (window.toast) window.toast('Lien copié !', 'success');
+    }).catch(fallback);
+  } else {
+    fallback();
+  }
 };
 
 window.cmShareGenLink = function() {
-  const val  = window._cmCurrentGenLink;
+  const val = window._cmCurrentGenLink;
   const name = window._cmCurrentGenName || 'Employé';
   if (!val) return;
   if (navigator.share) {
-    navigator.share({ title: 'Accès Commerce — ' + name, text: 'Voici ton lien d'accès Commerce AET', url: val }).catch(() => {});
+    navigator.share({ title: 'Accès Commerce — ' + name, text: 'Voici ton lien d\'accès Commerce AET', url: val }).catch(() => {});
   } else {
     window.cmCopyGenLink();
     if (window.toast) window.toast('Lien copié — partagez par WhatsApp ou SMS', 'info');
   }
+};
+
+window.cmShareGenLinkWhatsApp = function() {
+  const val = window._cmCurrentGenLink;
+  const name = window._cmCurrentGenName || 'Employé';
+  const pin = window._cmCurrentGenPin || '—';
+  const phone = window.cmNormalizePhoneForWa(window._cmCurrentGenWhatsapp || '');
+  if (!val) return;
+  const msg = `Bonjour ${name}, voici ton lien d'accès Commerce AET : ${val}\nPIN : ${pin}`;
+  const base = phone ? ('https://wa.me/' + phone) : 'https://wa.me/';
+  window.open(base + '?text=' + encodeURIComponent(msg), '_blank');
 };
 
 window.cmShowGenLinkQR = function() {
@@ -10739,6 +11055,7 @@ window.cmShowGenLinkQR = function() {
   const qrDiv = document.getElementById('cmGenLinkQR');
   const canvas = document.getElementById('cmGenLinkQRCanvas');
   if (!qrDiv || !canvas) return;
+
   if (typeof QRCode !== 'undefined') {
     canvas.innerHTML = '';
     new QRCode(canvas, { text: val, width: 180, height: 180, colorDark: '#0f172a', colorLight: '#ffffff' });

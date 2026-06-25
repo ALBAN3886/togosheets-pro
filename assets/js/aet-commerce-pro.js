@@ -2461,18 +2461,426 @@ body.dark #cpSearchBox, html[data-theme=dark] #cpSearchBox { background: #111827
   /* ═══════════════════════════════════════════════════════════
    * 24. VERROUILLAGE EMPLOYÉ — Accès Commerce uniquement
    *
-   * Quand un employé/manager est en session active (CM.activeRole
-   * !== 'patron'), on bloque toute navigation hors de Commerce :
-   *  - Bottom nav : seul Commerce reste cliquable
-   *  - Sidebar désactivée pour les autres onglets
-   *  - Drawer "Plus" verrouillé
-   *  - Tentative de navigation → overlay de blocage
-   *  - Bandeau en haut affichant nom + rôle + boutique
+   * Navigation réelle de l'app :
+   *  - Sidebar : .sidebar-link avec ids sb-dashboard, sb-revenus…
+   *  - Bottom nav : .bnav-btn avec ids bnav-dashboard, bnav-historique,
+   *                 bnav-epargne, bnav-more (ouvre drawer)
+   *  - Drawer : .bnav-drawer-item avec ids bnd-revenus, bnd-depenses…
+   *  - Fonctions JS : switchTab(), bnavSwitch(), bnavSwitchExt(),
+   *                   openBnavDrawer()
    * ═══════════════════════════════════════════════════════════ */
+
+  // IDs sidebar à bloquer (tous sauf commerce)
+  const CP_BLOCKED_SB = [
+    'sb-dashboard','sb-revenus','sb-depenses','sb-epargne','sb-budget',
+    'sb-salaire','sb-objectifs','sb-tontines','sb-plangestion',
+    'sb-historique','sb-notes','sb-conseils','sb-profil',
+  ];
+  // IDs bottom nav à bloquer
+  const CP_BLOCKED_BNAV = ['bnav-dashboard','bnav-historique','bnav-epargne','bnav-more'];
+  // IDs drawer à bloquer
+  const CP_BLOCKED_BND = [
+    'bnd-revenus','bnd-depenses','bnd-budget','bnd-salaire',
+    'bnd-notes','bnd-plangestion',
+  ];
 
   function cpIsEmployeeSession() {
     const cm = window.CM_DEBUG;
-    return cm && cm.activeRole && cm.activeRole !== 'patron';
+    return !!(cm && cm.activeRole && cm.activeRole !== 'patron');
+  }
+
+  function injectLockCSS() {
+    if (document.getElementById('cp-lock-css')) return;
+    const s = document.createElement('style');
+    s.id = 'cp-lock-css';
+    s.textContent = `
+/* ── Éléments bloqués en mode employé ── */
+.cp-nav-blocked {
+  opacity: .25 !important;
+  pointer-events: none !important;
+  filter: grayscale(1) !important;
+  cursor: not-allowed !important;
+}
+/* ── Bandeau session employé ── */
+#cpEmployeeBanner {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 9999;
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  color: #fff;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 3px 16px rgba(37,99,235,.5);
+}
+#cpEmployeeBanner.show { display: flex; }
+#cpBannerName { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+#cpBannerShop { font-size: 11px; opacity: .8; flex-shrink: 0; }
+.cp-banner-exit {
+  background: rgba(255,255,255,.2);
+  border: none; border-radius: 8px;
+  color: #fff; padding: 6px 12px;
+  font-size: 12px; font-weight: 700;
+  cursor: pointer; font-family: inherit;
+  flex-shrink: 0;
+}
+/* Pousser le contenu sous le bandeau */
+body.cp-employee-mode { padding-top: 42px; }
+/* ── Overlay de blocage ── */
+#cpLockOverlay {
+  display: none;
+  position: fixed; inset: 0;
+  z-index: 9998;
+  background: rgba(15,23,42,.7);
+  align-items: center; justify-content: center;
+  backdrop-filter: blur(6px);
+}
+#cpLockOverlay.show { display: flex; }
+#cpLockOverlayBox {
+  background: var(--card, #fff);
+  border-radius: 22px; padding: 30px 24px;
+  max-width: 290px; width: 88%;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(0,0,0,.3);
+  animation: cpSlideIn .2s ease;
+}
+#cpLockOverlayBox .cp-lo-ico { font-size: 48px; margin-bottom: 12px; }
+#cpLockOverlayBox h3 { margin: 0 0 8px; font-size: 18px; font-weight: 900; color: var(--text,#0f172a); }
+#cpLockOverlayBox p  { margin: 0 0 20px; font-size: 13px; color: var(--muted,#64748b); line-height: 1.55; }
+    `;
+    document.head.appendChild(s);
+  }
+
+  function injectLockElements() {
+    if (!document.getElementById('cpEmployeeBanner')) {
+      document.body.insertAdjacentHTML('afterbegin', `
+        <div id="cpEmployeeBanner">
+          <i class="fas fa-user-shield"></i>
+          <span id="cpBannerName">Session employé</span>
+          <span id="cpBannerShop"></span>
+          <button class="cp-banner-exit" onclick="cpExitEmployeeMode()">
+            <i class="fas fa-right-from-bracket"></i> Quitter
+          </button>
+        </div>
+      `);
+    }
+    if (!document.getElementById('cpLockOverlay')) {
+      document.body.insertAdjacentHTML('beforeend', `
+        <div id="cpLockOverlay" onclick="this.classList.remove('show')">
+          <div id="cpLockOverlayBox">
+            <div class="cp-lo-ico">🔒</div>
+            <h3>Accès restreint</h3>
+            <p>En tant qu'<strong>employé</strong>, vous n'avez accès qu'au module <strong>Commerce</strong>.</p>
+            <button onclick="cpGoToCommerce()" style="width:100%;padding:13px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:13px;font-weight:700;font-size:14px;cursor:pointer;font-family:inherit;">
+              <i class="fas fa-store"></i> Retourner au Commerce
+            </button>
+          </div>
+        </div>
+      `);
+    }
+  }
+
+  /* Active le mode employé */
+  function cpActivateEmployeeMode() {
+    const cm = window.CM_DEBUG;
+    if (!cm || cm.activeRole === 'patron') return;
+
+    injectLockCSS();
+    injectLockElements();
+    document.body.classList.add('cp-employee-mode');
+
+    // Bandeau
+    const banner = document.getElementById('cpEmployeeBanner');
+    if (banner) banner.classList.add('show');
+    const nameEl = document.getElementById('cpBannerName');
+    const shopEl = document.getElementById('cpBannerShop');
+    const emp  = cm.activeEmployee;
+    const shop = CP.getShop();
+    if (nameEl) nameEl.textContent = (emp ? emp.name : 'Employé') + ' · ' + (cm.activeRole === 'manager' ? 'Manager' : 'Employé');
+    if (shopEl && shop) shopEl.textContent = '— ' + shop.name;
+
+    // Appliquer classe de blocage sur les éléments nav
+    [...CP_BLOCKED_SB, ...CP_BLOCKED_BNAV, ...CP_BLOCKED_BND].forEach(id => {
+      document.getElementById(id)?.classList.add('cp-nav-blocked');
+    });
+    // Bloquer aussi tous les .bnav-drawer-item qui ne concernent pas commerce
+    document.querySelectorAll('.bnav-drawer-item:not(#bnd-commerce)').forEach(el => {
+      el.classList.add('cp-nav-blocked');
+    });
+
+    // Forcer Commerce
+    cpGoToCommerce();
+  }
+
+  /* Désactive le mode employé */
+  function cpDeactivateEmployeeMode() {
+    document.body.classList.remove('cp-employee-mode');
+    document.getElementById('cpEmployeeBanner')?.classList.remove('show');
+    document.getElementById('cpLockOverlay')?.classList.remove('show');
+
+    // Retirer les blocages CSS
+    document.querySelectorAll('.cp-nav-blocked').forEach(el => {
+      el.classList.remove('cp-nav-blocked');
+    });
+  }
+
+  /* Montre l'overlay de blocage (auto-fermeture 3s) */
+  function cpShowLockOverlay() {
+    const o = document.getElementById('cpLockOverlay');
+    if (!o) { injectLockElements(); }
+    const ov = document.getElementById('cpLockOverlay');
+    if (ov) {
+      ov.classList.add('show');
+      clearTimeout(cpShowLockOverlay._t);
+      cpShowLockOverlay._t = setTimeout(() => ov.classList.remove('show'), 3000);
+    }
+  }
+
+  window.cpGoToCommerce = function () {
+    document.getElementById('cpLockOverlay')?.classList.remove('show');
+    // Appel direct sur la dernière version de switchTab
+    if (typeof window.switchTab === 'function') {
+      // Contourner notre propre hook en appelant directement
+      const fn = window.switchTab._cpOrigForLock || window.switchTab;
+      fn.call(window, 'commerce');
+    }
+  };
+
+  window.cpExitEmployeeMode = function () {
+    if (typeof window.cmExitEmployeeSession === 'function') window.cmExitEmployeeSession();
+    cpDeactivateEmployeeMode();
+    CP.toast('Session terminée — Bienvenue Patron 👑', 'success');
+  };
+
+  /* ── Hook des 4 fonctions de navigation ── */
+  function hookAllNavForLock() {
+
+    // 1. switchTab
+    const origST = window.switchTab;
+    if (typeof origST === 'function' && !origST._cpLockHooked) {
+      window.switchTab = function (tab) {
+        if (cpIsEmployeeSession() && tab !== 'commerce') {
+          cpShowLockOverlay(); return;
+        }
+        origST.apply(this, arguments);
+      };
+      window.switchTab._cpLockHooked = true;
+      window.switchTab._cpOrigForLock = origST;
+    }
+
+    // 2. bnavSwitch
+    const origBN = window.bnavSwitch;
+    if (typeof origBN === 'function' && !origBN._cpLockHooked) {
+      window.bnavSwitch = function (tab) {
+        if (cpIsEmployeeSession() && tab !== 'commerce') {
+          cpShowLockOverlay(); return;
+        }
+        origBN.apply(this, arguments);
+      };
+      window.bnavSwitch._cpLockHooked = true;
+    }
+
+    // 3. bnavSwitchExt
+    const origBE = window.bnavSwitchExt;
+    if (typeof origBE === 'function' && !origBE._cpLockHooked) {
+      window.bnavSwitchExt = function (tab) {
+        if (cpIsEmployeeSession()) {
+          cpShowLockOverlay(); return;
+        }
+        origBE.apply(this, arguments);
+      };
+      window.bnavSwitchExt._cpLockHooked = true;
+    }
+
+    // 4. openBnavDrawer — bloquer l'ouverture du tiroir
+    const origDr = window.openBnavDrawer;
+    if (typeof origDr === 'function' && !origDr._cpLockHooked) {
+      window.openBnavDrawer = function () {
+        if (cpIsEmployeeSession()) {
+          cpShowLockOverlay(); return;
+        }
+        origDr.apply(this, arguments);
+      };
+      window.openBnavDrawer._cpLockHooked = true;
+    }
+  }
+
+  /* ── Hook cmSubmitIdentityPin : activer le verrou après login employé ── */
+  function hookCmIdentityPin() {
+    const orig = window.cmSubmitIdentityPin;
+    if (typeof orig !== 'function' || orig._cpHooked) return;
+    window.cmSubmitIdentityPin = function () {
+      orig.apply(this, arguments);
+      setTimeout(() => {
+        if (cpIsEmployeeSession()) cpActivateEmployeeMode();
+      }, 300);
+    };
+    window.cmSubmitIdentityPin._cpHooked = true;
+  }
+
+  /* ── PIN Patron ── */
+  const CP_PATRON_PIN_KEY = 'aet_cp_patron_pin';
+  function cpGetPatronPin() { return localStorage.getItem(CP_PATRON_PIN_KEY) || null; }
+
+  function injectPatronPinModal() {
+    if (document.getElementById('cpPatronPinModal')) return;
+    document.body.insertAdjacentHTML('beforeend', `
+      <div class="modal-overlay" id="cpPatronPinModal">
+        <div class="modal-box" style="max-width:320px;text-align:center">
+          <div class="modal-header" style="justify-content:center;border-bottom:none;padding-bottom:0">
+            <h3><i class="fas fa-crown" style="color:#f59e0b;margin-right:8px"></i>Accès Patron</h3>
+          </div>
+          <div class="modal-body">
+            <p id="cpPatronPinLabel" style="font-size:13px;color:var(--muted);margin-bottom:16px">Entrez votre code PIN Patron</p>
+            <input type="password" id="cpPatronPinInput" maxlength="6" inputmode="numeric" placeholder="••••••"
+              style="width:100%;text-align:center;font-size:28px;letter-spacing:14px;padding:14px;border:1.5px solid var(--border);border-radius:12px;font-weight:700;background:var(--card);color:var(--text);box-sizing:border-box"
+              onkeydown="if(event.key==='Enter')cpConfirmPatronPin()">
+            <div id="cpPatronPinError" style="color:#ef4444;font-size:12px;margin-top:8px;min-height:18px"></div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+              <button onclick="closeModal('cpPatronPinModal')" style="flex:1;padding:12px;border:1px solid var(--border);border-radius:12px;background:transparent;font-weight:700;cursor:pointer;font-family:inherit;color:var(--muted)">Annuler</button>
+              <button onclick="cpConfirmPatronPin()" style="flex:2;padding:12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:12px;font-weight:700;cursor:pointer;font-family:inherit">
+                <i class="fas fa-unlock"></i> Confirmer
+              </button>
+            </div>
+            <button id="cpPatronPinSetupBtn" onclick="cpSetupPatronPin()" style="display:none;width:100%;margin-top:10px;padding:10px;border:1.5px dashed var(--border);border-radius:12px;background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">
+              <i class="fas fa-key"></i> Créer mon code PIN Patron
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-overlay" id="cpPatronPinSetupModal">
+        <div class="modal-box" style="max-width:320px;text-align:center">
+          <div class="modal-header" style="justify-content:center;border-bottom:none">
+            <h3><i class="fas fa-key" style="color:#f59e0b;margin-right:8px"></i>Code PIN Patron</h3>
+          </div>
+          <div class="modal-body">
+            <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Ce code vous sera demandé à chaque fois que vous accédez en tant que Patron.</p>
+            <label class="cp-label" style="text-align:left;display:block;margin-bottom:5px">Nouveau PIN (4–6 chiffres)</label>
+            <input type="password" id="cpNewPin1" maxlength="6" inputmode="numeric" placeholder="••••••"
+              style="width:100%;text-align:center;font-size:24px;letter-spacing:12px;padding:12px;border:1.5px solid var(--border);border-radius:12px;font-weight:700;background:var(--card);color:var(--text);box-sizing:border-box;margin-bottom:10px">
+            <label class="cp-label" style="text-align:left;display:block;margin-bottom:5px">Confirmer le PIN</label>
+            <input type="password" id="cpNewPin2" maxlength="6" inputmode="numeric" placeholder="••••••"
+              style="width:100%;text-align:center;font-size:24px;letter-spacing:12px;padding:12px;border:1.5px solid var(--border);border-radius:12px;font-weight:700;background:var(--card);color:var(--text);box-sizing:border-box"
+              onkeydown="if(event.key==='Enter')cpSavePatronPin()">
+            <div id="cpPinSetupError" style="color:#ef4444;font-size:12px;margin:8px 0;min-height:16px"></div>
+            <button onclick="cpSavePatronPin()" style="width:100%;padding:13px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:12px;font-weight:700;cursor:pointer;font-family:inherit">
+              <i class="fas fa-save"></i> Enregistrer le PIN
+            </button>
+          </div>
+        </div>
+      </div>
+    `);
+  }
+
+  window.cpConfirmPatronPin = function () {
+    const pin = document.getElementById('cpPatronPinInput')?.value.trim();
+    const stored = cpGetPatronPin();
+    const errEl = document.getElementById('cpPatronPinError');
+    if (!pin) { if (errEl) errEl.textContent = 'Entrez votre PIN'; return; }
+    if (pin === stored) {
+      if (window.closeModal) window.closeModal('cpPatronPinModal');
+      if (window.closeModal) window.closeModal('cmIdentityModal');
+      const cm = window.CM_DEBUG;
+      if (cm) { cm.activeRole = 'patron'; cm.activeEmployee = null; }
+      if (typeof window.cmUpdateRoleBadge === 'function') window.cmUpdateRoleBadge();
+      if (typeof window.cmRenderAll === 'function') window.cmRenderAll();
+      cpDeactivateEmployeeMode();
+      CP.toast('Bienvenue Patron 👑', 'success');
+    } else {
+      if (errEl) { errEl.textContent = 'PIN incorrect ❌'; setTimeout(() => { errEl.textContent = ''; }, 2000); }
+      if (document.getElementById('cpPatronPinInput')) {
+        document.getElementById('cpPatronPinInput').value = '';
+        document.getElementById('cpPatronPinInput').focus();
+      }
+    }
+  };
+
+  window.cpSetupPatronPin = function () {
+    if (window.closeModal) window.closeModal('cpPatronPinModal');
+    document.getElementById('cpNewPin1').value = '';
+    document.getElementById('cpNewPin2').value = '';
+    document.getElementById('cpPinSetupError').textContent = '';
+    if (window.openModal) window.openModal('cpPatronPinSetupModal');
+  };
+
+  window.cpSavePatronPin = function () {
+    const p1 = document.getElementById('cpNewPin1')?.value.trim();
+    const p2 = document.getElementById('cpNewPin2')?.value.trim();
+    const errEl = document.getElementById('cpPinSetupError');
+    if (!p1 || p1.length < 4) { if (errEl) errEl.textContent = 'Minimum 4 chiffres'; return; }
+    if (p1 !== p2) { if (errEl) errEl.textContent = 'Les PIN ne correspondent pas'; return; }
+    if (!/^\d+$/.test(p1)) { if (errEl) errEl.textContent = 'Chiffres uniquement'; return; }
+    localStorage.setItem(CP_PATRON_PIN_KEY, p1);
+    if (window.closeModal) window.closeModal('cpPatronPinSetupModal');
+    CP.toast('Code PIN Patron enregistré ✓', 'success');
+    // Accorder l'accès Patron directement
+    const cm = window.CM_DEBUG;
+    if (cm) { cm.activeRole = 'patron'; cm.activeEmployee = null; }
+    if (window.closeModal) window.closeModal('cmIdentityModal');
+    cpDeactivateEmployeeMode();
+  };
+
+  function hookCmShowPatronPinEntry() {
+    const orig = window.cmShowPatronPinEntry;
+    if (typeof orig !== 'function' || orig._cpHooked) return;
+    window.cmShowPatronPinEntry = function () {
+      injectPatronPinModal();
+      const stored = cpGetPatronPin();
+      const label   = document.getElementById('cpPatronPinLabel');
+      const inputEl = document.getElementById('cpPatronPinInput');
+      const errEl   = document.getElementById('cpPatronPinError');
+      const setupBtn= document.getElementById('cpPatronPinSetupBtn');
+
+      if (errEl) errEl.textContent = '';
+
+      if (!stored) {
+        // Pas de PIN encore — accès direct + proposition de créer un
+        if (label) label.textContent = 'Aucun code PIN défini.';
+        if (inputEl) inputEl.style.display = 'none';
+        if (setupBtn) setupBtn.style.display = 'block';
+        // Modifier temporairement le bouton Confirmer pour accès direct
+        const confirmBtn = document.querySelector('#cpPatronPinModal [onclick="cpConfirmPatronPin()"]');
+        if (confirmBtn) {
+          confirmBtn.innerHTML = '<i class="fas fa-crown"></i> Accéder sans PIN';
+          confirmBtn.onclick = () => {
+            if (window.closeModal) window.closeModal('cpPatronPinModal');
+            orig.apply(window, arguments);
+          };
+        }
+      } else {
+        if (label) label.textContent = 'Entrez votre code PIN Patron';
+        if (inputEl) { inputEl.style.display = ''; inputEl.value = ''; }
+        if (setupBtn) setupBtn.style.display = 'none';
+        const confirmBtn = document.querySelector('#cpPatronPinModal [onclick="cpConfirmPatronPin()"]');
+        if (confirmBtn) {
+          confirmBtn.innerHTML = '<i class="fas fa-unlock"></i> Confirmer';
+          confirmBtn.onclick = window.cpConfirmPatronPin;
+        }
+        setTimeout(() => inputEl?.focus(), 200);
+      }
+      if (window.openModal) window.openModal('cpPatronPinModal');
+    };
+    window.cmShowPatronPinEntry._cpHooked = true;
+  }
+
+  /* ── Watcher rôle (filet de sécurité) ── */
+  function watchEmployeeRole() {
+    let _last = null; // null = pas encore initialisé
+    setInterval(() => {
+      const cm = window.CM_DEBUG;
+      if (!cm) return;
+      const role = cm.activeRole || 'patron';
+      if (role === _last) return;
+      _last = role;
+      if (role !== 'patron') {
+        cpActivateEmployeeMode();
+      } else {
+        cpDeactivateEmployeeMode();
+      }
+    }, 600);
   }
 
   function injectLockCSS() {
@@ -2584,326 +2992,10 @@ body.cp-employee-mode #authScreen { margin-top:38px; }
       `);
     }
   }
-
-  function cpActivateEmployeeMode() {
-    const cm = window.CM_DEBUG;
-    if (!cm || cm.activeRole === 'patron') return;
-    injectLockCSS();
-    injectLockElements();
-    document.body.classList.add('cp-employee-mode');
-
-    // Bandeau
-    const banner   = document.getElementById('cpEmployeeBanner');
-    const nameEl   = document.getElementById('cpBannerName');
-    const shopEl   = document.getElementById('cpBannerShop');
-    if (banner) banner.classList.add('show');
-    const emp  = cm.activeEmployee;
-    const shop = CP.getShop();
-    if (nameEl && emp) {
-      nameEl.textContent = emp.name + ' · ' + (cm.activeRole === 'manager' ? 'Manager' : 'Employé');
-    }
-    if (shopEl && shop) shopEl.textContent = '— ' + shop.name;
-
-    // Forcer Commerce
-    cpGoToCommerce();
-    // Verrouiller nav
-    cpLockNav();
-  }
-
-  function cpDeactivateEmployeeMode() {
-    document.body.classList.remove('cp-employee-mode');
-    const banner  = document.getElementById('cpEmployeeBanner');
-    const overlay = document.getElementById('cpLockOverlay');
-    if (banner)  banner.classList.remove('show');
-    if (overlay) overlay.classList.remove('show');
-    cpUnlockNav();
-  }
-
-  function cpLockNav() {
-    // Bottom nav
-    ['bnav-dashboard','bnav-revenus','bnav-depenses','bnav-epargne','bnav-more'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el && !el.dataset.cpNavLocked) {
-        el.dataset.cpNavLocked = '1';
-        el.addEventListener('click', cpBlockNavClick, true);
-      }
-    });
-    // Sidebar links
-    document.querySelectorAll('.sidebar-link').forEach(el => {
-      const tab = el.dataset.tab || el.id.replace('sb-','');
-      if (tab === 'commerce') return;
-      if (!el.dataset.cpNavLocked) {
-        el.dataset.cpNavLocked = '1';
-        el.addEventListener('click', cpBlockNavClick, true);
-      }
-    });
-    // Onglets desktop
-    document.querySelectorAll('.tab-btn').forEach(el => {
-      if ((el.dataset.tab || '') === 'commerce') return;
-      if (!el.dataset.cpNavLocked) {
-        el.dataset.cpNavLocked = '1';
-        el.addEventListener('click', cpBlockNavClick, true);
-      }
-    });
-  }
-
-  function cpUnlockNav() {
-    document.querySelectorAll('[data-cp-nav-locked]').forEach(el => {
-      el.removeEventListener('click', cpBlockNavClick, true);
-      delete el.dataset.cpNavLocked;
-    });
-  }
-
-  function cpBlockNavClick(e) {
-    if (!cpIsEmployeeSession()) { cpUnlockNav(); return; }
-    e.preventDefault();
-    e.stopImmediatePropagation();
-    cpShowLockOverlay();
-  }
-
-  function cpShowLockOverlay() {
-    const o = document.getElementById('cpLockOverlay');
-    if (o) {
-      o.classList.add('show');
-      // Auto-fermeture après 3s
-      clearTimeout(cpShowLockOverlay._t);
-      cpShowLockOverlay._t = setTimeout(() => o.classList.remove('show'), 3000);
-    }
-  }
-
-  window.cpGoToCommerce = function () {
-    document.getElementById('cpLockOverlay')?.classList.remove('show');
-    // Utiliser l'original non-hooké pour éviter la récursion
-    const orig = window.switchTab?._cpOrigForLock || window.switchTab;
-    if (typeof orig === 'function') orig.call(window, 'commerce');
-  };
-
-  window.cpExitEmployeeMode = function () {
-    if (typeof window.cmExitEmployeeSession === 'function') window.cmExitEmployeeSession();
-    cpDeactivateEmployeeMode();
-    CP.toast('Session terminée — Bienvenue Patron 👑', 'success');
-  };
-
-  /* ──────────────────────────────────────────────────────────
-   * HOOK cmSubmitIdentityPin — activer le verrou APRÈS
-   * que l'employé a validé son PIN dans le modal natif CM
-   * ────────────────────────────────────────────────────────── */
-  function hookCmIdentityPin() {
-    const orig = window.cmSubmitIdentityPin;
-    if (typeof orig !== 'function' || orig._cpHooked) return;
-    window.cmSubmitIdentityPin = function () {
-      orig.apply(this, arguments);
-      // Après la validation, attendre que CM.activeRole soit mis à jour
-      setTimeout(() => {
-        if (cpIsEmployeeSession()) cpActivateEmployeeMode();
-      }, 200);
-    };
-    window.cmSubmitIdentityPin._cpHooked = true;
-  }
-
-  /* ──────────────────────────────────────────────────────────
-   * HOOK cmShowPatronPinEntry — exiger un PIN Patron
-   * au lieu de laisser passer directement
-   * ────────────────────────────────────────────────────────── */
-  const CP_PATRON_PIN_KEY = 'aet_cp_patron_pin';
-
-  function cpGetPatronPin() {
-    return localStorage.getItem(CP_PATRON_PIN_KEY) || null;
-  }
-
-  function injectPatronPinModal() {
-    if (document.getElementById('cpPatronPinModal')) return;
-    document.body.insertAdjacentHTML('beforeend', `
-      <div class="modal-overlay" id="cpPatronPinModal">
-        <div class="modal-box" style="max-width:320px;text-align:center">
-          <div class="modal-header" style="justify-content:center;border-bottom:none;padding-bottom:0">
-            <h3><i class="fas fa-crown" style="color:#f59e0b;margin-right:8px"></i>Accès Patron</h3>
-          </div>
-          <div class="modal-body">
-            <p id="cpPatronPinLabel" style="font-size:13px;color:var(--muted);margin-bottom:16px">
-              Entrez votre code PIN Patron
-            </p>
-            <input type="password" id="cpPatronPinInput"
-              maxlength="6" inputmode="numeric" placeholder="••••••"
-              style="width:100%;text-align:center;font-size:28px;letter-spacing:14px;padding:14px;border:1.5px solid var(--border);border-radius:12px;font-weight:700;background:var(--card);color:var(--text);box-sizing:border-box"
-              onkeydown="if(event.key==='Enter')cpConfirmPatronPin()">
-            <div id="cpPatronPinError" style="color:#ef4444;font-size:12px;margin-top:8px;min-height:18px"></div>
-            <div style="display:flex;gap:8px;margin-top:12px">
-              <button onclick="closeModal('cpPatronPinModal')" style="flex:1;padding:12px;border:1px solid var(--border);border-radius:12px;background:transparent;font-weight:700;cursor:pointer;font-family:inherit;color:var(--muted)">Annuler</button>
-              <button onclick="cpConfirmPatronPin()" style="flex:2;padding:12px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:12px;font-weight:700;cursor:pointer;font-family:inherit">
-                <i class="fas fa-unlock"></i> Confirmer
-              </button>
-            </div>
-            <button id="cpPatronPinSetupBtn" onclick="cpSetupPatronPin()" style="display:none;width:100%;margin-top:10px;padding:10px;border:1.5px dashed var(--border);border-radius:12px;background:transparent;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit">
-              <i class="fas fa-key"></i> Créer mon code PIN Patron
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Modal création / changement PIN Patron -->
-      <div class="modal-overlay" id="cpPatronPinSetupModal">
-        <div class="modal-box" style="max-width:320px;text-align:center">
-          <div class="modal-header" style="justify-content:center;border-bottom:none">
-            <h3><i class="fas fa-key" style="color:#f59e0b;margin-right:8px"></i>Créer un code PIN Patron</h3>
-          </div>
-          <div class="modal-body">
-            <p style="font-size:13px;color:var(--muted);margin-bottom:14px">
-              Ce code vous sera demandé à chaque fois que vous accédez à Commerce en tant que Patron.
-            </p>
-            <label class="cp-label" style="text-align:left">Nouveau PIN (4 à 6 chiffres)</label>
-            <input type="password" id="cpNewPin1" maxlength="6" inputmode="numeric" placeholder="••••••"
-              style="width:100%;text-align:center;font-size:24px;letter-spacing:12px;padding:12px;border:1.5px solid var(--border);border-radius:12px;font-weight:700;background:var(--card);color:var(--text);box-sizing:border-box;margin-bottom:10px">
-            <label class="cp-label" style="text-align:left">Confirmer le PIN</label>
-            <input type="password" id="cpNewPin2" maxlength="6" inputmode="numeric" placeholder="••••••"
-              style="width:100%;text-align:center;font-size:24px;letter-spacing:12px;padding:12px;border:1.5px solid var(--border);border-radius:12px;font-weight:700;background:var(--card);color:var(--text);box-sizing:border-box;margin-bottom:4px"
-              onkeydown="if(event.key==='Enter')cpSavePatronPin()">
-            <div id="cpPinSetupError" style="color:#ef4444;font-size:12px;margin-bottom:12px;min-height:16px"></div>
-            <button onclick="cpSavePatronPin()" style="width:100%;padding:13px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:12px;font-weight:700;cursor:pointer;font-family:inherit">
-              <i class="fas fa-save"></i> Enregistrer le PIN
-            </button>
-          </div>
-        </div>
-      </div>
-    `);
-  }
-
-  window.cpConfirmPatronPin = function () {
-    const pin = document.getElementById('cpPatronPinInput')?.value.trim();
-    const stored = cpGetPatronPin();
-    const errEl = document.getElementById('cpPatronPinError');
-
-    if (!pin) { if (errEl) errEl.textContent = 'Entrez votre PIN'; return; }
-
-    if (pin === stored) {
-      // PIN correct — accès Patron
-      if (window.closeModal) window.closeModal('cpPatronPinModal');
-      if (window.closeModal) window.closeModal('cmIdentityModal');
-      const cm = window.CM_DEBUG;
-      if (cm) { cm.activeRole = 'patron'; cm.activeEmployee = null; }
-      if (typeof window.cmUpdateRoleBadge === 'function') window.cmUpdateRoleBadge();
-      if (typeof window.cmRenderAll === 'function') window.cmRenderAll();
-      cpDeactivateEmployeeMode();
-      CP.toast('Bienvenue Patron 👑', 'success');
-    } else {
-      if (errEl) {
-        errEl.textContent = 'PIN incorrect ❌';
-        setTimeout(() => { errEl.textContent = ''; }, 2000);
-      }
-      document.getElementById('cpPatronPinInput').value = '';
-      document.getElementById('cpPatronPinInput').focus();
-    }
-  };
-
-  window.cpSetupPatronPin = function () {
-    if (window.closeModal) window.closeModal('cpPatronPinModal');
-    document.getElementById('cpNewPin1').value = '';
-    document.getElementById('cpNewPin2').value = '';
-    document.getElementById('cpPinSetupError').textContent = '';
-    if (window.openModal) window.openModal('cpPatronPinSetupModal');
-  };
-
-  window.cpSavePatronPin = function () {
-    const p1 = document.getElementById('cpNewPin1')?.value.trim();
-    const p2 = document.getElementById('cpNewPin2')?.value.trim();
-    const errEl = document.getElementById('cpPinSetupError');
-    if (!p1 || p1.length < 4) { if (errEl) errEl.textContent = 'Minimum 4 chiffres'; return; }
-    if (p1 !== p2) { if (errEl) errEl.textContent = 'Les PIN ne correspondent pas'; return; }
-    if (!/^\d+$/.test(p1)) { if (errEl) errEl.textContent = 'Chiffres uniquement'; return; }
-    localStorage.setItem(CP_PATRON_PIN_KEY, p1);
-    if (window.closeModal) window.closeModal('cpPatronPinSetupModal');
-    CP.toast('Code PIN Patron enregistré ✓', 'success');
-    // Ouvrir directement l'accès Patron
-    window.cpConfirmPatronPin();
-  };
-
-  function hookCmShowPatronPinEntry() {
-    const orig = window.cmShowPatronPinEntry;
-    if (typeof orig !== 'function' || orig._cpHooked) return;
-    window.cmShowPatronPinEntry = function () {
-      const storedPin = cpGetPatronPin();
-      injectPatronPinModal();
-
-      if (!storedPin) {
-        // Pas encore de PIN — proposer d'en créer un ou passer directement
-        const label = document.getElementById('cpPatronPinLabel');
-        const setupBtn = document.getElementById('cpPatronPinSetupBtn');
-        if (label) label.textContent = 'Aucun code PIN défini. Créez-en un ou accédez directement.';
-        if (setupBtn) setupBtn.style.display = 'block';
-        // Bouton confirmer = accès direct si pas de PIN
-        document.getElementById('cpPatronPinInput').style.display = 'none';
-        const confirmBtn = document.querySelector('#cpPatronPinModal .modal-body button[onclick="cpConfirmPatronPin()"]');
-        if (confirmBtn) {
-          confirmBtn.textContent = '👑 Accéder sans PIN';
-          confirmBtn.onclick = () => {
-            if (window.closeModal) window.closeModal('cpPatronPinModal');
-            if (window.closeModal) window.closeModal('cmIdentityModal');
-            orig.apply(this, arguments); // Appel original → accès direct
-          };
-        }
-      } else {
-        // PIN existe — le demander
-        const label = document.getElementById('cpPatronPinLabel');
-        if (label) label.textContent = 'Entrez votre code PIN Patron';
-        document.getElementById('cpPatronPinInput').style.display = '';
-        document.getElementById('cpPatronPinInput').value = '';
-        document.getElementById('cpPatronPinError').textContent = '';
-        const setupBtn = document.getElementById('cpPatronPinSetupBtn');
-        if (setupBtn) setupBtn.style.display = 'none';
-        const confirmBtn = document.querySelector('#cpPatronPinModal .modal-body button[onclick="cpConfirmPatronPin()"]');
-        if (confirmBtn) {
-          confirmBtn.innerHTML = '<i class="fas fa-unlock"></i> Confirmer';
-          confirmBtn.onclick = cpConfirmPatronPin;
-        }
-        setTimeout(() => document.getElementById('cpPatronPinInput')?.focus(), 200);
-      }
-
-      if (window.openModal) window.openModal('cpPatronPinModal');
-    };
-    window.cmShowPatronPinEntry._cpHooked = true;
-  }
-
-  /* ──────────────────────────────────────────────────────────
-   * Surveille les changements de rôle toutes les 600ms
-   * (filet de sécurité si les hooks ne suffisent pas)
-   * ────────────────────────────────────────────────────────── */
-  function watchEmployeeRole() {
-    let _last = null;
-    setInterval(() => {
-      const cm = window.CM_DEBUG;
-      if (!cm) return;
-      const role = cm.activeRole || 'patron';
-      if (role === _last) return;
-      _last = role;
-      if (role !== 'patron') {
-        cpActivateEmployeeMode();
-      } else {
-        cpDeactivateEmployeeMode();
-      }
-    }, 600);
-  }
-
-  /* ═══════════════════════════════════════════════════════════
-   * 25. HOOK switchTab — Bloquer navigation hors Commerce
-   *     quand une session employé est active
-   * ═══════════════════════════════════════════════════════════ */
   function hookSwitchTabForLock() {
-    const orig = window.switchTab;
-    if (typeof orig !== 'function' || orig._cpLockHooked) return;
-
-    // Sauvegarder l'original pour cpGoToCommerce (sans hook)
-    window.switchTab._cpOrigForLock = orig;
-
-    window.switchTab = function (tab) {
-      // Si session employé active et tab !== commerce → bloquer
-      if (cpIsEmployeeSession() && tab !== 'commerce') {
-        cpShowLockOverlay();
-        return; // Ne pas laisser passer
-      }
-      orig.apply(this, arguments);
-    };
-    window.switchTab._cpLockHooked = true;
-    window.switchTab._cpOrigForLock = orig;
+    // Déjà géré dans hookAllNavForLock() — cette fonction
+    // sert juste de point d'entrée unifié appelé dans cpInit
+    hookAllNavForLock();
   }
 
   /* ═══════════════════════════════════════════════════════════

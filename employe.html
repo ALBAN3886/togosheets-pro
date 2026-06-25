@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<title>AET Commerce — Espace Employé</title>
+<meta name="description" content="Portail employé AET Commerce — Ventes et gestion de stock"/>
+<meta name="theme-color" content="#10b981"/>
+<link rel="manifest" href="manifest-employe.json"/>
+<link rel="icon" href="icon-192.png" type="image/png"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="AET Employé"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<!-- ══════════════════ FIREBASE ══════════════════ -->
+<script type="module">
+import { initializeApp }           from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
+                                   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+         doc, getDoc, setDoc, onSnapshot, serverTimestamp }
+                                   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyB5hpkRlFZ9HFRRbpQlvpHwMNDja37Nr2s",
+  authDomain:        "gestion-salaire-9d3e9.firebaseapp.com",
+  databaseURL:       "https://gestion-salaire-9d3e9-default-rtdb.firebaseio.com",
+  projectId:         "gestion-salaire-9d3e9",
+  storageBucket:     "gestion-salaire-9d3e9.firebasestorage.app",
+  messagingSenderId: "1090226725870",
+  appId:             "1:1090226725870:web:d16c25eb46397b3f2de4ff",
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const auth  = getAuth(fbApp);
+const db    = initializeFirestore(fbApp, {
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+});
+
+window.__EMP_AUTH__ = auth;
+window.__EMP_DB__   = db;
+window.__EMP_FS__   = { doc, getDoc, setDoc, onSnapshot, serverTimestamp };
+
+// ── Écouter l'état d'authentification ──
+onAuthStateChanged(auth, user => {
+  window.__EMP_USER__ = user;
+  if (user) {
+    window.empLoadOwnerData(user.uid);
+  } else {
+    // Pas connecté → afficher le login
+    window.empShowScreen('login');
+  }
+});
+</script>
+
+<style>
+/* ════════════════════ VARIABLES & RESET ════════════════════ */
+:root {
+  --green:  #10b981;
+  --green2: #059669;
+  --blue:   #2563eb;
+  --red:    #ef4444;
+  --amber:  #f59e0b;
+  --bg:     #f0fdf9;
+  --card:   #ffffff;
+  --border: rgba(16,185,129,.18);
+  --text:   #0f172a;
+  --muted:  #64748b;
+  --radius: 16px;
+  font-family: 'Poppins', sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+button { font-family: inherit; cursor: pointer; border: none; outline: none; }
+input  { font-family: inherit; outline: none; }
+
+/* ════════════════════ SCREENS ════════════════════ */
+.screen { display: none; min-height: 100dvh; }
+.screen.active { display: flex; flex-direction: column; }
+
+/* ════════════════════ LOADER ════════════════════ */
+#loaderScreen {
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #ecfdf5, #d1fae5);
+  gap: 20px;
+}
+.loader-logo {
+  width: 72px; height: 72px;
+  background: linear-gradient(135deg, var(--green), var(--green2));
+  border-radius: 22px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 32px; color: #fff;
+  box-shadow: 0 12px 32px rgba(16,185,129,.35);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%,100% { transform: scale(1); box-shadow: 0 12px 32px rgba(16,185,129,.35); }
+  50%      { transform: scale(1.06); box-shadow: 0 16px 40px rgba(16,185,129,.5); }
+}
+.loader-text { font-size: 14px; color: var(--muted); font-weight: 600; }
+
+/* ════════════════════ LOGIN ════════════════════ */
+#loginScreen {
+  background: linear-gradient(160deg, #ecfdf5 0%, #d1fae5 50%, #a7f3d0 100%);
+  align-items: center; justify-content: center; padding: 24px;
+}
+.login-card {
+  background: #fff;
+  border-radius: 24px;
+  padding: 32px 24px;
+  width: 100%; max-width: 400px;
+  box-shadow: 0 20px 60px rgba(16,185,129,.15);
+}
+.login-header { text-align: center; margin-bottom: 28px; }
+.login-header .brand-icon {
+  width: 64px; height: 64px;
+  background: linear-gradient(135deg, var(--green), var(--green2));
+  border-radius: 18px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 28px; color: #fff; margin-bottom: 14px;
+  box-shadow: 0 8px 24px rgba(16,185,129,.3);
+}
+.login-header h1 { font-size: 22px; font-weight: 800; color: var(--text); }
+.login-header p  { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+.form-group { margin-bottom: 16px; }
+.form-label { font-size: 12px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .06em; color: var(--muted); margin-bottom: 6px; display: block; }
+.form-input {
+  width: 100%; padding: 13px 14px;
+  border: 1.5px solid #e2e8f0; border-radius: 12px;
+  font-size: 14px; font-weight: 500; color: var(--text);
+  background: #f8fafc; transition: border-color .2s;
+}
+.form-input:focus { border-color: var(--green); background: #fff; }
+.btn-primary {
+  width: 100%; padding: 14px;
+  background: linear-gradient(135deg, var(--green), var(--green2));
+  color: #fff; border-radius: 13px; font-weight: 800; font-size: 15px;
+  box-shadow: 0 6px 20px rgba(16,185,129,.3);
+  transition: transform .15s, box-shadow .15s;
+}
+.btn-primary:active { transform: scale(.98); }
+.login-error {
+  background: rgba(239,68,68,.08); border: 1px solid rgba(239,68,68,.2);
+  border-radius: 10px; padding: 10px 14px; font-size: 13px; color: #dc2626;
+  margin-bottom: 16px; display: none;
+}
+
+/* ════════════════════ IDENTITY ════════════════════ */
+#identityScreen {
+  background: rgba(0,0,0,.55);
+  align-items: center; justify-content: center; padding: 20px;
+  position: fixed; inset: 0; z-index: 200;
+}
+.identity-card {
+  background: #fff; border-radius: 24px;
+  padding: 28px 20px; width: 100%; max-width: 420px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.2);
+}
+.identity-title {
+  font-size: 18px; font-weight: 800; color: var(--text);
+  display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+}
+.emp-btn {
+  width: 100%; display: flex; align-items: center; gap: 12px;
+  padding: 13px; border: 1.5px solid #e2e8f0; border-radius: 14px;
+  background: #fff; text-align: left; margin-bottom: 10px;
+  transition: border-color .2s, background .2s;
+}
+.emp-btn:hover { border-color: var(--green); background: #f0fdf9; }
+.emp-avatar {
+  width: 42px; height: 42px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+  background: rgba(16,185,129,.1); flex-shrink: 0;
+}
+.emp-avatar.manager { background: rgba(37,99,235,.1); }
+.emp-name { font-weight: 700; font-size: 14px; color: var(--text); }
+.emp-role { font-size: 12px; color: var(--muted); margin-top: 1px; }
+
+.pin-section { display: none; }
+.pin-label { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 10px; }
+.pin-input {
+  width: 100%; padding: 14px; font-size: 22px; letter-spacing: .3em;
+  text-align: center; border: 2px solid var(--green); border-radius: 13px;
+  font-weight: 800; color: var(--text); background: #f0fdf9; margin-bottom: 12px;
+}
+.pin-error { font-size: 12px; color: var(--red); text-align: center; display: none; margin-bottom: 8px; }
+.btn-pin-ok {
+  width: 100%; padding: 13px;
+  background: linear-gradient(135deg, var(--green), var(--green2));
+  color: #fff; border-radius: 13px; font-weight: 800; font-size: 14px;
+  box-shadow: 0 4px 16px rgba(16,185,129,.25);
+}
+.btn-back { background: none; color: var(--muted); font-size: 13px; width: 100%;
+  padding: 10px; font-weight: 600; margin-top: 4px; }
+
+/* ════════════════════ MAIN APP ════════════════════ */
+#appScreen { background: var(--bg); }
+
+.app-header {
+  background: linear-gradient(135deg, var(--green), var(--green2));
+  padding: 16px 18px 14px; padding-top: calc(16px + env(safe-area-inset-top));
+  color: #fff; display: flex; align-items: center; justify-content: space-between;
+  position: sticky; top: 0; z-index: 100;
+  box-shadow: 0 4px 20px rgba(16,185,129,.3);
+}
+.app-header-left { display: flex; align-items: center; gap: 10px; }
+.app-header-icon { font-size: 20px; }
+.app-header-title { font-size: 18px; font-weight: 800; }
+.app-header-sub { font-size: 11px; opacity: .8; margin-top: 1px; }
+.header-badge {
+  background: rgba(255,255,255,.2); padding: 5px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 5px;
+  backdrop-filter: blur(8px);
+}
+.header-logout-btn {
+  background: rgba(255,255,255,.18); border: none; color: #fff;
+  width: 34px; height: 34px; border-radius: 50%; font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: background .2s; margin-left: 8px;
+}
+.header-logout-btn:hover { background: rgba(255,255,255,.3); }
+
+/* ── Onglets ── */
+.tabs-bar {
+  display: flex; overflow-x: auto; gap: 0;
+  background: #fff; border-bottom: 1.5px solid var(--border);
+  scrollbar-width: none; position: sticky; top: 68px; z-index: 90;
+}
+.tabs-bar::-webkit-scrollbar { display: none; }
+.tab-btn {
+  flex: 1; min-width: 70px; padding: 12px 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 3px;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em;
+  color: var(--muted); background: none; border: none; border-bottom: 2.5px solid transparent;
+  transition: color .2s, border-color .2s; cursor: pointer;
+}
+.tab-btn i { font-size: 16px; }
+.tab-btn.active { color: var(--green); border-bottom-color: var(--green); }
+
+/* ── Content ── */
+.tab-content { display: none; padding: 14px 14px 90px; }
+.tab-content.active { display: block; }
+
+/* ── Cards KPI ── */
+.kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.kpi-card {
+  background: #fff; border-radius: var(--radius); padding: 14px;
+  border: 1px solid var(--border); position: relative; overflow: hidden;
+}
+.kpi-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--accent, var(--green)); border-radius: var(--radius) var(--radius) 0 0;
+}
+.kpi-label { font-size: 9.5px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--muted); margin-bottom: 4px; }
+.kpi-value { font-size: 18px; font-weight: 900; color: var(--text); }
+.kpi-sub   { font-size: 10px; color: var(--muted); margin-top: 3px; }
+.kpi-icon  { position: absolute; right: 10px; top: 10px; font-size: 20px; opacity: .1; }
+
+/* ── Section title ── */
+.sec-title {
+  font-size: 12px; font-weight: 800; text-transform: uppercase;
+  letter-spacing: .07em; color: var(--muted);
+  display: flex; align-items: center; gap: 6px;
+  margin: 14px 0 8px;
+}
+
+/* ── Lists ── */
+.item-card {
+  background: #fff; border: 1px solid var(--border); border-radius: 14px;
+  padding: 12px 14px; display: flex; align-items: center; gap: 10px;
+  margin-bottom: 8px;
+}
+.item-icon {
+  width: 38px; height: 38px; border-radius: 11px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0;
+  background: rgba(16,185,129,.1); color: var(--green);
+}
+.item-icon.danger { background: rgba(239,68,68,.1); color: var(--red); }
+.item-icon.amber  { background: rgba(245,158,11,.1); color: var(--amber); }
+.item-body { flex: 1; min-width: 0; }
+.item-name { font-weight: 700; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+.item-right { text-align: right; flex-shrink: 0; }
+.item-price { font-weight: 800; font-size: 14px; }
+.item-stock { font-size: 11px; color: var(--muted); }
+
+/* ── Sell modal ── */
+.modal-bg {
+  position: fixed; inset: 0; background: rgba(0,0,0,.5);
+  display: flex; align-items: flex-end; justify-content: center;
+  z-index: 300; opacity: 0; pointer-events: none; transition: opacity .25s;
+}
+.modal-bg.open { opacity: 1; pointer-events: auto; }
+.modal-sheet {
+  background: #fff; border-radius: 24px 24px 0 0; width: 100%; max-width: 500px;
+  padding: 8px 20px 32px; padding-bottom: calc(32px + env(safe-area-inset-bottom));
+  transform: translateY(100%); transition: transform .3s cubic-bezier(.4,0,.2,1);
+  max-height: 90dvh; overflow-y: auto;
+}
+.modal-bg.open .modal-sheet { transform: translateY(0); }
+.modal-handle { width: 40px; height: 4px; background: #e2e8f0; border-radius: 4px;
+  margin: 10px auto 18px; }
+.modal-title { font-size: 17px; font-weight: 800; color: var(--text); margin-bottom: 18px; }
+.qty-row { display: flex; align-items: center; justify-content: space-between;
+  background: #f8fafc; border-radius: 14px; padding: 12px 14px; margin-bottom: 14px; }
+.qty-label { font-size: 13px; font-weight: 700; }
+.qty-controls { display: flex; align-items: center; gap: 12px; }
+.qty-btn {
+  width: 36px; height: 36px; border-radius: 50%; border: none;
+  font-size: 18px; font-weight: 900; display: flex; align-items: center; justify-content: center;
+  background: var(--green); color: #fff; transition: transform .1s;
+}
+.qty-btn:active { transform: scale(.92); }
+.qty-btn.minus { background: #f1f5f9; color: var(--text); }
+.qty-val { font-size: 20px; font-weight: 900; min-width: 32px; text-align: center; }
+.total-row { display: flex; justify-content: space-between; align-items: center;
+  border-top: 1.5px solid #f1f5f9; padding-top: 14px; margin-bottom: 14px; }
+.total-label { font-size: 13px; font-weight: 700; color: var(--muted); }
+.total-val { font-size: 22px; font-weight: 900; color: var(--green); }
+.btn-sell {
+  width: 100%; padding: 15px;
+  background: linear-gradient(135deg, var(--green), var(--green2));
+  color: #fff; border-radius: 14px; font-weight: 800; font-size: 16px;
+  box-shadow: 0 6px 20px rgba(16,185,129,.3);
+}
+.btn-cancel-modal {
+  width: 100%; padding: 13px; background: none; color: var(--muted);
+  font-weight: 700; font-size: 14px; margin-top: 6px;
+}
+
+/* ── Ventes list ── */
+.mvt-tag {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 700;
+}
+.mvt-tag.vente { background: rgba(16,185,129,.1); color: var(--green2); }
+.mvt-tag.achat { background: rgba(239,68,68,.1); color: var(--red); }
+
+/* ── Empty state ── */
+.empty-state {
+  text-align: center; padding: 40px 20px; color: var(--muted);
+}
+.empty-state i { font-size: 36px; margin-bottom: 10px; opacity: .4; display: block; }
+.empty-state p { font-size: 13px; font-weight: 600; }
+
+/* ── Toast ── */
+#empToast {
+  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
+  background: #0f172a; color: #fff; padding: 10px 20px; border-radius: 12px;
+  font-size: 13px; font-weight: 600; z-index: 999; opacity: 0;
+  transition: opacity .3s; pointer-events: none; white-space: nowrap;
+  display: flex; align-items: center; gap: 8px;
+}
+#empToast.show { opacity: 1; }
+#empToast.success { background: #059669; }
+#empToast.error   { background: #dc2626; }
+
+/* ── Install banner ── */
+#installBanner {
+  background: linear-gradient(135deg, #eff6ff, #dbeafe);
+  border: 1px solid rgba(37,99,235,.2); border-radius: 14px;
+  padding: 12px 14px; margin-bottom: 14px; display: none;
+  align-items: center; gap: 10px;
+}
+#installBanner i { font-size: 20px; color: var(--blue); flex-shrink: 0; }
+#installBanner .ib-text { flex: 1; font-size: 12px; font-weight: 600; color: var(--text); }
+#installBanner .ib-btn {
+  background: var(--blue); color: #fff; border-radius: 8px;
+  padding: 7px 12px; font-size: 12px; font-weight: 700; flex-shrink: 0;
+}
+
+/* ── Bottom nav ── */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  background: #fff; border-top: 1.5px solid var(--border);
+  display: flex; padding-bottom: env(safe-area-inset-bottom);
+  z-index: 150; box-shadow: 0 -4px 20px rgba(0,0,0,.06);
+}
+.bnav-btn {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+  padding: 10px 4px; font-size: 9.5px; font-weight: 700;
+  color: var(--muted); background: none; border: none; cursor: pointer;
+  transition: color .2s;
+}
+.bnav-btn i { font-size: 19px; }
+.bnav-btn.active { color: var(--green); }
+</style>
+</head>
+<body>
+
+<!-- ════ LOADER ════ -->
+<div class="screen active" id="loaderScreen">
+  <div class="loader-logo"><i class="fas fa-store"></i></div>
+  <div class="loader-text">Chargement…</div>
+</div>
+
+<!-- ════ LOGIN ════ -->
+<div class="screen" id="loginScreen">
+  <div class="login-card">
+    <div class="login-header">
+      <div class="brand-icon"><i class="fas fa-store"></i></div>
+      <h1>AET Commerce</h1>
+      <p>Espace Employé — Connexion patron requise</p>
+    </div>
+    <div class="login-error" id="loginError"></div>
+    <div class="form-group">
+      <label class="form-label">Email du compte</label>
+      <input type="email" id="loginEmail" class="form-input" placeholder="email@exemple.com" autocomplete="email"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Mot de passe</label>
+      <input type="password" id="loginPassword" class="form-input" placeholder="••••••••" autocomplete="current-password"/>
+    </div>
+    <button class="btn-primary" onclick="empDoLogin()">
+      <i class="fas fa-right-to-bracket"></i> Se connecter
+    </button>
+    <p style="font-size:11px;color:var(--muted);text-align:center;margin-top:14px;line-height:1.6">
+      Cette page est réservée aux employés.<br>Connectez-vous avec les identifiants fournis par le patron.
+    </p>
+  </div>
+</div>
+
+<!-- ════ IDENTITY ════ -->
+<div class="screen" id="identityScreen">
+  <div class="identity-card">
+    <div class="identity-title">
+      <i class="fas fa-user-circle" style="color:var(--green)"></i> Qui êtes-vous ?
+    </div>
+    <div id="identityList"></div>
+    <!-- Section PIN -->
+    <div class="pin-section" id="pinSection">
+      <div class="pin-label" id="pinLabel">Entrez votre code PIN</div>
+      <input type="password" inputmode="numeric" maxlength="4" id="pinInput" class="pin-input" placeholder="••••"
+        onkeydown="if(event.key==='Enter')empSubmitPin()"/>
+      <div class="pin-error" id="pinError">❌ Code PIN incorrect</div>
+      <button class="btn-pin-ok" onclick="empSubmitPin()">
+        <i class="fas fa-unlock"></i> Valider
+      </button>
+      <button class="btn-back" onclick="empBackToList()">← Retour</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ APP PRINCIPALE ════ -->
+<div class="screen" id="appScreen">
+
+  <!-- Header -->
+  <div class="app-header">
+    <div class="app-header-left">
+      <i class="fas fa-store app-header-icon"></i>
+      <div>
+        <div class="app-header-title" id="shopNameHeader">Commerce</div>
+        <div class="app-header-sub" id="empNameHeader">Chargement…</div>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <div class="header-badge" id="roleBadge">
+        <i class="fas fa-user"></i> <span id="roleBadgeTxt">Employé</span>
+      </div>
+      <button class="header-logout-btn" onclick="empChangeUser()" title="Changer d'utilisateur">
+        <i class="fas fa-right-left"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Tabs bar -->
+  <div class="tabs-bar" id="tabsBar">
+    <button class="tab-btn active" data-tab="resume" onclick="empSwitchTab('resume')">
+      <i class="fas fa-chart-line"></i> Résumé
+    </button>
+    <button class="tab-btn" data-tab="vendre" onclick="empSwitchTab('vendre')">
+      <i class="fas fa-cash-register"></i> Vendre
+    </button>
+    <button class="tab-btn" data-tab="stock" onclick="empSwitchTab('stock')">
+      <i class="fas fa-warehouse"></i> Stock
+    </button>
+    <button class="tab-btn" data-tab="historique" onclick="empSwitchTab('historique')">
+      <i class="fas fa-clock-rotate-left"></i> Historique
+    </button>
+  </div>
+
+  <!-- ── Résumé ── -->
+  <div class="tab-content active" id="tab-resume">
+    <!-- Install banner -->
+    <div id="installBanner">
+      <i class="fas fa-mobile-screen-button"></i>
+      <div class="ib-text">Installez l'app pour un accès rapide !</div>
+      <button class="ib-btn" onclick="empTriggerInstall()">Installer</button>
+    </div>
+
+    <div class="kpi-grid">
+      <div class="kpi-card" style="--accent:var(--green)">
+        <div class="kpi-icon"><i class="fas fa-arrow-up"></i></div>
+        <div class="kpi-label">Ventes aujourd'hui</div>
+        <div class="kpi-value" id="kpiVentesJour">0 XOF</div>
+        <div class="kpi-sub" id="kpiVentesNb">0 transaction(s)</div>
+      </div>
+      <div class="kpi-card" style="--accent:#2563eb">
+        <div class="kpi-icon"><i class="fas fa-calendar"></i></div>
+        <div class="kpi-label">Ventes ce mois</div>
+        <div class="kpi-value" id="kpiVentesMois">0 XOF</div>
+        <div class="kpi-sub" id="kpiVentesMoisNb">0 transaction(s)</div>
+      </div>
+      <div class="kpi-card" style="--accent:var(--amber)">
+        <div class="kpi-icon"><i class="fas fa-box"></i></div>
+        <div class="kpi-label">Articles</div>
+        <div class="kpi-value" id="kpiArticles">0</div>
+        <div class="kpi-sub">articles actifs</div>
+      </div>
+      <div class="kpi-card" style="--accent:var(--red)">
+        <div class="kpi-icon"><i class="fas fa-triangle-exclamation"></i></div>
+        <div class="kpi-label">Alertes stock</div>
+        <div class="kpi-value" id="kpiAlertes">0</div>
+        <div class="kpi-sub">en rupture / faible</div>
+      </div>
+    </div>
+
+    <div class="sec-title"><i class="fas fa-fire" style="color:var(--amber)"></i> Top articles</div>
+    <div id="topArticles"></div>
+  </div>
+
+  <!-- ── Vendre ── -->
+  <div class="tab-content" id="tab-vendre">
+    <div class="sec-title"><i class="fas fa-basket-shopping"></i> Sélectionner un article</div>
+    <div id="vendreList"></div>
+  </div>
+
+  <!-- ── Stock ── -->
+  <div class="tab-content" id="tab-stock">
+    <div class="sec-title"><i class="fas fa-warehouse"></i> État du stock</div>
+    <div id="stockList"></div>
+  </div>
+
+  <!-- ── Historique ── -->
+  <div class="tab-content" id="tab-historique">
+    <div class="sec-title"><i class="fas fa-clock-rotate-left"></i> Mes ventes récentes</div>
+    <div id="historiqueList"></div>
+  </div>
+
+  <!-- Bottom nav (mobile) -->
+  <div class="bottom-nav">
+    <button class="bnav-btn active" data-tab="resume" onclick="empSwitchTab('resume')">
+      <i class="fas fa-chart-line"></i> Résumé
+    </button>
+    <button class="bnav-btn" data-tab="vendre" onclick="empSwitchTab('vendre')">
+      <i class="fas fa-cash-register"></i> Vendre
+    </button>
+    <button class="bnav-btn" data-tab="stock" onclick="empSwitchTab('stock')">
+      <i class="fas fa-warehouse"></i> Stock
+    </button>
+    <button class="bnav-btn" data-tab="historique" onclick="empSwitchTab('historique')">
+      <i class="fas fa-clock-rotate-left"></i> Historique
+    </button>
+  </div>
+</div>
+
+<!-- ════ MODAL VENTE ════ -->
+<div class="modal-bg" id="sellModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="sellModalTitle">Vente</div>
+    <div class="qty-row">
+      <span class="qty-label">Quantité</span>
+      <div class="qty-controls">
+        <button class="qty-btn minus" onclick="empChangeQty(-1)">−</button>
+        <span class="qty-val" id="sellQty">1</span>
+        <button class="qty-btn" onclick="empChangeQty(1)">+</button>
+      </div>
+    </div>
+    <div class="total-row">
+      <span class="total-label">Total</span>
+      <span class="total-val" id="sellTotal">0 XOF</span>
+    </div>
+    <button class="btn-sell" onclick="empConfirmSell()">
+      <i class="fas fa-check"></i> Confirmer la vente
+    </button>
+    <button class="btn-cancel-modal" onclick="empCloseSellModal()">Annuler</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="empToast"></div>
+
+<script>
+/* ════════════════════════════════════════════════════════════
+ * AET EMPLOYEE PORTAL — Logique principale
+ * ════════════════════════════════════════════════════════════ */
+
+let EMP = {
+  user: null,
+  cmData: null,          // { shops, articles, mouvements, … } (localStorage du patron)
+  shop: null,            // boutique sélectionnée
+  employee: null,        // employé connecté
+  role: null,            // 'employee' | 'manager'
+  pendingEmployeeId: null,
+  sellArticle: null,
+  sellQty: 1,
+};
+
+let _installPrompt = null;
+
+/* ── Utilitaires ── */
+function empShowScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(name + 'Screen');
+  if (el) el.classList.add('active');
+  // Identity screen est overlay, on garde appScreen dessous
+  if (name === 'identity') {
+    document.getElementById('appScreen')?.classList.add('active');
+    document.getElementById('identityScreen').style.display = 'flex';
+  } else {
+    document.getElementById('identityScreen').style.display = '';
+  }
+}
+
+function empToast(msg, type = 'success') {
+  const el = document.getElementById('empToast');
+  el.textContent = msg;
+  el.className = 'show ' + type;
+  setTimeout(() => el.className = '', 2800);
+}
+
+function empFmt(n) {
+  const cur = localStorage.getItem('aet_currency') || 'XOF';
+  try {
+    return new Intl.NumberFormat('fr-TG', { style:'currency', currency: cur, maximumFractionDigits: 0 }).format(n || 0);
+  } catch(e) { return (n || 0).toLocaleString('fr-FR') + ' ' + cur; }
+}
+
+function empToday() { return new Date().toISOString().slice(0, 10); }
+function empMonth() { return new Date().toISOString().slice(0, 7); }
+function empUID()   { return 'emp_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+/* ── Login ── */
+window.empDoLogin = async function() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  errEl.style.display = 'none';
+  if (!email || !pass) { errEl.textContent = 'Remplissez tous les champs.'; errEl.style.display = 'block'; return; }
+  try {
+    const auth = window.__EMP_AUTH__;
+    await auth.signInWithEmailAndPassword
+      ? auth.signInWithEmailAndPassword(email, pass)
+      : (await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js')).signInWithEmailAndPassword(auth, email, pass);
+    // onAuthStateChanged prend le relais
+  } catch(e) {
+    errEl.textContent = 'Identifiants incorrects. Vérifiez avec votre patron.';
+    errEl.style.display = 'block';
+  }
+};
+
+// Compatibilité : signInWithEmailAndPassword peut être méthode ou fonction
+(function patchAuth() {
+  const orig = window.empDoLogin;
+  window.empDoLogin = async function() {
+    const email = document.getElementById('loginEmail').value.trim();
+    const pass  = document.getElementById('loginPassword').value;
+    const errEl = document.getElementById('loginError');
+    errEl.style.display = 'none';
+    if (!email || !pass) { errEl.textContent = 'Remplissez tous les champs.'; errEl.style.display = 'block'; return; }
+    try {
+      const { signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js');
+      await signInWithEmailAndPassword(window.__EMP_AUTH__, email, pass);
+    } catch(e) {
+      errEl.textContent = 'Identifiants incorrects. Vérifiez avec votre patron.';
+      errEl.style.display = 'block';
+    }
+  };
+})();
+
+/* ── Chargement des données du patron ── */
+window.empLoadOwnerData = function(uid) {
+  EMP.user = { uid };
+
+  // 1. Lire depuis localStorage (même clé que l'app principale)
+  const cmKey = 'aet_commerce_' + uid;
+  let cmData = null;
+  try {
+    const raw = localStorage.getItem(cmKey);
+    if (raw) cmData = JSON.parse(raw);
+  } catch(e) {}
+
+  if (cmData && Array.isArray(cmData.shops) && cmData.shops.length > 0) {
+    EMP.cmData = cmData;
+    empShowIdentityScreen();
+  } else {
+    // 2. Essayer de charger depuis Firestore si pas en local
+    empLoadFromFirestore(uid);
+  }
+};
+
+async function empLoadFromFirestore(uid) {
+  const db = window.__EMP_DB__;
+  const fs = window.__EMP_FS__;
+  if (!db || !fs) { empShowError('Base de données non disponible.'); return; }
+  try {
+    const snap = await fs.getDoc(fs.doc(db, 'commerce_data', uid));
+    if (snap.exists()) {
+      EMP.cmData = snap.data();
+      localStorage.setItem('aet_commerce_' + uid, JSON.stringify(EMP.cmData));
+      empShowIdentityScreen();
+    } else {
+      empShowError('Aucune boutique trouvée. Demandez au patron de configurer Commerce d\'abord.');
+    }
+  } catch(e) {
+    empShowError('Impossible de charger les données. Vérifiez votre connexion.');
+  }
+}
+
+function empShowError(msg) {
+  document.getElementById('loaderScreen').innerHTML = `
+    <div style="text-align:center;padding:40px 24px">
+      <i class="fas fa-triangle-exclamation" style="font-size:48px;color:var(--amber);margin-bottom:16px;display:block"></i>
+      <p style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:12px">${msg}</p>
+      <button onclick="window.location.reload()" style="padding:12px 24px;background:var(--green);color:#fff;border-radius:12px;font-weight:700;font-size:14px;border:none;cursor:pointer">Réessayer</button>
+    </div>`;
+  empShowScreen('loader');
+}
+
+/* ── Écran d'identification ── */
+function empShowIdentityScreen() {
+  empRenderIdentityList();
+  empShowScreen('identity');
+}
+
+function empAllEmployees() {
+  const out = [];
+  (EMP.cmData?.shops || []).forEach(s => {
+    (s.employees || []).forEach(e => out.push({ ...e, shopId: s.id, shopName: s.name }));
+  });
+  return out;
+}
+
+function empRenderIdentityList() {
+  const employees = empAllEmployees();
+  const list = document.getElementById('identityList');
+  document.getElementById('pinSection').style.display = 'none';
+
+  if (employees.length === 0) {
+    list.innerHTML = `<div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">
+      <i class="fas fa-user-slash" style="font-size:30px;margin-bottom:10px;display:block;opacity:.4"></i>
+      Aucun employé enregistré.<br>Demandez au patron d'ajouter des employés dans Commerce.
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = employees.map(e => `
+    <button class="emp-btn" onclick="empSelectEmployee('${e.id}')">
+      <div class="emp-avatar ${e.role === 'manager' ? 'manager' : ''}">
+        ${e.role === 'manager' ? '👔' : '🧑‍💼'}
+      </div>
+      <div>
+        <div class="emp-name">${e.name}</div>
+        <div class="emp-role">${e.role === 'manager' ? 'Manager' : 'Employé'} — ${e.shopName}</div>
+      </div>
+    </button>
+  `).join('');
+}
+
+window.empSelectEmployee = function(employeeId) {
+  EMP.pendingEmployeeId = employeeId;
+  const employees = empAllEmployees();
+  const emp = employees.find(e => e.id === employeeId);
+  if (!emp) return;
+  document.getElementById('identityList').style.display = 'none';
+  document.getElementById('pinSection').style.display = 'block';
+  document.getElementById('pinLabel').textContent = `PIN de ${emp.name}`;
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinError').style.display = 'none';
+  setTimeout(() => document.getElementById('pinInput').focus(), 100);
+};
+
+window.empBackToList = function() {
+  document.getElementById('identityList').style.display = 'block';
+  document.getElementById('pinSection').style.display = 'none';
+  EMP.pendingEmployeeId = null;
+};
+
+window.empSubmitPin = function() {
+  const pin = document.getElementById('pinInput').value.trim();
+  const employees = empAllEmployees();
+  const emp = employees.find(e => e.id === EMP.pendingEmployeeId);
+  if (!emp || emp.pin !== pin) {
+    document.getElementById('pinError').style.display = 'block';
+    document.getElementById('pinInput').value = '';
+    return;
+  }
+  // PIN correct → session active
+  EMP.employee = emp;
+  EMP.role = emp.role;
+  EMP.shop = (EMP.cmData?.shops || []).find(s => s.id === emp.shopId) || null;
+  empStartSession();
+};
+
+function empStartSession() {
+  // Mettre à jour le header
+  document.getElementById('shopNameHeader').textContent = EMP.shop?.name || 'Commerce';
+  document.getElementById('empNameHeader').textContent = EMP.employee.name;
+  document.getElementById('roleBadgeTxt').textContent = EMP.role === 'manager' ? 'Manager' : 'Employé';
+
+  // Masquer onglet "Achats" si rôle employé simple
+  if (EMP.role === 'employee') {
+    // Seul "Vendre" + lecture autorisée
+  }
+
+  empShowScreen('app');
+  empSwitchTab('resume');
+  empRenderAll();
+  empToast('Bonjour ' + EMP.employee.name + ' 👋', 'success');
+}
+
+/* ── Changer d'utilisateur ── */
+window.empChangeUser = function() {
+  EMP.employee = null;
+  EMP.role = null;
+  empRenderIdentityList();
+  document.getElementById('identityScreen').style.display = 'flex';
+};
+
+/* ── Navigation tabs ── */
+window.empSwitchTab = function(tab) {
+  document.querySelectorAll('.tab-btn, .bnav-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === tab);
+  });
+  document.querySelectorAll('.tab-content').forEach(c => {
+    c.classList.toggle('active', c.id === 'tab-' + tab);
+  });
+  empRenderTab(tab);
+};
+
+function empRenderAll() {
+  empRenderTab('resume');
+}
+
+function empRenderTab(tab) {
+  if (tab === 'resume')     empRenderResume();
+  if (tab === 'vendre')     empRenderVendre();
+  if (tab === 'stock')      empRenderStock();
+  if (tab === 'historique') empRenderHistorique();
+}
+
+/* ── Données de la boutique ── */
+function empGetArticles() {
+  if (!EMP.shop || !EMP.cmData) return [];
+  return (EMP.cmData.articles || []).filter(a => a.shopId === EMP.shop.id);
+}
+
+function empGetMvts() {
+  if (!EMP.shop || !EMP.cmData) return [];
+  return (EMP.cmData.mouvements || []).filter(m => m.shopId === EMP.shop.id);
+}
+
+/* ── Résumé ── */
+function empRenderResume() {
+  const today = empToday();
+  const month = empMonth();
+  const mvts  = empGetMvts();
+  const arts  = empGetArticles();
+
+  const ventesJour  = mvts.filter(m => m.type === 'vente' && m.date === today);
+  const ventesMois  = mvts.filter(m => m.type === 'vente' && (m.date || '').startsWith(month));
+  const totalJour   = ventesJour.reduce((a, b) => a + (b.total || 0), 0);
+  const totalMois   = ventesMois.reduce((a, b) => a + (b.total || 0), 0);
+  const alertes     = arts.filter(a => (a.stock || 0) <= (EMP.shop?.seuil || 5));
+
+  document.getElementById('kpiVentesJour').textContent = empFmt(totalJour);
+  document.getElementById('kpiVentesNb').textContent   = ventesJour.length + ' transaction(s)';
+  document.getElementById('kpiVentesMois').textContent = empFmt(totalMois);
+  document.getElementById('kpiVentesMoisNb').textContent = ventesMois.length + ' transaction(s)';
+  document.getElementById('kpiArticles').textContent   = arts.length;
+  document.getElementById('kpiAlertes').textContent    = alertes.length;
+
+  // Top articles
+  const salesMap = {};
+  mvts.filter(m => m.type === 'vente').forEach(m => {
+    (m.lignes || [{ artId: m.artId, artNom: m.artNom, qty: m.qty, total: m.total }]).forEach(l => {
+      if (!l.artId) return;
+      if (!salesMap[l.artId]) salesMap[l.artId] = { nom: l.artNom || '?', qty: 0, total: 0 };
+      salesMap[l.artId].qty   += l.qty || 1;
+      salesMap[l.artId].total += l.total || 0;
+    });
+  });
+  const top = Object.entries(salesMap).sort((a, b) => b[1].total - a[1].total).slice(0, 5);
+  const topEl = document.getElementById('topArticles');
+  if (top.length === 0) {
+    topEl.innerHTML = '<div class="empty-state"><i class="fas fa-chart-bar"></i><p>Aucune vente enregistrée</p></div>';
+  } else {
+    topEl.innerHTML = top.map(([id, d]) => `
+      <div class="item-card">
+        <div class="item-icon"><i class="fas fa-box"></i></div>
+        <div class="item-body">
+          <div class="item-name">${d.nom}</div>
+          <div class="item-meta">${d.qty} unité(s) vendue(s)</div>
+        </div>
+        <div class="item-right">
+          <div class="item-price">${empFmt(d.total)}</div>
+        </div>
+      </div>`).join('');
+  }
+}
+
+/* ── Vendre ── */
+function empRenderVendre() {
+  const arts = empGetArticles().filter(a => (a.stock || 0) > 0);
+  const el = document.getElementById('vendreList');
+  if (arts.length === 0) {
+    el.innerHTML = '<div class="empty-state"><i class="fas fa-basket-shopping"></i><p>Aucun article disponible en stock</p></div>';
+    return;
+  }
+  el.innerHTML = arts.map(a => `
+    <div class="item-card" onclick="empOpenSell('${a.id}')" style="cursor:pointer;transition:background .15s" 
+         onmouseenter="this.style.background='#f0fdf9'" onmouseleave="this.style.background=''">
+      <div class="item-icon ${(a.stock || 0) <= (EMP.shop?.seuil || 5) ? 'amber' : ''}">
+        <i class="fas fa-tag"></i>
+      </div>
+      <div class="item-body">
+        <div class="item-name">${a.name || a.nom}</div>
+        <div class="item-meta">Stock : ${a.stock || 0} unité(s)</div>
+      </div>
+      <div class="item-right">
+        <div class="item-price">${empFmt(a.prixVente || a.prix || 0)}</div>
+        <div class="item-stock">/ unité</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ── Stock ── */
+function empRenderStock() {
+  const arts = empGetArticles();
+  const el = document.getElementById('stockList');
+  if (arts.length === 0) {
+    el.innerHTML = '<div class="empty-state"><i class="fas fa-warehouse"></i><p>Aucun article trouvé</p></div>';
+    return;
+  }
+  const seuil = EMP.shop?.seuil || 5;
+  el.innerHTML = arts.map(a => {
+    const stock = a.stock || 0;
+    const low   = stock <= seuil;
+    const zero  = stock === 0;
+    return `
+    <div class="item-card">
+      <div class="item-icon ${zero ? 'danger' : low ? 'amber' : ''}">
+        <i class="fas fa-${zero ? 'ban' : low ? 'triangle-exclamation' : 'check'}"></i>
+      </div>
+      <div class="item-body">
+        <div class="item-name">${a.name || a.nom}</div>
+        <div class="item-meta">Prix : ${empFmt(a.prixVente || a.prix || 0)}</div>
+      </div>
+      <div class="item-right">
+        <div class="item-price" style="color:${zero ? 'var(--red)' : low ? 'var(--amber)' : 'var(--green)'}">
+          ${stock}
+        </div>
+        <div class="item-stock">unité(s)</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── Historique ── */
+function empRenderHistorique() {
+  const mvts = empGetMvts().filter(m => m.type === 'vente')
+    .sort((a, b) => (b.date || '').localeCompare(a.date || ''))
+    .slice(0, 50);
+  const el = document.getElementById('historiqueList');
+  if (mvts.length === 0) {
+    el.innerHTML = '<div class="empty-state"><i class="fas fa-clock-rotate-left"></i><p>Aucune vente enregistrée</p></div>';
+    return;
+  }
+  el.innerHTML = mvts.map(m => `
+    <div class="item-card">
+      <div class="item-icon"><i class="fas fa-receipt"></i></div>
+      <div class="item-body">
+        <div class="item-name">${m.artNom || m.lignes?.[0]?.artNom || 'Vente'}</div>
+        <div class="item-meta">${m.date || '—'} · Qté : ${m.qty || 1}</div>
+      </div>
+      <div class="item-right">
+        <div class="item-price" style="color:var(--green)">${empFmt(m.total || 0)}</div>
+        <span class="mvt-tag vente">Vente</span>
+      </div>
+    </div>`).join('');
+}
+
+/* ── Modal vente ── */
+window.empOpenSell = function(artId) {
+  const arts = empGetArticles();
+  const art  = arts.find(a => a.id === artId);
+  if (!art) return;
+  EMP.sellArticle = art;
+  EMP.sellQty = 1;
+  document.getElementById('sellModalTitle').textContent = art.name || art.nom;
+  empUpdateSellTotal();
+  document.getElementById('sellModal').classList.add('open');
+};
+
+window.empCloseSellModal = function() {
+  document.getElementById('sellModal').classList.remove('open');
+  EMP.sellArticle = null;
+};
+
+window.empChangeQty = function(delta) {
+  const art = EMP.sellArticle;
+  if (!art) return;
+  const max = art.stock || 0;
+  EMP.sellQty = Math.max(1, Math.min(EMP.sellQty + delta, max));
+  empUpdateSellTotal();
+};
+
+function empUpdateSellTotal() {
+  const art = EMP.sellArticle;
+  document.getElementById('sellQty').textContent = EMP.sellQty;
+  document.getElementById('sellTotal').textContent = empFmt((art?.prixVente || art?.prix || 0) * EMP.sellQty);
+}
+
+window.empConfirmSell = function() {
+  const art = EMP.sellArticle;
+  if (!art || !EMP.cmData) return;
+  const qty   = EMP.sellQty;
+  const total = (art.prixVente || art.prix || 0) * qty;
+
+  // Décrémenter stock
+  const artIdx = EMP.cmData.articles.findIndex(a => a.id === art.id);
+  if (artIdx === -1) { empToast('Article introuvable', 'error'); return; }
+  EMP.cmData.articles[artIdx].stock = Math.max(0, (EMP.cmData.articles[artIdx].stock || 0) - qty);
+
+  // Créer mouvement
+  const mvt = {
+    id: empUID(),
+    shopId: EMP.shop.id,
+    type: 'vente',
+    artId: art.id,
+    artNom: art.name || art.nom,
+    qty,
+    prixUnit: art.prixVente || art.prix || 0,
+    total,
+    date: empToday(),
+    employeeId: EMP.employee.id,
+    employeeName: EMP.employee.name,
+    createdAt: Date.now(),
+  };
+  if (!EMP.cmData.mouvements) EMP.cmData.mouvements = [];
+  EMP.cmData.mouvements.push(mvt);
+
+  // Sauvegarder localement
+  localStorage.setItem('aet_commerce_' + EMP.user.uid, JSON.stringify(EMP.cmData));
+
+  // Sauvegarder sur Firestore
+  empSaveToFirestore();
+
+  empCloseSellModal();
+  empToast(`Vente enregistrée — ${empFmt(total)} ✓`, 'success');
+  empRenderAll();
+  empSwitchTab('resume');
+};
+
+async function empSaveToFirestore() {
+  const db = window.__EMP_DB__;
+  const fs = window.__EMP_FS__;
+  const uid = EMP.user?.uid;
+  if (!db || !fs || !uid) return;
+  try {
+    await fs.setDoc(fs.doc(db, 'commerce_data', uid), {
+      ...EMP.cmData,
+      updatedAt: fs.serverTimestamp(),
+    }, { merge: true });
+  } catch(e) { console.warn('[EMP] save', e); }
+}
+
+/* ── PWA Install ── */
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  _installPrompt = e;
+  const banner = document.getElementById('installBanner');
+  if (banner) banner.style.display = 'flex';
+});
+
+window.empTriggerInstall = async function() {
+  if (_installPrompt) {
+    _installPrompt.prompt();
+    const { outcome } = await _installPrompt.userChoice;
+    if (outcome === 'accepted') {
+      document.getElementById('installBanner').style.display = 'none';
+    }
+    _installPrompt = null;
+  } else {
+    empToast('Utilisez "Ajouter à l\'écran d\'accueil" dans le menu de votre navigateur', 'info');
+  }
+};
+
+/* ── Fermer modal en cliquant dehors ── */
+document.getElementById('sellModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('sellModal')) empCloseSellModal();
+});
+
+/* ── Service Worker (PWA offline) ── */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw-employe.js').catch(() => {});
+}
+</script>
+</body>
+</html>

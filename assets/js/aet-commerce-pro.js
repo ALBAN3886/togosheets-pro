@@ -117,7 +117,23 @@
     getCM: () => window.CM_DEBUG,
     getShop: () => { const cm = window.CM_DEBUG; return cm ? cm.shops.find(s => s.id === cm.currentShopId) : null; },
     getArticles: () => { const cm = window.CM_DEBUG; return cm ? cm.articles.filter(a => a.shopId === cm.currentShopId) : []; },
-    getMvts: () => { const cm = window.CM_DEBUG; return cm ? cm.mouvements.filter(m => m.shopId === cm.currentShopId) : []; },
+    getMvts: () => {
+      const cm = window.CM_DEBUG;
+      if (!cm) return [];
+      return (cm.mouvements || []).filter(m => m.shopId === cm.currentShopId).map(m => {
+        const qte = Number(m?.qte ?? m?.qty ?? m?.lignes?.[0]?.qte ?? m?.lignes?.[0]?.qty ?? 0);
+        const prix = Number(m?.prix ?? m?.prixUnit ?? m?.lignes?.[0]?.prix ?? m?.lignes?.[0]?.prixUnit ?? 0);
+        const total = Number(m?.total ?? (qte * prix) ?? 0);
+        return Object.assign({}, m, {
+          artName: m?.artName || m?.artNom || m?.lignes?.[0]?.artName || m?.lignes?.[0]?.artNom || 'Article',
+          qte,
+          prix,
+          total,
+          sellerName: m?.sellerName || m?.employeeName || m?.employee?.name || '',
+          person: m?.person || ''
+        });
+      });
+    },
     db: () => window.__AET_DB__,
     fs: () => window.__AET_FIRESTORE__,
     uid_user: () => window.currentUser ? window.currentUser.uid : null,

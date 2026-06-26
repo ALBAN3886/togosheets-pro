@@ -1,7 +1,7 @@
 /* ═══════════════════════════════════════════════
  * AET Commerce Employé — Service Worker PWA
  * ═══════════════════════════════════════════════ */
-const CACHE_NAME = 'aet-employe-v7';
+const CACHE_NAME = 'aet-employe-v9';
 const URLS_TO_CACHE = [
   'employe.html',
   'manifest-employe.json',

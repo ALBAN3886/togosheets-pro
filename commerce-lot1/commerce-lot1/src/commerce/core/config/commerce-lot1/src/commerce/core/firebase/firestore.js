@@ -1,0 +1,50 @@
+import {
+  getFirestore,
+  collection,
+  collectionGroup,
+  doc,
+  getDoc,
+  getDocs,
+  addDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+  orderBy,
+  limit,
+  startAfter,
+  onSnapshot,
+  serverTimestamp,
+  runTransaction,
+  writeBatch,
+  increment,
+  documentId,
+} from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+export function createCommerceDb(app) {
+  return getFirestore(app);
+}
+
+export {
+  collection,
+  collectionGroup,
+  doc,
+  getDoc,
+  getDocs,
+  addDoc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+  orderBy,
+  limit,
+  startAfter,
+  onSnapshot,
+  serverTimestamp,
+  runTransaction,
+  writeBatch,
+  increment,
+  documentId,
+};

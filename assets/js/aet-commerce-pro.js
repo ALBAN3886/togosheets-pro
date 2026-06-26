@@ -193,6 +193,10 @@
         ['clients', 'fournisseurs', 'credits', 'caisse', 'inventaires'].forEach(k => {
           if (Array.isArray(remote[k])) CPData[k] = remote[k];
         });
+        // Sync PIN Patron depuis Firestore → localStorage
+        if (remote.patronPin) {
+          localStorage.setItem(CP_PATRON_PIN_KEY, remote.patronPin);
+        }
         cpSaveLocal();
       }
     } catch (e) { console.warn('[CP] load remote', e); }
@@ -3105,6 +3109,36 @@ body.cp-employee-mode { padding-top: 42px; }
   const CP_PATRON_PIN_KEY = 'aet_cp_patron_pin';
   function cpGetPatronPin() { return localStorage.getItem(CP_PATRON_PIN_KEY) || null; }
 
+  /* Sync PIN Patron vers Firestore */
+  async function cpSavePinRemote(pin) {
+    const uid = CP.uid_user();
+    const db = CP.db();
+    const fs = CP.fs();
+    if (!uid || !db || !fs) return;
+    try {
+      await fs.setDoc(fs.doc(db, 'commerce_pro_data', uid), {
+        patronPin: pin,
+        patronPinUpdatedAt: Date.now(),
+      }, { merge: true });
+    } catch(e) { console.warn('[CP] save pin remote', e); }
+  }
+
+  async function cpLoadPinRemote() {
+    const uid = CP.uid_user();
+    const db = CP.db();
+    const fs = CP.fs();
+    if (!uid || !db || !fs) return;
+    try {
+      const snap = await fs.getDoc(fs.doc(db, 'commerce_pro_data', uid));
+      if (snap.exists()) {
+        const data = snap.data() || {};
+        if (data.patronPin) {
+          localStorage.setItem(CP_PATRON_PIN_KEY, data.patronPin);
+        }
+      }
+    } catch(e) { console.warn('[CP] load pin remote', e); }
+  }
+
   function injectPatronPinModal() {
     if (document.getElementById('cpPatronPinModal')) return;
     document.body.insertAdjacentHTML('beforeend', `
@@ -3194,6 +3228,7 @@ body.cp-employee-mode { padding-top: 42px; }
     if (p1 !== p2) { if (errEl) errEl.textContent = 'Les PIN ne correspondent pas'; return; }
     if (!/^\d+$/.test(p1)) { if (errEl) errEl.textContent = 'Chiffres uniquement'; return; }
     localStorage.setItem(CP_PATRON_PIN_KEY, p1);
+    cpSavePinRemote(p1);
     if (window.closeModal) window.closeModal('cpPatronPinSetupModal');
     CP.toast('Code PIN Patron enregistré ✓', 'success');
     // Accorder l'accès Patron directement
@@ -3295,6 +3330,10 @@ body.cp-employee-mode { padding-top: 42px; }
     const orig = window.cmShowPatronPinEntry;
     if (typeof orig !== 'function' || orig._cpHooked) return;
     window.cmShowPatronPinEntry = function () {
+      // Charger le PIN Patron depuis Firestore pour synchronisation multi-navigateur
+      cpLoadPinRemote().finally(_showPatronPinModal);
+    };
+    function _showPatronPinModal() {
       injectPatronPinModal();
       const stored = cpGetPatronPin();
       const label   = document.getElementById('cpPatronPinLabel');

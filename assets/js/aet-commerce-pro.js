@@ -358,32 +358,91 @@
   };
 
   window.cpGenerateEmployeeLink = function () {
-    const name  = document.getElementById('cpLinkName')?.value.trim();
-    const role  = document.getElementById('cpLinkRole')?.value || 'employee';
-    const shopId= document.getElementById('cpLinkShop')?.value;
-    if (!name) { CP.toast("Nom de l'employe requis", "error"); return; }
+    const name   = document.getElementById('cpLinkName')?.value.trim();
+    const role   = document.getElementById('cpLinkRole')?.value || 'employee';
+    const shopId = document.getElementById('cpLinkShop')?.value;
+    if (!name) { CP.toast("Nom de l'employé requis", "error"); return; }
     if (!shopId) { CP.toast('Sélectionnez une boutique', 'error'); return; }
 
-    // UID du patron encodé dans le lien (permet multi-comptes)
-    const uid   = CP.uid_user() || '';
-    const token = btoa(name + ':' + shopId + ':' + Date.now()).replace(/=/g,'');
+    const uid = CP.uid_user() || '';
+    const cm  = window.CM_DEBUG || null;
+    if (!uid || !cm || !Array.isArray(cm.shops)) {
+      CP.toast('Commerce non prêt. Réessayez.', 'error');
+      return;
+    }
 
-    // Lien vers la page dédiée employés (employe.html) avec l'UID patron
+    const shop = cm.shops.find(s => String(s.id) === String(shopId));
+    if (!shop) { CP.toast('Boutique introuvable', 'error'); return; }
+    if (!Array.isArray(shop.employees)) shop.employees = [];
+
+    let emp = shop.employees.find(e => String((e.name || '').trim()).toLowerCase() === String(name).toLowerCase());
+    const pin = emp?.pin || String(Math.floor(1000 + Math.random() * 9000));
+
+    if (!emp) {
+      emp = {
+        id: (typeof window.cmUID === 'function' ? window.cmUID() : ('emp_' + Date.now().toString(36))),
+        name,
+        pin,
+        role,
+        createdAt: Date.now(),
+      };
+      shop.employees.push(emp);
+    } else {
+      emp.name = name;
+      emp.role = role;
+      if (!emp.pin) emp.pin = pin;
+      emp.updatedAt = Date.now();
+    }
+
+    if (typeof window.cmBuildEmployeeLinkMeta === 'function') {
+      const expiryCfg = typeof window.cmGetLinkExpiryConfig === 'function'
+        ? window.cmGetLinkExpiryConfig()
+        : { mode: 'never', expiresAtMs: null };
+      emp.accessLink = window.cmBuildEmployeeLinkMeta(expiryCfg);
+    } else {
+      emp.accessLink = {
+        token: btoa(name + ':' + shopId + ':' + Date.now()).replace(/=/g, ''),
+        generatedAt: Date.now(),
+        expiresAtMs: null,
+      };
+    }
+
+    const token = emp.accessLink.token;
     const base  = window.location.origin + window.location.pathname.replace(/[^/]*$/, '') + 'employe.html';
-    const link  = `${base}?uid=${encodeURIComponent(uid)}&shop=${encodeURIComponent(shopId)}&name=${encodeURIComponent(name)}&role=${role}&token=${token}`;
+    const link  = `${base}?uid=${encodeURIComponent(uid)}&shop=${encodeURIComponent(shopId)}&name=${encodeURIComponent(name)}&role=${encodeURIComponent(role)}&empId=${encodeURIComponent(emp.id)}&token=${encodeURIComponent(token)}`;
+
+    if (!Array.isArray(emp.accessLinkHistory)) emp.accessLinkHistory = [];
+    emp.accessLinkHistory.unshift({
+      generatedAt: Date.now(),
+      expiresAtMs: emp.accessLink.expiresAtMs || null,
+      token,
+      url: link,
+      sentTo: ''
+    });
+    emp.accessLinkHistory = emp.accessLinkHistory.slice(0, 10);
 
     const resultInput = document.getElementById('cpLinkResult');
     if (resultInput) resultInput.value = link;
     document.getElementById('cpLinkResultBox').style.display = 'block';
     document.getElementById('cpLinkQR').style.display = 'none';
 
-    // Sauvegarder dans les données Pro (historique des liens)
-    const shopId2 = CP.getCM()?.currentShopId;
     if (!CPData.employeeLinks) CPData.employeeLinks = [];
-    CPData.employeeLinks.push({ name, role, shopId, token, link, createdAt: Date.now() });
+    CPData.employeeLinks.unshift({ name, role, shopId, token, link, empId: emp.id, pin: emp.pin, createdAt: Date.now() });
+
+    if (typeof window.cmSave === 'function') window.cmSave();
     cpSave();
 
-    CP.toast('Lien généré ✓', 'success');
+    const hintHost = document.getElementById('cpLinkResultBox');
+    let pinHint = document.getElementById('cpLinkPinHint');
+    if (!pinHint && hintHost) {
+      pinHint = document.createElement('div');
+      pinHint.id = 'cpLinkPinHint';
+      pinHint.style.cssText = 'margin-top:10px;font-size:12px;font-weight:700;color:#065f46;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.18);padding:10px 12px;border-radius:12px';
+      hintHost.appendChild(pinHint);
+    }
+    if (pinHint) pinHint.innerHTML = 'PIN employé : <strong>' + (emp.pin || '—') + '</strong>';
+
+    CP.toast('Lien employé corrigé et synchronisé ✓', 'success');
   };
 
   window.cpCopyLink = function () {

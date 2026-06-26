@@ -109,7 +109,7 @@
     // Raccourcis
     fmt: (n) => (typeof window.fmt === 'function' ? window.fmt(n || 0) : (n || 0).toLocaleString('fr-FR')),
     cur: () => window.activeCurrency || localStorage.getItem('aet_currency') || 'XOF',
-    amt: (n) => CP.fmt(n) + ' ' + CP.cur(),
+    amt: (n) => CP.fmt(n), // La devise est déjà incluse dans fmt() via Intl.NumberFormat
     today: () => new Date().toISOString().slice(0, 10),
     month: () => new Date().toISOString().slice(0, 7),
     uid: () => 'cp_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),

@@ -25,7 +25,7 @@ import { initializeApp }           from "https://www.gstatic.com/firebasejs/10.1
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
                                    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
-         doc, getDoc, setDoc, onSnapshot, serverTimestamp }
+         doc, getDoc, setDoc, onSnapshot, serverTimestamp, collection, query, where, updateDoc }
                                    from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -46,7 +46,7 @@ const db    = initializeFirestore(fbApp, {
 
 window.__EMP_AUTH__ = auth;
 window.__EMP_DB__   = db;
-window.__EMP_FS__   = { doc, getDoc, setDoc, onSnapshot, serverTimestamp };
+window.__EMP_FS__   = { doc, getDoc, setDoc, onSnapshot, serverTimestamp, collection, query, where, updateDoc };
 
 // ── Écouter l'état d'authentification ──
 // ── Lire l'UID patron depuis l'URL ──
@@ -602,6 +602,8 @@ input  { font-family: inherit; outline: none; }
 
     <div class="sec-title"><i class="fas fa-fire" style="color:var(--amber)"></i> Top articles</div>
     <div id="topArticles"></div>
+    <div class="sec-title"><i class="fas fa-bag-shopping" style="color:var(--green)"></i> Commandes boutique publique</div>
+    <div id="publicOrdersList"></div>
   </div>
 
   <!-- ── Vendre ── -->
@@ -707,6 +709,8 @@ let EMP = {
   scanDetected: false,
   scanSaleArtId: null,
   scanSaleUnitId: null,
+  publicOrders: [],
+  publicOrdersUnsub: null,
 };
 
 let _installPrompt = null;
@@ -1065,6 +1069,7 @@ window.empSubmitPin = function() {
 };
 
 function empStartSession() {
+  empWatchPublicOrders();
   // Mettre à jour le header
   document.getElementById('shopNameHeader').textContent = EMP.shop?.name || 'Commerce';
   document.getElementById('empNameHeader').textContent = EMP.employee.name;
@@ -1085,6 +1090,9 @@ function empStartSession() {
 window.empChangeUser = function() {
   EMP.employee = null;
   EMP.role = null;
+  EMP.publicOrders = [];
+  if (typeof EMP.publicOrdersUnsub === 'function') { try { EMP.publicOrdersUnsub(); } catch(_) {} }
+  EMP.publicOrdersUnsub = null;
   empRenderIdentityList();
   document.getElementById('identityScreen').style.display = 'flex';
 };
@@ -1113,6 +1121,7 @@ window.empSwitchTab = function(tab) {
 
 function empRenderAll() {
   empRenderResume();
+  empRenderPublicOrders();
   if (EMP.currentTab && EMP.currentTab !== 'resume') empRenderTab(EMP.currentTab);
 }
 
@@ -1133,6 +1142,159 @@ function empGetMvts() {
   if (!EMP.shop || !EMP.cmData) return [];
   return (EMP.cmData.mouvements || []).filter(m => m.shopId === EMP.shop.id);
 }
+
+function empNormalizePhone(raw) {
+  return String(raw || '').replace(/[^\d+]/g, '');
+}
+
+function empWatchPublicOrders() {
+  const db = window.__EMP_DB__;
+  const fs = window.__EMP_FS__;
+  const uid = EMP.user?.uid || localStorage.getItem('aet_employe_patron_uid');
+  if (typeof EMP.publicOrdersUnsub === 'function') { try { EMP.publicOrdersUnsub(); } catch(_) {} }
+  EMP.publicOrdersUnsub = null;
+  if (!db || !fs || !uid) return;
+  const ref = fs.query(fs.collection(db, 'public_orders'), fs.where('ownerUid', '==', uid));
+  EMP.publicOrdersUnsub = fs.onSnapshot(ref, snap => {
+    EMP.publicOrders = snap.docs.map(docSnap => ({ id: docSnap.id, ...(docSnap.data() || {}) }))
+      .filter(order => !EMP.shop || String(order.shopId || '') === String(EMP.shop.id || ''))
+      .sort((a, b) => Number(b.createdAtMs || 0) - Number(a.createdAtMs || 0));
+    if (EMP.employee) empRenderPublicOrders();
+  }, err => {
+    console.warn('[EMP] public orders', err);
+  });
+}
+
+function empPublicOrderStatusLabel(status) {
+  return ({ pending:'En attente', validated:'Validée', rejected:'Refusée', discussing:'En discussion' })[String(status || 'pending')] || 'En attente';
+}
+
+function empPublicOrderStatusColor(status) {
+  return ({ pending:'var(--amber)', validated:'var(--green)', rejected:'var(--red)', discussing:'var(--blue)' })[String(status || 'pending')] || 'var(--amber)';
+}
+
+function empRenderPublicOrders() {
+  const host = document.getElementById('publicOrdersList');
+  if (!host) return;
+  const orders = Array.isArray(EMP.publicOrders) ? EMP.publicOrders.slice(0, 20) : [];
+  if (!orders.length) {
+    host.innerHTML = '<div class="empty-state"><i class="fas fa-bag-shopping"></i><p>Aucune commande publique pour cette boutique</p></div>';
+    return;
+  }
+  host.innerHTML = orders.map(order => {
+    const total = Number(order.total || 0);
+    const lines = Array.isArray(order.items) ? order.items.map(i => '<div class="item-meta">• '+empHtml((i.name||'Article'))+' × '+empHtml(String(i.qty||0))+'</div>').join('') : '';
+    const phone = empNormalizePhone(order.customer && order.customer.phone);
+    const canValidate = String(order.status || 'pending') !== 'validated';
+    const key = encodeURIComponent(String(order.id || ''));
+    return '<div class="item-card" style="align-items:flex-start">'
+      + '<div class="item-icon" style="background:rgba(16,185,129,.1);color:var(--green)"><i class="fas fa-bag-shopping"></i></div>'
+      + '<div class="item-body">'
+      + '<div class="item-name">'+empHtml((order.customer&&order.customer.name)||'Client')+'</div>'
+      + '<div class="item-meta">'+empHtml(order.shopName||EMP.shop?.name||'Boutique')+' · '+empHtml(phone||'Sans téléphone')+'</div>'
+      + lines
+      + '<div class="item-meta">Réf: '+empHtml(order.id||'—')+'</div>'
+      + '</div>'
+      + '<div class="item-right">'
+      + '<div class="item-price" style="color:'+empPublicOrderStatusColor(order.status)+'">'+empHtml(empFmt(total))+'</div>'
+      + '<span class="mvt-tag vente" style="background:rgba(16,185,129,.08);color:'+empPublicOrderStatusColor(order.status)+'">'+empHtml(empPublicOrderStatusLabel(order.status))+'</span>'
+      + '<div class="item-actions" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;margin-top:8px">'
+      + (canValidate ? '<button class="item-mini-btn green" type="button" onclick="empApprovePublicOrder(decodeURIComponent(\''+key+'\'))"><i class="fas fa-check"></i> Valider</button>' : '')
+      + '<button class="item-mini-btn" type="button" onclick="empDiscussPublicOrder(decodeURIComponent(\''+key+'\'))"><i class="fas fa-comments"></i> Discuter</button>'
+      + (canValidate ? '<button class="item-mini-btn" style="background:#fef2f2;color:#b91c1c;border-color:rgba(239,68,68,.16)" type="button" onclick="empRejectPublicOrder(decodeURIComponent(\''+key+'\'))"><i class="fas fa-xmark"></i> Refuser</button>' : '')
+      + '</div>'
+      + '</div>'
+      + '</div>';
+  }).join('');
+}
+
+window.empDiscussPublicOrder = function(orderId) {
+  const order = (EMP.publicOrders || []).find(o => String(o.id) === String(orderId));
+  if (!order) return;
+  const phone = empNormalizePhone(order.customer && order.customer.phone);
+  const message = [
+    'Bonjour '+((order.customer&&order.customer.name)||'client')+',',
+    'votre commande '+(order.id||'')+' pour '+(order.shopName||EMP.shop?.name||'notre boutique')+' est bien reçue.',
+    'Répondez à ce message pour confirmer les détails ou la livraison.'
+  ].join('\n');
+  if (phone) {
+    window.open('https://wa.me/'+encodeURIComponent(phone.replace(/\D/g,''))+'?text='+encodeURIComponent(message), '_blank');
+  } else {
+    navigator.clipboard && navigator.clipboard.writeText(message).catch(()=>{});
+    empToast('Message copié. Aucun numéro WhatsApp détecté.', 'info');
+  }
+};
+
+window.empRejectPublicOrder = async function(orderId) {
+  const db = window.__EMP_DB__;
+  const fs = window.__EMP_FS__;
+  const order = (EMP.publicOrders || []).find(o => String(o.id) === String(orderId));
+  if (!db || !fs || !order) return;
+  try {
+    await fs.updateDoc(fs.doc(db, 'public_orders', orderId), {
+      status: 'rejected',
+      rejectedAt: fs.serverTimestamp(),
+      rejectedAtMs: Date.now(),
+      rejectedByName: EMP.employee?.name || ''
+    });
+    empToast('Commande refusée', 'success');
+  } catch(e) {
+    empToast('Impossible de refuser la commande', 'error');
+  }
+};
+
+window.empApprovePublicOrder = async function(orderId) {
+  const db = window.__EMP_DB__;
+  const fs = window.__EMP_FS__;
+  const order = (EMP.publicOrders || []).find(o => String(o.id) === String(orderId));
+  if (!db || !fs || !order || !EMP.cmData || !EMP.shop || !EMP.employee) return;
+  const items = Array.isArray(order.items) ? order.items : [];
+  if (!items.length) { empToast('Commande vide', 'error'); return; }
+  const issues = [];
+  items.forEach(item => {
+    const art = (EMP.cmData.articles || []).find(a => String(a.id) === String(item.id) && String(a.shopId) === String(EMP.shop.id));
+    if (!art) issues.push((item.name||'Article') + ' introuvable');
+    else if (Number(art.stock || 0) < Number(item.qty || 0)) issues.push((item.name||'Article') + ' : stock insuffisant');
+  });
+  if (issues.length) { empToast(issues[0], 'error'); return; }
+
+  const createdAt = Date.now();
+  const date = empToday();
+  const movementIds = [];
+  items.forEach(item => {
+    const idx = (EMP.cmData.articles || []).findIndex(a => String(a.id) === String(item.id) && String(a.shopId) === String(EMP.shop.id));
+    const art = EMP.cmData.articles[idx];
+    EMP.cmData.articles[idx].stock = Math.max(0, Number(art.stock || 0) - Number(item.qty || 0));
+    const total = Number(item.total || (Number(item.qty || 0) * Number(item.price || 0)));
+    const receiptNum = 'PUB-' + String(createdAt).slice(-6) + '-' + String(movementIds.length + 1);
+    const mvt = {
+      id: empUID(), shopId: EMP.shop.id, type: 'vente', artId: art.id, artName: item.name || empGetArticleName(art),
+      qte: Number(item.qty || 0), prix: Number(item.price || 0), total, date, person: (order.customer && order.customer.name) || 'Client boutique',
+      note: 'Commande publique '+orderId, createdAt: createdAt + movementIds.length,
+      sellerId: EMP.employee.id, sellerName: EMP.employee.name, sellerRole: EMP.role === 'manager' ? 'Manager' : 'Employé',
+      employeeId: EMP.employee.id, employeeName: EMP.employee.name, receiptNum, source: 'public-order'
+    };
+    if (!Array.isArray(EMP.cmData.mouvements)) EMP.cmData.mouvements = [];
+    EMP.cmData.mouvements.push(mvt);
+    movementIds.push(mvt.id);
+  });
+
+  try {
+    await empSaveToFirestore();
+    await fs.updateDoc(fs.doc(db, 'public_orders', orderId), {
+      status: 'validated',
+      validatedAt: fs.serverTimestamp(),
+      validatedAtMs: Date.now(),
+      validatedById: EMP.employee.id,
+      validatedByName: EMP.employee.name,
+      movementIds
+    });
+    empRenderAll();
+    empToast('Commande validée et ventes enregistrées ✓', 'success');
+  } catch(e) {
+    empToast('Validation impossible', 'error');
+  }
+};
 
 function empGetArticleName(article) {
   return article?.name || article?.nom || 'Article';

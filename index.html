@@ -3685,10 +3685,7 @@ select.form-input option{background:var(--bg2)}
     }, 80);
   });
   // Cacher le splash après 2.4s → onboarding ou auth
-  // (ne dépend plus de DOMContentLoaded : sur réseau lent, certains scripts
-  // externes pouvaient mettre cet événement en attente indéfiniment et
-  // bloquer l'écran de chargement pour toujours)
-  (() => {
+  window.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       const splash = document.getElementById('aetSplash');
       if (splash) {
@@ -3713,7 +3710,7 @@ select.form-input option{background:var(--bg2)}
         }, 500);
       }
     }, 2400);
-  })();
+  });
 })();
 </script>
 

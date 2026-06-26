@@ -3685,7 +3685,10 @@ select.form-input option{background:var(--bg2)}
     }, 80);
   });
   // Cacher le splash après 2.4s → onboarding ou auth
-  window.addEventListener('DOMContentLoaded', () => {
+  // (ne dépend plus de DOMContentLoaded : sur réseau lent, certains scripts
+  // externes pouvaient mettre cet événement en attente indéfiniment et
+  // bloquer l'écran de chargement pour toujours)
+  (() => {
     setTimeout(() => {
       const splash = document.getElementById('aetSplash');
       if (splash) {
@@ -3710,7 +3713,7 @@ select.form-input option{background:var(--bg2)}
         }, 500);
       }
     }, 2400);
-  });
+  })();
 })();
 </script>
 
@@ -11722,7 +11725,16 @@ body.aet-subpage-active #bottomNav,body.aet-subpage-active #appSidebar,body.aet-
   var _renderProfile=window.renderProfileTab; window.renderProfileTab=function(){ var out=_renderProfile&&_renderProfile.apply(this,arguments); setTimeout(renderProfileHome,0); return out; };
   var _bnav=window.bnavSwitchExt; if(_bnav){ window.bnavSwitchExt=function(tab){ var out=_bnav.apply(this,arguments); if(tab==='profil') setTimeout(renderProfileHome,0); return out; }; }
   var _cm=window.cmRenderAll; if(_cm){ window.cmRenderAll=function(){ var out=_cm.apply(this,arguments); setTimeout(refreshStorefrontCard,0); setTimeout(syncSubpageState,0); return out; }; }
-  new MutationObserver(syncSubpageState).observe(document.body,{subtree:true,attributes:true,attributeFilter:['class','style']});
+  // Surveillance limitée (debounce) : évite de relancer syncSubpageState() à chaque
+  // micro-changement de style/classe pendant le rendu du tableau de bord, ce qui
+  // pouvait saturer les téléphones modestes et bloquer l'affichage.
+  var _syncPending=false;
+  function _syncSubpageStateThrottled(){
+    if(_syncPending) return;
+    _syncPending=true;
+    requestAnimationFrame(function(){ _syncPending=false; syncSubpageState(); });
+  }
+  new MutationObserver(_syncSubpageStateThrottled).observe(document.body,{subtree:true,attributes:true,attributeFilter:['class','style']});
   if(document.readyState!=='loading'){ setTimeout(function(){ try{renderProfileHome();refreshStorefrontCard();syncSubpageState();}catch(e){} },120); } else { document.addEventListener('DOMContentLoaded',function(){ setTimeout(function(){ try{renderProfileHome();refreshStorefrontCard();syncSubpageState();}catch(e){} },120); }); }
 })();
 </script>

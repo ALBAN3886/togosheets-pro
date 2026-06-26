@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aet-monbudget-v5';
+const CACHE_NAME = 'aet-monbudget-v6';
 const OFFLINE_ASSETS = [
   './',
   './index.html',

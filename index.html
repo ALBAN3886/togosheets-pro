@@ -11190,4 +11190,34 @@ window.cmShowGenLinkQR = function() {
 })();
 </script>
 
+
+<script id="aet-index-patch-v4">
+(function(){
+  if(window.__AET_INDEX_PATCH_V4__) return;
+  window.__AET_INDEX_PATCH_V4__ = true;
+  const prevBuild = window.cmBuildReceipt;
+  window.cmBuildReceipt = function(mvt, article){
+    const base = prevBuild ? prevBuild(mvt, article) : {};
+    return Object.assign({}, base, {
+      sellerPhotoUrl: mvt?.sellerPhotoUrl || '',
+      sellerSignature: mvt?.sellerSignature || '',
+      sellerRole: mvt?.sellerRole || '',
+      shopLogoText: String((base.shopName || 'CM')).split(/\s+/).filter(Boolean).slice(0,2).map(x => x[0] || '').join('').toUpperCase() || 'CM'
+    });
+  };
+
+  const prevDoc = window.cmDocHTML || cmDocHTML;
+  cmDocHTML = function(doc){
+    const html = prevDoc(doc);
+    const d = doc?.data || {};
+    const extras = [
+      d.sellerRole ? `<div class="cm-doc-row"><span>${currentLang==='en' ? 'Role' : 'Fonction'}</span><span>${d.sellerRole === 'manager' ? (currentLang==='en' ? 'Manager' : 'Manager') : (currentLang==='en' ? 'Employee' : 'Employé')}</span></div>` : '',
+      d.sellerSignature ? `<div class="cm-doc-row"><span>${currentLang==='en' ? 'Seller signature' : 'Signature vendeur'}</span><span>${d.sellerSignature}</span></div>` : ''
+    ].filter(Boolean).join('');
+    if (!extras) return html;
+    return html.replace('<div class="cm-doc-foot">', extras + '<div class="cm-doc-foot">');
+  };
+})();
+</script>
+
 </body>

@@ -796,8 +796,295 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
   </div>
 </div>
 
-<!-- TOAST -->
-<div id="toast" class="toast"></div>
+<!-- ══════════════════════════════════════════════════
+  DRAWER : PI WALLET — PAIEMENT DIRECT
+  L'acheteur clique → voit le montant → ouvre Pi Wallet
+  directement via wallet.pinet.com → revient → colle le hash
+══════════════════════════════════════════════════ -->
+<div id="piCheckoutDrawer" class="drawer">
+  <div class="drawer-head">
+    <div class="handle"></div>
+    <div class="drawer-head-row">
+      <h3 style="display:flex;align-items:center;gap:8px">
+        <span style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#5b21b6,#7c3aed);display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:17px;flex-shrink:0">π</span>
+        Payer avec Pi
+      </h3>
+      <button class="close-x" onclick="closeAllDrawers()"><i class="fas fa-xmark"></i></button>
+    </div>
+  </div>
+
+  <div class="drawer-body">
+
+    <!-- Article + Montant -->
+    <div class="pi-pay-hero">
+      <div class="pi-pay-label">Vous achetez</div>
+      <div class="pi-pay-product" id="piChk_productName">—</div>
+      <div class="pi-pay-price">
+        <span id="piChk_xof" class="pi-pay-xof"></span>
+        <span class="pi-pay-eq">≈</span>
+        <span id="piChk_amount" class="pi-pay-pi-amt"></span>
+        <span class="pi-pay-pi-sym">π</span>
+      </div>
+      <div class="pi-pay-memo-row">Mémo commande : <strong id="piChk_orderId"></strong></div>
+    </div>
+
+    <!-- Bouton principal — ouvre Pi Wallet directement -->
+    <button class="pi-open-wallet-btn" onclick="openPiWalletDirect()">
+      <span style="font-size:22px;font-weight:900">π</span>
+      Ouvrir Pi Wallet pour payer
+      <i class="fas fa-arrow-up-right-from-square" style="font-size:13px;opacity:.8"></i>
+    </button>
+    <p style="text-align:center;font-size:12px;color:#6b7280;margin:8px 0 16px">Appuyez ci-dessus → Pi Wallet s'ouvre avec le montant déjà rempli → confirmez le paiement dans l'app → revenez ici.</p>
+
+    <!-- QR Code (alternative) -->
+    <details class="pi-qr-details">
+      <summary>📷 Scanner le QR code à la place</summary>
+      <div style="display:flex;justify-content:center;padding:16px 0 8px">
+        <div style="background:#f3e8ff;border-radius:20px;padding:14px;display:inline-block">
+          <div id="piChk_qr"></div>
+        </div>
+      </div>
+      <p style="text-align:center;font-size:11px;color:#9ca3af;margin:0 0 8px">Scannez avec l'app Pi Network → Wallet → Pay</p>
+    </details>
+
+    <!-- Adresse (copier) -->
+    <div class="pi-address-box">
+      <div class="pi-address-label">Adresse Pi Wallet</div>
+      <div id="piChk_address" class="pi-address-val"></div>
+      <div class="pi-address-user">Compte : <strong id="piChk_username"></strong></div>
+      <button onclick="copyPiAddress()" class="pi-copy-btn"><i class="fas fa-copy"></i> Copier l'adresse</button>
+    </div>
+
+    <!-- Après paiement : champ hash -->
+    <div id="piChk_afterPayHint" class="pi-after-pay">
+      <div class="pi-after-pay-title">✅ Paiement effectué ?</div>
+      <p style="font-size:12px;color:#4b5563;margin:4px 0 10px">Collez ci-dessous le <strong>Hash de transaction</strong> affiché dans votre Pi Wallet après confirmation.</p>
+      <input id="piChk_txRef" class="pi-tx-input" placeholder="Hash de transaction Pi (ex: abc123def…)"/>
+      <p style="font-size:11px;color:#9ca3af;margin:6px 0 0">Votre commande sera vérifiée et confirmée rapidement.</p>
+    </div>
+
+  </div>
+
+  <div class="drawer-foot" style="display:flex;flex-direction:column;gap:8px">
+    <button class="pi-confirm-btn" onclick="confirmPiTx()">
+      <span style="font-size:18px">π</span> J'ai payé — Valider ma commande
+    </button>
+    <button onclick="openPiWalletDirect()" class="pi-open-wallet-btn-sm">
+      <i class="fas fa-arrow-up-right-from-square"></i> Ré-ouvrir Pi Wallet
+    </button>
+  </div>
+</div>
+
+<!-- ═══ PI WALLET STYLES ═══ -->
+<style id="pi-wallet-styles">
+
+/* ── Bouton "Payer en Pi" sur les cartes produit ── */
+.btn-pay-pi {
+  width: 100%;
+  margin-top: 8px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #5b21b6, #7c3aed);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 10px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: opacity .15s, transform .15s;
+  box-shadow: 0 8px 20px rgba(91,33,182,.28);
+}
+.btn-pay-pi:active { transform: scale(.97); opacity: .9; }
+.pi-logo-icon { font-weight: 900; line-height: 1; }
+
+/* ── Bouton "Acheter maintenant avec Pi" dans la fiche produit ── */
+.btn-pay-pi-big {
+  width: 100%;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #5b21b6, #7c3aed);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  padding: 14px 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 10px 24px rgba(91,33,182,.30);
+  transition: opacity .15s, transform .15s;
+}
+.btn-pay-pi-big:active { transform: scale(.98); }
+
+/* ── Option Pi dans checkout ── */
+.pay-opt-pi {
+  background: linear-gradient(135deg,#f3e8ff,#ede9fe) !important;
+  border-color: #c4b5fd !important;
+  color: #7c3aed !important;
+}
+.pay-opt-pi.active {
+  background: linear-gradient(135deg,#5b21b6,#7c3aed) !important;
+  border-color: #5b21b6 !important;
+  color: #fff !important;
+}
+.pi-icon { font-size: 18px; font-weight: 900; }
+
+/* ── Drawer Pi Checkout ── */
+.pi-pay-hero {
+  background: linear-gradient(135deg,#5b21b6,#7c3aed);
+  border-radius: 20px;
+  padding: 20px;
+  color: #fff;
+  margin-bottom: 16px;
+  text-align: center;
+}
+.pi-pay-label { font-size: 12px; opacity: .75; margin-bottom: 4px; }
+.pi-pay-product { font-size: 16px; font-weight: 800; margin-bottom: 12px; }
+.pi-pay-price {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+}
+.pi-pay-xof { font-size: 16px; opacity: .75; }
+.pi-pay-eq { font-size: 14px; opacity: .6; }
+.pi-pay-pi-amt { font-size: 34px; font-weight: 900; letter-spacing: -1px; }
+.pi-pay-pi-sym { font-size: 22px; font-weight: 900; }
+.pi-pay-memo-row {
+  margin-top: 12px;
+  background: rgba(255,255,255,.15);
+  border-radius: 10px;
+  padding: 7px 12px;
+  font-size: 12px;
+  letter-spacing: .3px;
+}
+
+.pi-open-wallet-btn {
+  width: 100%;
+  background: linear-gradient(135deg,#5b21b6,#7c3aed);
+  color: #fff;
+  border: none;
+  border-radius: 16px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 14px 32px rgba(91,33,182,.35);
+  transition: transform .15s;
+  letter-spacing: .2px;
+}
+.pi-open-wallet-btn:active { transform: scale(.97); }
+
+.pi-qr-details {
+  border: 1.5px solid #ddd6fe;
+  border-radius: 14px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  background: #faf5ff;
+}
+.pi-qr-details summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  color: #7c3aed;
+  list-style: none;
+}
+.pi-qr-details summary::-webkit-details-marker { display: none; }
+#piChk_qr img, #piChk_qr canvas { border-radius: 12px; display: block; }
+
+.pi-address-box {
+  background: #f5f3ff;
+  border: 1.5px solid #ddd6fe;
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 14px;
+}
+.pi-address-label { font-size: 10px; font-weight: 800; color: #7c3aed; text-transform: uppercase; letter-spacing: .07em; margin-bottom: 6px; }
+.pi-address-val { font-size: 10.5px; color: #3730a3; font-family: monospace; word-break: break-all; line-height: 1.7; }
+.pi-address-user { font-size: 12px; color: #6b7280; margin-top: 6px; }
+.pi-copy-btn {
+  margin-top: 10px;
+  width: 100%;
+  border: 1.5px solid #7c3aed;
+  background: #fff;
+  color: #7c3aed;
+  border-radius: 10px;
+  padding: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.pi-after-pay {
+  background: #f0fdf4;
+  border: 1.5px solid #bbf7d0;
+  border-radius: 16px;
+  padding: 14px;
+  margin-bottom: 4px;
+}
+.pi-after-pay-title { font-size: 14px; font-weight: 800; color: #16a34a; margin-bottom: 2px; }
+.pi-tx-input {
+  width: 100%;
+  border: 1.5px solid #86efac;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 12px;
+  font-family: monospace;
+  outline: none;
+  box-sizing: border-box;
+  background: #fff;
+}
+.pi-tx-input:focus { border-color: #16a34a; }
+
+.pi-confirm-btn {
+  width: 100%;
+  background: linear-gradient(135deg,#16a34a,#22c55e);
+  color: #fff;
+  border: none;
+  border-radius: 14px;
+  padding: 15px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 10px 24px rgba(22,163,74,.30);
+}
+.pi-confirm-btn:active { opacity: .9; }
+
+.pi-open-wallet-btn-sm {
+  width: 100%;
+  background: transparent;
+  border: 1.5px solid #7c3aed;
+  color: #7c3aed;
+  border-radius: 12px;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+</style>
+
+
 
 <!-- ══════════════════════════════════════════════════
   FIREBASE + LOGIQUE
@@ -996,8 +1283,9 @@ function cardHTML(p, rank) {
     <div class="card-price">${esc(money(p.salePrice))}</div>
     <div class="card-actions">
       <button class="btn-ghost" onclick="event.stopPropagation();openProduct('${esc(String(p.id))}')">Détails</button>
-      <button class="btn-main" onclick="event.stopPropagation();addToCart('${esc(String(p.id))}')">Commander</button>
+      <button class="btn-main" onclick="event.stopPropagation();addToCart('${esc(String(p.id))}')">Panier</button>
     </div>
+    <button class="btn-pay-pi" onclick="event.stopPropagation();buyNowWithPi('${esc(String(p.id))}',1)"><span class="pi-logo-icon">π</span>Payer en Pi</button>
   </div>`;
 }
 
@@ -1089,10 +1377,11 @@ window.openProduct = id => {
   window._pdProduct = p;
   window._pdQty = 1;
   document.getElementById('productDrawerFoot').innerHTML = `
-    <div style="display:flex;gap:8px">
+    <div style="display:flex;gap:8px;margin-bottom:10px">
       <button class="btn-full ${isFav?'btn-outline':'btn-secondary'}" id="pdFavBtn" onclick="toggleFavPD('${esc(String(p.id))}')"><i class="fas fa-heart" style="margin-right:6px"></i>${isFav?'Retiré':'Favoris'}</button>
       <button class="btn-full btn-primary" onclick="addToCartFromPD()"><i class="fas fa-cart-plus" style="margin-right:6px"></i>Ajouter au panier</button>
     </div>
+    <button class="btn-full btn-pay-pi-big" onclick="buyNowWithPi('${esc(String(p.id))}', window._pdQty||1)"><span class="pi-logo-icon" style="font-size:20px">π</span>Acheter maintenant avec Pi</button>
   `;
   openDrawer('productDrawer');
 };
@@ -1215,6 +1504,7 @@ window.renderCheckout = () => {
         <div class="pay-opt active" id="pay_cash" onclick="selectPay('cash')"><i class="fas fa-money-bill-wave"></i>Cash</div>
         <div class="pay-opt" id="pay_flooz" onclick="selectPay('flooz')"><i class="fas fa-mobile-alt"></i>Flooz</div>
         <div class="pay-opt" id="pay_wave" onclick="selectPay('wave')"><i class="fas fa-wave-square"></i>Wave</div>
+        <div class="pay-opt pay-opt-pi" id="pay_pi" onclick="selectPay('pi')"><span class="pi-icon">π</span>Pi Wallet</div>
       </div>
     </div>
     <div class="cart-summary">
@@ -1224,15 +1514,188 @@ window.renderCheckout = () => {
   `;
   window._selectedPay = 'cash';
   document.getElementById('checkoutFoot').innerHTML = `
-    <button class="btn-full btn-primary" onclick="submitOrder()"><i class="fas fa-check-circle" style="margin-right:6px"></i>Confirmer la commande</button>
+    <button class="btn-full btn-primary" onclick="window._selectedPay==='pi' ? payCartWithPi() : submitOrder()"><i class="fas fa-check-circle" style="margin-right:6px"></i>Confirmer la commande</button>
   `;
 };
 
 window.selectPay = mode => {
   window._selectedPay = mode;
-  ['cash','flooz','wave'].forEach(m => {
+  ['cash','flooz','wave','pi'].forEach(m => {
     document.getElementById('pay_'+m)?.classList.toggle('active', m===mode);
   });
+};
+
+// ══════════════════════════════════════════════════════════════════
+//  PI WALLET — PAIEMENT DIRECT via wallet.pinet.com
+//  L'acheteur voit le produit → clique "Payer en Pi"
+//  → redirigé vers Pi Wallet avec montant + mémo préremplis
+//  → revient, entre le hash de tx → commande enregistrée en DB
+// ══════════════════════════════════════════════════════════════════
+const PI_WALLET_ADDRESS = 'GCUUZTOUNR2BCFYQMLS4NE7JDYOLJDYY2OYSNYW2EA26XXGHOSWEAYR7';
+const PI_USERNAME       = 'ALBANeloh';   // ton @username Pi
+const PI_RATE_XOF       = 3500;          // 1 Pi ≈ 3500 XOF — à ajuster
+
+function xofToPi(xof) {
+  return Math.max(0.0001, xof / PI_RATE_XOF).toFixed(4);
+}
+
+function genOrderId() {
+  return 'PI-' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2,5).toUpperCase();
+}
+
+// Ouvre directement Pi Wallet pour payer un article depuis la fiche / la carte
+window.buyNowWithPi = (productId, qty) => {
+  qty = parseInt(qty) || 1;
+  const p = S.products.find(x => String(x.id) === String(productId));
+  if (!p) { showToast('⚠️ Article introuvable'); return; }
+
+  const total   = p.salePrice * qty;
+  const piAmt   = xofToPi(total);
+  const orderId = genOrderId();
+
+  // Sauvegarder en localStorage pour récupérer après retour
+  window._pendingPiOrder = {
+    productId, qty, total, piAmt, orderId,
+    items: [{ articleId: String(p.id), name: p.name, qty, prixV: p.salePrice, total }],
+    productName: p.name,
+  };
+  localStorage.setItem('aet_pending_pi', JSON.stringify(window._pendingPiOrder));
+
+  // Ouvrir le drawer de confirmation Pi (QR + lien direct)
+  openPiCheckoutDrawer(p, qty, total, piAmt, orderId);
+};
+
+// Payer le panier entier en Pi
+window.payCartWithPi = () => {
+  if (!S.cart.length) { showToast('⚠️ Panier vide'); return; }
+  const total   = S.cart.reduce((s,i) => s + i.qty * i.price, 0);
+  const piAmt   = xofToPi(total);
+  const orderId = genOrderId();
+  const items   = S.cart.map(i => ({ articleId: String(i.id), name: i.name, qty: i.qty, prixV: i.price, total: i.qty * i.price }));
+
+  window._pendingPiOrder = { total, piAmt, orderId, items, productName: `Panier (${S.cart.length} article${S.cart.length>1?'s':''})` };
+  localStorage.setItem('aet_pending_pi', JSON.stringify(window._pendingPiOrder));
+
+  const fakeProduct = { name: window._pendingPiOrder.productName, salePrice: total };
+  openPiCheckoutDrawer(fakeProduct, 1, total, piAmt, orderId);
+};
+
+function openPiCheckoutDrawer(p, qty, total, piAmt, orderId) {
+  // URL directe vers Pi Wallet avec paramètres préremplis
+  const piDeepLink = `https://wallet.pinet.com/#pay?to=${PI_USERNAME}&amount=${piAmt}&memo=${orderId}`;
+  window._currentPiDeepLink = piDeepLink;
+
+  document.getElementById('piChk_productName').textContent = qty > 1 ? `${p.name} × ${qty}` : p.name;
+  document.getElementById('piChk_xof').textContent = money(total);
+  document.getElementById('piChk_amount').textContent = piAmt;
+  document.getElementById('piChk_orderId').textContent = orderId;
+  document.getElementById('piChk_username').textContent = '@' + PI_USERNAME;
+  document.getElementById('piChk_address').textContent = PI_WALLET_ADDRESS;
+  document.getElementById('piChk_txRef').value = '';
+
+  // QR Code
+  const qrDiv = document.getElementById('piChk_qr');
+  qrDiv.innerHTML = '';
+  if (window.QRCode) {
+    new QRCode(qrDiv, {
+      text: piDeepLink,
+      width: 200, height: 200,
+      colorDark: '#5b21b6', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M,
+    });
+  }
+
+  closeAllDrawers();
+  document.getElementById('piCheckoutDrawer').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+  S.activeDrawers = ['piCheckoutDrawer'];
+}
+
+// Bouton "Ouvrir Pi Wallet" — redirige directement
+window.openPiWalletDirect = () => {
+  const link = window._currentPiDeepLink;
+  if (!link) return;
+  window.open(link, '_blank');
+  // Après 3s, afficher le champ de hash
+  setTimeout(() => {
+    const hint = document.getElementById('piChk_afterPayHint');
+    if (hint) { hint.style.display = 'block'; }
+  }, 3000);
+};
+
+window.copyPiAddress = () => {
+  navigator.clipboard.writeText(PI_WALLET_ADDRESS).then(() => showToast('✅ Adresse Pi copiée !'));
+};
+
+// Confirmation après paiement — enregistre la commande
+window.confirmPiTx = async () => {
+  const txRef = document.getElementById('piChk_txRef').value.trim();
+  if (!txRef) { showToast('⚠️ Collez le Hash de transaction Pi'); return; }
+
+  const pending = window._pendingPiOrder || JSON.parse(localStorage.getItem('aet_pending_pi') || 'null');
+  if (!pending) { showToast('⚠️ Données de commande introuvables'); return; }
+
+  const tid = tenantId || '';
+  if (!tid) { showToast('⚠️ Boutique non identifiée'); return; }
+
+  const order = {
+    id: pending.orderId,
+    tenantId: tid,
+    shopId: storeId || '',
+    customer: { name: S.user?.name || 'Client Pi', phone: S.user?.phone || '', city: '', note: '' },
+    items: pending.items,
+    subtotal: pending.total,
+    grandTotal: pending.total,
+    paymentMode: 'pi_wallet',
+    piTxRef: txRef,
+    piAmount: pending.piAmt,
+    piAddress: PI_WALLET_ADDRESS,
+    piUsername: PI_USERNAME,
+    status: 'pending_pi_verification',
+    source: 'storefront_direct',
+    createdAtMs: Date.now(),
+  };
+
+  let saved = false;
+  try {
+    await runTransaction(db, async tx => {
+      const ref = doc(db, 'commerce_data', tid);
+      const snap = await tx.get(ref);
+      const data = snap.exists() ? (snap.data() || {}) : {};
+      const pending2 = Array.isArray(data.pendingOrders) ? [...data.pendingOrders] : [];
+      pending2.push(order);
+      tx.set(ref, { pendingOrders: pending2, updatedAt: serverTimestamp() }, { merge: true });
+    });
+    saved = true;
+  } catch(e) {
+    try {
+      const ref = doc(db, 'commerce_data', tid);
+      const snap = await getDoc(ref);
+      const data = snap.exists() ? (snap.data() || {}) : {};
+      const p2 = Array.isArray(data.pendingOrders) ? [...data.pendingOrders] : [];
+      p2.push(order);
+      await setDoc(ref, { pendingOrders: p2, updatedAt: serverTimestamp() }, { merge: true });
+      saved = true;
+    } catch(e2) { console.warn(e2); }
+  }
+  try {
+    await addDoc(collection(db, 'public_orders'), { ...order, createdAt: serverTimestamp() });
+    saved = true;
+  } catch(e) { console.warn(e); }
+
+  if (!saved) { showToast('⚠️ Erreur réseau. Réessayez.'); return; }
+
+  S.orders.unshift(order);
+  localStorage.setItem('aet_orders', JSON.stringify(S.orders.slice(0, 20)));
+  localStorage.removeItem('aet_pending_pi');
+  window._pendingPiOrder = null;
+
+  // Vider le panier si paiement panier
+  if (pending.items && pending.items.length > 1) { S.cart = []; renderCart(); }
+
+  closeAllDrawers();
+  showToast(`✅ Commande ${pending.orderId} reçue ! Vérification en cours.`);
+  document.getElementById('accOrders').textContent = S.orders.length;
 };
 
 window.submitOrder = async () => {

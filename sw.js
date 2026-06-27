@@ -1,18 +1,32 @@
-const CACHE_NAME = 'aet-monbudget-v10';
-const OFFLINE_ASSETS = [
+const CACHE_NAME = 'aet-monbudget-v12-final';
+const CORE_ASSETS = [
   './',
   './index.html',
+  './sw.js',
+  './assets/js/aet-commerce-pro.js'
+];
+const OPTIONAL_ASSETS = [
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
   './assets/css/aet-enhancements.css',
   './assets/js/aet-enhancements.js',
-  './assets/js/aet-commerce-pro.js',
   './assets/js/aet-ai-chat.js'
 ];
 
+async function cacheOptional(cache, assets) {
+  await Promise.allSettled(assets.map(async (asset) => {
+    try { await cache.add(asset); } catch (_) {}
+  }));
+}
+
 self.addEventListener('install', event => {
-  event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(OFFLINE_ASSETS)).then(() => self.skipWaiting()));
+  event.waitUntil((async () => {
+    const cache = await caches.open(CACHE_NAME);
+    await cache.addAll(CORE_ASSETS);
+    await cacheOptional(cache, OPTIONAL_ASSETS);
+    await self.skipWaiting();
+  })());
 });
 
 self.addEventListener('activate', event => {
@@ -23,9 +37,6 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
-  // Stratégie réseau-d'abord pour index.html : on veut toujours la
-  // dernière version de la page principale, avec repli sur le cache
-  // hors-ligne. Les autres fichiers restent cache-first (rapide).
   const url = new URL(event.request.url);
   const isHTML = event.request.mode === 'navigate' || url.pathname.endsWith('/index.html') || url.pathname.endsWith('/');
   if (isHTML) {

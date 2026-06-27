@@ -8141,6 +8141,25 @@ if ('serviceWorker' in navigator) {
     <p data-i18n="cm_subtitle">Gérez vos boutiques, stocks, achats et ventes</p>
   </div>
 
+  <!-- ═══ Accès rapide Commerce Pro ═══ -->
+  <div id="cmProLinks" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px">
+    <button onclick="cmOpenBoutique()" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid #d1fae5;border-radius:16px;cursor:pointer;box-shadow:0 4px 12px rgba(16,185,129,.08)">
+      <i class="fas fa-store" style="font-size:20px;color:#10b981"></i>
+      <span style="font-size:12px;font-weight:700;color:#0f172a">Boutique publique</span>
+      <span style="font-size:10px;color:#64748b">Temps réel</span>
+    </button>
+    <button onclick="cmOpenEmploye()" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid #dbeafe;border-radius:16px;cursor:pointer;box-shadow:0 4px 12px rgba(37,99,235,.08)">
+      <i class="fas fa-cash-register" style="font-size:20px;color:#2563eb"></i>
+      <span style="font-size:12px;font-weight:700;color:#0f172a">Caisse POS</span>
+      <span style="font-size:10px;color:#64748b">Espace employé</span>
+    </button>
+    <button onclick="cmCopyBoutiqueLink()" style="display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 10px;background:#fff;border:1px solid #fef3c7;border-radius:16px;cursor:pointer;box-shadow:0 4px 12px rgba(245,158,11,.08)">
+      <i class="fas fa-link" style="font-size:20px;color:#f59e0b"></i>
+      <span style="font-size:12px;font-weight:700;color:#0f172a">Lien boutique</span>
+      <span style="font-size:10px;color:#64748b">Copier & partager</span>
+    </button>
+  </div>
+
   <!-- ═══ Présentation des fonctionnalités (visible avant la 1ère boutique) ═══ -->
   <div id="cmFeaturesIntro" style="margin-bottom:18px">
     <div class="cm-feat-grid">
@@ -10505,6 +10524,42 @@ window.CM_DEBUG = CM;
 })();
 </script>
 <!-- ═══════════════ FIN MODULE COMMERCE ═══════════════ -->
+
+<!-- ═══ Liens Commerce Pro ═══ -->
+<script>
+(function(){
+  function getCmUid() {
+    try { return window.__AET_AUTH__?.currentUser?.uid || ''; } catch(e){ return ''; }
+  }
+  function getCmShop() {
+    try { return document.getElementById('cmShopSelect')?.value || ''; } catch(e){ return ''; }
+  }
+  window.cmOpenBoutique = function() {
+    const uid  = getCmUid();
+    const shop = getCmShop();
+    const url  = 'boutique.html' + (uid ? '?tenant=' + encodeURIComponent(uid) + (shop ? '&store=' + encodeURIComponent(shop) : '') : '');
+    window.open(url, '_blank');
+  };
+  window.cmOpenEmploye = function() {
+    const uid  = getCmUid();
+    const shop = getCmShop();
+    const url  = 'employe.html' + (uid ? '?tenant=' + encodeURIComponent(uid) + (shop ? '&store=' + encodeURIComponent(shop) : '') : '');
+    window.open(url, '_blank');
+  };
+  window.cmCopyBoutiqueLink = function() {
+    const uid  = getCmUid();
+    const shop = getCmShop();
+    if (!uid) { if(window.showToast) showToast('Connectez-vous d\'abord', 'error'); return; }
+    const base = location.origin + location.pathname.replace('index.html','');
+    const url  = base + 'boutique.html?tenant=' + encodeURIComponent(uid) + (shop ? '&store=' + encodeURIComponent(shop) : '');
+    navigator.clipboard.writeText(url).then(() => {
+      if(window.showToast) showToast('Lien boutique copié ! 🔗');
+    }).catch(() => {
+      prompt('Copiez ce lien :', url);
+    });
+  };
+})();
+</script>
 
 <!-- ═══════════════ COMMERCE PRO — Améliorations ═══════════════ -->
 <script src="assets/js/aet-commerce-pro.js"></script>

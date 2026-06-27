@@ -1,0 +1,19 @@
+LOT FINAL DE DEPLOIEMENT — AET
+
+Fichiers ajoutés/corrigés :
+- manifest.json
+- manifest-employe.json
+- firebase-messaging-sw.js à la racine
+- assets/css/aet-enhancements.css
+- assets/js/aet-enhancements.js
+- assets/js/aet-ai-chat.js (stub de sécurité, car le fichier source était absent)
+- icon-192.png et icon-512.png générés pour le déploiement
+- employe.html enrichi avec meta PWA et icônes
+- versions de cache incrémentées dans sw.js et sw-employe.js
+
+Validation des références locales :
+- OK : aucune référence locale manquante détectée dans index.html, employe.html, boutique.html
+
+Attention :
+- Les notifications push dans aet-enhancements.js nécessitent encore une vraie clé VAPID Firebase (le fichier fourni contient un placeholder).
+- Le fichier assets/js/aet-ai-chat.js est un stub pour éviter les erreurs de chargement; si tu as la vraie implémentation, il suffira de remplacer ce fichier.

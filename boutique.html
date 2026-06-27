@@ -57,7 +57,7 @@
   <div class="hero">
     <div class="hero-box">
       <span class="badge"><span class="realtime-dot"></span>temps réel</span>
-      <h1 id="shopTitle">Chargement… (v-diag2)</h1>
+      <h1 id="shopTitle">Chargement…</h1>
       <p id="shopSubtitle">Boutique publique synchronisée en temps réel.</p>
       <div class="hero-stat">
         <div class="stat-mini"><strong id="statProducts">0</strong>articles</div>
@@ -168,16 +168,11 @@ function startRealtimeWatch() {
   const ref = doc(db, 'commerce_data', tenantId);
   if (state.unsub) state.unsub();
   state.unsub = onSnapshot(ref, snap => {
-    if (!snap.exists()) {
-      document.getElementById('productsGrid').innerHTML =
-        '<div class="empty" style="grid-column:1/-1"><i class="fas fa-triangle-exclamation"></i><div>DIAGNOSTIC: document commerce_data introuvable pour tenant='+esc(tenantId)+'</div></div>';
-      return;
-    }
+    if (!snap.exists()) { showNoProducts(); return; }
     applyCommerceData(snap.data() || {});
   }, err => {
     console.error('[Boutique]', err);
-    document.getElementById('productsGrid').innerHTML =
-      '<div class="empty" style="grid-column:1/-1"><i class="fas fa-triangle-exclamation"></i><div>DIAGNOSTIC ERREUR: '+esc(err.code||'')+' — '+esc(err.message||String(err))+'</div></div>';
+    showNoProducts();
   });
 }
 

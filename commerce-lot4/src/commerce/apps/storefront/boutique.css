@@ -1,0 +1,3 @@
+@import '../../shared-ui/styles/commerce-theme.css';
+@import '../../shared-ui/styles/commerce-components.css';
+body{padding:18px}.catalog-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}.toolbar-public{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:18px}

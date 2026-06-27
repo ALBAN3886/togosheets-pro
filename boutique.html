@@ -1368,7 +1368,79 @@ function chatDocRef(type) {
   return doc(db, 'chats_flat', docId);
 }
 
-window.loadMessages = () => {};
+
+const CHAT_TYPES = {
+  support:{ icon:'fa-headset', title:'Support ALBAN STORE', subtitle:'Assistance, suivi et service client', avatarBg:'linear-gradient(135deg,var(--orange),var(--orange2))' },
+  vendeur:{ icon:'fa-user-tie', title:'Vendeur', subtitle:'Questions sur les produits', avatarBg:'linear-gradient(135deg,#7c3aed,#a78bfa)' }
+};
+let chatSummaryUnsubs = [];
+
+function lastChatMessage(data) {
+  const list = Array.isArray(data?.messages) ? data.messages : [];
+  return list.length ? list[list.length - 1] : null;
+}
+function chatMeta(type) {
+  const m = CHAT_TYPES[type] || CHAT_TYPES.support;
+  const shopName = (document.getElementById('shopTitle')?.textContent || '').trim();
+  return {
+    ...m,
+    title: type === 'support' && shopName ? ('Support ' + shopName) : m.title
+  };
+}
+function renderMessagesList() {
+  const body = document.getElementById('msgBody');
+  if (!body) return;
+  const items = ['support','vendeur'].map(type => {
+    const meta = chatMeta(type);
+    const data = (S.chatDocs && S.chatDocs[type]) || null;
+    const last = lastChatMessage(data);
+    const preview = last?.text || meta.subtitle;
+    const stamp = last?.ts ? timeAgo(last.ts) : 'Disponible';
+    const unread = !!data?.unreadClient;
+    return `
+      <div class="chat-list-item" onclick="openChatWindow('${type}')">
+        <div class="chat-avatar" style="background:${meta.avatarBg}">
+          <i class="fas ${meta.icon}"></i>
+          <span class="online-dot"></span>
+        </div>
+        <div class="chat-info">
+          <h4>${esc(meta.title)}</h4>
+          <p>${esc(preview)}</p>
+        </div>
+        <div class="chat-meta">
+          <time>${esc(stamp)}</time>
+          ${unread ? '<span class="unread-badge">1</span>' : ''}
+        </div>
+      </div>`;
+  }).join('');
+  body.innerHTML = items + `<div style="text-align:center;margin-top:18px"><button class="btn-full btn-primary" onclick="openChatWindow('support')" style="max-width:280px;margin:0 auto"><i class="fas fa-comment-medical" style="margin-right:6px"></i>Démarrer une discussion</button></div>`;
+  const count = ['support','vendeur'].filter(type => !!(S.chatDocs && S.chatDocs[type] && S.chatDocs[type].unreadClient)).length;
+  const badge = document.getElementById('msgBadge');
+  if (badge) {
+    badge.style.display = count ? 'inline-flex' : 'none';
+    badge.textContent = count > 9 ? '9+' : String(count || '');
+  }
+}
+function ensureChatSummaryWatch() {
+  if (S._chatSummaryStarted || !tenantId) { renderMessagesList(); return; }
+  S.chatDocs = S.chatDocs || {};
+  chatSummaryUnsubs.forEach(fn => { try { fn(); } catch(_){} });
+  chatSummaryUnsubs = [];
+  ['support','vendeur'].forEach(type => {
+    const unsub = onSnapshot(chatDocRef(type), snap => {
+      S.chatDocs[type] = snap.exists() ? (snap.data() || {}) : null;
+      renderMessagesList();
+    }, () => renderMessagesList());
+    chatSummaryUnsubs.push(unsub);
+  });
+  S._chatSummaryStarted = true;
+  renderMessagesList();
+}
+window.loadMessages = () => {
+  if (!tenantId) return;
+  ensureChatSummaryWatch();
+};
+
 
 window.openChatWindow = type => {
   currentChatType = type;
@@ -1387,6 +1459,7 @@ function startChatListener(type) {
     if (!snap.exists()) return;
     const messages = Array.isArray(snap.data().messages) ? snap.data().messages : [];
     if (!messages.length) return;
+    if (snap.data().unreadClient) setDoc(ref, { unreadClient: false }, { merge: true }).catch(() => {});
     msgs.innerHTML = messages.map(m => {
       const isClient = m.role === 'client';
       const t = m.ts ? new Date(m.ts).toLocaleTimeString('fr', {hour:'2-digit', minute:'2-digit'}) : '';
@@ -1433,6 +1506,7 @@ window.sendChatMsg = async () => {
       clientPhone: S.user?.phone || '',
       updatedAt: now,
       unreadEmployee: true,
+      unreadClient: false,
       messages: purged,
     });
   } catch(e) {
@@ -1532,6 +1606,127 @@ document.getElementById('accOrders').textContent = S.orders.length;
 document.getElementById('accFavs').textContent = S.favorites.length;
 startRealtimeWatch();
 </script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+
+<!-- AET BOUTIQUE MODERN STYLE PATCH -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<meta name="theme-color" content="#ea580c">
+<style id="aet-boutique-modern-style">
+:root{--safe-bottom:max(12px, env(safe-area-inset-bottom));--dock-h:92px;--vvh:100vh}
+body{
+  font-family:'Inter',Poppins,sans-serif !important;
+  min-height:var(--vvh);
+  background:linear-gradient(180deg,#fff7ed 0%,#f8fafc 18%,#f8fafc 100%) !important;
+}
+.header{background:rgba(255,255,255,.92) !important;backdrop-filter:blur(18px);padding:0 16px !important}
+.header-top{padding:12px 0 8px !important}
+.wrap{max-width:1100px !important;padding:0 14px calc(var(--dock-h) + 32px + env(safe-area-inset-bottom)) !important}
+.search-shell{border-width:1px !important;border-color:rgba(251,146,60,.28) !important;border-radius:20px !important;padding:10px 12px !important;box-shadow:0 16px 36px rgba(251,146,60,.12) !important}
+.hero-banner,.promo-card,.card,.menu-section,.order-card{box-shadow:0 16px 36px rgba(15,23,42,.07) !important}
+.hero-banner{border-radius:24px !important;padding:18px !important}
+.grid{gap:12px !important}
+.card{border-radius:20px !important}
+.card-title{font-size:13.5px !important}
+.card-price{font-size:22px !important}
+.bottom-nav{
+  left:50% !important;
+  right:auto !important;
+  width:min(96%,760px) !important;
+  transform:translateX(-50%);
+  bottom:calc(12px + env(safe-area-inset-bottom)) !important;
+  border-radius:26px !important;
+  padding:8px !important;
+  background:rgba(255,255,255,.92) !important;
+  backdrop-filter:blur(18px);
+  border:1px solid rgba(226,232,240,.95);
+  box-shadow:0 22px 48px rgba(15,23,42,.16) !important;
+  gap:6px !important;
+}
+.bottom-nav button{
+  min-height:64px !important;
+  border-radius:18px !important;
+  padding:8px 4px !important;
+  gap:5px !important;
+}
+.bottom-nav button span{font-size:10.5px !important;font-weight:700 !important}
+.bottom-nav button i{font-size:18px !important}
+.bottom-nav button.active{
+  background:linear-gradient(135deg,var(--orange),var(--orange2)) !important;
+  color:#fff !important;
+  box-shadow:0 14px 24px rgba(249,115,22,.26);
+}
+.bottom-nav button.active .nav-badge{background:#fff !important;color:var(--orange) !important}
+.bottom-nav .nav-badge{top:8px !important;right:calc(50% - 18px) !important;min-width:19px}
+.drawer{
+  left:50% !important;
+  right:auto !important;
+  width:min(100%,760px) !important;
+  transform:translateX(-50%);
+  bottom:calc(-100% - 40px) !important;
+  max-height:calc(var(--vvh) - 8px) !important;
+  border-radius:30px 30px 0 0 !important;
+}
+.drawer.open{bottom:0 !important}
+.drawer-head{padding:10px 16px 12px !important}
+.drawer-body{padding:16px !important}
+.drawer-foot{padding:12px 16px calc(12px + env(safe-area-inset-bottom)) !important}
+.chat-list-item{padding:14px 4px !important}
+.chat-window,.chat-msgs{min-height:0}
+.chat-msgs{padding-bottom:14px !important}
+.chat-input-row{position:sticky;bottom:0;background:#fff;padding-top:10px;padding-bottom:calc(10px + env(safe-area-inset-bottom));z-index:2}
+.chat-input{border-radius:16px !important;min-height:46px}
+.chat-send{width:46px !important;height:46px !important;border-radius:14px !important;box-shadow:0 12px 22px rgba(249,115,22,.24)}
+.toast{bottom:calc(118px + env(safe-area-inset-bottom)) !important;border-radius:14px !important;box-shadow:0 18px 36px rgba(15,23,42,.18)}
+body.drawer-active .bottom-nav{opacity:.25;pointer-events:none;transform:translateX(-50%) translateY(8px)}
+body.keyboard-open .bottom-nav{opacity:0;pointer-events:none;transform:translateX(-50%) translateY(120px)}
+body.keyboard-open .drawer{max-height:calc(var(--vvh) - 2px) !important}
+@media (min-width:900px){
+  .grid{grid-template-columns:repeat(3,minmax(0,1fr)) !important}
+}
+@media (max-width:640px){
+  .wrap{padding:0 12px calc(var(--dock-h) + 28px + env(safe-area-inset-bottom)) !important}
+  .bottom-nav button span{font-size:10px !important}
+}
+</style>
+<script id="aet-boutique-modern-ui">
+(function(){
+  function syncViewportMetrics(){
+    var vv = window.visualViewport;
+    var height = vv ? vv.height : window.innerHeight;
+    document.documentElement.style.setProperty('--vvh', height + 'px');
+    var keyboardOpen = vv ? (window.innerHeight - vv.height) > 120 : false;
+    document.body.classList.toggle('keyboard-open', keyboardOpen);
+  }
+  function syncDrawerState(){
+    var drawers = document.querySelectorAll('.drawer.open').length;
+    document.body.classList.toggle('drawer-active', drawers > 0);
+  }
+  var _openDrawer = window.openDrawer;
+  var _closeDrawer = window.closeDrawer;
+  var _closeAllDrawers = window.closeAllDrawers;
+  if (typeof _openDrawer === 'function') {
+    window.openDrawer = function(id){ var r = _openDrawer(id); syncDrawerState(); return r; };
+  }
+  if (typeof _closeDrawer === 'function') {
+    window.closeDrawer = function(id){ var r = _closeDrawer(id); syncDrawerState(); return r; };
+  }
+  if (typeof _closeAllDrawers === 'function') {
+    window.closeAllDrawers = function(){ var r = _closeAllDrawers(); syncDrawerState(); return r; };
+  }
+  function bootMessaging(){ if (typeof window.loadMessages === 'function') window.loadMessages(); }
+  ['resize','orientationchange'].forEach(function(evt){ window.addEventListener(evt, syncViewportMetrics, {passive:true}); });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', syncViewportMetrics);
+    window.visualViewport.addEventListener('scroll', syncViewportMetrics);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function(){ syncViewportMetrics(); syncDrawerState(); bootMessaging(); });
+  } else {
+    syncViewportMetrics(); syncDrawerState(); bootMessaging();
+  }
+})();
+</script>
+
 </body>
 </html>

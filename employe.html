@@ -1677,12 +1677,18 @@ window.setOrdersFilter = function(f) {
 /* ═══════════════════════════════════════════════════════════════
    PAGE : TICKETS / RECEIPTS
 ═══════════════════════════════════════════════════════════════ */
+
+function findSaleBySelection(sel) {
+  return state.sales.find(s => s.id === sel || s.receiptNumber === sel) || state.sales[0];
+}
+
+
 function renderReceipts() {
   if (!state.sales.length) {
     setMain('<div class="card"><div class="card-body"><div class="empty-state"><i class="fas fa-receipt"></i><h3>Aucun ticket</h3><p>Les ventes encaissées apparaîtront ici.</p></div></div></div>');
     return;
   }
-  const selected = state.sales.find(s => s.id === state.selectedSaleId) || state.sales[0];
+  const selected = findSaleBySelection(state.selectedSaleId);
   const mobile = isMobileView();
   const list = state.sales.map(s => {
     const date = shortDateTime(s.createdAtMs || 0);
@@ -2247,7 +2253,7 @@ window.doApproveOrder = async function(orderId) {
 };
 
 window.doPrint = function() {
-  const sale = state.sales.find(s => s.id === state.selectedSaleId) || state.sales[0];
+  const sale = findSaleBySelection(state.selectedSaleId);
   if (!sale) return;
   const items = (sale.items||[]).map(normalizeSaleItem).map(i =>
     `<tr><td>${esc(i.name||'Article')}</td><td>${esc(String(i.qty))}</td><td>${esc(money(getItemUnitPrice(i)))}</td><td><strong>${esc(money(i.total||((i.qty||0)*getItemUnitPrice(i))))}</strong></td></tr>`
@@ -2322,6 +2328,46 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+
+<!-- AET EMPLOYEE MODERN STYLE PATCH -->
+<style id="aet-employee-modern-style">
+:root{--safe-bottom:max(12px, env(safe-area-inset-bottom));--vvh:100vh}
+body{min-height:var(--vvh);background:linear-gradient(180deg,#f8fafc 0%,#eef6ff 100%) !important}
+.content{padding-bottom:calc(100px + env(safe-area-inset-bottom)) !important}
+.card,.receipt-item,.table-wrap{box-shadow:0 14px 30px rgba(15,23,42,.06)}
+.table-wrap{scrollbar-width:thin}
+.mobile-nav{
+  padding:10px 8px calc(10px + env(safe-area-inset-bottom)) !important;
+  background:rgba(255,255,255,.92) !important;
+  backdrop-filter:blur(18px);
+  border-top:1px solid rgba(226,232,240,.95) !important;
+  box-shadow:0 -14px 34px rgba(15,23,42,.08);
+}
+.mobile-nav button{min-height:62px !important;border-radius:16px !important;padding:8px 4px !important}
+.mobile-nav button.active{box-shadow:0 14px 24px rgba(15,118,110,.22)}
+.receipt-list{padding-bottom:4px}
+body.keyboard-open .mobile-nav{transform:translateY(120%);opacity:0;pointer-events:none}
+@media (max-width:900px){
+  .topbar{background:rgba(255,255,255,.92) !important;backdrop-filter:blur(18px)}
+}
+</style>
+<script id="aet-employee-modern-ui">
+(function(){
+  function syncViewport(){
+    var vv = window.visualViewport;
+    var h = vv ? vv.height : window.innerHeight;
+    document.documentElement.style.setProperty('--vvh', h + 'px');
+    var keyboardOpen = vv ? (window.innerHeight - vv.height) > 120 : false;
+    document.body.classList.toggle('keyboard-open', keyboardOpen);
+  }
+  ['resize','orientationchange'].forEach(function(evt){ window.addEventListener(evt, syncViewport, {passive:true}); });
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', syncViewport);
+    window.visualViewport.addEventListener('scroll', syncViewport);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', syncViewport); else syncViewport();
+})();
+</script>
+
 </body>
 </html>

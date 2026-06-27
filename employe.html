@@ -128,8 +128,7 @@ import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebase
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
   from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {
-  getFirestore, collection, query, where, orderBy, limit,
-  getDocs, addDoc, updateDoc, doc, runTransaction, serverTimestamp, increment
+  getFirestore, doc, onSnapshot, runTransaction, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 // ── Firebase ─────────────────────────────────────────────────────────────────
@@ -151,6 +150,13 @@ const tenantId = qs.get('tenant') || qs.get('uid') || '';
 const storeId  = qs.get('store')  || qs.get('shop') || '';
 
 // ── État ─────────────────────────────────────────────────────────────────────
+// Source de vérité unique : commerce_data/{tenantId} (même document que lit/écrit
+// l'admin dans index.html). cmData garde la forme brute {shops,articles,mouvements,
+// pendingOrders}; les autres champs d'état (products, inventory, …) en sont dérivés
+// pour ne pas casser le reste du rendu de cette page.
+let cmData = { shops: [], articles: [], mouvements: [], pendingOrders: [], cashSessions: [] };
+let cmUnsub = null;
+
 let state = {
   user: null, context: null,
   products: [], inventory: [], orders: [], sales: [], cashSessions: [],
@@ -163,6 +169,7 @@ const money = n => new Intl.NumberFormat('fr-FR',{style:'currency',currency:'XOF
 const esc   = v => String(v==null?'':v).replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[s]||s);
 const html  = (id, c) => { const el=document.getElementById(id); if(el) el.innerHTML=c; };
 const setMain = c => html('cmMain', c);
+const empUID = () => 'emp_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 
 function showToast(msg, type='info') {
   const el = document.createElement('div');
@@ -189,30 +196,78 @@ window.navigate = function(page) {
   renderPage();
 };
 
-// ── Collections Firestore ────────────────────────────────────────────────────
-const col = (name) => collection(db, 'tenants', tenantId || state.user?.uid || 'default', name);
+// ── Référence document commerce_data ────────────────────────────────────────
+const cdRef = () => doc(db, 'commerce_data', tenantId || state.user?.uid || 'default');
 
-// ── Chargement données ───────────────────────────────────────────────────────
-async function loadData() {
-  const tid = tenantId || state.user?.uid || '';
-  if (!tid) return;
+// Reconstruit state.products / inventory / orders / sales / cashSessions à
+// partir du document brut commerce_data, filtré sur la boutique courante.
+function deriveStateFromCmData() {
   const sid = storeId || state.context?.storeIds?.[0] || '';
+  const arts = Array.isArray(cmData.articles) ? cmData.articles : [];
+  const artsForShop = sid ? arts.filter(a => String(a.shopId) === String(sid)) : arts;
 
-  try {
-    const [pSnap, iSnap, oSnap, sSnap, csSnap] = await Promise.all([
-      getDocs(query(col('products'), where('isActive','==',true), ...(sid?[where('storeId','==',sid)]:[])) ),
-      getDocs(query(col('inventory'), ...(sid?[where('storeId','==',sid)]:[])) ),
-      getDocs(query(col('orders'), where('status','==','pending'), ...(sid?[where('storeId','==',sid)]:[])) ),
-      getDocs(query(col('sales'), orderBy('createdAt','desc'), limit(50)) ),
-      getDocs(query(col('cashSessions'), ...(sid?[where('storeId','==',sid)]:[])) ),
-    ]);
-    state.products     = pSnap.docs.map(d=>({id:d.id,...d.data()}));
-    state.inventory    = iSnap.docs.map(d=>({id:d.id,...d.data()}));
-    state.orders       = oSnap.docs.map(d=>({id:d.id,...d.data()}));
-    state.sales        = sSnap.docs.map(d=>({id:d.id,...d.data()}));
-    state.cashSessions = csSnap.docs.map(d=>({id:d.id,...d.data()}));
-    if (!state.selectedSaleId && state.sales[0]) state.selectedSaleId = state.sales[0].id;
-  } catch(e) { console.error('[Employé]', e); }
+  state.products = artsForShop.map(a => ({
+    id: a.id,
+    name: a.name || a.nom || 'Article',
+    salePrice: Number(a.prixV ?? a.prixVente ?? a.prix ?? 0),
+    promoPrice: null,
+    stock: Number(a.stock || 0),
+  }));
+
+  state.inventory = artsForShop.map(a => ({
+    productId: a.id,
+    storeId: a.shopId,
+    availableQuantity: Number(a.stock || 0),
+    reorderLevel: Number(a.seuil ?? 5),
+  }));
+
+  const pending = Array.isArray(cmData.pendingOrders) ? cmData.pendingOrders : [];
+  state.orders = pending
+    .filter(o => o.status === 'pending' && (!sid || String(o.shopId) === String(sid)))
+    .map(o => ({ ...o }));
+
+  const mvts = Array.isArray(cmData.mouvements) ? cmData.mouvements : [];
+  state.sales = mvts
+    .filter(m => m.type === 'sale' && (!sid || String(m.shopId) === String(sid)))
+    .sort((a,b) => (b.createdAtMs||0) - (a.createdAtMs||0))
+    .slice(0, 50)
+    .map(m => ({
+      id: m.id,
+      receiptNumber: m.receiptNumber || m.id,
+      paymentMethod: m.paymentMethod || 'cash',
+      sellerName: m.sellerName || '',
+      items: m.items || [],
+      grandTotal: m.total || m.grandTotal || 0,
+    }));
+
+  state.cashSessions = (Array.isArray(cmData.cashSessions) ? cmData.cashSessions : [])
+    .filter(s => !sid || String(s.storeId) === String(sid));
+
+  if (!state.selectedSaleId && state.sales[0]) state.selectedSaleId = state.sales[0].id;
+}
+
+// ── Chargement données (abonnement temps réel) ──────────────────────────────
+function loadData() {
+  return new Promise((resolve) => {
+    const tid = tenantId || state.user?.uid || '';
+    if (!tid) { resolve(); return; }
+    if (cmUnsub) cmUnsub();
+    let first = true;
+    cmUnsub = onSnapshot(cdRef(), snap => {
+      cmData = snap.exists() ? (snap.data() || {}) : {};
+      cmData.articles      = Array.isArray(cmData.articles) ? cmData.articles : [];
+      cmData.shops         = Array.isArray(cmData.shops) ? cmData.shops : [];
+      cmData.mouvements    = Array.isArray(cmData.mouvements) ? cmData.mouvements : [];
+      cmData.pendingOrders = Array.isArray(cmData.pendingOrders) ? cmData.pendingOrders : [];
+      cmData.cashSessions  = Array.isArray(cmData.cashSessions) ? cmData.cashSessions : [];
+      deriveStateFromCmData();
+      if (first) { first = false; resolve(); }
+      else if (state.user) renderPage(); // rafraîchir l'écran courant en temps réel
+    }, err => {
+      console.error('[Employé]', err);
+      resolve();
+    });
+  });
 }
 
 function activeSession() {
@@ -452,6 +507,7 @@ window.doSignIn = async function() {
 
 window.doSignOut = async function() {
   await signOut(auth);
+  if (cmUnsub) { cmUnsub(); cmUnsub = null; }
   state = { ...state, user: null, context: null, cart: [], products: [], inventory: [], orders: [], sales: [], cashSessions: [] };
   currentPage = 'login';
   navigate('login');
@@ -461,22 +517,35 @@ window.doOpenSession = async function() {
   const amount = Number(document.getElementById('openingAmount')?.value || 0);
   const sid    = storeId || state.context?.storeIds?.[0] || '';
   try {
-    await addDoc(col('cashSessions'), {
-      storeId: sid, status: 'open', openingAmount: amount,
-      employeeId: state.user?.uid, employeeName: state.user?.displayName||state.user?.email||'Opérateur',
-      openedAt: serverTimestamp(), createdAt: serverTimestamp(),
+    await runTransaction(db, async (tx) => {
+      const ref = cdRef();
+      const snap = await tx.get(ref);
+      const data = snap.exists() ? (snap.data() || {}) : {};
+      const sessions = Array.isArray(data.cashSessions) ? data.cashSessions : [];
+      sessions.push({
+        id: empUID(), storeId: sid, status: 'open', openingAmount: amount,
+        employeeId: state.user?.uid, employeeName: state.user?.displayName||state.user?.email||'Opérateur',
+        openedAtMs: Date.now(),
+      });
+      tx.set(ref, { cashSessions: sessions, updatedAt: serverTimestamp() }, { merge: true });
     });
-    await loadData(); showToast('Caisse ouverte ✅', 'success'); renderPage();
+    showToast('Caisse ouverte ✅', 'success');
   } catch(e) { showToast(e.message||'Erreur', 'error'); }
 };
 
 window.doCloseSession = async function(sessionId) {
   const closing = Number(document.getElementById('closingAmount')?.value || 0);
   try {
-    await updateDoc(doc(db,'tenants',tenantId||state.user?.uid,'cashSessions',sessionId), {
-      status: 'closed', closingAmount: closing, closedAt: serverTimestamp(),
+    await runTransaction(db, async (tx) => {
+      const ref = cdRef();
+      const snap = await tx.get(ref);
+      const data = snap.exists() ? (snap.data() || {}) : {};
+      const sessions = Array.isArray(data.cashSessions) ? data.cashSessions : [];
+      const idx = sessions.findIndex(s => s.id === sessionId);
+      if (idx >= 0) sessions[idx] = { ...sessions[idx], status: 'closed', closingAmount: closing, closedAtMs: Date.now() };
+      tx.set(ref, { cashSessions: sessions, updatedAt: serverTimestamp() }, { merge: true });
     });
-    await loadData(); showToast('Caisse clôturée', 'success'); renderPage();
+    showToast('Caisse clôturée', 'success');
   } catch(e) { showToast(e.message||'Erreur', 'error'); }
 };
 
@@ -488,66 +557,90 @@ window.doSale = async function() {
   const sid           = storeId || state.context?.storeIds?.[0] || '';
   const grandTotal    = state.cart.reduce((s,i) => s + i.qty*i.unitPrice, 0);
   const receiptNum    = 'AET-' + new Date().toISOString().slice(0,10).replace(/-/g,'') + '-' + String(Date.now()).slice(-4);
+  const saleItems     = state.cart.map(i => ({ ...i, total: i.qty*i.unitPrice }));
 
   try {
-    // Transaction atomique : créer la vente + décrémenter le stock
+    // Transaction atomique sur commerce_data : décrémente le stock des articles
+    // ET enregistre la vente comme mouvement, en une seule écriture cohérente.
     await runTransaction(db, async (tx) => {
-      const saleRef = doc(collection(db,'tenants',tenantId||state.user?.uid,'sales'));
-      tx.set(saleRef, {
-        storeId: sid,
+      const ref = cdRef();
+      const snap = await tx.get(ref);
+      const data = snap.exists() ? (snap.data() || {}) : {};
+      const articles   = Array.isArray(data.articles) ? data.articles : [];
+      const mouvements = Array.isArray(data.mouvements) ? data.mouvements : [];
+
+      for (const item of state.cart) {
+        const idx = articles.findIndex(a => String(a.id) === String(item.productId));
+        if (idx >= 0) {
+          const current = Number(articles[idx].stock || 0);
+          if (current < item.qty) {
+            throw new Error(`Stock insuffisant pour "${item.name}" (disponible: ${current})`);
+          }
+          articles[idx] = { ...articles[idx], stock: current - item.qty };
+        }
+      }
+
+      mouvements.push({
+        id: empUID(), type: 'sale', shopId: sid,
         cashSessionId: session.id,
         sellerEmployeeId: state.user?.uid,
         sellerName: state.user?.displayName || state.user?.email || 'Opérateur',
-        source: 'employee-pos',
-        paymentMethod,
-        items: state.cart.map(i => ({ ...i, total: i.qty*i.unitPrice })),
-        subtotal: grandTotal, grandTotal,
-        receiptNumber: receiptNum,
-        status: 'completed',
-        createdAt: serverTimestamp(),
+        source: 'employee-pos', paymentMethod,
+        items: saleItems, total: grandTotal, grandTotal,
+        receiptNumber: receiptNum, status: 'completed',
+        createdAtMs: Date.now(),
       });
-      // Décrémenter inventaire
-      for (const item of state.cart) {
-        const invQuery = await getDocs(query(col('inventory'),
-          where('productId','==',item.productId),
-          ...(sid?[where('storeId','==',sid)]:[])
-        ));
-        if (!invQuery.empty) {
-          tx.update(invQuery.docs[0].ref, { availableQuantity: increment(-item.qty) });
-        }
-      }
+
+      tx.set(ref, { articles, mouvements, updatedAt: serverTimestamp() }, { merge: true });
     });
     state.cart = [];
-    await loadData();
     showToast('Vente enregistrée ✅ · ' + receiptNum, 'success');
-    state.selectedSaleId = state.sales[0]?.id || '';
+    state.selectedSaleId = receiptNum;
     navigate('receipts');
   } catch(e) { showToast(e.message||'Erreur vente', 'error'); }
 };
 
 window.doApproveOrder = async function(orderId) {
-  const order   = state.orders.find(o => o.id === orderId);
+  const order = state.orders.find(o => o.id === orderId);
   if (!order) return;
-  const session = activeSession();
+  const sid = storeId || state.context?.storeIds?.[0] || '';
+  const receiptNum = 'AET-' + Date.now();
   try {
-    const saleRef = doc(collection(db,'tenants',tenantId||state.user?.uid,'sales'));
-    await addDoc(col('sales'), {
-      storeId: order.storeId || storeId,
-      originOrderId: orderId,
-      cashSessionId: session?.id || null,
-      sellerEmployeeId: state.user?.uid,
-      sellerName: state.user?.displayName || state.user?.email || 'Opérateur',
-      source: 'employee-pos',
-      paymentMethod: 'cash',
-      items: order.items || [],
-      subtotal: order.grandTotal||order.total||0,
-      grandTotal: order.grandTotal||order.total||0,
-      receiptNumber: 'AET-' + Date.now(),
-      status: 'completed',
-      createdAt: serverTimestamp(),
+    await runTransaction(db, async (tx) => {
+      const ref = cdRef();
+      const snap = await tx.get(ref);
+      const data = snap.exists() ? (snap.data() || {}) : {};
+      const articles   = Array.isArray(data.articles) ? data.articles : [];
+      const mouvements = Array.isArray(data.mouvements) ? data.mouvements : [];
+      const pending     = Array.isArray(data.pendingOrders) ? data.pendingOrders : [];
+
+      for (const item of (order.items || [])) {
+        const pid = item.articleId || item.productId;
+        const idx = articles.findIndex(a => String(a.id) === String(pid));
+        if (idx >= 0) {
+          const current = Number(articles[idx].stock || 0);
+          articles[idx] = { ...articles[idx], stock: Math.max(0, current - Number(item.qty||0)) };
+        }
+      }
+
+      mouvements.push({
+        id: empUID(), type: 'sale', shopId: order.shopId || sid,
+        originOrderId: orderId,
+        sellerEmployeeId: state.user?.uid,
+        sellerName: state.user?.displayName || state.user?.email || 'Opérateur',
+        source: 'storefront-approved', paymentMethod: 'cash',
+        items: order.items || [], total: order.grandTotal||order.total||0, grandTotal: order.grandTotal||order.total||0,
+        receiptNumber: receiptNum, status: 'completed',
+        createdAtMs: Date.now(),
+      });
+
+      const oIdx = pending.findIndex(o => o.id === orderId);
+      if (oIdx >= 0) pending[oIdx] = { ...pending[oIdx], status: 'completed' };
+
+      tx.set(ref, { articles, mouvements, pendingOrders: pending, updatedAt: serverTimestamp() }, { merge: true });
     });
-    await updateDoc(doc(db,'tenants',tenantId||state.user?.uid,'orders',orderId), { status: 'completed' });
-    await loadData(); showToast('Commande validée ✅', 'success'); navigate('receipts');
+    showToast('Commande validée ✅', 'success');
+    navigate('receipts');
   } catch(e) { showToast(e.message||'Erreur', 'error'); }
 };
 
@@ -586,11 +679,10 @@ onAuthStateChanged(auth, async user => {
   }
   if (topbar) topbar.textContent = user.email || user.displayName || '';
 
-  // Charger le rôle depuis Firestore
+  // Charger le rôle/permissions depuis Firestore (fonctionnalité indépendante du stock,
+  // toujours basée sur tenants/{tid}/roleBindings — non liée à commerce_data)
   const tid = tenantId || user.uid;
   try {
-    const roleSnap = await getDocs(query(collection(db,'tenants',tid,'roleBindings'), where('__name__','==',user.uid)));
-    // Tentative directe
     const { getDoc: gd } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
     const roleDoc = await gd(doc(db,'tenants',tid,'roleBindings',user.uid));
     if (roleDoc.exists()) {

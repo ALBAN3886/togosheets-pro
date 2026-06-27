@@ -114,8 +114,8 @@
 <script type="module">
 import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import {
-  getFirestore, collection, query, where, onSnapshot,
-  addDoc, serverTimestamp
+  getFirestore, doc, onSnapshot,
+  collection, addDoc, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 // ── Config Firebase (partagée avec index.html) ──────────────────────────────
@@ -140,6 +140,7 @@ const wa       = qs.get('wa') || '';
 
 // ── État local ──────────────────────────────────────────────────────────────
 const state = { products: [], cart: [], unsub: null };
+const imgOfArt = a => a.imageUrl||a.photoUrl||a.img||a.photo||a.image||a.cover||a.thumbnail||'';
 
 // ── Utilitaires ─────────────────────────────────────────────────────────────
 const money = n => new Intl.NumberFormat('fr-FR',{style:'currency',currency:'XOF',maximumFractionDigits:0}).format(Number(n||0));
@@ -153,7 +154,10 @@ window.showToast = function(msg) {
   window.__tt = setTimeout(()=>t.style.display='none', 2600);
 };
 
-// ── Connexion temps réel Firestore ──────────────────────────────────────────
+// ── Connexion temps réel Firestore (source unique : commerce_data/{tenantId}) ──
+// L'admin (index.html) et l'employé (employe.html) écrivent tous deux dans ce
+// même document. La boutique publique s'y abonne en direct : tout article,
+// stock ou prix mis à jour côté admin/employé apparaît instantanément ici.
 function startRealtimeWatch() {
   if (!tenantId) {
     document.getElementById('productsGrid').innerHTML =
@@ -161,34 +165,28 @@ function startRealtimeWatch() {
     return;
   }
 
-  // Collection : tenants/{tenantId}/products
-  let q = collection(db, 'tenants', tenantId, 'products');
-  const filters = [where('isPublished', '==', true), where('isActive', '==', true)];
-  if (storeId) filters.push(where('storeId', '==', storeId));
-  q = query(q, ...filters);
-
-  if (state.unsub) state.unsub(); // désabonner l'ancien listener
-  state.unsub = onSnapshot(q, snapshot => {
-    state.products = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderProducts();
-    updateHeroStats();
+  const ref = doc(db, 'commerce_data', tenantId);
+  if (state.unsub) state.unsub();
+  state.unsub = onSnapshot(ref, snap => {
+    if (!snap.exists()) { showNoProducts(); return; }
+    applyCommerceData(snap.data() || {});
   }, err => {
     console.error('[Boutique]', err);
-    // Fallback : ancienne collection commerce_data
-    loadLegacyStore();
+    showNoProducts();
   });
 }
 
-// Fallback ancienne structure (commerce_data/{uid})
-async function loadLegacyStore() {
-  const { doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
-  try {
-    const snap = await getDoc(doc(db, 'commerce_data', tenantId));
-    if (!snap.exists()) { showNoProducts(); return; }
-    const data = snap.data() || {};
-    const arts = Array.isArray(data.articles) ? data.articles : [];
-    state.products = arts.filter(a => Number(a.stock||0) > 0).map(a => ({
-      id: a.id || a.articleId,
+function applyCommerceData(data) {
+  const arts  = Array.isArray(data.articles) ? data.articles : [];
+  const shops = Array.isArray(data.shops) ? data.shops : [];
+
+  // Filtrer sur la boutique demandée (si ?store= est fourni), sinon toutes les boutiques du compte
+  const filtered = storeId ? arts.filter(a => String(a.shopId) === String(storeId)) : arts;
+
+  state.products = filtered
+    .filter(a => Number(a.stock || 0) > 0) // n'afficher que ce qui est en stock
+    .map(a => ({
+      id: a.id,
       name: a.name || a.nom || 'Article',
       description: a.note || '',
       salePrice: Number(a.prixV ?? a.prixVente ?? a.prix ?? 0),
@@ -196,20 +194,20 @@ async function loadLegacyStore() {
       stock: Number(a.stock || 0),
       isPublished: true,
       isActive: true,
-      imageUrl: imgOf(a),
+      imageUrl: imgOfArt(a),
       category: a.cat || a.category || 'Divers',
       storeId: a.shopId || storeId,
     }));
-    // Mettre à jour le titre avec les données boutique
-    const shops = Array.isArray(data.shops) ? data.shops : [];
-    const shop = shops.find(s => String(s.id) === storeId) || shops[0];
-    if (shop) {
-      document.getElementById('shopTitle').textContent = shop.name || 'Boutique AET';
-      document.getElementById('shopSubtitle').textContent = shop.branding?.slogan || 'Boutique publique AET';
-    }
-    renderProducts();
-    updateHeroStats();
-  } catch(e) { showNoProducts(); }
+
+  // Titre / sous-titre de la boutique
+  const shop = shops.find(s => String(s.id) === String(storeId)) || shops[0];
+  if (shop) {
+    document.getElementById('shopTitle').textContent = shop.name || 'Boutique AET';
+    document.getElementById('shopSubtitle').textContent = (shop.branding && shop.branding.slogan) || 'Boutique publique synchronisée en temps réel.';
+  }
+
+  renderProducts();
+  updateHeroStats();
 }
 
 function showNoProducts() {
@@ -335,25 +333,36 @@ window.submitOrder = async function() {
   if (!name || !phone) { showToast('Nom et téléphone requis'); return; }
 
   const total = state.cart.reduce((s,i)=>s+i.qty*i.price,0);
+  const orderId = 'ord_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7);
   const order = {
-    tenantId, storeId,
+    id: orderId,
+    tenantId, shopId: storeId,
     customer: { name, phone, city, note },
-    items: state.cart.map(i => ({ productId: i.id, name: i.name, qty: i.qty, unitPrice: i.price, total: i.qty*i.price })),
+    items: state.cart.map(i => ({ articleId: i.id, name: i.name, qty: i.qty, prixV: i.price, total: i.qty*i.price })),
     subtotal: total, grandTotal: total,
     status: 'pending', source: 'storefront',
     createdAtMs: Date.now(),
   };
 
-  let ref = '';
+  let ref = orderId;
   try {
-    // Écriture dans tenants/{tenantId}/orders (nouveau schéma)
-    const saved = await addDoc(collection(db, 'tenants', tenantId, 'orders'), { ...order, createdAt: serverTimestamp() });
-    ref = saved.id;
-    // Aussi écrire dans public_orders pour compatibilité
-    await addDoc(collection(db, 'public_orders'), { ...order, createdAt: serverTimestamp() });
+    // Source de vérité : ajouté dans commerce_data/{tenantId}.pendingOrders
+    // (le même document que lit/écrit index.html et employe.html), pour que
+    // l'admin et l'employé voient la commande et puissent la valider.
+    const { runTransaction } = await import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js');
+    await runTransaction(db, async (tx) => {
+      const cdRef = doc(db, 'commerce_data', tenantId);
+      const snap = await tx.get(cdRef);
+      const data = snap.exists() ? (snap.data() || {}) : {};
+      const pending = Array.isArray(data.pendingOrders) ? data.pendingOrders : [];
+      pending.push(order);
+      tx.set(cdRef, { pendingOrders: pending, updatedAt: serverTimestamp() }, { merge: true });
+    });
   } catch(e) {
-    try { await addDoc(collection(db, 'public_orders'), { ...order, createdAt: serverTimestamp() }); } catch(e2){}
+    console.warn('[Boutique] écriture commande échouée', e);
   }
+  // Conservé en plus pour historique/notifications externes
+  try { await addDoc(collection(db, 'public_orders'), { ...order, createdAt: serverTimestamp() }); } catch(e2){}
 
   const lines = [
     'Commande boutique AET',

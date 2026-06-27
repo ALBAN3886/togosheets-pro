@@ -30,7 +30,7 @@ import { getAuth, onAuthStateChanged, signInWithEmailAndPassword,
          reauthenticateWithCredential, updatePassword }          from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, addDoc, doc, deleteDoc,
          updateDoc, query, where, orderBy, onSnapshot, getDocs,
-         serverTimestamp, setDoc, getDoc, limit }               from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+         serverTimestamp, setDoc, getDoc, limit, runTransaction }               from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey:            "AIzaSyB5hpkRlFZ9HFRRbpQlvpHwMNDja37Nr2s",
@@ -50,7 +50,7 @@ const db    = initializeFirestore(fbApp, { localCache: persistentLocalCache({ ta
 window.__AET_FBAPP__ = fbApp;
 window.__AET_AUTH__ = auth;
 window.__AET_DB__ = db;
-window.__AET_FIRESTORE__ = { doc, getDoc, setDoc, serverTimestamp };
+window.__AET_FIRESTORE__ = { doc, getDoc, setDoc, serverTimestamp, runTransaction, onSnapshot };
 
 // ══ CATÉGORIES COMPLÈTES ══
 const CATS = {
@@ -8809,6 +8809,7 @@ let CM_COUNTRIES = [];
 let CM_COUNTRY_LOAD_PROMISE = null;
 let cmDataStamp = 0;
 let cmRemoteSaveTimer = null;
+let cmStockBaseline = {}; // {articleId: stock connu au dernier chargement} — pour sauvegarder par delta
 
 /* ── État ── */
 let CM = {
@@ -9119,6 +9120,11 @@ function cmApplyData(d){
   CM.mouvements = Array.isArray(d?.mouvements) ? d.mouvements : [];
   CM.currentShopId = d?.currentShopId || (CM.shops[0] && CM.shops[0].id) || null;
   cmDataStamp = Number(d?.updatedAtMs || 0);
+  // Mémorise le stock "tel que connu" pour calculer un delta lors de la sauvegarde,
+  // au lieu d'écraser une valeur absolue qui aurait changé côté serveur entre-temps
+  // (ex: vente faite par l'employé ou validée depuis la boutique publique).
+  cmStockBaseline = {};
+  CM.articles.forEach(a => { cmStockBaseline[a.id] = Number(a.stock||0); });
 }
 function cmSaveLocal(payload){
   try{ localStorage.setItem(cmKey(), JSON.stringify(payload)); }
@@ -9134,6 +9140,40 @@ function cmLoad(){
   }catch(e){ console.warn('CM load',e); }
   cmApplyData({ shops:[], articles:[], mouvements:[], currentShopId:null, updatedAtMs:0 });
 }
+let cmRemoteUnsub = null;
+function cmIsEditing(){
+  // Ne jamais écraser ce que l'admin est en train de saisir dans un formulaire ouvert
+  return !!(CM.editingArtId || CM.editingShopId);
+}
+function cmWatchRemote(){
+  const uid = (window.currentUser && window.currentUser.uid) || '';
+  const db = window.__AET_DB__;
+  const fs = window.__AET_FIRESTORE__;
+  if(!uid || !db || !fs || !fs.onSnapshot) return;
+  if(cmRemoteUnsub){ cmRemoteUnsub(); cmRemoteUnsub = null; }
+  cmRemoteUnsub = fs.onSnapshot(fs.doc(db,'commerce_data',uid), snap => {
+    if(!snap.exists()){
+      if((CM.shops.length || CM.articles.length || CM.mouvements.length) && cmDataStamp>0) cmQueueRemoteSave();
+      return;
+    }
+    if(cmIsEditing()) return; // on relira au prochain événement, après la saisie
+    const remote = snap.data() || {};
+    const remoteStamp = Number(remote.updatedAtMs || 0);
+    if(remoteStamp >= cmDataStamp){
+      cmApplyData(remote);
+      cmSaveLocal({
+        shops: CM.shops,
+        articles: CM.articles,
+        mouvements: CM.mouvements,
+        currentShopId: CM.currentShopId,
+        updatedAtMs: cmDataStamp,
+        schemaVersion: 2
+      });
+      cmRenderAll();
+    }
+  }, err => console.warn('CM watch remote', err));
+}
+// Conservé pour compatibilité : force un aller-retour ponctuel (utilisé au login/changement uid)
 async function cmLoadRemote(force=false){
   const uid = (window.currentUser && window.currentUser.uid) || '';
   const db = window.__AET_DB__;
@@ -9143,6 +9183,7 @@ async function cmLoadRemote(force=false){
     const snap = await fs.getDoc(fs.doc(db,'commerce_data',uid));
     if(!snap.exists()){
       if((CM.shops.length || CM.articles.length || CM.mouvements.length) && cmDataStamp>0) cmQueueRemoteSave();
+      cmWatchRemote();
       return;
     }
     const remote = snap.data() || {};
@@ -9162,20 +9203,81 @@ async function cmLoadRemote(force=false){
       cmQueueRemoteSave();
     }
   }catch(e){ console.warn('CM load remote', e); }
+  cmWatchRemote();
 }
 async function cmSaveRemote(){
   const uid = (window.currentUser && window.currentUser.uid) || '';
   const db = window.__AET_DB__;
   const fs = window.__AET_FIRESTORE__;
-  if(!uid || !db || !fs) return;
-  const payload = cmSnapshot();
-  cmDataStamp = payload.updatedAtMs;
+  if(!uid || !db || !fs || !fs.runTransaction) return;
+  const localArticles   = CM.articles;
+  const localMouvements = CM.mouvements;
+  const localShops      = CM.shops;
+  const localShopId     = CM.currentShopId;
+  const baseline         = cmStockBaseline;
+  const stamp            = Date.now();
   try{
-    await fs.setDoc(fs.doc(db,'commerce_data',uid), {
-      userId: uid,
-      ...payload,
-      updatedAt: fs.serverTimestamp()
-    }, { merge:true });
+    await fs.runTransaction(db, async (tx) => {
+      const ref = fs.doc(db,'commerce_data',uid);
+      const snap = await tx.get(ref);
+      const remote = snap.exists() ? (snap.data()||{}) : {};
+      const remoteArticles   = Array.isArray(remote.articles) ? remote.articles : [];
+      const remoteMouvements = Array.isArray(remote.mouvements) ? remote.mouvements : [];
+      // Champs gérés par l'employé/la boutique : on ne les touche jamais ici, on les
+      // relit simplement pour les réécrire tels quels avec { merge:true } implicite.
+      const pendingOrders = Array.isArray(remote.pendingOrders) ? remote.pendingOrders : [];
+      const cashSessions  = Array.isArray(remote.cashSessions) ? remote.cashSessions : [];
+
+      const remoteById = {};
+      remoteArticles.forEach(a => { remoteById[a.id] = a; });
+
+      // Fusionne chaque article local avec sa version serveur :
+      // - le stock est appliqué en DELTA (différence depuis le chargement admin),
+      //   donc une vente employé/boutique survenue entre-temps côté serveur reste prise en compte
+      // - les autres champs (nom, prix, catégorie…) suivent la version admin (dernier éditeur gagne)
+      const mergedArticles = localArticles.map(localArt => {
+        const remoteArt = remoteById[localArt.id];
+        if(!remoteArt) return localArt; // nouvel article créé par l'admin
+        const baseStock   = Number(baseline[localArt.id] ?? localArt.stock ?? 0);
+        const localStock  = Number(localArt.stock ?? 0);
+        const remoteStock = Number(remoteArt.stock ?? 0);
+        const delta       = localStock - baseStock; // ce que l'admin a réellement changé
+        return { ...localArt, stock: remoteStock + delta };
+      });
+      // Conserver les articles supprimés côté serveur uniquement s'ils ont été retirés
+      // intentionnellement par l'admin (absents de localArticles) — rien à faire de plus,
+      // la liste locale est la référence pour la présence/absence d'articles.
+
+      // Les mouvements ne sont jamais écrasés : on ajoute uniquement les nouveaux
+      // mouvements locaux (créés par l'admin) à la liste serveur existante.
+      const knownIds = new Set(remoteMouvements.map(m => m.id));
+      const newLocalMvts = localMouvements.filter(m => !knownIds.has(m.id));
+      const mergedMouvements = remoteMouvements.concat(newLocalMvts);
+
+      tx.set(ref, {
+        userId: uid,
+        shops: localShops,
+        articles: mergedArticles,
+        mouvements: mergedMouvements,
+        pendingOrders, cashSessions,
+        currentShopId: localShopId,
+        updatedAtMs: stamp,
+        schemaVersion: 2,
+        updatedAt: fs.serverTimestamp(),
+      }, { merge:true });
+
+      // Met à jour l'état local avec le résultat fusionné pour rester cohérent
+      CM.articles = mergedArticles;
+      CM.mouvements = mergedMouvements;
+      cmStockBaseline = {};
+      mergedArticles.forEach(a => { cmStockBaseline[a.id] = Number(a.stock||0); });
+    });
+    cmDataStamp = stamp;
+    cmSaveLocal({
+      shops: CM.shops, articles: CM.articles, mouvements: CM.mouvements,
+      currentShopId: CM.currentShopId, updatedAtMs: cmDataStamp, schemaVersion: 2
+    });
+    if(typeof cmRenderAll === 'function') cmRenderAll();
   }catch(e){ console.warn('CM save remote', e); }
 }
 function cmQueueRemoteSave(){
@@ -10497,6 +10599,7 @@ setInterval(function(){
   const uid = (window.currentUser && window.currentUser.uid) || null;
   if(uid !== _cmLastUid){
     _cmLastUid = uid;
+    if(cmRemoteUnsub){ cmRemoteUnsub(); cmRemoteUnsub = null; }
     cmLoad();
     cmRenderAll();
     if(uid) cmLoadRemote(true);

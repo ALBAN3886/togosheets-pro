@@ -1,0 +1,9 @@
+export * as tenantRepo from './tenant.repository.js';
+export * as storesRepo from './store.repository.js';
+export * as categoriesRepo from './category.repository.js';
+export * as productsRepo from './product.repository.js';
+export * as inventoryRepo from './inventory.repository.js';
+export * as ordersRepo from './order.repository.js';
+export * as employeesRepo from './employee.repository.js';
+export * as rolesRepo from './role.repository.js';
+export * as salesRepo from './sale.repository.js';

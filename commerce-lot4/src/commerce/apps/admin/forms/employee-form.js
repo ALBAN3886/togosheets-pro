@@ -1,0 +1,3 @@
+export function employeeForm(initial = {}, stores = []) {
+  return `<form id="employeeForm" class="cm-card cm-section"><div class="cm-grid cols-3"><input class="cm-input" name="displayName" placeholder="Nom employé" value="${initial.displayName || ''}" /><input class="cm-input" name="phone" placeholder="Téléphone" value="${initial.phone || ''}" /><select class="cm-select" name="role"><option value="employee">Employé</option><option value="manager">Manager</option></select><select class="cm-select" name="storeId"><option value="">Boutique</option>${stores.map(store => `<option value="${store.id}">${store.name}</option>`).join('')}</select></div><button class="cm-btn primary" type="submit" style="margin-top:14px">Enregistrer</button></form>`;
+}

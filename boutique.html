@@ -801,7 +801,7 @@ button,input,textarea,select{font:inherit}a{text-decoration:none;color:inherit}
 ══════════════════════════════════════════════════ -->
 <script type="module">
 import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getFirestore, doc, getDoc, onSnapshot, collection, addDoc, serverTimestamp, runTransaction } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, serverTimestamp, runTransaction } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const FIREBASE_CONFIG = window.__AET_FIREBASE_CONFIG__ || {
   apiKey: 'AIzaSyB5hpkRlFZ9HFRRbpQlvpHwMNDja37Nr2s',
@@ -1239,37 +1239,74 @@ window.submitOrder = async () => {
   const note  = document.getElementById('ordNote')?.value.trim();
   if (!name||!phone) { showToast('⚠️ Nom et téléphone requis'); return; }
 
+  const tid = tenantId || '';
+  if (!tid) { showToast('⚠️ Boutique non identifiée (uid manquant dans l\'URL)'); return; }
+
   const total = S.cart.reduce((s,i)=>s+i.qty*i.price,0);
   const orderId = 'ORD-'+Date.now().toString(36).toUpperCase()+Math.random().toString(36).slice(2,5).toUpperCase();
   const order = {
-    id: orderId, tenantId, shopId: storeId,
-    customer: {name,phone,city,note},
-    items: S.cart.map(i=>({articleId:i.id,name:i.name,qty:i.qty,prixV:i.price,total:i.qty*i.price})),
-    subtotal:total, grandTotal:total, paymentMode: window._selectedPay||'cash',
-    status:'pending', source:'storefront', createdAtMs:Date.now(),
+    id: orderId, tenantId: tid, shopId: storeId||'',
+    customer: {name, phone, city: city||'', note: note||''},
+    items: S.cart.map(i=>({articleId:String(i.id),name:i.name,qty:i.qty,prixV:i.price,total:i.qty*i.price})),
+    subtotal: total, grandTotal: total, paymentMode: window._selectedPay||'cash',
+    status: 'pending', source: 'storefront', createdAtMs: Date.now(),
   };
 
+  let saved = false;
+
+  // 1ère tentative : transaction atomique sur commerce_data/{tenantId}
   try {
     await runTransaction(db, async tx => {
-      const ref = doc(db,'commerce_data',tenantId);
+      const ref = doc(db, 'commerce_data', tid);
       const snap = await tx.get(ref);
-      const data = snap.exists()?(snap.data()||{}):{};
-      const pending = Array.isArray(data.pendingOrders)?data.pendingOrders:[];
+      const data = snap.exists() ? (snap.data()||{}) : {};
+      const pending = Array.isArray(data.pendingOrders) ? [...data.pendingOrders] : [];
       pending.push(order);
-      tx.set(ref,{pendingOrders:pending,updatedAt:serverTimestamp()},{merge:true});
+      tx.set(ref, { pendingOrders: pending, updatedAt: serverTimestamp() }, { merge: true });
     });
-  } catch(e){ console.warn('[checkout]',e); }
-  try { await addDoc(collection(db,'public_orders'),{...order,createdAt:serverTimestamp()}); } catch(e){}
+    saved = true;
+  } catch(e) {
+    console.warn('[checkout transaction]', e);
+    // 2ème tentative : écriture simple avec setDoc merge
+    try {
+      const ref = doc(db, 'commerce_data', tid);
+      const snap = await getDoc(ref);
+      const data = snap.exists() ? (snap.data()||{}) : {};
+      const pending = Array.isArray(data.pendingOrders) ? [...data.pendingOrders] : [];
+      pending.push(order);
+      await setDoc(ref, { pendingOrders: pending, updatedAt: serverTimestamp() }, { merge: true });
+      saved = true;
+    } catch(e2) {
+      console.warn('[checkout setDoc]', e2);
+    }
+  }
 
-  // Save locally
+  // 3ème tentative : collection public_orders (si les règles l'autorisent)
+  try {
+    await addDoc(collection(db, 'public_orders'), { ...order, createdAt: serverTimestamp() });
+    saved = true;
+  } catch(e) { console.warn('[public_orders]', e); }
+
+  if (!saved) {
+    showToast('⚠️ Erreur enregistrement. Vérifiez la connexion.');
+    return;
+  }
+
+  // Sauvegarde locale
   S.orders.unshift(order);
   localStorage.setItem('aet_orders', JSON.stringify(S.orders.slice(0,20)));
   if (S.user) { S.user.name=name; S.user.phone=phone; localStorage.setItem('aet_user',JSON.stringify(S.user)); }
 
   // WhatsApp
-  const lines = [`Commande ${orderId}`,`Client: ${name}`,`Tél: ${phone}`,city?`Adresse: ${city}`:'',
-    ...order.items.map(i=>`- ${i.name} x${i.qty} = ${money(i.total)}`),
-    `Total: ${money(total)}`,note?`Note: ${note}`:'',`Paiement: ${window._selectedPay||'cash'}`
+  const lines = [
+    `🛒 Commande ${orderId}`,
+    `Client: ${name}`,
+    `Tél: ${phone}`,
+    city ? `Adresse: ${city}` : '',
+    ...order.items.map(i=>`- ${i.name} ×${i.qty} = ${money(i.total)}`),
+    `Total: ${money(total)}`,
+    note ? `Note: ${note}` : '',
+    `Paiement: ${window._selectedPay||'cash'}`,
   ].filter(Boolean).join('\n');
   if (wa) window.open('https://wa.me/'+wa.replace(/\D/g,'')+'?text='+encodeURIComponent(lines),'_blank');
 
@@ -1313,25 +1350,26 @@ window.openOrdersDrawer = () => {
 let chatUnsub = null;
 let currentChatType = 'support';
 
-// Génère un ID client persistant
 function getClientId() {
   let cid = localStorage.getItem('aet_chat_cid');
-  if (!cid) { cid = 'client_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); localStorage.setItem('aet_chat_cid', cid); }
+  if (!cid) { cid = 'clt_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); localStorage.setItem('aet_chat_cid', cid); }
   return cid;
 }
 
-// Construit la référence du thread de chat : chats/{tenantId}/threads/{clientId}_{type}
-function chatRef(type) {
+// Référence : chats__{tenantId}__{clientId}_{type}  dans collection "chats_flat"
+// On évite les sous-collections qui ont des règles Firestore plus strictes
+function chatDocRef(type) {
   const tid = tenantId || 'default';
   const cid = getClientId();
-  return doc(db, 'chats', tid, 'threads', cid + '_' + type);
+  const docId = tid + '__' + cid + '_' + type;
+  return doc(db, 'chats_flat', docId);
 }
 
 window.loadMessages = () => {};
 
 window.openChatWindow = type => {
   currentChatType = type;
-  document.getElementById('chatTitle').textContent = type==='support' ? 'Support ALBAN STORE' : 'Vendeur';
+  document.getElementById('chatTitle').textContent = type === 'support' ? 'Support ALBAN STORE' : 'Vendeur';
   openDrawer('chatWindow');
   startChatListener(type);
 };
@@ -1339,25 +1377,22 @@ window.openChatWindow = type => {
 function startChatListener(type) {
   if (chatUnsub) { chatUnsub(); chatUnsub = null; }
   const msgs = document.getElementById('chatMsgs');
-  // Afficher message d'accueil si vide
-  msgs.innerHTML = '<div class="msg theirs">Bonjour ! 👋 Bienvenue sur ALBAN STORE.<br>Comment puis-je vous aider aujourd\'hui ?<span class="msg-time">Maintenant</span></div>';
+  msgs.innerHTML = `<div class="msg theirs">Bonjour ! 👋 Bienvenue sur ALBAN STORE.<br>Comment puis-je vous aider aujourd'hui ?<span class="msg-time">Maintenant</span></div>`;
 
-  const ref = chatRef(type);
+  const ref = chatDocRef(type);
   chatUnsub = onSnapshot(ref, snap => {
     if (!snap.exists()) return;
-    const data = snap.data();
-    const messages = Array.isArray(data.messages) ? data.messages : [];
+    const messages = Array.isArray(snap.data().messages) ? snap.data().messages : [];
     if (!messages.length) return;
     msgs.innerHTML = messages.map(m => {
       const isClient = m.role === 'client';
-      const t = m.ts ? new Date(m.ts).toLocaleTimeString('fr',{hour:'2-digit',minute:'2-digit'}) : '';
+      const t = m.ts ? new Date(m.ts).toLocaleTimeString('fr', {hour:'2-digit', minute:'2-digit'}) : '';
       return `<div class="msg ${isClient?'mine':'theirs'}">${esc(m.text)}<span class="msg-time">${t}</span></div>`;
     }).join('');
     msgs.scrollTop = msgs.scrollHeight;
-  }, err => console.warn('[chat]', err));
+  }, err => console.warn('[chat listen]', err));
 }
 
-// Purge les messages de plus de 30 jours
 function purgeOldMessages(messages) {
   const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
   return messages.filter(m => (m.ts || 0) > cutoff);
@@ -1369,42 +1404,42 @@ window.sendChatMsg = async () => {
   if (!txt) return;
   inp.value = ''; inp.style.height = 'auto';
 
-  const ref = chatRef(currentChatType);
+  const tid = tenantId || 'default';
+  const ref = chatDocRef(currentChatType);
   const now = Date.now();
-  const newMsg = {
-    role: 'client',
-    text: txt,
-    ts: now,
-    sender: S.user?.name || 'Client',
-    phone: S.user?.phone || '',
-  };
+  const newMsg = { role: 'client', text: txt, ts: now, sender: S.user?.name || 'Client', phone: S.user?.phone || '' };
+
+  // Afficher immédiatement côté client (optimistic UI)
+  const msgs = document.getElementById('chatMsgs');
+  const t = new Date(now).toLocaleTimeString('fr', {hour:'2-digit', minute:'2-digit'});
+  msgs.innerHTML += `<div class="msg mine">${esc(txt)}<span class="msg-time">${t}</span></div>`;
+  msgs.scrollTop = msgs.scrollHeight;
 
   try {
-    await runTransaction(db, async tx => {
-      const s = await tx.get(ref);
-      const existing = s.exists() ? (s.data().messages || []) : [];
-      const purged = purgeOldMessages(existing);
-      purged.push(newMsg);
-      tx.set(ref, {
-        clientId: getClientId(),
-        tenantId: tenantId || 'default',
-        chatType: currentChatType,
-        shopId: storeId || '',
-        clientName: S.user?.name || 'Client',
-        clientPhone: S.user?.phone || '',
-        updatedAt: now,
-        unreadEmployee: true,
-        messages: purged,
-      }, { merge: true });
+    // Lecture + écriture merge via getDoc + setDoc (plus simple que transaction sur sous-collection)
+    const snap = await getDoc(ref);
+    const existing = snap.exists() ? (snap.data().messages || []) : [];
+    const purged = purgeOldMessages(existing);
+    purged.push(newMsg);
+    await setDoc(ref, {
+      clientId: getClientId(),
+      tenantId: tid,
+      shopId: storeId || '',
+      chatType: currentChatType,
+      clientName: S.user?.name || 'Client',
+      clientPhone: S.user?.phone || '',
+      updatedAt: now,
+      unreadEmployee: true,
+      messages: purged,
     });
   } catch(e) {
     console.warn('[sendChatMsg]', e);
-    showToast('⚠️ Erreur envoi message');
+    showToast('⚠️ Message non envoyé — vérifiez votre connexion');
   }
 };
 
-window.chatEnter = e => { if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendChatMsg(); }};
-window.autoResizeChat = el => { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,100)+'px'; };
+window.chatEnter = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChatMsg(); } };
+window.autoResizeChat = el => { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 100) + 'px'; };
 
 // ── COMPTE ────────────────────────────────────────────────────────────────
 window.loadAccount = () => {

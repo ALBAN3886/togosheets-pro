@@ -140,7 +140,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       <div class="hero-stat-n" id="statShops">—</div>
       <div class="hero-stat-l">Boutiques</div>
     </div>
-    <div class="hero-stat">
+    <div class="hero-stat" style="display:none">
       <div class="hero-stat-n" id="statProducts">—</div>
       <div class="hero-stat-l">Produits</div>
     </div>
@@ -368,8 +368,7 @@ function renderShops(list){
         <div class="shop-type">${icon} ${esc(label)}</div>
         <div class="shop-location"><i class="fas fa-location-dot"></i>${esc(loc)}</div>
         <div class="shop-stats">
-          <div class="shop-stat"><i class="fas fa-box"></i>${nbArt} produit${nbArt>1?'s':''}</div>
-          ${s.slogan ? `<div class="shop-stat" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:80px" title="${esc(s.slogan)}"><i class="fas fa-quote-left"></i>${esc(s.slogan.slice(0,20))}…</div>` : ''}
+          ${s.slogan ? `<div class="shop-stat" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:120px" title="${esc(s.slogan)}"><i class="fas fa-quote-left"></i>${esc(s.slogan.slice(0,30))}…</div>` : ''}
         </div>
         <button class="shop-btn">Visiter la boutique →</button>
       </div>

@@ -826,6 +826,7 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
         <span class="pi-pay-pi-sym">π</span>
       </div>
       <div class="pi-pay-memo-row">Mémo commande : <strong id="piChk_orderId"></strong></div>
+      <div style="margin-top:8px;font-size:10px;opacity:.65" id="piChk_rate">Chargement du taux…</div>
     </div>
 
     <!-- Bouton principal — ouvre Pi Wallet directement -->
@@ -1526,14 +1527,38 @@ window.selectPay = mode => {
 };
 
 // ══════════════════════════════════════════════════════════════════
-//  PI WALLET — PAIEMENT DIRECT via wallet.pinet.com
-//  L'acheteur voit le produit → clique "Payer en Pi"
-//  → redirigé vers Pi Wallet avec montant + mémo préremplis
-//  → revient, entre le hash de tx → commande enregistrée en DB
+//  PI WALLET — PAIEMENT DIRECT
+//  Taux Pi/XOF récupéré en temps réel depuis l'API CoinGecko
+//  Deep link minepi:// pour ouvrir l'app Pi Browser directement
 // ══════════════════════════════════════════════════════════════════
 const PI_WALLET_ADDRESS = 'GCUUZTOUNR2BCFYQMLS4NE7JDYOLJDYY2OYSNYW2EA26XXGHOSWEAYR7';
-const PI_USERNAME       = 'ALBANeloh';   // ton @username Pi
-const PI_RATE_XOF       = 3500;          // 1 Pi ≈ 3500 XOF — à ajuster
+const PI_USERNAME       = 'ALBANeloh';
+const USD_TO_XOF        = 600; // 1 USD ≈ 600 XOF (taux fixe UEMOA)
+
+// Taux Pi en XOF — mis à jour dynamiquement
+let PI_RATE_XOF = 78; // valeur par défaut (0,13 USD × 600)
+let piRateLoaded = false;
+
+async function fetchPiRate() {
+  try {
+    // CoinGecko API — gratuit, pas de clé requise
+    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=pi-network&vs_currencies=usd', { signal: AbortSignal.timeout(5000) });
+    const d = await r.json();
+    const usd = d?.['pi-network']?.usd;
+    if (usd && usd > 0) {
+      PI_RATE_XOF = Math.round(usd * USD_TO_XOF);
+      piRateLoaded = true;
+      // Mettre à jour l'affichage du taux dans le drawer s'il est ouvert
+      const el = document.getElementById('piChk_rate');
+      if (el) el.textContent = `1 π ≈ ${PI_RATE_XOF.toLocaleString('fr-FR')} XOF  (${usd.toFixed(4)} $)`;
+    }
+  } catch(e) {
+    // Silencieux — on garde le taux par défaut
+    console.warn('[Pi rate fetch]', e);
+  }
+}
+// Charger le taux dès que possible
+fetchPiRate();
 
 function xofToPi(xof) {
   return Math.max(0.0001, xof / PI_RATE_XOF).toFixed(4);
@@ -1581,9 +1606,13 @@ window.payCartWithPi = () => {
 };
 
 function openPiCheckoutDrawer(p, qty, total, piAmt, orderId) {
-  // URL directe vers Pi Wallet avec paramètres préremplis
-  const piDeepLink = `https://wallet.pinet.com/#pay?to=${PI_USERNAME}&amount=${piAmt}&memo=${orderId}`;
-  window._currentPiDeepLink = piDeepLink;
+  // Deep links Pi Browser (dans l'ordre de priorité) :
+  // 1. minepi://wallet/pay  — ouvre l'app Pi directement sur Android/iOS
+  // 2. https://minepi.com/wallet  — fallback web Pi Browser
+  const piDeepLinkApp  = `minepi://wallet/pay?to=${PI_USERNAME}&amount=${piAmt}&memo=${orderId}`;
+  const piDeepLinkWeb  = `https://minepi.com/wallet?action=pay&to=${PI_USERNAME}&amount=${piAmt}&memo=${orderId}`;
+  const piDeepLinkAlt  = `https://app-cdn.minepi.com/mobile-app-ui/wallet/#pay?to=${PI_USERNAME}&amount=${piAmt}&memo=${orderId}`;
+  window._currentPiDeepLinks = { app: piDeepLinkApp, web: piDeepLinkWeb, alt: piDeepLinkAlt };
 
   document.getElementById('piChk_productName').textContent = qty > 1 ? `${p.name} × ${qty}` : p.name;
   document.getElementById('piChk_xof').textContent = money(total);
@@ -1592,13 +1621,16 @@ function openPiCheckoutDrawer(p, qty, total, piAmt, orderId) {
   document.getElementById('piChk_username').textContent = '@' + PI_USERNAME;
   document.getElementById('piChk_address').textContent = PI_WALLET_ADDRESS;
   document.getElementById('piChk_txRef').value = '';
+  // Afficher le taux actuel
+  const rateEl = document.getElementById('piChk_rate');
+  if (rateEl) rateEl.textContent = `1 π ≈ ${PI_RATE_XOF.toLocaleString('fr-FR')} XOF${piRateLoaded ? ' ✓' : ' (estimation)'}`;
 
-  // QR Code
+  // QR Code — encode le deep link app
   const qrDiv = document.getElementById('piChk_qr');
   qrDiv.innerHTML = '';
   if (window.QRCode) {
     new QRCode(qrDiv, {
-      text: piDeepLink,
+      text: piDeepLinkApp,
       width: 200, height: 200,
       colorDark: '#5b21b6', colorLight: '#ffffff',
       correctLevel: QRCode.CorrectLevel.M,
@@ -1609,18 +1641,60 @@ function openPiCheckoutDrawer(p, qty, total, piAmt, orderId) {
   document.getElementById('piCheckoutDrawer').classList.add('open');
   document.getElementById('overlay').classList.add('show');
   S.activeDrawers = ['piCheckoutDrawer'];
+
+  // Rafraîchir le taux en arrière-plan et mettre à jour l'affichage
+  fetchPiRate().then(() => {
+    const newPiAmt = xofToPi(total);
+    const amtEl = document.getElementById('piChk_amount');
+    if (amtEl && newPiAmt !== piAmt) {
+      amtEl.textContent = newPiAmt;
+      // Mettre à jour la commande en attente
+      if (window._pendingPiOrder) {
+        window._pendingPiOrder.piAmt = newPiAmt;
+        localStorage.setItem('aet_pending_pi', JSON.stringify(window._pendingPiOrder));
+      }
+    }
+    const rEl = document.getElementById('piChk_rate');
+    if (rEl) rEl.textContent = `1 π ≈ ${PI_RATE_XOF.toLocaleString('fr-FR')} XOF ✓ (temps réel)`;
+  });
 }
 
-// Bouton "Ouvrir Pi Wallet" — redirige directement
+// Bouton "Ouvrir Pi Wallet" — essaie le deep link app en premier
 window.openPiWalletDirect = () => {
-  const link = window._currentPiDeepLink;
-  if (!link) return;
-  window.open(link, '_blank');
-  // Après 3s, afficher le champ de hash
-  setTimeout(() => {
-    const hint = document.getElementById('piChk_afterPayHint');
-    if (hint) { hint.style.display = 'block'; }
-  }, 3000);
+  const links = window._currentPiDeepLinks;
+  if (!links) return;
+
+  // Révèle le champ hash immédiatement
+  const hint = document.getElementById('piChk_afterPayHint');
+  if (hint) hint.style.display = 'block';
+
+  // Stratégie : tente minepi:// (app), si pas répondu en 1.5s → ouvre le web
+  let opened = false;
+  const timer = setTimeout(() => {
+    if (!opened) {
+      // App Pi pas installée ou deep link non supporté → ouvrir la version web
+      window.open(links.web, '_blank');
+    }
+  }, 1500);
+
+  // Tentative d'ouverture de l'app via iframe (ne recharge pas la page)
+  const iframe = document.createElement('iframe');
+  iframe.style.display = 'none';
+  iframe.src = links.app;
+  document.body.appendChild(iframe);
+  setTimeout(() => { document.body.removeChild(iframe); }, 2000);
+
+  // Sur mobile, window.location redirige aussi vers l'app si installée
+  try {
+    window.location.href = links.app;
+    opened = true;
+    clearTimeout(timer);
+    // Après 2s si toujours là, ouvrir web en fallback
+    setTimeout(() => { if (document.visibilityState !== 'hidden') window.open(links.web, '_blank'); }, 2000);
+  } catch(e) {
+    window.open(links.web, '_blank');
+    clearTimeout(timer);
+  }
 };
 
 window.copyPiAddress = () => {

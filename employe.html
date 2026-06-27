@@ -1021,6 +1021,40 @@ const initials = (name) => {
 };
 const setApp = c => { document.getElementById('app').innerHTML = c; };
 const setMain = c => { const el = document.getElementById('main-content'); if(el) el.innerHTML = c; };
+const isMobileView = () => window.innerWidth <= 640;
+const getItemUnitPrice = item => {
+  const qty = Number(item?.qty || 0) || 0;
+  const direct = item?.unitPrice ?? item?.prixV ?? item?.price ?? item?.salePrice ?? item?.pu;
+  if (direct != null && direct !== '') return Number(direct || 0);
+  if (qty > 0 && item?.total != null) return Number(item.total || 0) / qty;
+  return 0;
+};
+const normalizeSaleItem = item => {
+  const qty = Number(item?.qty || 0) || 0;
+  const unitPrice = getItemUnitPrice(item);
+  const total = item?.total != null ? Number(item.total || 0) : qty * unitPrice;
+  return {
+    ...item,
+    unitPrice,
+    total,
+  };
+};
+const shortDateTime = ms => ms ? new Date(ms).toLocaleString('fr-FR', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : '';
+const fullDateTime = ms => ms ? new Date(ms).toLocaleString('fr-FR') : '';
+const statusBadgeHtml = status => ({
+  pending: '<span class="badge badge-warning"><i class="fas fa-clock"></i> En attente</span>',
+  completed: '<span class="badge badge-success"><i class="fas fa-check"></i> Validée</span>',
+  rejected: '<span class="badge badge-danger"><i class="fas fa-xmark"></i> Rejetée</span>'
+}[status || 'pending'] || '<span class="badge badge-neutral">Inconnue</span>');
+const orderActionButtons = order => {
+  const st = order.status || 'pending';
+  return st === 'pending'
+    ? `<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+        <button class="btn btn-success btn-sm" data-approve-oid="${esc(order.id)}"><i class="fas fa-check"></i> Valider</button>
+        <button class="btn btn-danger btn-sm" data-reject-oid="${esc(order.id)}"><i class="fas fa-xmark"></i> Rejeter</button>
+      </div>`
+    : statusBadgeHtml(st);
+};
 
 function showToast(msg, type='info') {
   const icons = { success: 'fa-circle-check', error: 'fa-circle-exclamation', info: 'fa-circle-info' };
@@ -1073,7 +1107,7 @@ function deriveStateFromCmData() {
       receiptNumber: m.receiptNumber || m.id,
       paymentMethod: m.paymentMethod || 'cash',
       sellerName: m.sellerName || '',
-      items: m.items || [],
+      items: (m.items || []).map(normalizeSaleItem),
       grandTotal: m.total || m.grandTotal || 0,
       createdAtMs: m.createdAtMs || 0,
     }));
@@ -1515,6 +1549,7 @@ function renderOrders() {
   const allPending = Array.isArray(cmData.pendingOrders) ? cmData.pendingOrders : [];
   const sid = storeId || state.context?.storeIds?.[0] || '';
   const all = allPending.filter(o => !sid || String(o.shopId) === String(sid) || !o.shopId);
+  const mobile = isMobileView();
 
   const filterLabel = { pending: 'En attente', completed: 'Validées', rejected: 'Rejetées' };
   const filterIcon = { pending: 'fa-clock', completed: 'fa-circle-check', rejected: 'fa-circle-xmark' };
@@ -1536,22 +1571,45 @@ function renderOrders() {
       <h3>Aucune commande "${filterLabel[ordersFilter].toLowerCase()}"</h3>
       <p>Les nouvelles commandes apparaîtront ici en temps réel.</p>
     </div></div></div>`;
-  } else {
-    const statusBadge = {
-      pending: '<span class="badge badge-warning"><i class="fas fa-clock"></i> En attente</span>',
-      completed: '<span class="badge badge-success"><i class="fas fa-check"></i> Validée</span>',
-      rejected: '<span class="badge badge-danger"><i class="fas fa-xmark"></i> Rejetée</span>'
-    };
-    const rows = filtered.map(order => {
+  } else if (mobile) {
+    content = filtered.map(order => {
       const st = order.status || 'pending';
-      const items = (order.items||[]).map(i => `${esc(i.name||'Article')} ×${esc(String(i.qty||1))}`).join(', ');
-      const date = order.createdAtMs ? new Date(order.createdAtMs).toLocaleDateString('fr',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
-      const actions = st === 'pending' ? `
-        <div style="display:flex;gap:6px;justify-content:flex-end">
-          <button class="btn btn-success btn-sm" data-approve-oid="${esc(order.id)}"><i class="fas fa-check"></i> Valider</button>
-          <button class="btn btn-danger btn-sm" data-reject-oid="${esc(order.id)}"><i class="fas fa-xmark"></i> Rejeter</button>
+      const items = (order.items||[]).map(i => `${esc(i.name||'Article')} ×${esc(String(i.qty||1))}`).join(' • ');
+      const date = shortDateTime(order.createdAtMs || 0);
+      return `<div class="card" style="margin-bottom:12px">
+        <div class="card-body">
+          <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px">
+            <div>
+              <div style="font-weight:800;font-size:14px">#${esc((order.id||'').slice(-8).toUpperCase())}</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">${esc(date)}</div>
+            </div>
+            ${statusBadgeHtml(st)}
+          </div>
+          <div style="display:grid;gap:10px">
+            <div>
+              <div class="label" style="margin-bottom:4px">Client</div>
+              <div style="font-weight:700">${esc(order.customer?.name||'Client')}</div>
+              <div style="font-size:12px;color:var(--muted)">${esc(order.customer?.phone||'—')}</div>
+            </div>
+            <div>
+              <div class="label" style="margin-bottom:4px">Articles</div>
+              <div style="font-size:13px;color:var(--text-2)">${esc(items)}</div>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding-top:8px;border-top:1px solid var(--border);flex-wrap:wrap">
+              <div>
+                <div class="label" style="margin-bottom:4px">Total</div>
+                <div style="font-weight:800;font-size:20px;color:var(--primary)">${esc(money(order.grandTotal||order.total||0))}</div>
+              </div>
+              <div>${orderActionButtons(order)}</div>
+            </div>
+          </div>
         </div>
-      ` : statusBadge[st];
+      </div>`;
+    }).join('');
+  } else {
+    const rows = filtered.map(order => {
+      const items = (order.items||[]).map(i => `${esc(i.name||'Article')} ×${esc(String(i.qty||1))}`).join(', ');
+      const date = shortDateTime(order.createdAtMs || 0);
       return `<tr>
         <td>
           <div style="font-weight:800;font-size:13px">#${esc((order.id||'').slice(-8).toUpperCase())}</div>
@@ -1563,7 +1621,7 @@ function renderOrders() {
         </td>
         <td style="font-size:12px;color:var(--text-2);max-width:220px">${esc(items)}</td>
         <td><strong style="color:var(--primary);font-size:14px">${esc(money(order.grandTotal||order.total||0))}</strong></td>
-        <td style="text-align:right">${actions}</td>
+        <td style="text-align:right">${orderActionButtons(order)}</td>
       </tr>`;
     }).join('');
     content = `<div class="card"><div class="card-body" style="padding:0">
@@ -1625,8 +1683,9 @@ function renderReceipts() {
     return;
   }
   const selected = state.sales.find(s => s.id === state.selectedSaleId) || state.sales[0];
+  const mobile = isMobileView();
   const list = state.sales.map(s => {
-    const date = s.createdAtMs ? new Date(s.createdAtMs).toLocaleDateString('fr',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '';
+    const date = shortDateTime(s.createdAtMs || 0);
     return `<button class="receipt-item ${s.id===selected.id?'active':''}" data-sale-id="${esc(s.id)}">
       <div>
         <div class="ref">${esc(s.receiptNumber||s.id.slice(-6))}</div>
@@ -1636,63 +1695,79 @@ function renderReceipts() {
     </button>`;
   }).join('');
 
-  const items = (selected.items||[]).map(i =>
+  const normalizedItems = (selected.items||[]).map(normalizeSaleItem);
+  const ticketDate = fullDateTime(selected.createdAtMs || 0);
+  const desktopItemsTable = normalizedItems.map(i =>
     `<tr>
       <td>${esc(i.name||i.productId||'—')}</td>
       <td style="text-align:center">${esc(String(i.qty||0))}</td>
-      <td style="text-align:right">${esc(money(i.unitPrice||0))}</td>
-      <td style="text-align:right"><strong>${esc(money(i.total||(i.qty*i.unitPrice)||0))}</strong></td>
+      <td style="text-align:right">${esc(money(getItemUnitPrice(i)))}</td>
+      <td style="text-align:right"><strong>${esc(money(i.total||((i.qty||0)*getItemUnitPrice(i))||0))}</strong></td>
     </tr>`
   ).join('');
+  const mobileItemsCards = normalizedItems.map(i => `
+    <div style="display:grid;gap:6px;padding:12px 14px;border:1px solid var(--border);border-radius:14px;background:var(--bg)">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
+        <strong style="font-size:14px">${esc(i.name||i.productId||'—')}</strong>
+        <span class="badge badge-primary">Qté ${esc(String(i.qty||0))}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--text-2)">
+        <span>PU</span>
+        <strong>${esc(money(getItemUnitPrice(i)))}</strong>
+      </div>
+      <div style="display:flex;justify-content:space-between;gap:10px;font-size:12px;color:var(--text-2)">
+        <span>Total</span>
+        <strong style="font-size:15px;color:var(--text)">${esc(money(i.total||((i.qty||0)*getItemUnitPrice(i))||0))}</strong>
+      </div>
+    </div>
+  `).join('');
 
-  const ticketDate = selected.createdAtMs ? new Date(selected.createdAtMs).toLocaleString('fr') : '';
+  const detailsCard = `
+    <div class="card">
+      <div class="card-head">
+        <h3><i class="fas fa-file-invoice"></i> Détail du ticket</h3>
+        <span class="badge badge-primary">${esc(selected.receiptNumber||selected.id.slice(-6))}</span>
+      </div>
+      <div class="card-body">
+        <div style="display:grid;grid-template-columns:${mobile ? '1fr' : '1fr 1fr'};gap:14px;margin-bottom:18px">
+          <div>
+            <div class="label">Date</div>
+            <div style="font-weight:700;font-size:13px">${esc(ticketDate)}</div>
+          </div>
+          <div>
+            <div class="label">Paiement</div>
+            <div style="font-weight:700;font-size:13px">${esc(selected.paymentMethod||'cash')}</div>
+          </div>
+          <div style="grid-column:1/-1">
+            <div class="label">Vendeur</div>
+            <div style="font-weight:700;font-size:13px">${esc(selected.sellerName||'—')}</div>
+          </div>
+        </div>
+        ${mobile
+          ? `<div style="display:grid;gap:10px">${mobileItemsCards}</div>`
+          : `<div class="table-wrap"><table class="table"><thead><tr><th>Article</th><th style="text-align:center">Qté</th><th style="text-align:right">PU</th><th style="text-align:right">Total</th></tr></thead><tbody>${desktopItemsTable}</tbody></table></div>`}
+        <div class="cart-total">
+          <div><div class="lbl">Total payé</div></div>
+          <div class="val">${esc(money(selected.grandTotal||0))}</div>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="doPrint()">
+          <i class="fas fa-print"></i> Imprimer ce ticket
+        </button>
+      </div>
+    </div>`;
 
   setMain(`
-    <div class="grid grid-pos">
+    <div class="grid ${mobile ? '' : 'grid-pos'}" style="${mobile ? 'gap:16px' : ''}">
       <div class="card">
         <div class="card-head">
           <h3><i class="fas fa-receipt"></i> Tickets récents</h3>
           <span class="badge badge-neutral">${state.sales.length}</span>
         </div>
-        <div class="card-body" style="max-height:600px;overflow-y:auto">
+        <div class="card-body" style="max-height:${mobile ? '320px' : '600px'};overflow-y:auto">
           <div class="receipt-list">${list}</div>
         </div>
       </div>
-      <div class="card">
-        <div class="card-head">
-          <h3><i class="fas fa-file-invoice"></i> Détail du ticket</h3>
-          <span class="badge badge-primary">${esc(selected.receiptNumber||selected.id.slice(-6))}</span>
-        </div>
-        <div class="card-body">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px">
-            <div>
-              <div class="label">Date</div>
-              <div style="font-weight:700;font-size:13px">${esc(ticketDate)}</div>
-            </div>
-            <div>
-              <div class="label">Paiement</div>
-              <div style="font-weight:700;font-size:13px">${esc(selected.paymentMethod||'cash')}</div>
-            </div>
-            <div style="grid-column:1/-1">
-              <div class="label">Vendeur</div>
-              <div style="font-weight:700;font-size:13px">${esc(selected.sellerName||'—')}</div>
-            </div>
-          </div>
-          <div class="table-wrap">
-            <table class="table">
-              <thead><tr><th>Article</th><th style="text-align:center">Qté</th><th style="text-align:right">PU</th><th style="text-align:right">Total</th></tr></thead>
-              <tbody>${items}</tbody>
-            </table>
-          </div>
-          <div class="cart-total">
-            <div><div class="lbl">Total payé</div></div>
-            <div class="val">${esc(money(selected.grandTotal||0))}</div>
-          </div>
-          <button class="btn btn-primary btn-block" onclick="doPrint()">
-            <i class="fas fa-print"></i> Imprimer ce ticket
-          </button>
-        </div>
-      </div>
+      ${detailsCard}
     </div>
   `);
 
@@ -2156,7 +2231,7 @@ window.doApproveOrder = async function(orderId) {
         sellerEmployeeId: state.user?.uid,
         sellerName: state.user?.displayName || state.user?.email || 'Opérateur',
         source: 'storefront-approved', paymentMethod: 'cash',
-        items: order.items || [], total: order.grandTotal||order.total||0, grandTotal: order.grandTotal||order.total||0,
+        items: (order.items || []).map(normalizeSaleItem), total: order.grandTotal||order.total||0, grandTotal: order.grandTotal||order.total||0,
         receiptNumber: receiptNum, status: 'completed',
         createdAtMs: Date.now(),
       });
@@ -2174,8 +2249,8 @@ window.doApproveOrder = async function(orderId) {
 window.doPrint = function() {
   const sale = state.sales.find(s => s.id === state.selectedSaleId) || state.sales[0];
   if (!sale) return;
-  const items = (sale.items||[]).map(i =>
-    `<tr><td>${esc(i.name||'Article')}</td><td>${esc(String(i.qty))}</td><td>${esc(money(i.unitPrice))}</td><td><strong>${esc(money(i.total||(i.qty*i.unitPrice)))}</strong></td></tr>`
+  const items = (sale.items||[]).map(normalizeSaleItem).map(i =>
+    `<tr><td>${esc(i.name||'Article')}</td><td>${esc(String(i.qty))}</td><td>${esc(money(getItemUnitPrice(i)))}</td><td><strong>${esc(money(i.total||((i.qty||0)*getItemUnitPrice(i))))}</strong></td></tr>`
   ).join('');
   const win = window.open('','_blank','noopener,width=600,height=700');
   win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Ticket ${sale.receiptNumber||''}</title>

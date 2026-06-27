@@ -20,6 +20,7 @@
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;font-family:Poppins,sans-serif;background:#f7f7fb;color:var(--dark);overflow-x:hidden}
 button,input,textarea,select{font:inherit}a{text-decoration:none;color:inherit}
+button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shadow:none}
 
 /* ── HEADER ── */
 .header{position:sticky;top:0;z-index:100;background:#fff;border-bottom:1px solid var(--border);padding:0 14px}
@@ -37,7 +38,7 @@ button,input,textarea,select{font:inherit}a{text-decoration:none;color:inherit}
 .top-tabs button.active::after{content:'';position:absolute;left:0;right:0;bottom:0;height:3px;border-radius:999px 999px 0 0;background:linear-gradient(90deg,var(--orange),#f59e0b)}
 
 /* ── MAIN ── */
-.wrap{max-width:960px;margin:0 auto;padding:0 12px 90px}
+.wrap{max-width:960px;margin:0 auto;padding:0 12px 108px}
 
 /* ── SEARCH ── */
 .search-shell{display:flex;gap:8px;align-items:center;background:#fff;border:2px solid #ff9a3c;border-radius:var(--radius-md);padding:8px 10px;box-shadow:0 8px 20px rgba(255,106,0,.1);margin:12px 0}
@@ -262,11 +263,13 @@ button,input,textarea,select{font:inherit}a{text-decoration:none;color:inherit}
 .notif-info time{font-size:10px;color:#94a3b8;display:block;margin-top:3px}
 
 /* ── BOTTOM NAV ── */
-.bottom-nav{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(5,1fr);padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:100}
-.bottom-nav button{border:none;background:none;display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:center;font-size:10px;color:#9ca3af;cursor:pointer;padding:4px;position:relative;transition:color .15s}
-.bottom-nav button.active{color:var(--orange)}
-.bottom-nav button.active i{transform:scale(1.1)}
-.nav-badge{position:absolute;top:2px;right:12px;min-width:17px;height:17px;border-radius:999px;background:var(--orange);color:#fff;font-size:9px;display:grid;place-items:center;padding:0 3px;font-weight:800}
+.bottom-nav{position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(5,1fr);padding:8px 6px calc(10px + env(safe-area-inset-bottom));z-index:100;gap:2px}
+.bottom-nav button{border:none;background:none;display:flex;flex-direction:column;gap:4px;align-items:center;justify-content:center;font-size:11px;color:#9ca3af;cursor:pointer;padding:8px 4px;position:relative;transition:color .15s,background .15s;min-height:58px;border-radius:12px}
+.bottom-nav button i{font-size:18px}
+.bottom-nav button.active{color:var(--orange);background:#fff7ed}
+.bottom-nav button.active i{transform:scale(1.08)}
+.bottom-nav button:focus,.bottom-nav button:focus-visible,.bottom-nav button:active{outline:none;box-shadow:none}
+.nav-badge{position:absolute;top:4px;right:12px;min-width:17px;height:17px;border-radius:999px;background:var(--orange);color:#fff;font-size:9px;display:grid;place-items:center;padding:0 3px;font-weight:800}
 
 /* ── TOAST ── */
 .toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%) translateY(10px);padding:11px 16px;border-radius:14px;background:#0f172a;color:#fff;font-size:12px;z-index:1000;opacity:0;pointer-events:none;transition:all .25s;max-width:90vw;text-align:center;white-space:nowrap}
@@ -441,15 +444,15 @@ button,input,textarea,select{font:inherit}a{text-decoration:none;color:inherit}
   <button id="bnCat" onclick="openPage('catalogue');setActiveNav('bnCat')">
     <i class="fas fa-table-cells-large"></i><span>Catégories</span>
   </button>
-  <button id="bnMsg" onclick="openDrawer('msgDrawer');loadMessages()">
+  <button id="bnMsg" onclick="setActiveNav('bnMsg');openDrawer('msgDrawer');loadMessages()">
     <i class="far fa-comment-dots"></i><span>Messages</span>
     <span class="nav-badge" id="msgBadge" style="display:none">1</span>
   </button>
-  <button id="bnCart" onclick="openDrawer('cartDrawer')">
+  <button id="bnCart" onclick="setActiveNav('bnCart');openDrawer('cartDrawer')">
     <i class="fas fa-cart-shopping"></i><span>Panier</span>
     <span class="nav-badge" id="cartCount">0</span>
   </button>
-  <button id="bnAccount" onclick="openDrawer('accountDrawer');loadAccount()">
+  <button id="bnAccount" onclick="setActiveNav('bnAccount');openDrawer('accountDrawer');loadAccount()">
     <i class="far fa-user"></i><span>Mon compte</span>
   </button>
 </nav>
@@ -1529,5 +1532,6 @@ document.getElementById('accOrders').textContent = S.orders.length;
 document.getElementById('accFavs').textContent = S.favorites.length;
 startRealtimeWatch();
 </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/v833ccba57c9e4d2798f2e76cebdd09a11778172276447" integrity="sha512-57MDmcccJXYtNnH+ZiBwzC4jb2rvgVCEokYN+L/nLlmO8rfYT/gIpW2A569iJ/3b+0UEasghjuZH/ma3wIs/EQ==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>

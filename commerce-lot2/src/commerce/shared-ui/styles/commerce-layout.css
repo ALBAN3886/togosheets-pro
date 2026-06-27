@@ -1,0 +1,12 @@
+.cm-shell { min-height: 100vh; display: grid; grid-template-columns: 280px 1fr; }
+.cm-sidebar { background: #0f172a; color: #fff; padding: 24px 18px; }
+.cm-main { padding: 24px; }
+.cm-grid { display: grid; gap: 16px; }
+.cm-grid.cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.cm-grid.cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.cm-card { background: var(--cm-card); border-radius: var(--cm-radius); box-shadow: var(--cm-shadow); border: 1px solid var(--cm-border); }
+.cm-section { padding: 18px; }
+@media (max-width: 980px) {
+  .cm-shell { grid-template-columns: 1fr; }
+  .cm-grid.cols-4, .cm-grid.cols-3 { grid-template-columns: 1fr; }
+}

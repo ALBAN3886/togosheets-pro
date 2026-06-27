@@ -1,0 +1,15 @@
+:root {
+  --cm-bg: #f8fafc;
+  --cm-card: #ffffff;
+  --cm-text: #0f172a;
+  --cm-muted: #64748b;
+  --cm-primary: #10b981;
+  --cm-primary-2: #059669;
+  --cm-danger: #ef4444;
+  --cm-warning: #f59e0b;
+  --cm-info: #2563eb;
+  --cm-border: rgba(15,23,42,.08);
+  --cm-radius: 18px;
+  --cm-shadow: 0 10px 32px rgba(15,23,42,.06);
+}
+*{box-sizing:border-box} body{margin:0;font-family:Poppins,system-ui,sans-serif;background:var(--cm-bg);color:var(--cm-text)} button,input,select,textarea{font:inherit}

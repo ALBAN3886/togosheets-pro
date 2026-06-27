@@ -209,7 +209,7 @@ function updatePremiumUI() {
   }
   const subBtn = document.getElementById('premiumSubscribeBtn');
   if (subBtn) subBtn.style.display = premiumStatus.isPremium ? 'none' : '';
-  // Mettre à jour le bloc V5.2 Commerce selon le statut premium
+  // bloc V5.2 supprimé
   try {
     if (typeof renderCommerceHero === 'function') renderCommerceHero();
     if (typeof renderBrandStudio === 'function') renderBrandStudio();
@@ -11670,7 +11670,7 @@ window.cmShowGenLinkQR = function() {
 </script>
 
 <style id="aet-index-patch-v52-style">
-.aetx-open-shell{margin:14px 0 16px}
+.aetx-open-shell{display:none!important}
 .aetx-open-hero{position:relative;border-radius:30px;overflow:hidden;color:#fff;padding:20px 18px;background:linear-gradient(135deg,#0f172a,#1d4ed8 55%,#10b981);box-shadow:0 26px 60px rgba(15,23,42,.18)}
 .aetx-open-hero::before{content:'';position:absolute;inset:0;background-image:var(--aetx-bg,none);background-size:cover;background-position:center;opacity:.22;transform:scale(1.06)}
 .aetx-open-hero::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(15,23,42,.88),rgba(29,78,216,.64),rgba(16,185,129,.44))}
@@ -11776,10 +11776,7 @@ window.cmShowGenLinkQR = function() {
     return branding.bgUrl ? '--aetx-bg:url("'+esc(branding.bgUrl)+'")' : '--aetx-bg:none';
   }
   function heroHTML(mode, branding){
-    var title = mode === 'commerce' ? ((branding.shopName || 'Mon espace Commerce')) : ((branding.shopName || 'AET MonBudget — Portail officiel'));
-    var chip = mode === 'commerce' ? 'Accueil Commerce V5.2' : 'Ouverture officielle V5.2';
-    var sub = branding.slogan || (mode === 'commerce' ? 'Même identité visuelle que le site officiel et l’espace employé, avec un rendu plus premium.' : 'Bienvenue sur une ouverture premium, animée et harmonisée avec Commerce et l’espace employé.');
-    return ''
+    return ''  /* V5.2 hero désactivé */
       + '<div class="aetx-open-shell">'
       + '<div class="aetx-open-hero" style="'+bgStyle(branding)+'">'
       + '<div class="aetx-open-orbs"><span></span><span></span><span></span></div>'
@@ -11807,31 +11804,8 @@ window.cmShowGenLinkQR = function() {
     if(!host){ host = document.createElement('div'); host.id = id; if(before && before.parentNode === parent) parent.insertBefore(host, before); else parent.appendChild(host); }
     return host;
   }
-  function renderOfficialHero(){
-    var auth = document.getElementById('authScreen');
-    if(!auth) return;
-    auth.classList.add('official-v52');
-    var header = auth.querySelector('.auth-header');
-    if(!header) return;
-    var existing = document.getElementById('officialOpenHero');
-    if(existing){ existing.innerHTML = heroHTML('official', resolveBranding()); return; }
-    var host = ensureHost(auth, 'officialOpenHeroV52', header.nextSibling);
-    if(host) host.innerHTML = heroHTML('official', resolveBranding());
-  }
-  function renderCommerceHero(){
-    var tab = document.getElementById('tab-commerce');
-    if(!tab) return;
-    // Masquer si abonnement premium inactif
-    var host = document.getElementById('cmV52HeroHost');
-    if(!window.isPremiumUser){
-      if(host) host.style.display = 'none';
-      return;
-    }
-    var header = tab.querySelector('.cm-header');
-    if(!header) return;
-    host = ensureHost(tab, 'cmV52HeroHost', header.nextSibling);
-    if(host){ host.style.display = ''; host.innerHTML = heroHTML('commerce', resolveBranding()); }
-  }
+  function renderOfficialHero(){ /* V5.2 supprimé */ }
+  function renderCommerceHero(){ /* V5.2 supprimé */ }
   function renderBrandStudio(){
     var tab = document.getElementById('tab-commerce');
     if(!tab) return;

@@ -385,22 +385,7 @@ window.openShop = function(uid, shopId){
   const loc   = [s.addr, s.city, s.country].filter(Boolean).join(' • ') || 'Togo';
   const bg    = TYPE_BG[s.type] || TYPE_BG.autre;
 
-  // Miniatures des 3 premiers produits
-  const previewArts = s.articles.slice(0,6);
-  const miniProds = previewArts.length ? `
-    <div class="drawer-products">
-      <h4><i class="fas fa-box" style="margin-right:6px;color:var(--primary)"></i>Aperçu produits (${s.articles.length})</h4>
-      <div class="mini-products">
-        ${previewArts.map(a => `
-          <div class="mini-product">
-            <div class="mini-product-img" style="background:${bg}">
-              ${a.imageUrl ? `<img src="${esc(a.imageUrl)}" alt="">` : (TYPE_ICONS[s.type]||'📦')}
-            </div>
-            <div class="mini-product-name">${esc(a.name||'')}</div>
-            <div class="mini-product-price">${fmtPrice(a.prixV||a.salePrice||0)}</div>
-          </div>`).join('')}
-      </div>
-    </div>` : '';
+  const miniProds = '';
 
   document.getElementById('drawerContent').innerHTML = `
     <div class="drawer-header">

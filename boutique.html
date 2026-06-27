@@ -128,38 +128,6 @@ button,input,textarea,select{font:inherit}a{text-decoration:none;color:inherit}
 /* ── PRODUCT DETAIL DRAWER ── */
 .pd-img{width:100%;aspect-ratio:1;border-radius:20px;background:linear-gradient(135deg,#fff7ed,#fef3c7 50%,#eff6ff);display:grid;place-items:center;margin-bottom:14px;overflow:hidden}
 .pd-img img{width:100%;height:100%;object-fit:cover;border-radius:20px}
-
-/* ── Galerie photos style Alibaba ── */
-.pd-gallery{width:100%;margin-bottom:14px}
-.pd-gallery-main{width:100%;aspect-ratio:1;border-radius:20px;overflow:hidden;background:linear-gradient(135deg,#fff7ed,#fef3c7 50%,#eff6ff);position:relative;display:flex;align-items:center;justify-content:center}
-.pd-gallery-main img{width:100%;height:100%;object-fit:cover;transition:opacity .25s}
-.pd-gallery-main .ph-big{font-size:72px;color:#fb923c}
-.pd-thumbs{display:flex;gap:8px;margin-top:10px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
-.pd-thumbs::-webkit-scrollbar{display:none}
-.pd-thumb{width:60px;height:60px;border-radius:10px;border:2px solid var(--border);overflow:hidden;cursor:pointer;flex-shrink:0;transition:border-color .15s}
-.pd-thumb.active{border-color:var(--primary)}
-.pd-thumb img{width:100%;height:100%;object-fit:cover}
-/* badge promo */
-.pd-badge-promo{position:absolute;top:10px;left:10px;background:#ef4444;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px}
-/* infos enrichies */
-.pd-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
-.pd-meta-item{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px}
-.pd-meta-label{font-size:11px;color:var(--muted);margin-bottom:3px}
-.pd-meta-val{font-size:13px;font-weight:600;color:var(--text)}
-.pd-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-.pd-chip{padding:4px 10px;border-radius:20px;border:1.5px solid var(--border);font-size:12px;cursor:pointer;transition:all .15s}
-.pd-chip.active,.pd-chip:hover{background:var(--primary);color:#fff;border-color:var(--primary)}
-.pd-specs{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-top:12px}
-.pd-specs h5{font-size:13px;font-weight:700;margin:0 0 8px}
-.pd-specs p{font-size:13px;color:var(--text);line-height:1.6;white-space:pre-wrap;margin:0}
-.pd-old-price{text-decoration:line-through;color:var(--muted);font-size:13px;margin-left:8px}
-.pd-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
-.pd-tag{background:rgba(var(--primary-rgb),.1);color:var(--primary);font-size:11px;padding:2px 8px;border-radius:20px}
-.pd-delivery-row{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);margin-top:8px}
-.pd-delivery-row i{color:var(--primary)}
-/* carte article - badge promo */
-.card-promo-badge{position:absolute;top:8px;left:8px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;z-index:2}
-.thumb{position:relative}
 .pd-img .ph-big{font-size:72px;color:#fb923c}
 .pd-cat{display:inline-block;background:#fff7ed;color:#9a3412;border-radius:999px;padding:4px 12px;font-size:11px;font-weight:800;margin-bottom:8px}
 .pd-name{font-size:20px;font-weight:900;margin:0 0 6px}
@@ -390,7 +358,7 @@ button,input,textarea,select{font:inherit}a{text-decoration:none;color:inherit}
         <p id="shopDesc">Boutique synchronisée en temps réel.</p>
         <div class="hero-stats">
           <div class="stat-pill"><strong id="stProducts">0</strong><span>Articles</span></div>
-          <div class="stat-pill"><strong id="stStock">0</strong><span>Stock</span></div>
+          
           <div class="stat-pill"><strong id="stCats">0</strong><span>Catégories</span></div>
         </div>
       </div>
@@ -942,16 +910,7 @@ function applyData(data) {
     .filter(a => Number(a.stock||0) > 0)
     .map(a => ({
       id: a.id, name: a.name||a.nom||'Article',
-      description: a.note||a.description||'',
-      brand:       a.brand||'',
-      colors:      Array.isArray(a.colors)?a.colors:[],
-      sizes:       Array.isArray(a.sizes)?a.sizes:[],
-      specs:       a.specs||'',
-      photos:      Array.isArray(a.photos)?a.photos:[],
-      tags:        Array.isArray(a.tags)?a.tags:[],
-      oldPrice:    Number(a.oldPrice||0),
-      delivery:    a.delivery||'',
-      origin:      a.origin||'',
+      description: a.note||'',
       salePrice: Number(a.prixV??a.prixVente??a.prix??0),
       stock: Number(a.stock||0),
       imageUrl: imgOf(a),
@@ -979,7 +938,7 @@ function updateStats() {
   const cats = new Set(S.products.map(p=>p.category));
   const stock = S.products.reduce((s,p)=>s+p.stock,0);
   document.getElementById('stProducts').textContent = S.products.length;
-  document.getElementById('stStock').textContent = stock;
+  // stock display hidden
   document.getElementById('stCats').textContent = cats.size;
 }
 
@@ -1025,13 +984,13 @@ function cardHTML(p, rank) {
     <div class="thumb">
       ${img ? `<img src="${esc(img)}" alt="${esc(p.name)}" loading="lazy">` : `<span class="ph">${esc((p.name||'A').slice(0,2).toUpperCase())}</span>`}
       <span class="cat-tag">${esc(p.category||'Produit')}</span>
-      ${lowStock ? `<span class="stock-tag low">Stock limité</span>` : ''}
+      
       ${rank ? `<span class="stock-tag" style="background:#fff7ed;color:#9a3412;right:8px;top:8px">#${rank}</span>` : ''}
     </div>
     <div class="card-title">${esc(p.name)}</div>
     <div class="card-desc">${esc(p.description||'Produit disponible en boutique.')}</div>
     ${avgRating ? `<div class="card-rating"><span class="stars">${'★'.repeat(Math.round(avgRating))}${'☆'.repeat(5-Math.round(avgRating))}</span><span>${avgRating} (${reviews.length})</span></div>` : ''}
-    <div class="card-price">${esc(money(p.salePrice))} <small>stock: ${stock}</small></div>
+    <div class="card-price">${esc(money(p.salePrice))}</div>
     <div class="card-actions">
       <button class="btn-ghost" onclick="event.stopPropagation();openProduct('${esc(String(p.id))}')">Détails</button>
       <button class="btn-main" onclick="event.stopPropagation();addToCart('${esc(String(p.id))}')">Commander</button>
@@ -1084,65 +1043,19 @@ window.openProduct = id => {
   const reviews = S.reviews[p.id] || [];
   const avgRating = reviews.length ? (reviews.reduce((s,r)=>s+r.stars,0)/reviews.length).toFixed(1) : null;
 
-  // Galerie photos
-  const allPhotos = (p.photos && p.photos.length) ? p.photos : (img ? [img] : []);
-  const hasPromo = p.oldPrice && p.oldPrice > p.salePrice;
-  const promoPercent = hasPromo ? Math.round((1-p.salePrice/p.oldPrice)*100) : 0;
-
-  const galleryHtml = allPhotos.length > 0 ? `
-    <div class="pd-gallery">
-      <div class="pd-gallery-main" id="pdGalleryMain">
-        ${hasPromo ? `<span class="pd-badge-promo">PROMO -${promoPercent}%</span>` : ''}
-        <img src="${esc(allPhotos[0])}" id="pdMainImg" alt="${esc(p.name)}">
-      </div>
-      ${allPhotos.length > 1 ? `<div class="pd-thumbs">${allPhotos.map((u,i)=>`<div class="pd-thumb ${i===0?'active':''}" onclick="pdSwitchPhoto(this,'${esc(u)}')" ><img src="${esc(u)}" loading="lazy"></div>`).join('')}</div>` : ''}
-    </div>` :
-    `<div class="pd-img">${hasPromo?`<span class="pd-badge-promo">PROMO -${promoPercent}%</span>`:''}<span class="ph-big">${esc((p.name||'A').slice(0,2).toUpperCase())}</span></div>`;
-
-  // Couleurs & tailles
-  const colorsHtml = (p.colors && p.colors.length) ? `
-    <div style="margin-top:10px">
-      <div style="font-size:12px;color:var(--muted);margin-bottom:4px">Couleur :</div>
-      <div class="pd-chips">${p.colors.map(c=>`<span class="pd-chip">${esc(c)}</span>`).join('')}</div>
-    </div>` : '';
-  const sizesHtml = (p.sizes && p.sizes.length) ? `
-    <div style="margin-top:10px">
-      <div style="font-size:12px;color:var(--muted);margin-bottom:4px">Taille :</div>
-      <div class="pd-chips">${p.sizes.map(s=>`<span class="pd-chip">${esc(s)}</span>`).join('')}</div>
-    </div>` : '';
-
-  // Meta infos (grille 2 colonnes)
-  const metaItems = [];
-  if(p.brand)    metaItems.push({label:'Marque',val:p.brand,icon:'fa-tag'});
-  if(p.origin)   metaItems.push({label:'Origine',val:p.origin,icon:'fa-earth-africa'});
-  if(p.delivery) metaItems.push({label:'Livraison',val:p.delivery,icon:'fa-truck'});
-  const unit = p.unit||'pcs';
-  metaItems.push({label:'Unité',val:unit,icon:'fa-cube'});
-  const metaHtml = metaItems.length ? `<div class="pd-meta-grid">${metaItems.map(m=>`<div class="pd-meta-item"><div class="pd-meta-label"><i class="fas ${m.icon}" style="margin-right:4px"></i>${m.label}</div><div class="pd-meta-val">${esc(m.val)}</div></div>`).join('')}</div>` : '';
-
-  // Spécifications
-  const specsHtml = p.specs ? `<div class="pd-specs"><h5><i class="fas fa-list-ul" style="margin-right:6px;color:var(--primary)"></i>Caractéristiques</h5><p>${esc(p.specs)}</p></div>` : '';
-
-  // Tags
-  const tagsHtml = (p.tags && p.tags.length) ? `<div class="pd-tags">${p.tags.map(tg=>`<span class="pd-tag">#${esc(tg)}</span>`).join('')}</div>` : '';
-
   document.getElementById('productDrawerBody').innerHTML = `
-    ${galleryHtml}
+    <div class="pd-img">
+      ${img ? `<img src="${esc(img)}" alt="${esc(p.name)}">` : `<span class="ph-big">${esc((p.name||'A').slice(0,2).toUpperCase())}</span>`}
+    </div>
     <span class="pd-cat">${esc(p.category||'Produit')}</span>
     <h2 class="pd-name">${esc(p.name)}</h2>
-    ${avgRating ? `<div class="card-rating" style="margin-bottom:6px"><span class="stars" style="font-size:15px">${'★'.repeat(Math.round(avgRating))}${'☆'.repeat(5-Math.round(avgRating))}</span><span style="font-size:13px">${avgRating}/5 (${reviews.length} avis)</span></div>` : ''}
+    ${avgRating ? `<div class="card-rating" style="margin-bottom:10px"><span class="stars" style="font-size:15px">${'★'.repeat(Math.round(avgRating))}${'☆'.repeat(5-Math.round(avgRating))}</span><span style="font-size:13px">${avgRating} sur 5 (${reviews.length} avis)</span></div>` : ''}
+    <p class="pd-desc">${esc(p.description||'Produit disponible dans notre boutique. Commandez maintenant !')}</p>
     <div class="pd-price-row">
       <div class="pd-price">${esc(money(p.salePrice))}</div>
-      ${hasPromo ? `<span class="pd-old-price">${esc(money(p.oldPrice))}</span>` : ''}
     </div>
-    <div class="pd-stock-info"><i class="fas fa-check-circle"></i> En stock (${p.stock} disponibles)</div>
-    ${colorsHtml}
-    ${sizesHtml}
-    ${metaHtml}
-    ${p.description ? `<p class="pd-desc" style="margin-top:12px">${esc(p.description)}</p>` : ''}
-    ${specsHtml}
-    ${tagsHtml}
-    <div class="qty-row" style="margin-top:14px">
+
+    <div class="qty-row">
       <label>Quantité :</label>
       <div class="qty-ctrl">
         <button onclick="pdQtyChange(-1)">−</button>
@@ -1179,13 +1092,6 @@ window.openProduct = id => {
     </div>
   `;
   openDrawer('productDrawer');
-};
-
-window.pdSwitchPhoto = function(thumb, url){
-  const mainImg = document.getElementById('pdMainImg');
-  if(mainImg){ mainImg.src = url; }
-  document.querySelectorAll('.pd-thumb').forEach(t=>t.classList.remove('active'));
-  thumb.classList.add('active');
 };
 
 window.pdQtyChange = d => {

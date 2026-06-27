@@ -105,7 +105,7 @@
     <a href="#pos"   onclick="navigate('pos')"   id="nav-pos"  ><i class="fas fa-cash-register"></i> Caisse (POS)</a>
     <a href="#stock" onclick="navigate('stock')" id="nav-stock"><i class="fas fa-boxes-stacked"></i> Stock</a>
     <a href="#orders" onclick="navigate('orders')" id="nav-orders"><i class="fas fa-clipboard-list"></i> Commandes</a>
-    <a href="#chat" onclick="navigate('chat')" id="nav-chat" style="position:relative"><i class="fas fa-comments"></i> Messages <span id="chatBadgeSide" style="display:none;background:#ef4444;color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:4px;font-weight:900"></span></a>
+    <a href="#chat" onclick="navigate('chat')" id="nav-chat" style="position:relative"><i class="fas fa-comments"></i> Messages <span id="chatBadgeSide" style="display:none;background:#ef4444;color:#fff;border-radius:999px;font-size:10px;padding:1px 6px;margin-left:4px"></span></a>
     <a href="#receipts" onclick="navigate('receipts')" id="nav-receipts"><i class="fas fa-receipt"></i> Tickets</a>
     <div style="flex:1"></div>
     <div id="sidebarContext" style="font-size:12px;opacity:.5;padding:8px 14px"></div>
@@ -121,7 +121,7 @@
   <button onclick="navigate('pos')"      id="mnav-pos"     ><i class="fas fa-cash-register"></i><span>Caisse</span></button>
   <button onclick="navigate('stock')"    id="mnav-stock"   ><i class="fas fa-boxes-stacked"></i><span>Stock</span></button>
   <button onclick="navigate('orders')"   id="mnav-orders"  ><i class="fas fa-clipboard-list"></i><span>Commandes</span></button>
-  <button onclick="navigate('chat')"     id="mnav-chat"    style="position:relative"><i class="fas fa-comments"></i><span>Messages</span><span id="chatBadge" style="display:none;position:absolute;top:4px;right:10px;background:#ef4444;color:#fff;border-radius:999px;font-size:9px;padding:1px 4px;font-weight:900;min-width:16px;text-align:center"></span></button>
+  <button onclick="navigate('chat')"     id="mnav-chat"    style="position:relative"><i class="fas fa-comments"></i><span>Messages</span><span id="chatBadge" style="display:none;position:absolute;top:6px;right:18px;background:#ef4444;color:#fff;border-radius:999px;font-size:10px;padding:1px 5px;font-weight:800"></span></button>
   <button onclick="navigate('receipts')" id="mnav-receipts"><i class="fas fa-receipt"></i><span>Tickets</span></button>
 </nav>
 
@@ -130,7 +130,7 @@ import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebase
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut }
   from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {
-  getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, onSnapshot, runTransaction, serverTimestamp
+  getFirestore, doc, collection, getDocs, onSnapshot, runTransaction, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 // ── Firebase ─────────────────────────────────────────────────────────────────
@@ -224,7 +224,6 @@ function deriveStateFromCmData() {
   }));
 
   const pending = Array.isArray(cmData.pendingOrders) ? cmData.pendingOrders : [];
-  // Garder toutes les commandes (pending + completed + rejected) pour les filtres
   state.orders = pending
     .filter(o => !sid || String(o.shopId) === String(sid) || !o.shopId)
     .map(o => ({ ...o }));
@@ -291,67 +290,8 @@ function renderPage() {
   }
 }
 
-// Page commandes avec filtres + bouton Rejeter
-let ordersFilter = 'pending';
-window.setOrdersFilter = function(f) { ordersFilter = f; renderOrders(); };
-
-function renderOrders() {
-  const tid = tenantId || state.user?.uid || '';
-  const sid = storeId || state.context?.storeIds?.[0] || '';
-  const all = (Array.isArray(cmData.pendingOrders) ? cmData.pendingOrders : [])
-    .filter(o => !sid || String(o.shopId) === String(sid) || !o.shopId)
-    .sort((a,b) => (b.createdAtMs||0) - (a.createdAtMs||0));
-
-  const counts = { pending: 0, completed: 0, rejected: 0 };
-  all.forEach(o => { const s = o.status||'pending'; if (counts[s]!==undefined) counts[s]++; });
-
-  const filterBtns = [
-    ['pending','⏳ En attente','#f59e0b'],
-    ['completed','✅ Validées','#10b981'],
-    ['rejected','❌ Rejetées','#ef4444'],
-  ].map(([k,v,col]) => {
-    const active = ordersFilter === k;
-    return `<button onclick="setOrdersFilter('${k}')" style="padding:8px 16px;border-radius:12px;font-weight:700;font-size:13px;cursor:pointer;border:2px solid ${active?col:'var(--cm-border)'};background:${active?col:'#fff'};color:${active?'#fff':'var(--cm-text)'};transition:.15s">${v} <span style="background:rgba(0,0,0,.15);border-radius:999px;padding:1px 7px;font-size:11px">${counts[k]}</span></button>`;
-  }).join('');
-
-  const filtered = all.filter(o => (o.status||'pending') === ordersFilter);
-  let content = '';
-
-  if (!filtered.length) {
-    const labels = { pending:'en attente', completed:'validée', rejected:'rejetée' };
-    content = `<div class="empty-state"><i class="fas fa-clipboard-list"></i><br>Aucune commande ${labels[ordersFilter]||ordersFilter}.</div>`;
-  } else {
-    const rows = filtered.map(order => {
-      const st = order.status || 'pending';
-      const date = order.createdAtMs ? new Date(order.createdAtMs).toLocaleDateString('fr',{day:'2-digit',month:'2-digit',year:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
-      const preview = (order.items||[]).slice(0,2).map(i=>`${i.name||'Article'} ×${i.qty||1}`).join(' · ') + ((order.items||[]).length>2 ? ` +${order.items.length-2}` : '');
-      const actions = st === 'pending'
-        ? `<div style="display:flex;gap:6px">
-            <button class="cm-btn primary small" data-approve-oid="${esc(order.id)}"><i class="fas fa-check"></i> Valider</button>
-            <button class="cm-btn danger small"  data-reject-oid="${esc(order.id)}"><i class="fas fa-times"></i> Rejeter</button>
-           </div>`
-        : `<span class="cm-badge ${st==='completed'?'success':'danger'}">${st==='completed'?'Validée':'Rejetée'}</span>`;
-      return `<tr>
-        <td><strong style="font-size:12px">${esc((order.id||'').slice(-8))}</strong><br><small style="color:var(--cm-muted);font-size:10px">${esc(date)}</small></td>
-        <td>${esc(order.customer?.name||'Client')}<br><small style="color:var(--cm-muted)">${esc(order.customer?.phone||'—')}</small></td>
-        <td style="font-size:11px;color:var(--cm-muted);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(preview)}</td>
-        <td><strong>${esc(money(order.grandTotal||order.total||0))}</strong></td>
-        <td>${actions}</td>
-      </tr>`;
-    }).join('');
-    content = `<div class="cm-card" style="overflow:auto">
-      <table class="cm-table"><thead><tr><th>Réf / Date</th><th>Client</th><th>Articles</th><th>Total</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table>
-    </div>`;
-  }
-
-  setMain(`<div class="cm-card cm-section" style="margin-bottom:14px">
-    <h2 style="margin:0 0 14px;font-size:17px"><i class="fas fa-clipboard-list" style="color:var(--cm-primary)"></i> Commandes</h2>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">${filterBtns}</div>
-  </div>${content}`);
-
-  document.querySelectorAll('[data-approve-oid]').forEach(btn => btn.onclick = () => doApproveOrder(btn.dataset.approveOid));
-  document.querySelectorAll('[data-reject-oid]').forEach(btn  => btn.onclick = () => doRejectOrder(btn.dataset.rejectOid));
-}
+// Page connexion
+function renderLogin() {
   setMain(`<div class="cm-card cm-section" style="max-width:420px;margin:40px auto">
     <h2><i class="fas fa-lock" style="color:var(--cm-primary)"></i> Connexion Employé</h2>
     <p style="color:var(--cm-muted);font-size:13px">Connectez-vous avec votre compte Firebase autorisé.</p>
@@ -476,32 +416,68 @@ function renderStock() {
   </div>`);
 }
 
-// Page commandes
+// Page commandes — avec filtres En attente / Validée / Rejetée
+let ordersFilter = 'pending';
+
 function renderOrders() {
-  if (!state.orders.length) {
-    setMain('<div class="empty-state"><i class="fas fa-clipboard-list"></i><br>Aucune commande en attente.</div>');
-    return;
+  const allPending = Array.isArray(cmData.pendingOrders) ? cmData.pendingOrders : [];
+  const sid = storeId || state.context?.storeIds?.[0] || '';
+
+  // Récupérer TOUTES les commandes (pending + completed + rejected)
+  const all = allPending.filter(o => !sid || String(o.shopId) === String(sid) || !o.shopId);
+
+  const filterLabel = { pending: 'En attente', completed: 'Validées', rejected: 'Rejetées' };
+  const filterBtns = Object.entries(filterLabel).map(([k,v]) => {
+    const count = all.filter(o => (o.status||'pending') === k).length;
+    return `<button onclick="setOrdersFilter('${k}')" style="padding:8px 14px;border-radius:12px;font-weight:700;font-size:13px;cursor:pointer;border:2px solid ${ordersFilter===k?'var(--cm-primary)':'var(--cm-border)'};background:${ordersFilter===k?'var(--cm-primary)':'#fff'};color:${ordersFilter===k?'#fff':'var(--cm-text)'}">${v} <span style="background:rgba(255,255,255,.25);border-radius:999px;padding:1px 6px">${count}</span></button>`;
+  }).join('');
+
+  const filtered = all.filter(o => (o.status||'pending') === ordersFilter);
+
+  let content = '';
+  if (!filtered.length) {
+    content = `<div class="empty-state"><i class="fas fa-clipboard-list"></i><br>Aucune commande "${filterLabel[ordersFilter].toLowerCase()}".</div>`;
+  } else {
+    const statusColor = { pending:'warning', completed:'success', rejected:'danger' };
+    const statusTxt   = { pending:'En attente', completed:'Validée', rejected:'Rejetée' };
+    const rows = filtered.map(order => {
+      const st = order.status || 'pending';
+      const actions = st === 'pending' ? `
+        <button class="cm-btn primary small" data-approve-oid="${esc(order.id)}" style="margin-right:6px"><i class="fas fa-check"></i> Valider</button>
+        <button class="cm-btn danger small"  data-reject-oid="${esc(order.id)}"><i class="fas fa-times"></i> Rejeter</button>
+      ` : `<span class="cm-badge ${statusColor[st]||'warning'}">${statusTxt[st]||st}</span>`;
+      const itemsPreview = (order.items||[]).slice(0,2).map(i=>`${i.name} ×${i.qty}`).join(' • ') + (order.items?.length>2?` +${order.items.length-2}`:'');
+      return `<tr>
+        <td><strong>${esc((order.id||'').slice(-8))}</strong><br><small style="color:var(--cm-muted)">${esc(new Date(order.createdAtMs||Date.now()).toLocaleDateString('fr'))}</small></td>
+        <td>${esc(order.customer?.name||'Client')}<br><small style="color:var(--cm-muted)">${esc(order.customer?.phone||'—')}</small></td>
+        <td style="font-size:12px;color:var(--cm-muted)">${esc(itemsPreview)}</td>
+        <td><strong>${esc(money(order.grandTotal||order.total||0))}</strong></td>
+        <td>${actions}</td>
+      </tr>`;
+    }).join('');
+    content = `<div class="cm-card cm-section">
+      <table class="cm-table"><thead><tr><th>Réf / Date</th><th>Client</th><th>Articles</th><th>Total</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table>
+    </div>`;
   }
-  const rows = state.orders.map(order => `<tr>
-    <td><strong>${esc(order.id.slice(-6))}</strong></td>
-    <td>${esc(order.customer?.name||'Client')}</td>
-    <td>${esc(order.customer?.phone||'—')}</td>
-    <td>${esc(money(order.grandTotal||order.total||0))}</td>
-    <td><span class="cm-badge warning">${esc(order.status||'pending')}</span></td>
-    <td>
-      <button class="cm-btn primary small" data-approve-oid="${esc(order.id)}">
-        <i class="fas fa-check"></i> Valider
-      </button>
-    </td>
-  </tr>`).join('');
-  setMain(`<div class="cm-card cm-section">
-    <h2><i class="fas fa-clipboard-list" style="color:var(--cm-primary)"></i> Commandes en attente</h2>
-    <table class="cm-table"><thead><tr><th>Réf</th><th>Client</th><th>Tél</th><th>Total</th><th>Statut</th><th>Action</th></tr></thead><tbody>${rows}</tbody></table>
-  </div>`);
+
+  setMain(`<div class="cm-card cm-section" style="margin-bottom:14px">
+    <h2 style="margin:0 0 14px"><i class="fas fa-clipboard-list" style="color:var(--cm-primary)"></i> Commandes</h2>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">${filterBtns}</div>
+  </div>
+  ${content}`);
+
   document.querySelectorAll('[data-approve-oid]').forEach(btn => {
     btn.onclick = () => doApproveOrder(btn.dataset.approveOid);
   });
+  document.querySelectorAll('[data-reject-oid]').forEach(btn => {
+    btn.onclick = () => doRejectOrder(btn.dataset.rejectOid);
+  });
 }
+
+window.setOrdersFilter = function(f) {
+  ordersFilter = f;
+  renderOrders();
+};
 
 // Page tickets
 function renderReceipts() {
@@ -665,142 +641,154 @@ window.doSale = async function() {
 
 window.doRejectOrder = async function(orderId) {
   if (!confirm('Rejeter cette commande ?')) return;
-  const tid = tenantId || state.user?.uid || '';
   try {
-    await runTransaction(db, async tx => {
-      const ref = doc(db, 'commerce_data', tid);
+    await runTransaction(db, async (tx) => {
+      const ref = cdRef();
       const snap = await tx.get(ref);
-      const data = snap.exists() ? (snap.data()||{}) : {};
-      const pending = Array.isArray(data.pendingOrders) ? [...data.pendingOrders] : [];
-      const idx = pending.findIndex(o => o.id === orderId);
-      if (idx >= 0) pending[idx] = { ...pending[idx], status: 'rejected', rejectedAt: Date.now(), rejectedBy: state.user?.email||'employé' };
+      const data = snap.exists() ? (snap.data() || {}) : {};
+      const pending = Array.isArray(data.pendingOrders) ? data.pendingOrders : [];
+      const oIdx = pending.findIndex(o => o.id === orderId);
+      if (oIdx >= 0) pending[oIdx] = { ...pending[oIdx], status: 'rejected', rejectedAt: Date.now(), rejectedBy: state.user?.email || 'employé' };
       tx.set(ref, { pendingOrders: pending, updatedAt: serverTimestamp() }, { merge: true });
     });
     showToast('Commande rejetée', 'success');
     renderOrders();
-  } catch(e) { showToast(e.message||'Erreur rejet', 'error'); }
+  } catch(e) { showToast(e.message||'Erreur', 'error'); }
 };
 
-// ── MESSAGERIE EMPLOYÉ (chats_flat) ──────────────────────────────────────────
-let chatListUnsub = null;
-let activeChatId = null;
-let activeChatUnsub = null;
+// ── MESSAGERIE EMPLOYÉ ───────────────────────────────────────────────────────
+let chatThreadsUnsub = null;
+let activeThreadId = null;
+let activeThreadUnsub = null;
+
+function chatThreadsRef() {
+  const tid = tenantId || state.user?.uid || 'default';
+  return collection(db, 'chats', tid, 'threads');
+}
 
 function renderChat() {
   setMain(`<div class="cm-card cm-section">
-    <h2 style="margin:0 0 14px;font-size:17px"><i class="fas fa-comments" style="color:var(--cm-primary)"></i> Messagerie clients</h2>
-    <div id="chatLayout" style="display:grid;grid-template-columns:260px 1fr;gap:14px;min-height:440px">
-      <div style="border:1px solid var(--cm-border);border-radius:16px;overflow:hidden">
-        <div style="padding:10px 12px;background:#f8fafc;font-size:11px;font-weight:800;color:var(--cm-muted);text-transform:uppercase;letter-spacing:.05em">Conversations</div>
-        <div id="chatList" style="padding:6px;display:grid;gap:3px;max-height:400px;overflow-y:auto">
-          <div style="padding:16px;text-align:center;color:var(--cm-muted);font-size:13px"><i class="fas fa-spinner fa-spin"></i></div>
+    <h2 style="margin:0 0 14px"><i class="fas fa-comments" style="color:var(--cm-primary)"></i> Messagerie clients</h2>
+    <div style="display:grid;grid-template-columns:280px 1fr;gap:16px;min-height:400px">
+      <div id="chatThreadsList" style="border:1px solid var(--cm-border);border-radius:16px;overflow:hidden">
+        <div style="padding:12px;background:#f8fafc;font-size:12px;font-weight:800;color:var(--cm-muted);text-transform:uppercase">Conversations</div>
+        <div id="chatThreadsContent" style="padding:8px;display:grid;gap:4px">
+          <div style="text-align:center;padding:20px;color:var(--cm-muted);font-size:13px"><i class="fas fa-spinner fa-spin"></i></div>
         </div>
       </div>
-      <div style="border:1px solid var(--cm-border);border-radius:16px;display:flex;flex-direction:column;overflow:hidden">
-        <div id="chatMsgArea" style="flex:1;padding:14px;overflow-y:auto;max-height:360px;display:flex;flex-direction:column;gap:8px">
-          <div style="text-align:center;padding:40px;color:var(--cm-muted);font-size:13px"><i class="fas fa-comment-dots" style="font-size:32px;display:block;margin-bottom:10px;opacity:.3"></i>Sélectionnez une conversation</div>
+      <div id="chatMain" style="border:1px solid var(--cm-border);border-radius:16px;display:flex;flex-direction:column">
+        <div id="chatMsgsArea" style="flex:1;padding:14px;overflow-y:auto;max-height:420px;display:flex;flex-direction:column;gap:8px">
+          <div style="text-align:center;padding:40px;color:var(--cm-muted);font-size:13px"><i class="fas fa-comment-dots" style="font-size:28px;display:block;margin-bottom:8px"></i>Sélectionnez une conversation</div>
         </div>
-        <div id="chatReplyBox" style="display:none;border-top:1px solid var(--cm-border);padding:10px;gap:8px;align-items:flex-end">
-          <textarea id="empMsg" rows="2" placeholder="Répondre…" style="flex:1;border:1px solid var(--cm-border);border-radius:12px;padding:10px;font-family:inherit;font-size:13px;resize:none;width:100%"></textarea>
-          <button class="cm-btn primary" onclick="sendEmpReply()" style="margin-top:6px;width:100%"><i class="fas fa-paper-plane" style="margin-right:6px"></i>Envoyer</button>
+        <div id="chatReplyArea" style="display:none;border-top:1px solid var(--cm-border);padding:10px;display:flex;gap:8px">
+          <textarea id="empChatInput" rows="2" placeholder="Répondre au client…" style="flex:1;border:1px solid var(--cm-border);border-radius:12px;padding:10px;font-family:inherit;resize:none"></textarea>
+          <button class="cm-btn primary" onclick="sendEmployeeReply()" style="align-self:flex-end;padding:10px 16px"><i class="fas fa-paper-plane"></i></button>
         </div>
       </div>
     </div>
   </div>`);
-  loadChatList();
+  loadChatThreads();
 }
 
-function loadChatList() {
-  if (chatListUnsub) { chatListUnsub(); chatListUnsub = null; }
+function loadChatThreads() {
+  if (chatThreadsUnsub) { chatThreadsUnsub(); chatThreadsUnsub = null; }
   const tid = tenantId || state.user?.uid || '';
-  if (!tid) { document.getElementById('chatList').innerHTML = '<p style="padding:10px;font-size:12px;color:var(--cm-muted)">ID boutique manquant.</p>'; return; }
+  if (!tid) { document.getElementById('chatThreadsContent').innerHTML = '<p style="padding:10px;font-size:13px;color:var(--cm-muted)">ID boutique manquant.</p>'; return; }
 
-  // Écouter chats_flat où tenantId == tid
-  const q = query(collection(db, 'chats_flat'), where('tenantId', '==', tid));
-  chatListUnsub = onSnapshot(q, snap => {
+  chatThreadsUnsub = onSnapshot(chatThreadsRef(), snap => {
     const threads = [];
     snap.forEach(d => threads.push({ id: d.id, ...d.data() }));
     threads.sort((a,b) => (b.updatedAt||0) - (a.updatedAt||0));
 
-    // Badge non lus
     const unread = threads.filter(t => t.unreadEmployee).length;
-    ['chatBadge','chatBadgeSide'].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) { el.textContent = unread||''; el.style.display = unread ? 'inline' : 'none'; }
-    });
+    const badge = document.getElementById('chatBadge');
+    if (badge) { badge.textContent = unread||''; badge.style.display = unread ? 'inline' : 'none'; }
+    const badgeSide = document.getElementById('chatBadgeSide');
+    if (badgeSide) { badgeSide.textContent = unread||''; badgeSide.style.display = unread ? 'inline' : 'none'; }
 
-    const list = document.getElementById('chatList');
-    if (!list) return;
-    if (!threads.length) { list.innerHTML = '<p style="padding:12px;font-size:13px;color:var(--cm-muted)">Aucun message client.</p>'; return; }
-
-    list.innerHTML = threads.map(t => {
-      const last = (t.messages||[]).slice(-1)[0];
-      const preview = last ? last.text.slice(0,30) + (last.text.length>30?'…':'') : '';
-      const isActive = t.id === activeChatId;
-      return `<button onclick="openChatThread('${esc(t.id)}')" style="width:100%;text-align:left;border:none;border-radius:10px;padding:9px 10px;cursor:pointer;background:${isActive?'var(--cm-primary)':'transparent'};color:${isActive?'#fff':'var(--cm-text)'};transition:.15s">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+    const container = document.getElementById('chatThreadsContent');
+    if (!container) return;
+    if (!threads.length) {
+      container.innerHTML = '<p style="padding:10px;font-size:13px;color:var(--cm-muted)">Aucune conversation.</p>';
+      return;
+    }
+    container.innerHTML = threads.map(t => {
+      const lastMsg = (t.messages||[]).slice(-1)[0];
+      const preview = lastMsg ? lastMsg.text.slice(0,35) + (lastMsg.text.length>35?'…':'') : '';
+      const isActive = t.id === activeThreadId;
+      return `<button onclick="openThread('${esc(t.id)}')" style="width:100%;text-align:left;border:none;border-radius:10px;padding:10px;cursor:pointer;background:${isActive?'var(--cm-primary)':'transparent'};color:${isActive?'#fff':'var(--cm-text)'};transition:.15s">
+        <div style="display:flex;justify-content:space-between;align-items:center">
           <strong style="font-size:13px">${esc(t.clientName||'Client')}</strong>
-          ${t.unreadEmployee&&!isActive?'<span style="width:7px;height:7px;border-radius:50%;background:#ef4444;display:inline-block;flex-shrink:0"></span>':''}
+          ${t.unreadEmployee&&!isActive?'<span style="width:8px;height:8px;border-radius:50%;background:#ef4444;display:inline-block"></span>':''}
         </div>
-        <div style="font-size:10px;opacity:.65;margin-bottom:2px">${esc(t.clientPhone||'')}${t.chatType?' · '+t.chatType:''}</div>
-        <div style="font-size:11px;opacity:.55;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${esc(preview)}</div>
+        <div style="font-size:11px;opacity:.7;margin-top:2px">${esc(t.clientPhone||'')} · ${esc(t.chatType||'support')}</div>
+        <div style="font-size:12px;opacity:.6;margin-top:3px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${esc(preview)}</div>
       </button>`;
     }).join('');
-  }, err => console.warn('[chatList]', err));
+  }, err => console.warn('[chatThreads]', err));
 }
 
-window.openChatThread = function(threadId) {
-  activeChatId = threadId;
-  if (activeChatUnsub) { activeChatUnsub(); activeChatUnsub = null; }
-  loadChatList(); // re-render list to show active highlight
+window.openThread = function(threadId) {
+  activeThreadId = threadId;
+  if (activeThreadUnsub) { activeThreadUnsub(); activeThreadUnsub = null; }
+  loadChatThreads(); // re-render list to show active
 
-  const ref = doc(db, 'chats_flat', threadId);
-  const area = document.getElementById('chatMsgArea');
-  const replyBox = document.getElementById('chatReplyBox');
-  if (replyBox) { replyBox.style.display = 'flex'; replyBox.style.flexDirection = 'column'; replyBox.style.gap = '6px'; }
+  const tid = tenantId || state.user?.uid || 'default';
+  const ref = doc(db, 'chats', tid, 'threads', threadId);
 
-  // Marquer lu
-  setDoc(ref, { unreadEmployee: false }, { merge: true }).catch(()=>{});
+  const area = document.getElementById('chatMsgsArea');
+  const replyArea = document.getElementById('chatReplyArea');
+  if (replyArea) replyArea.style.display = 'flex';
 
-  activeChatUnsub = onSnapshot(ref, snap => {
+  // Marquer comme lu
+  import('https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js').then(({ updateDoc }) => {
+    updateDoc(ref, { unreadEmployee: false }).catch(()=>{});
+  });
+
+  activeThreadUnsub = onSnapshot(ref, snap => {
     if (!area) return;
-    if (!snap.exists()) { area.innerHTML = '<p style="padding:10px;color:var(--cm-muted)">Vide.</p>'; return; }
-    const messages = Array.isArray(snap.data().messages) ? snap.data().messages : [];
-    if (!messages.length) { area.innerHTML = '<p style="padding:10px;color:var(--cm-muted);font-size:13px">Aucun message.</p>'; return; }
+    if (!snap.exists()) { area.innerHTML = '<p style="padding:10px;color:var(--cm-muted)">Aucun message.</p>'; return; }
+    const data = snap.data();
+    const messages = Array.isArray(data.messages) ? data.messages : [];
     area.innerHTML = messages.map(m => {
       const isClient = m.role === 'client';
       const t = m.ts ? new Date(m.ts).toLocaleTimeString('fr',{hour:'2-digit',minute:'2-digit'}) : '';
-      return `<div style="display:flex;justify-content:${isClient?'flex-start':'flex-end'}">
-        <div style="max-width:75%;background:${isClient?'#f1f5f9':'var(--cm-primary)'};color:${isClient?'var(--cm-text)':'#fff'};border-radius:14px;padding:9px 13px;font-size:13px">
+      const bgColor = isClient ? '#f1f5f9' : 'var(--cm-primary)';
+      const txtColor = isClient ? 'var(--cm-text)' : '#fff';
+      const align = isClient ? 'flex-start' : 'flex-end';
+      return `<div style="display:flex;justify-content:${align}">
+        <div style="max-width:75%;background:${bgColor};color:${txtColor};border-radius:14px;padding:10px 14px;font-size:13px">
           <div style="font-size:10px;opacity:.6;margin-bottom:3px">${isClient?esc(m.sender||'Client'):'Employé'} · ${t}</div>
           ${esc(m.text)}
         </div>
       </div>`;
     }).join('');
     area.scrollTop = area.scrollHeight;
-  }, err => console.warn('[chatThread]', err));
+  }, err => console.warn('[activeThread]', err));
 };
 
-window.sendEmpReply = async function() {
-  const inp = document.getElementById('empMsg');
-  if (!inp || !activeChatId) return;
+window.sendEmployeeReply = async function() {
+  const inp = document.getElementById('empChatInput');
+  if (!inp || !activeThreadId) return;
   const txt = inp.value.trim();
   if (!txt) return;
   inp.value = '';
-  const ref = doc(db, 'chats_flat', activeChatId);
+  const tid = tenantId || state.user?.uid || 'default';
+  const ref = doc(db, 'chats', tid, 'threads', activeThreadId);
   const now = Date.now();
   try {
-    const snap = await getDoc(ref);
-    const existing = snap.exists() ? (snap.data().messages || []) : [];
-    existing.push({ role: 'employee', text: txt, ts: now, sender: state.user?.displayName||state.user?.email||'Employé' });
-    await setDoc(ref, { messages: existing, updatedAt: now, unreadClient: true, unreadEmployee: false }, { merge: true });
+    await runTransaction(db, async tx => {
+      const snap = await tx.get(ref);
+      const existing = snap.exists() ? (snap.data().messages || []) : [];
+      existing.push({ role: 'employee', text: txt, ts: now, sender: state.user?.displayName || state.user?.email || 'Employé' });
+      tx.set(ref, { messages: existing, updatedAt: now, unreadClient: true }, { merge: true });
+    });
   } catch(e) { showToast('Erreur envoi', 'error'); }
 };
 
 window.doApproveOrder = async function(orderId) {
-  const order = (Array.isArray(cmData.pendingOrders) ? cmData.pendingOrders : []).find(o => o.id === orderId)
-             || state.orders.find(o => o.id === orderId);
-  if (!order) { showToast('Commande introuvable', 'error'); return; }
+  const order = state.orders.find(o => o.id === orderId);
+  if (!order) return;
   const sid = storeId || state.context?.storeIds?.[0] || '';
   const receiptNum = 'AET-' + Date.now();
   try {
@@ -901,8 +889,8 @@ onAuthStateChanged(auth, async user => {
   }
 
   await loadData();
-  // Démarrer le listener badge messages non lus
-  try { loadChatList(); } catch(e) {}
+  // Démarrer le listener de chat (badge de messages non lus)
+  setTimeout(() => { try { loadChatThreads(); } catch(e) {} }, 500);
   currentPage = 'pos';
   navigate('pos');
 });

@@ -1,0 +1,102 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() { return request.auth != null; }
+    function tenantPath(tenantId) { return /databases/$(database)/documents/tenants/$(tenantId); }
+    function rolePath(tenantId) { return /databases/$(database)/documents/tenants/$(tenantId)/roleBindings/$(request.auth.uid); }
+    function hasRoleDoc(tenantId) { return isSignedIn() && exists(rolePath(tenantId)); }
+    function roleDoc(tenantId) { return get(rolePath(tenantId)); }
+    function roleName(tenantId) { return hasRoleDoc(tenantId) ? roleDoc(tenantId).data.role : null; }
+    function storeIds(tenantId) { return hasRoleDoc(tenantId) && roleDoc(tenantId).data.storeIds is list ? roleDoc(tenantId).data.storeIds : []; }
+    function isOwner(tenantId) { return roleName(tenantId) == 'owner'; }
+    function isManager(tenantId) { return roleName(tenantId) == 'manager'; }
+    function isEmployee(tenantId) { return roleName(tenantId) == 'employee'; }
+    function canReadInternal(tenantId) { return isOwner(tenantId) || isManager(tenantId) || isEmployee(tenantId); }
+    function canWriteCatalog(tenantId) { return isOwner(tenantId) || isManager(tenantId); }
+    function canWriteSales(tenantId) { return isOwner(tenantId) || isManager(tenantId) || isEmployee(tenantId); }
+    function allowedStore(tenantId, storeId) { return isOwner(tenantId) || storeId in storeIds(tenantId); }
+    function publicProduct() { return resource.data.isPublished == true && resource.data.isActive == true; }
+
+    match /tenants/{tenantId} {
+      allow read: if canReadInternal(tenantId);
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.ownerUid;
+      allow update, delete: if isOwner(tenantId);
+
+      match /settings/{settingId} {
+        allow read: if canReadInternal(tenantId);
+        allow write: if canWriteCatalog(tenantId);
+      }
+
+      match /stores/{storeId} {
+        allow read: if canReadInternal(tenantId);
+        allow create, update: if canWriteCatalog(tenantId);
+        allow delete: if isOwner(tenantId);
+      }
+
+      match /categories/{categoryId} {
+        allow read: if true;
+        allow create, update: if canWriteCatalog(tenantId);
+        allow delete: if isOwner(tenantId);
+      }
+
+      match /products/{productId} {
+        allow read: if publicProduct() || canReadInternal(tenantId);
+        allow create, update: if canWriteCatalog(tenantId);
+        allow delete: if isOwner(tenantId);
+      }
+
+      match /inventory/{inventoryId} {
+        allow read: if canReadInternal(tenantId);
+        allow create, update: if canWriteCatalog(tenantId) && allowedStore(tenantId, request.resource.data.storeId);
+        allow delete: if isOwner(tenantId);
+      }
+
+      match /customers/{customerId} {
+        allow read, create, update: if canReadInternal(tenantId);
+        allow delete: if isOwner(tenantId) || isManager(tenantId);
+      }
+
+      match /suppliers/{supplierId} {
+        allow read: if canReadInternal(tenantId);
+        allow create, update: if canWriteCatalog(tenantId);
+        allow delete: if isOwner(tenantId);
+      }
+
+      match /employees/{employeeId} {
+        allow read: if isOwner(tenantId) || isManager(tenantId);
+        allow create, update, delete: if isOwner(tenantId);
+      }
+
+      match /roleBindings/{uid} {
+        allow read: if isOwner(tenantId) || (isSignedIn() && request.auth.uid == uid);
+        allow create, update, delete: if isOwner(tenantId);
+      }
+
+      match /orders/{orderId} {
+        allow create: if request.resource.data.tenantId == tenantId && request.resource.data.storeId is string;
+        allow read: if canReadInternal(tenantId);
+        allow update: if canWriteSales(tenantId);
+        allow delete: if isOwner(tenantId);
+      }
+
+      match /sales/{saleId} {
+        allow read: if canReadInternal(tenantId);
+        allow create: if canWriteSales(tenantId) && request.resource.data.tenantId == tenantId && allowedStore(tenantId, request.resource.data.storeId);
+        allow update: if isOwner(tenantId) || isManager(tenantId);
+        allow delete: if isOwner(tenantId);
+      }
+
+      match /cashSessions/{sessionId} {
+        allow read: if canReadInternal(tenantId);
+        allow create, update: if canWriteSales(tenantId);
+        allow delete: if isOwner(tenantId);
+      }
+
+      match /stockMovements/{movementId} {
+        allow read: if canReadInternal(tenantId);
+        allow create: if canWriteSales(tenantId) || canWriteCatalog(tenantId);
+        allow update, delete: if isOwner(tenantId);
+      }
+    }
+  }
+}

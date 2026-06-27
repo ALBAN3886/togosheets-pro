@@ -8437,8 +8437,51 @@ if ('serviceWorker' in navigator) {
         </div>
       </div>
 
-      <label class="cm-modal-label" data-i18n="cm_art_note">Note (optionnel)</label>
-      <textarea id="cmArtNote" class="cm-modal-input" rows="2" data-i18n="cm_art_note_ph" placeholder="Description, fournisseur…"></textarea>
+      <label class="cm-modal-label" data-i18n="cm_art_note">Description détaillée (optionnel)</label>
+      <textarea id="cmArtNote" class="cm-modal-input" rows="3" placeholder="Description complète, utilisation, avantages…"></textarea>
+
+      <!-- ── Champs enrichis style Alibaba ── -->
+      <div style="border-top:1px solid var(--border);margin:14px 0 12px;padding-top:12px">
+        <div style="font-size:12px;font-weight:700;color:var(--primary);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px"><i class="fas fa-star" style="margin-right:5px"></i>Détails produit (Boutique enrichie)</div>
+
+        <label class="cm-modal-label">Marque / Fournisseur</label>
+        <input type="text" id="cmArtBrand" class="cm-modal-input" placeholder="Ex: Samsung, Nike, Produit local…">
+
+        <div class="cm-modal-row">
+          <div>
+            <label class="cm-modal-label">Couleurs disponibles</label>
+            <input type="text" id="cmArtColors" class="cm-modal-input" placeholder="Ex: Rouge, Bleu, Noir">
+          </div>
+          <div>
+            <label class="cm-modal-label">Tailles disponibles</label>
+            <input type="text" id="cmArtSizes" class="cm-modal-input" placeholder="Ex: S, M, L, XL ou 38–44">
+          </div>
+        </div>
+
+        <label class="cm-modal-label">Caractéristiques / Spécifications</label>
+        <textarea id="cmArtSpecs" class="cm-modal-input" rows="3" placeholder="Ex:&#10;• Matière : Coton 100%&#10;• Poids : 500g&#10;• Dimensions : 30×20×10 cm&#10;• Garantie : 1 an"></textarea>
+
+        <label class="cm-modal-label">Photos de la galerie (URLs, une par ligne)</label>
+        <textarea id="cmArtPhotos" class="cm-modal-input" rows="4" placeholder="https://exemple.com/photo1.jpg&#10;https://exemple.com/photo2.jpg&#10;https://exemple.com/photo3.jpg&#10;(Ajoutez jusqu'à 8 photos)"></textarea>
+        <div id="cmArtPhotosPreview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px"></div>
+
+        <label class="cm-modal-label">Tags / Mots-clés (séparés par des virgules)</label>
+        <input type="text" id="cmArtTags" class="cm-modal-input" placeholder="Ex: électronique, promotion, nouveau, livraison rapide">
+
+        <label class="cm-modal-label">Prix barré (ancien prix, optionnel)</label>
+        <input type="number" id="cmArtOldPrice" class="cm-modal-input" step="0.01" min="0" placeholder="0 (si pas de promotion)">
+
+        <div class="cm-modal-row">
+          <div>
+            <label class="cm-modal-label">Délai de livraison</label>
+            <input type="text" id="cmArtDelivery" class="cm-modal-input" placeholder="Ex: 24h à Lomé, 3–5 jours">
+          </div>
+          <div>
+            <label class="cm-modal-label">Pays / Origine</label>
+            <input type="text" id="cmArtOrigin" class="cm-modal-input" placeholder="Ex: Togo, Chine, France">
+          </div>
+        </div>
+      </div>
     </div>
     <div class="modal-footer">
       <button class="btn-cancel" id="cmArtDelBtn" onclick="cmDeleteArticle()" style="display:none;background:rgba(239,68,68,.12);color:#ef4444"><i class="fas fa-trash"></i> <span data-i18n="btn_delete">Supprimer</span></button>
@@ -10076,6 +10119,25 @@ window.cmScanForQuickSale = function(){
   window.cmOpenScanner(null, { mode:'sale' });
 };
 
+/* ── Preview photos galerie en temps réel ── */
+function cmRenderPhotosPreview(){
+  const raw = (document.getElementById('cmArtPhotos')||{}).value||'';
+  const urls = raw.split('\n').map(s=>s.trim()).filter(Boolean).slice(0,8);
+  const box = document.getElementById('cmArtPhotosPreview');
+  if(!box) return;
+  box.innerHTML = urls.map(url=>`<img src="${url}" alt="" loading="lazy" style="width:64px;height:64px;object-fit:cover;border-radius:8px;border:2px solid var(--border)" onerror="this.style.display='none'">`).join('');
+}
+(function(){
+  const _origOpen = window.openModal;
+  window.openModal = function(id){
+    if(_origOpen) _origOpen(id);
+    if(id==='cmArticleModal'){
+      const ta = document.getElementById('cmArtPhotos');
+      if(ta && !ta._previewBound){ ta.addEventListener('input', cmRenderPhotosPreview); ta._previewBound=true; }
+    }
+  };
+})();
+
 window.cmOpenArticleModal = function(){
   if(!cmGetShop()){ cmToast(t('cm_msg_create_shop_first'),'error'); return; }
   CM.editingArtId = null;
@@ -10089,6 +10151,11 @@ window.cmOpenArticleModal = function(){
   document.getElementById('cmArtSeuil').value = (shop && shop.seuil) || 5;
   document.getElementById('cmArtCode').value = '';
   document.getElementById('cmArtNote').value = '';
+  // Champs enrichis
+  ['cmArtBrand','cmArtColors','cmArtSizes','cmArtSpecs','cmArtPhotos','cmArtTags','cmArtOldPrice','cmArtDelivery','cmArtOrigin'].forEach(function(eid){
+    var el=document.getElementById(eid); if(el) el.value='';
+  });
+  var prev=document.getElementById('cmArtPhotosPreview'); if(prev) prev.innerHTML='';
   document.getElementById('cmArtDelBtn').style.display = 'none';
   cmRenderArtCatGrid();
   if(window.openModal) window.openModal('cmArticleModal');
@@ -10107,6 +10174,18 @@ window.cmEditArticle = function(id){
   document.getElementById('cmArtSeuil').value = a.seuil!==undefined?a.seuil:5;
   document.getElementById('cmArtCode').value = a.code||'';
   document.getElementById('cmArtNote').value = a.note||'';
+  // Champs enrichis
+  var _ef = function(eid,val){ var el=document.getElementById(eid); if(el) el.value=val||''; };
+  _ef('cmArtBrand', a.brand);
+  _ef('cmArtColors', (a.colors||[]).join(', '));
+  _ef('cmArtSizes', (a.sizes||[]).join(', '));
+  _ef('cmArtSpecs', a.specs);
+  _ef('cmArtPhotos', (a.photos||[]).join('\n'));
+  _ef('cmArtTags', (a.tags||[]).join(', '));
+  _ef('cmArtOldPrice', a.oldPrice||'');
+  _ef('cmArtDelivery', a.delivery);
+  _ef('cmArtOrigin', a.origin);
+  setTimeout(cmRenderPhotosPreview, 50);
   document.getElementById('cmArtDelBtn').style.display = cmCan('delete_article') ? '' : 'none';
   cmRenderArtCatGrid(a.cat);
   // Si l'utilisateur n'a pas le droit de modifier les articles (employé),
@@ -10149,6 +10228,21 @@ window.cmSaveArticle = function(){
   const seuil = parseInt(document.getElementById('cmArtSeuil').value)||0;
   const code = document.getElementById('cmArtCode').value.trim();
   const note = document.getElementById('cmArtNote').value.trim();
+  // Champs enrichis
+  const brand    = (document.getElementById('cmArtBrand')||{}).value?.trim()||'';
+  const colorsRaw= (document.getElementById('cmArtColors')||{}).value?.trim()||'';
+  const sizesRaw = (document.getElementById('cmArtSizes')||{}).value?.trim()||'';
+  const specs    = (document.getElementById('cmArtSpecs')||{}).value?.trim()||'';
+  const photosRaw= (document.getElementById('cmArtPhotos')||{}).value?.trim()||'';
+  const tagsRaw  = (document.getElementById('cmArtTags')||{}).value?.trim()||'';
+  const oldPrice = parseFloat((document.getElementById('cmArtOldPrice')||{}).value)||0;
+  const delivery = (document.getElementById('cmArtDelivery')||{}).value?.trim()||'';
+  const origin   = (document.getElementById('cmArtOrigin')||{}).value?.trim()||'';
+  const colors   = colorsRaw ? colorsRaw.split(',').map(s=>s.trim()).filter(Boolean) : [];
+  const sizes    = sizesRaw  ? sizesRaw.split(',').map(s=>s.trim()).filter(Boolean)  : [];
+  const tags     = tagsRaw   ? tagsRaw.split(',').map(s=>s.trim()).filter(Boolean)   : [];
+  const photos   = photosRaw ? photosRaw.split('\n').map(s=>s.trim()).filter(Boolean).slice(0,8) : [];
+  const imageUrl = photos[0]||'';
 
   if(!name){ cmToast(t('cm_msg_name_required'),'error'); return; }
   if(!cat){ cmToast(t('cm_msg_category_required'),'error'); return; }
@@ -10157,7 +10251,7 @@ window.cmSaveArticle = function(){
   if(CM.editingArtId){
     const a = CM.articles.find(x=>x.id===CM.editingArtId);
     if(a){
-      Object.assign(a,{name,cat,prixA,prixV,stock,unit,seuil,code,note});
+      Object.assign(a,{name,cat,prixA,prixV,stock,unit,seuil,code,note,brand,colors,sizes,specs,photos,imageUrl,tags,oldPrice,delivery,origin});
       // a.qrId est l'identifiant unique servant au QR (services) — distinct
       // du code-barre (a.code) saisi à la main.
       if(!a.qrId) a.qrId = cmGenArticleCode();
@@ -10172,6 +10266,8 @@ window.cmSaveArticle = function(){
       qrId: cmGenArticleCode(),
       units: [],
       note,
+      brand,colors,sizes,specs,photos,imageUrl,
+      tags,oldPrice,delivery,origin,
       createdAt: Date.now()
     };
     CM.articles.push(a);

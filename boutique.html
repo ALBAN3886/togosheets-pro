@@ -801,7 +801,7 @@ button,input,textarea,select{font:inherit}a{text-decoration:none;color:inherit}
 ══════════════════════════════════════════════════ -->
 <script type="module">
 import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getFirestore, doc, onSnapshot, collection, addDoc, serverTimestamp, runTransaction } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getFirestore, doc, getDoc, onSnapshot, collection, addDoc, serverTimestamp, runTransaction } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const FIREBASE_CONFIG = window.__AET_FIREBASE_CONFIG__ || {
   apiKey: 'AIzaSyB5hpkRlFZ9HFRRbpQlvpHwMNDja37Nr2s',
@@ -1309,28 +1309,98 @@ window.openOrdersDrawer = () => {
   openDrawer('ordersDrawer');
 };
 
-// ── MESSAGERIE ────────────────────────────────────────────────────────────
+// ── MESSAGERIE FIREBASE ───────────────────────────────────────────────────
+let chatUnsub = null;
+let currentChatType = 'support';
+
+// Génère un ID client persistant
+function getClientId() {
+  let cid = localStorage.getItem('aet_chat_cid');
+  if (!cid) { cid = 'client_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); localStorage.setItem('aet_chat_cid', cid); }
+  return cid;
+}
+
+// Construit la référence du thread de chat : chats/{tenantId}/threads/{clientId}_{type}
+function chatRef(type) {
+  const tid = tenantId || 'default';
+  const cid = getClientId();
+  return doc(db, 'chats', tid, 'threads', cid + '_' + type);
+}
+
 window.loadMessages = () => {};
 
 window.openChatWindow = type => {
+  currentChatType = type;
   document.getElementById('chatTitle').textContent = type==='support' ? 'Support ALBAN STORE' : 'Vendeur';
   openDrawer('chatWindow');
+  startChatListener(type);
 };
 
-window.sendChatMsg = () => {
+function startChatListener(type) {
+  if (chatUnsub) { chatUnsub(); chatUnsub = null; }
+  const msgs = document.getElementById('chatMsgs');
+  // Afficher message d'accueil si vide
+  msgs.innerHTML = '<div class="msg theirs">Bonjour ! 👋 Bienvenue sur ALBAN STORE.<br>Comment puis-je vous aider aujourd\'hui ?<span class="msg-time">Maintenant</span></div>';
+
+  const ref = chatRef(type);
+  chatUnsub = onSnapshot(ref, snap => {
+    if (!snap.exists()) return;
+    const data = snap.data();
+    const messages = Array.isArray(data.messages) ? data.messages : [];
+    if (!messages.length) return;
+    msgs.innerHTML = messages.map(m => {
+      const isClient = m.role === 'client';
+      const t = m.ts ? new Date(m.ts).toLocaleTimeString('fr',{hour:'2-digit',minute:'2-digit'}) : '';
+      return `<div class="msg ${isClient?'mine':'theirs'}">${esc(m.text)}<span class="msg-time">${t}</span></div>`;
+    }).join('');
+    msgs.scrollTop = msgs.scrollHeight;
+  }, err => console.warn('[chat]', err));
+}
+
+// Purge les messages de plus de 30 jours
+function purgeOldMessages(messages) {
+  const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  return messages.filter(m => (m.ts || 0) > cutoff);
+}
+
+window.sendChatMsg = async () => {
   const inp = document.getElementById('chatInputField');
   const txt = inp.value.trim();
   if (!txt) return;
-  const msgs = document.getElementById('chatMsgs');
-  const now = new Date().toLocaleTimeString('fr',{hour:'2-digit',minute:'2-digit'});
-  msgs.innerHTML += `<div class="msg mine">${esc(txt)}<span class="msg-time">${now}</span></div>`;
-  inp.value=''; inp.style.height='auto';
-  msgs.scrollTop = msgs.scrollHeight;
-  // Auto-reply after delay
-  setTimeout(()=>{
-    msgs.innerHTML += `<div class="msg theirs">Merci pour votre message ! Un conseiller vous répondra très bientôt. 😊<span class="msg-time">${new Date().toLocaleTimeString('fr',{hour:'2-digit',minute:'2-digit'})}</span></div>`;
-    msgs.scrollTop = msgs.scrollHeight;
-  }, 1200);
+  inp.value = ''; inp.style.height = 'auto';
+
+  const ref = chatRef(currentChatType);
+  const now = Date.now();
+  const newMsg = {
+    role: 'client',
+    text: txt,
+    ts: now,
+    sender: S.user?.name || 'Client',
+    phone: S.user?.phone || '',
+  };
+
+  try {
+    await runTransaction(db, async tx => {
+      const s = await tx.get(ref);
+      const existing = s.exists() ? (s.data().messages || []) : [];
+      const purged = purgeOldMessages(existing);
+      purged.push(newMsg);
+      tx.set(ref, {
+        clientId: getClientId(),
+        tenantId: tenantId || 'default',
+        chatType: currentChatType,
+        shopId: storeId || '',
+        clientName: S.user?.name || 'Client',
+        clientPhone: S.user?.phone || '',
+        updatedAt: now,
+        unreadEmployee: true,
+        messages: purged,
+      }, { merge: true });
+    });
+  } catch(e) {
+    console.warn('[sendChatMsg]', e);
+    showToast('⚠️ Erreur envoi message');
+  }
 };
 
 window.chatEnter = e => { if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendChatMsg(); }};

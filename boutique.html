@@ -311,10 +311,14 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
 ══════════════════════════════════════════════════ -->
 <div class="header">
   <div class="header-top">
+    <!-- Bouton retour marketplace (visible seulement quand on navigue depuis marketplace) -->
+    <button class="icon-pill" id="btnBackMarket" onclick="goBackToMarketplace()" style="display:none;margin-right:4px">
+      <i class="fas fa-arrow-left"></i>
+    </button>
     <div class="header-logo"><i class="fas fa-store"></i></div>
     <div class="header-info" style="flex:1">
       <div id="shopName" style="font-weight:800;font-size:14px">ALBAN STORE</div>
-      <div style="font-size:11px;color:var(--muted)">Lomé, Togo</div>
+      <div style="font-size:11px;color:var(--muted)" id="shopSubtitle">Lomé, Togo</div>
     </div>
     <button class="icon-pill" onclick="openDrawer('notifDrawer')">
       <i class="fas fa-bell"></i>
@@ -352,20 +356,6 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
       <button class="qa-btn" onclick="openPage('top')"><i class="fas fa-trophy"></i>Top ventes</button>
     </div>
 
-    <!-- HERO BOUTIQUE -->
-    <div class="hero-banner" id="heroBanner">
-      <div class="hero-orb" id="shopLogoEl"><i class="fas fa-store"></i></div>
-      <div class="hero-info">
-        <div class="realtime-badge"><span class="realtime-dot"></span>temps réel</div>
-        <h1 id="shopTitle">Chargement…</h1>
-        <p id="shopDesc">Boutique synchronisée en temps réel.</p>
-        <div class="hero-stats">
-          <div class="stat-pill"><strong id="stProducts">0</strong><span>Articles</span></div>
-          
-          <div class="stat-pill"><strong id="stCats">0</strong><span>Catégories</span></div>
-        </div>
-      </div>
-    </div>
 
     <!-- PROMOS BANNERS -->
     <div class="sec-head"><h2>Offres spéciales</h2></div>
@@ -444,9 +434,8 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
   <button id="bnCat" onclick="openPage('catalogue');setActiveNav('bnCat')">
     <i class="fas fa-table-cells-large"></i><span>Catégories</span>
   </button>
-  <button id="bnMsg" onclick="setActiveNav('bnMsg');openDrawer('msgDrawer');loadMessages()">
-    <i class="far fa-comment-dots"></i><span>Messages</span>
-    <span class="nav-badge" id="msgBadge" style="display:none">1</span>
+  <button id="bnMarket" onclick="openMarketplace();setActiveNav('bnMarket')">
+    <i class="fas fa-shop"></i><span>Boutiques</span>
   </button>
   <button id="bnCart" onclick="setActiveNav('bnCart');openDrawer('cartDrawer')">
     <i class="fas fa-cart-shopping"></i><span>Panier</span>
@@ -456,6 +445,80 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
     <i class="far fa-user"></i><span>Mon compte</span>
   </button>
 </nav>
+
+<!-- ══════════════════════════════════════════════════
+  VUE MARKETPLACE — liste toutes les boutiques
+══════════════════════════════════════════════════ -->
+<div id="marketplaceView" style="display:none;position:fixed;inset:0;z-index:90;background:var(--bg);overflow-y:auto;padding-bottom:calc(80px + env(safe-area-inset-bottom))">
+
+  <!-- Header marketplace -->
+  <div style="background:linear-gradient(135deg,#059669,#10b981);padding:14px 16px 10px;position:sticky;top:0;z-index:5">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+      <button onclick="closeMarketplace()" style="background:rgba(255,255,255,.2);border:none;border-radius:10px;width:36px;height:36px;color:#fff;cursor:pointer;display:grid;place-items:center;flex-shrink:0">
+        <i class="fas fa-arrow-left"></i>
+      </button>
+      <div style="flex:1">
+        <div style="color:#fff;font-weight:900;font-size:16px">🏪 Marketplace</div>
+        <div style="color:rgba(255,255,255,.8);font-size:11px">Toutes les boutiques · Togo</div>
+      </div>
+      <div style="background:rgba(255,255,255,.2);border-radius:10px;padding:5px 10px;color:#fff;font-size:11px;font-weight:700" id="mktShopCount">…</div>
+    </div>
+    <!-- Barre de recherche -->
+    <div style="display:flex;align-items:center;gap:8px;background:#fff;border-radius:12px;padding:8px 12px">
+      <i class="fas fa-search" style="color:#10b981;font-size:13px"></i>
+      <input id="mktSearch" type="search" placeholder="Chercher une boutique ou produit…"
+        style="border:none;outline:none;flex:1;font-size:13px;font-family:inherit"
+        oninput="mktFilter()"/>
+      <button onclick="document.getElementById('mktSearch').value='';mktFilter()" style="border:none;background:none;color:#94a3b8;cursor:pointer;font-size:12px"><i class="fas fa-xmark"></i></button>
+    </div>
+  </div>
+
+  <!-- Filtres par type -->
+  <div style="overflow-x:auto;display:flex;gap:8px;padding:10px 16px;scrollbar-width:none" id="mktFilters">
+    <button class="mkt-chip active" data-cat="all" onclick="mktPickCat(this,'all')">Tous</button>
+    <button class="mkt-chip" data-cat="vetement" onclick="mktPickCat(this,'vetement')">👗 Vêtements</button>
+    <button class="mkt-chip" data-cat="alimentaire" onclick="mktPickCat(this,'alimentaire')">🍞 Alimentation</button>
+    <button class="mkt-chip" data-cat="electronique" onclick="mktPickCat(this,'electronique')">📱 Électronique</button>
+    <button class="mkt-chip" data-cat="beaute" onclick="mktPickCat(this,'beaute')">💄 Beauté</button>
+    <button class="mkt-chip" data-cat="maison" onclick="mktPickCat(this,'maison')">🏠 Maison</button>
+    <button class="mkt-chip" data-cat="service" onclick="mktPickCat(this,'service')">🔧 Services</button>
+  </div>
+
+  <!-- Stats -->
+  <div style="display:flex;gap:16px;padding:0 16px 10px">
+    <div style="background:#fff;border-radius:12px;padding:10px 16px;flex:1;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06)">
+      <div style="font-size:20px;font-weight:900;color:#10b981" id="mktStatShops">0</div>
+      <div style="font-size:11px;color:#64748b">Boutiques</div>
+    </div>
+    <div style="background:#fff;border-radius:12px;padding:10px 16px;flex:1;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06)">
+      <div style="font-size:20px;font-weight:900;color:#f59e0b" id="mktStatProducts">0</div>
+      <div style="font-size:11px;color:#64748b">Articles</div>
+    </div>
+    <div style="background:#fff;border-radius:12px;padding:10px 16px;flex:1;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.06)">
+      <div style="font-size:20px;font-weight:900;color:#8b5cf6" id="mktStatCities">0</div>
+      <div style="font-size:11px;color:#64748b">Villes</div>
+    </div>
+  </div>
+
+  <!-- Grille boutiques -->
+  <div id="mktGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:0 16px 16px">
+    <div style="grid-column:1/-1;text-align:center;padding:40px 0;color:#94a3b8">
+      <i class="fas fa-spinner fa-spin" style="font-size:28px;margin-bottom:8px;display:block"></i>
+      Chargement des boutiques…
+    </div>
+  </div>
+
+</div>
+
+<!-- Overlay drawer boutique dans marketplace -->
+<div id="mktShopOverlay" style="display:none;position:fixed;inset:0;z-index:95;background:rgba(0,0,0,.5);align-items:flex-end" onclick="if(event.target===this)closeMktDrawer()">
+  <div style="background:#fff;border-radius:24px 24px 0 0;width:100%;max-height:80vh;overflow-y:auto;padding:16px 16px 0;position:relative">
+    <div style="width:40px;height:4px;background:#e2e8f0;border-radius:2px;margin:0 auto 14px"></div>
+    <button onclick="closeMktDrawer()" style="position:absolute;top:16px;right:16px;background:#f8fafc;border:none;border-radius:50%;width:32px;height:32px;display:grid;place-items:center;cursor:pointer;color:#64748b"><i class="fas fa-times"></i></button>
+    <div id="mktDrawerContent"></div>
+    <div id="mktDrawerFoot" style="position:sticky;bottom:0;background:#fff;padding:12px 0 calc(16px + env(safe-area-inset-bottom));border-top:1px solid #e2e8f0;margin:0 -16px;padding-left:16px;padding-right:16px"></div>
+  </div>
+</div>
 
 <!-- ══════════════════════════════════════════════════
   OVERLAY
@@ -915,7 +978,11 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
 <!-- ═══ PI WALLET STYLES ═══ -->
 <style id="pi-wallet-styles">
 
-/* ── Bouton "Payer en Pi" sur les cartes produit ── */
+/* ── MARKETPLACE ── */
+.mkt-chip{padding:6px 14px;border-radius:20px;border:1.5px solid #e2e8f0;background:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s}
+.mkt-chip.active{background:#10b981;color:#fff;border-color:#10b981}
+
+
 .btn-pay-pi {
   width: 100%;
   margin-top: 8px;
@@ -1172,7 +1239,7 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
 ══════════════════════════════════════════════════ -->
 <script type="module">
 import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, serverTimestamp, runTransaction } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, getDocs, serverTimestamp, runTransaction } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const FIREBASE_CONFIG = window.__AET_FIREBASE_CONFIG__ || {
   apiKey: 'AIzaSyB5hpkRlFZ9HFRRbpQlvpHwMNDja37Nr2s',
@@ -1604,6 +1671,125 @@ window.selectPay = mode => {
   ['cash','flooz','wave','pi'].forEach(m => {
     document.getElementById('pay_'+m)?.classList.toggle('active', m===mode);
   });
+};
+
+// ══════════════════════════════════════════════════════════════════
+//  MARKETPLACE — liste toutes les boutiques depuis Firebase
+// ══════════════════════════════════════════════════════════════════
+const MKT = { shops:[], cat:'all', loaded:false };
+const MKT_TYPE_ICONS  = {alimentaire:'🍞',electronique:'📱',vetement:'👗',beaute:'💄',maison:'🏠',sante:'💊',service:'🔧',pharmacie:'💊',librairie:'📚',informatique:'💻',telephone:'📲',automobile:'🚗',agriculture:'🌱',artisanat:'🎨',bijouterie:'💍',sport:'⚽',autre:'📦'};
+const MKT_TYPE_LABELS = {alimentaire:'Alimentation',electronique:'Électronique',vetement:'Vêtements',beaute:'Beauté',maison:'Maison',sante:'Santé',pharmacie:'Pharmacie',librairie:'Librairie',informatique:'Informatique',telephone:'Téléphonie',automobile:'Automobile',agriculture:'Agriculture',artisanat:'Artisanat',bijouterie:'Bijouterie',sport:'Sport',service:'Services',autre:'Boutique'};
+const MKT_TYPE_BG     = {alimentaire:'linear-gradient(135deg,#ecfdf5,#d1fae5)',electronique:'linear-gradient(135deg,#eff6ff,#dbeafe)',vetement:'linear-gradient(135deg,#fdf4ff,#f3e8ff)',beaute:'linear-gradient(135deg,#fff1f2,#ffe4e6)',maison:'linear-gradient(135deg,#fffbeb,#fef3c7)',sante:'linear-gradient(135deg,#ecfdf5,#d1fae5)',service:'linear-gradient(135deg,#f0f9ff,#e0f2fe)',autre:'linear-gradient(135deg,#f8fafc,#f1f5f9)'};
+
+async function loadMarketplace() {
+  if (MKT.loaded) { renderMktGrid(); return; }
+  try {
+    const snap = await getDocs(collection(db,'commerce_data'));
+    const shops=[]; let totalProducts=0; const cities=new Set();
+    snap.forEach(docSnap => {
+      const data=docSnap.data(), uid=docSnap.id;
+      if (!data.shops?.length) return;
+      data.shops.forEach(shop => {
+        if (shop.isPublic===false) return;
+        const articles=(data.articles||[]).filter(a=>a.shopId===shop.id);
+        totalProducts+=articles.length;
+        if (shop.city) cities.add(shop.city);
+        shops.push({uid,shopId:shop.id,name:shop.name||'Boutique',type:shop.type||'autre',city:shop.city||'Togo',logo:shop.logoUrl||(shop.branding?.logoUrl)||'',banner:shop.branding?.bgUrl||'',slogan:shop.branding?.slogan||'',wa:shop.wa||shop.whatsapp||'',articles,isNew:(Date.now()-(shop.createdAt||0))<7*24*3600*1000});
+      });
+    });
+    MKT.shops=shops; MKT.loaded=true;
+    document.getElementById('mktStatShops').textContent=shops.length;
+    document.getElementById('mktStatProducts').textContent=totalProducts;
+    document.getElementById('mktStatCities').textContent=cities.size||1;
+    document.getElementById('mktShopCount').textContent=shops.length+' boutiques';
+    renderMktGrid();
+  } catch(e) {
+    document.getElementById('mktGrid').innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:#94a3b8"><i class="fas fa-wifi-slash" style="font-size:28px;display:block;margin-bottom:8px"></i>Erreur réseau</div>';
+  }
+}
+
+function renderMktGrid() {
+  const term=(document.getElementById('mktSearch')?.value||'').toLowerCase();
+  let list=MKT.shops.filter(s=>{
+    if (MKT.cat!=='all'&&s.type!==MKT.cat) return false;
+    if (term&&!s.name.toLowerCase().includes(term)&&!s.city.toLowerCase().includes(term)&&!s.articles.some(a=>(a.name||'').toLowerCase().includes(term))) return false;
+    return true;
+  });
+  if (!list.length){document.getElementById('mktGrid').innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:#94a3b8"><i class="fas fa-store-slash" style="font-size:28px;display:block;margin-bottom:8px"></i>Aucune boutique</div>';return;}
+  document.getElementById('mktGrid').innerHTML=list.map(s=>{
+    const icon=MKT_TYPE_ICONS[s.type]||'📦',label=MKT_TYPE_LABELS[s.type]||'Boutique',bg=MKT_TYPE_BG[s.type]||MKT_TYPE_BG.autre;
+    const initials=(s.name||'B').slice(0,2).toUpperCase(),firstImg=s.articles.find(a=>a.imageUrl)?.imageUrl||'';
+    return `<div onclick="openMktShop('${esc(s.uid)}','${esc(s.shopId)}')" style="background:#fff;border-radius:16px;overflow:hidden;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.07);border:1.5px solid #f1f5f9">
+      <div style="height:80px;background:${bg};position:relative;overflow:hidden;display:grid;place-items:center">
+        ${s.banner?`<img src="${esc(s.banner)}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0" onerror="this.style.display='none'">`:firstImg?`<img src="${esc(firstImg)}" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0" onerror="this.style.display='none'">`: ''}
+        ${s.isNew?'<span style="position:absolute;top:6px;right:6px;background:#f59e0b;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:5px">NOUVEAU</span>':''}
+        <div style="position:absolute;bottom:-16px;left:10px;width:38px;height:38px;border-radius:10px;border:2.5px solid #fff;background:${bg};display:grid;place-items:center;overflow:hidden;font-weight:900;font-size:12px;box-shadow:0 2px 6px rgba(0,0,0,.12)">
+          ${s.logo?`<img src="${esc(s.logo)}" style="width:100%;height:100%;object-fit:cover" onerror="this.outerHTML='${initials}'">`:`${initials}`}
+        </div>
+      </div>
+      <div style="padding:22px 10px 10px">
+        <div style="font-size:13px;font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(s.name)}</div>
+        <div style="font-size:10px;color:#10b981;font-weight:600;margin-bottom:3px">${icon} ${esc(label)}</div>
+        <div style="font-size:10px;color:#94a3b8"><i class="fas fa-location-dot" style="margin-right:3px"></i>${esc(s.city)} · ${s.articles.length} article${s.articles.length>1?'s':''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+window.openMarketplace = function(){
+  document.getElementById('marketplaceView').style.display='block';
+  loadMarketplace();
+};
+window.closeMarketplace = function(){
+  document.getElementById('marketplaceView').style.display='none';
+  setActiveNav('bnHome');
+};
+window.mktFilter=renderMktGrid;
+window.mktPickCat=function(el,cat){
+  document.querySelectorAll('.mkt-chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active'); MKT.cat=cat; renderMktGrid();
+};
+window.openMktShop=function(uid,shopId){
+  const s=MKT.shops.find(x=>x.uid===uid&&x.shopId===shopId); if (!s) return;
+  const icon=MKT_TYPE_ICONS[s.type]||'📦',label=MKT_TYPE_LABELS[s.type]||'Boutique',bg=MKT_TYPE_BG[s.type]||MKT_TYPE_BG.autre;
+  document.getElementById('mktDrawerContent').innerHTML=`
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+      <div style="width:56px;height:56px;border-radius:14px;overflow:hidden;background:${bg};display:grid;place-items:center;flex-shrink:0;font-weight:900;font-size:18px">
+        ${s.logo?`<img src="${esc(s.logo)}" style="width:100%;height:100%;object-fit:cover">`:(s.name||'B').slice(0,2).toUpperCase()}
+      </div>
+      <div><div style="font-size:18px;font-weight:900">${esc(s.name)}</div><div style="font-size:12px;color:#10b981;font-weight:600">${icon} ${esc(label)}</div></div>
+    </div>
+    ${s.slogan?`<div style="font-size:13px;color:#64748b;margin-bottom:12px;font-style:italic">"${esc(s.slogan)}"</div>`:''}
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+      <div style="background:#f8fafc;border-radius:10px;padding:10px"><div style="font-size:10px;color:#94a3b8;margin-bottom:2px"><i class="fas fa-location-dot"></i> Localisation</div><div style="font-size:13px;font-weight:600">${esc(s.city)}</div></div>
+      <div style="background:#f8fafc;border-radius:10px;padding:10px"><div style="font-size:10px;color:#94a3b8;margin-bottom:2px"><i class="fas fa-box"></i> Produits</div><div style="font-size:13px;font-weight:600">${s.articles.length} article${s.articles.length>1?'s':''}</div></div>
+    </div>`;
+  document.getElementById('mktDrawerFoot').innerHTML=`
+    <button onclick="enterShop('${esc(uid)}','${esc(s.name)}','${esc(s.city)}','${esc(s.wa)}')" style="width:100%;padding:14px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 8px 20px rgba(16,185,129,.3)"><i class="fas fa-store"></i> Ouvrir la boutique</button>
+    <button onclick="shareMktShop('${esc(uid)}')" style="width:100%;margin-top:8px;padding:12px;background:transparent;border:1.5px solid #e2e8f0;border-radius:14px;font-size:13px;font-weight:700;cursor:pointer;color:#64748b"><i class="fas fa-share-nodes" style="margin-right:6px"></i>Partager</button>`;
+  document.getElementById('mktShopOverlay').style.display='flex';
+};
+window.closeMktDrawer=function(){document.getElementById('mktShopOverlay').style.display='none';};
+window.enterShop=function(uid,name,city){
+  closeMktDrawer(); closeMarketplace();
+  document.getElementById('shopName').textContent=name;
+  document.getElementById('shopSubtitle').textContent=city||'Togo';
+  document.getElementById('btnBackMarket').style.display='flex';
+  const ref2=doc(db,'commerce_data',uid);
+  onSnapshot(ref2,snap=>{if (!snap.exists()){showEmpty();return;}applyData(snap.data()||{});},err=>{console.error(err);showEmpty();});
+  openPage('home'); setActiveNav('bnHome');
+  showToast('✅ '+name+' chargée');
+};
+window.goBackToMarketplace=function(){
+  document.getElementById('btnBackMarket').style.display='none';
+  document.getElementById('shopSubtitle').textContent='Lomé, Togo';
+  if (tenantId) startRealtimeWatch();
+  openMarketplace(); setActiveNav('bnMarket');
+};
+window.shareMktShop=function(uid){
+  const url=location.origin+location.pathname+'?tenant='+encodeURIComponent(uid);
+  if (navigator.share) navigator.share({title:'Boutique',url});
+  else navigator.clipboard.writeText(url).then(()=>showToast('🔗 Lien copié !'));
 };
 
 // ══════════════════════════════════════════════════════════════════

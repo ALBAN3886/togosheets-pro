@@ -797,17 +797,17 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
 </div>
 
 <!-- ══════════════════════════════════════════════════
-  DRAWER : PI WALLET — PAIEMENT DIRECT
-  L'acheteur clique → voit le montant → ouvre Pi Wallet
-  directement via wallet.pinet.com → revient → colle le hash
+  DRAWER : PAIEMENT PI — DOUBLE MÉTHODE
+  1. Pi-SPI / Mixx (alias TMoney) ← MÉTHODE PRINCIPALE
+  2. Pi Wallet (adresse blockchain)  ← ALTERNATIVE
 ══════════════════════════════════════════════════ -->
 <div id="piCheckoutDrawer" class="drawer">
   <div class="drawer-head">
     <div class="handle"></div>
     <div class="drawer-head-row">
       <h3 style="display:flex;align-items:center;gap:8px">
-        <span style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#5b21b6,#7c3aed);display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:17px;flex-shrink:0">π</span>
-        Payer avec Pi
+        <span style="width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,#1a56db,#f59e0b);display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:17px;flex-shrink:0">π</span>
+        Payer en Pi
       </h3>
       <button class="close-x" onclick="closeAllDrawers()"><i class="fas fa-xmark"></i></button>
     </div>
@@ -815,7 +815,7 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
 
   <div class="drawer-body">
 
-    <!-- Article + Montant -->
+    <!-- ── Récap commande ── -->
     <div class="pi-pay-hero">
       <div class="pi-pay-label">Vous achetez</div>
       <div class="pi-pay-product" id="piChk_productName">—</div>
@@ -825,43 +825,82 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
         <span id="piChk_amount" class="pi-pay-pi-amt"></span>
         <span class="pi-pay-pi-sym">π</span>
       </div>
-      <div class="pi-pay-memo-row">Mémo commande : <strong id="piChk_orderId"></strong></div>
-      <div style="margin-top:8px;font-size:10px;opacity:.65" id="piChk_rate">Chargement du taux…</div>
+      <div class="pi-pay-memo-row">Réf : <strong id="piChk_orderId"></strong></div>
+      <div style="margin-top:6px;font-size:10px;opacity:.65" id="piChk_rate">Chargement du taux…</div>
     </div>
 
-    <!-- Bouton principal — ouvre Pi Wallet directement -->
-    <button class="pi-open-wallet-btn" onclick="openPiWalletDirect()">
-      <span style="font-size:22px;font-weight:900">π</span>
-      Ouvrir Pi Wallet pour payer
-      <i class="fas fa-arrow-up-right-from-square" style="font-size:13px;opacity:.8"></i>
-    </button>
-    <p style="text-align:center;font-size:12px;color:#6b7280;margin:8px 0 16px">Appuyez ci-dessus → Pi Wallet s'ouvre avec le montant déjà rempli → confirmez le paiement dans l'app → revenez ici.</p>
+    <!-- ════════════════════════════════════
+      MÉTHODE 1 : Pi-SPI / Mixx (TMoney alias)  ← RECOMMANDÉ
+    ════════════════════════════════════ -->
+    <div class="pi-method-card pi-method-primary">
+      <div class="pi-method-badge">⭐ Recommandé</div>
+      <div class="pi-method-title">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Pi_logo.svg/32px-Pi_logo.svg.png" onerror="this.style.display='none'" style="width:20px;height:20px;vertical-align:middle;margin-right:4px">
+        <span style="color:#f59e0b;font-weight:900;font-size:16px">mixx</span>
+        <span style="color:#1a56db;font-size:13px;font-weight:700"> | Pi-SPI</span>
+      </div>
+      <p style="font-size:12px;color:#4b5563;margin:6px 0 10px;line-height:1.5">
+        Ouvrez votre app <strong>TMoney</strong> ou <strong>Flooz</strong> → Envoyer → entrez l'alias Pi ci-dessous.
+      </p>
 
-    <!-- QR Code (alternative) -->
-    <details class="pi-qr-details">
-      <summary>📷 Scanner le QR code à la place</summary>
-      <div style="display:flex;justify-content:center;padding:16px 0 8px">
-        <div style="background:#f3e8ff;border-radius:20px;padding:14px;display:inline-block">
-          <div id="piChk_qr"></div>
+      <!-- Alias à copier -->
+      <div class="pi-alias-box">
+        <div class="pi-alias-label">Alias Pi-SPI (TMoney)</div>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+          <div id="piChk_alias" class="pi-alias-val">+22893003941</div>
+          <button onclick="copyPiAlias()" class="pi-copy-btn-sm" title="Copier"><i class="fas fa-copy"></i></button>
         </div>
       </div>
-      <p style="text-align:center;font-size:11px;color:#9ca3af;margin:0 0 8px">Scannez avec l'app Pi Network → Wallet → Pay</p>
-    </details>
 
-    <!-- Adresse (copier) -->
-    <div class="pi-address-box">
-      <div class="pi-address-label">Adresse Pi Wallet</div>
-      <div id="piChk_address" class="pi-address-val"></div>
-      <div class="pi-address-user">Compte : <strong id="piChk_username"></strong></div>
-      <button onclick="copyPiAddress()" class="pi-copy-btn"><i class="fas fa-copy"></i> Copier l'adresse</button>
+      <!-- Montant à envoyer -->
+      <div class="pi-alias-amount-row">
+        <span style="font-size:12px;color:#6b7280">Montant à envoyer :</span>
+        <span style="font-size:18px;font-weight:900;color:#1a56db" id="piChk_amount2"></span>
+        <span style="font-size:14px;font-weight:700;color:#f59e0b">π</span>
+      </div>
+
+      <!-- Étapes -->
+      <ol class="pi-steps">
+        <li>Ouvrez <strong>TMoney</strong> ou <strong>Flooz</strong></li>
+        <li>→ <strong>Pi-SPI / Mixx</strong> → <strong>Envoyer</strong></li>
+        <li>Alias : <strong>+22893003941</strong></li>
+        <li>Montant : <strong id="piChk_amount3"></strong> π</li>
+        <li>Dans la note/mémo : <strong id="piChk_orderId2"></strong></li>
+        <li>Confirmez et copiez la <strong>référence de transaction</strong></li>
+      </ol>
     </div>
 
-    <!-- Après paiement : champ hash -->
-    <div id="piChk_afterPayHint" class="pi-after-pay">
-      <div class="pi-after-pay-title">✅ Paiement effectué ?</div>
-      <p style="font-size:12px;color:#4b5563;margin:4px 0 10px">Collez ci-dessous le <strong>Hash de transaction</strong> affiché dans votre Pi Wallet après confirmation.</p>
-      <input id="piChk_txRef" class="pi-tx-input" placeholder="Hash de transaction Pi (ex: abc123def…)"/>
-      <p style="font-size:11px;color:#9ca3af;margin:6px 0 0">Votre commande sera vérifiée et confirmée rapidement.</p>
+    <!-- ════════════════════════════════════
+      MÉTHODE 2 : Pi Wallet (blockchain)
+    ════════════════════════════════════ -->
+    <details class="pi-method-alt">
+      <summary>🔗 Autre méthode : Pi Wallet (adresse blockchain)</summary>
+      <div style="padding:12px 0 4px">
+
+        <!-- Adresse wallet -->
+        <div class="pi-address-box" style="margin-bottom:10px">
+          <div class="pi-address-label">Adresse Pi Wallet</div>
+          <div id="piChk_address" class="pi-address-val"></div>
+          <div class="pi-address-user">Compte : <strong id="piChk_username"></strong></div>
+          <button onclick="copyPiAddress()" class="pi-copy-btn"><i class="fas fa-copy"></i> Copier l'adresse</button>
+        </div>
+
+        <!-- QR Code -->
+        <div style="display:flex;justify-content:center;margin-bottom:8px">
+          <div style="background:#f3e8ff;border-radius:16px;padding:12px;display:inline-block">
+            <div id="piChk_qr"></div>
+          </div>
+        </div>
+        <p style="text-align:center;font-size:11px;color:#9ca3af;margin:0 0 10px">Scannez dans Pi Network → Wallet → Pay</p>
+      </div>
+    </details>
+
+    <!-- ── Après paiement : référence ── -->
+    <div class="pi-after-pay">
+      <div class="pi-after-pay-title">✅ Après avoir payé</div>
+      <p style="font-size:12px;color:#4b5563;margin:4px 0 10px">Entrez la <strong>référence / numéro de transaction</strong> reçue après confirmation :</p>
+      <input id="piChk_txRef" class="pi-tx-input" placeholder="Ex : TXN123456 ou hash Pi…"/>
+      <p style="font-size:11px;color:#9ca3af;margin:6px 0 0">Votre commande sera confirmée rapidement après vérification.</p>
     </div>
 
   </div>
@@ -869,9 +908,6 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
   <div class="drawer-foot" style="display:flex;flex-direction:column;gap:8px">
     <button class="pi-confirm-btn" onclick="confirmPiTx()">
       <span style="font-size:18px">π</span> J'ai payé — Valider ma commande
-    </button>
-    <button onclick="openPiWalletDirect()" class="pi-open-wallet-btn-sm">
-      <i class="fas fa-arrow-up-right-from-square"></i> Ré-ouvrir Pi Wallet
     </button>
   </div>
 </div>
@@ -885,7 +921,7 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
   margin-top: 8px;
   border: none;
   border-radius: 14px;
-  background: linear-gradient(135deg, #5b21b6, #7c3aed);
+  background: linear-gradient(135deg, #1a56db, #f59e0b);
   color: #fff;
   font-size: 13px;
   font-weight: 800;
@@ -896,7 +932,7 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
   justify-content: center;
   gap: 6px;
   transition: opacity .15s, transform .15s;
-  box-shadow: 0 8px 20px rgba(91,33,182,.28);
+  box-shadow: 0 8px 20px rgba(26,86,219,.25);
 }
 .btn-pay-pi:active { transform: scale(.97); opacity: .9; }
 .pi-logo-icon { font-weight: 900; line-height: 1; }
@@ -906,7 +942,7 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
   width: 100%;
   border: none;
   border-radius: 16px;
-  background: linear-gradient(135deg, #5b21b6, #7c3aed);
+  background: linear-gradient(135deg, #1a56db, #f59e0b);
   color: #fff;
   font-size: 15px;
   font-weight: 800;
@@ -916,27 +952,27 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow: 0 10px 24px rgba(91,33,182,.30);
+  box-shadow: 0 10px 24px rgba(26,86,219,.28);
   transition: opacity .15s, transform .15s;
 }
 .btn-pay-pi-big:active { transform: scale(.98); }
 
 /* ── Option Pi dans checkout ── */
 .pay-opt-pi {
-  background: linear-gradient(135deg,#f3e8ff,#ede9fe) !important;
-  border-color: #c4b5fd !important;
-  color: #7c3aed !important;
+  background: linear-gradient(135deg,#eff6ff,#fef3c7) !important;
+  border-color: #93c5fd !important;
+  color: #1a56db !important;
 }
 .pay-opt-pi.active {
-  background: linear-gradient(135deg,#5b21b6,#7c3aed) !important;
-  border-color: #5b21b6 !important;
+  background: linear-gradient(135deg,#1a56db,#f59e0b) !important;
+  border-color: #1a56db !important;
   color: #fff !important;
 }
 .pi-icon { font-size: 18px; font-weight: 900; }
 
 /* ── Drawer Pi Checkout ── */
 .pi-pay-hero {
-  background: linear-gradient(135deg,#5b21b6,#7c3aed);
+  background: linear-gradient(135deg,#1e40af,#1a56db,#d97706);
   border-radius: 20px;
   padding: 20px;
   color: #fff;
@@ -954,52 +990,109 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
 .pi-pay-xof { font-size: 16px; opacity: .75; }
 .pi-pay-eq { font-size: 14px; opacity: .6; }
 .pi-pay-pi-amt { font-size: 34px; font-weight: 900; letter-spacing: -1px; }
-.pi-pay-pi-sym { font-size: 22px; font-weight: 900; }
+.pi-pay-pi-sym { font-size: 22px; font-weight: 900; color: #fde68a; }
 .pi-pay-memo-row {
   margin-top: 12px;
   background: rgba(255,255,255,.15);
   border-radius: 10px;
   padding: 7px 12px;
   font-size: 12px;
-  letter-spacing: .3px;
 }
 
-.pi-open-wallet-btn {
-  width: 100%;
-  background: linear-gradient(135deg,#5b21b6,#7c3aed);
-  color: #fff;
-  border: none;
-  border-radius: 16px;
+/* ── Méthode principale Pi-SPI ── */
+.pi-method-card {
+  border-radius: 18px;
   padding: 16px;
-  font-size: 16px;
-  font-weight: 900;
-  cursor: pointer;
+  margin-bottom: 14px;
+  position: relative;
+}
+.pi-method-primary {
+  background: linear-gradient(135deg,#eff6ff,#fefce8);
+  border: 2px solid #93c5fd;
+}
+.pi-method-badge {
+  display: inline-block;
+  background: #f59e0b;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: 20px;
+  padding: 3px 10px;
+  margin-bottom: 8px;
+  letter-spacing: .04em;
+}
+.pi-method-title {
+  font-size: 15px;
+  font-weight: 800;
+  margin-bottom: 2px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  box-shadow: 0 14px 32px rgba(91,33,182,.35);
-  transition: transform .15s;
-  letter-spacing: .2px;
+  gap: 4px;
 }
-.pi-open-wallet-btn:active { transform: scale(.97); }
-
-.pi-qr-details {
-  border: 1.5px solid #ddd6fe;
+.pi-alias-box {
+  background: #fff;
+  border: 1.5px solid #93c5fd;
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+.pi-alias-label {
+  font-size: 10px;
+  font-weight: 800;
+  color: #1a56db;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  margin-bottom: 4px;
+}
+.pi-alias-val {
+  font-size: 22px;
+  font-weight: 900;
+  color: #1e40af;
+  letter-spacing: .5px;
+}
+.pi-copy-btn-sm {
+  background: #eff6ff;
+  border: 1.5px solid #93c5fd;
+  color: #1a56db;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.pi-alias-amount-row {
+  background: #fff;
+  border: 1.5px solid #fde68a;
   border-radius: 14px;
   padding: 10px 14px;
-  margin-bottom: 14px;
-  background: #faf5ff;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-.pi-qr-details summary {
-  cursor: pointer;
+.pi-steps {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: #374151;
+  line-height: 2;
+}
+.pi-steps li strong { color: #1a56db; }
+
+/* ── Méthode alternative ── */
+.pi-method-alt {
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
   font-size: 13px;
   font-weight: 700;
-  color: #7c3aed;
-  list-style: none;
+  color: #475569;
+  cursor: pointer;
 }
-.pi-qr-details summary::-webkit-details-marker { display: none; }
-#piChk_qr img, #piChk_qr canvas { border-radius: 12px; display: block; }
+.pi-method-alt summary { list-style: none; }
+.pi-method-alt summary::-webkit-details-marker { display: none; }
 
 .pi-address-box {
   background: #f5f3ff;
@@ -1028,6 +1121,7 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
   gap: 6px;
 }
 
+/* ── Après paiement ── */
 .pi-after-pay {
   background: #f0fdf4;
   border: 1.5px solid #bbf7d0;
@@ -1067,21 +1161,7 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
 }
 .pi-confirm-btn:active { opacity: .9; }
 
-.pi-open-wallet-btn-sm {
-  width: 100%;
-  background: transparent;
-  border: 1.5px solid #7c3aed;
-  color: #7c3aed;
-  border-radius: 12px;
-  padding: 10px;
-  font-size: 13px;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-}
+#piChk_qr img, #piChk_qr canvas { border-radius: 12px; display: block; }
 
 </style>
 
@@ -1617,7 +1697,11 @@ function openPiCheckoutDrawer(p, qty, total, piAmt, orderId) {
   document.getElementById('piChk_productName').textContent = qty > 1 ? `${p.name} × ${qty}` : p.name;
   document.getElementById('piChk_xof').textContent = money(total);
   document.getElementById('piChk_amount').textContent = piAmt;
+  document.getElementById('piChk_amount2').textContent = piAmt;
+  document.getElementById('piChk_amount3').textContent = piAmt;
   document.getElementById('piChk_orderId').textContent = orderId;
+  document.getElementById('piChk_orderId2').textContent = orderId;
+  document.getElementById('piChk_alias').textContent = PI_SPI_ALIAS;
   document.getElementById('piChk_username').textContent = '@' + PI_USERNAME;
   document.getElementById('piChk_address').textContent = PI_WALLET_ADDRESS;
   document.getElementById('piChk_txRef').value = '';
@@ -1659,42 +1743,62 @@ function openPiCheckoutDrawer(p, qty, total, piAmt, orderId) {
   });
 }
 
-// Bouton "Ouvrir Pi Wallet" — essaie le deep link app en premier
+// Bouton "Ouvrir Pi Wallet" — stratégie multi-couches pour WebView APK
 window.openPiWalletDirect = () => {
   const links = window._currentPiDeepLinks;
   if (!links) return;
 
-  // Révèle le champ hash immédiatement
+  // Révèle le champ hash
   const hint = document.getElementById('piChk_afterPayHint');
   if (hint) hint.style.display = 'block';
 
-  // Stratégie : tente minepi:// (app), si pas répondu en 1.5s → ouvre le web
-  let opened = false;
-  const timer = setTimeout(() => {
-    if (!opened) {
-      // App Pi pas installée ou deep link non supporté → ouvrir la version web
-      window.open(links.web, '_blank');
-    }
-  }, 1500);
+  // ── Stratégie pour WebView Android (APK) ──
+  // WebView bloque minepi:// sauf si l'APK l'autorise via shouldOverrideUrlLoading.
+  // On utilise l'Intent URL Android qui contourne cette restriction.
+  // Format : intent://...#Intent;scheme=minepi;package=com.minepi.browser;end
 
-  // Tentative d'ouverture de l'app via iframe (ne recharge pas la page)
-  const iframe = document.createElement('iframe');
-  iframe.style.display = 'none';
-  iframe.src = links.app;
-  document.body.appendChild(iframe);
-  setTimeout(() => { document.body.removeChild(iframe); }, 2000);
+  const intentUrl = `intent://wallet/pay?to=${PI_USERNAME}&amount=${document.getElementById('piChk_amount').textContent}&memo=${document.getElementById('piChk_orderId').textContent}#Intent;scheme=minepi;package=com.pi.browser;launchFlags=268435456;S.browser_fallback_url=${encodeURIComponent('https://minepi.com/wallet')};end`;
 
-  // Sur mobile, window.location redirige aussi vers l'app si installée
-  try {
+  // Tentative 1 : Intent Android (fonctionne dans WebView si APK bien configuré)
+  const tryIntent = () => {
+    const a = document.createElement('a');
+    a.href = intentUrl;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  };
+
+  // Tentative 2 : window.location avec minepi:// (parfois accepté selon config APK)
+  const tryMinepi = () => {
     window.location.href = links.app;
-    opened = true;
-    clearTimeout(timer);
-    // Après 2s si toujours là, ouvrir web en fallback
-    setTimeout(() => { if (document.visibilityState !== 'hidden') window.open(links.web, '_blank'); }, 2000);
-  } catch(e) {
-    window.open(links.web, '_blank');
-    clearTimeout(timer);
-  }
+  };
+
+  // Tentative 3 : fallback web Pi (toujours accessible)
+  const tryWeb = () => {
+    window.open('https://minepi.com/wallet', '_blank');
+  };
+
+  // On essaie les 3 en séquence avec délais
+  tryIntent();
+  setTimeout(() => {
+    // Si l'app ne s'est pas ouverte (on est encore visible), essayer minepi://
+    if (document.visibilityState !== 'hidden') {
+      tryMinepi();
+    }
+  }, 800);
+  setTimeout(() => {
+    // Dernier recours : ouvrir dans le navigateur web
+    if (document.visibilityState !== 'hidden') {
+      tryWeb();
+    }
+  }, 2000);
+};
+
+const PI_SPI_ALIAS = '+22893003941'; // Alias Pi-SPI / Mixx TMoney
+
+window.copyPiAlias = () => {
+  navigator.clipboard.writeText(PI_SPI_ALIAS).then(() => showToast('✅ Alias Pi-SPI copié : ' + PI_SPI_ALIAS));
 };
 
 window.copyPiAddress = () => {

@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
+  <script>
+    Pi.init({ version: "2.0", sandbox: true }); // sandbox:true pour Testnet, false pour Mainnet
+  </script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
 <title>AET MonBudget — Gestion Financière Personnelle</title>
@@ -12286,4 +12290,58 @@ body.aet-subpage-active #bottomNav,body.aet-subpage-active #appSidebar,body.aet-
 })();
 </script>
 
+  <!-- Bouton de test paiement Pi (étape 10 de validation Pi Network) -->
+  <div style="position:fixed;bottom:90px;right:16px;z-index:9999">
+    <button onclick="testPiPayment()" style="background:#7B2FF7;color:#fff;border:none;padding:12px 18px;border-radius:30px;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,0.2)">
+      Payer 1 π (test)
+    </button>
+  </div>
+
+  <script>
+    function testPiPayment() {
+      if (typeof Pi === "undefined") {
+        alert("Le SDK Pi n'est pas chargé. Ouvre cette page dans le Pi Browser.");
+        return;
+      }
+
+      Pi.authenticate(["payments"], onIncompletePaymentFound)
+        .then(function (auth) {
+          Pi.createPayment({
+            amount: 1,
+            memo: "Test transaction TogoSheets Pro",
+            metadata: { test: true }
+          }, {
+            onReadyForServerApproval: function (paymentId) {
+              fetch("/.netlify/functions/approve", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ paymentId: paymentId })
+              });
+            },
+            onReadyForServerCompletion: function (paymentId, txid) {
+              fetch("/.netlify/functions/complete", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ paymentId: paymentId, txid: txid })
+              }).then(function () {
+                alert("Paiement test terminé avec succès !");
+              });
+            },
+            onCancel: function (paymentId) {
+              console.log("Paiement annulé:", paymentId);
+            },
+            onError: function (error, payment) {
+              console.error("Erreur paiement:", error, payment);
+            }
+          });
+        })
+        .catch(function (err) {
+          console.error("Erreur d'authentification Pi:", err);
+        });
+    }
+
+    function onIncompletePaymentFound(payment) {
+      console.log("Paiement incomplet trouvé:", payment);
+    }
+  </script>
 </body>

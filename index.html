@@ -28,7 +28,9 @@ import { initializeApp }                                         from "https://w
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword,
          createUserWithEmailAndPassword, signOut, updateProfile,
          sendPasswordResetEmail, EmailAuthProvider,
-         reauthenticateWithCredential, updatePassword }          from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+         reauthenticateWithCredential, updatePassword,
+         GoogleAuthProvider, FacebookAuthProvider, signInWithPopup,
+         linkWithPopup, linkWithCredential, fetchSignInMethodsForEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, addDoc, doc, deleteDoc,
          updateDoc, query, where, orderBy, onSnapshot, getDocs,
          serverTimestamp, setDoc, getDoc, limit, runTransaction }               from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -425,6 +427,155 @@ window.doSignup = async () => {
 };
 
 window.doLogout = async () => { await signOut(auth); toast('Déconnecté','info'); };
+
+// ══ CONNEXION SOCIALE : GOOGLE & FACEBOOK ══
+const googleProvider   = new GoogleAuthProvider();
+const facebookProvider = new FacebookAuthProvider();
+
+googleProvider.setCustomParameters({ prompt: 'select_account' });
+facebookProvider.setCustomParameters({ display: 'popup' });
+
+/**
+ * Connexion / création de compte via un fournisseur social (Google ou Facebook).
+ * Si l'email existe déjà avec email/mot de passe, la connexion est liée
+ * automatiquement au compte existant après authentification par mot de passe.
+ */
+window.doSocialLogin = async (providerName) => {
+  const provider = providerName === 'google' ? googleProvider : facebookProvider;
+  const label    = providerName === 'google' ? 'Google' : 'Facebook';
+  const errEl    = $('#loginErr');
+  if (errEl) errEl.textContent = '';
+  loader(true);
+  try {
+    await signInWithPopup(auth, provider);
+    // onAuthStateChanged prend le relais (bienvenue, chargement données, etc.)
+  } catch (e) {
+    if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
+      // L'utilisateur a fermé la fenêtre : rien à signaler
+    } else if (e.code === 'auth/account-exists-with-different-credential') {
+      // L'email existe déjà avec une autre méthode → proposer la liaison
+      await handleAccountLinking(e, provider, label);
+    } else if (e.code === 'auth/popup-blocked') {
+      if (errEl) errEl.textContent = 'La fenêtre de connexion a été bloquée. Autorisez les popups pour ce site.';
+      toast('Popup bloquée par le navigateur', 'error');
+    } else if (e.code === 'auth/unauthorized-domain') {
+      if (errEl) errEl.textContent = 'Domaine non autorisé dans Firebase Console (Authentication → Settings → Authorized domains).';
+    } else if (e.code === 'auth/operation-not-allowed') {
+      if (errEl) errEl.textContent = label + ' n\'est pas encore activé dans la console Firebase.';
+    } else {
+      if (errEl) errEl.textContent = fbErr(e);
+    }
+  }
+  loader(false);
+};
+
+/**
+ * Gère le cas où l'email du compte social existe déjà avec email/mot de passe.
+ * On connecte d'abord l'utilisateur avec son mot de passe, puis on lie le
+ * fournisseur social : les deux méthodes mènent désormais au MÊME compte
+ * (même uid → mêmes transactions, budgets, notes…).
+ */
+async function handleAccountLinking(error, socialProvider, label) {
+  const email = error.customData && error.customData.email;
+  if (!email) { toast('Impossible de récupérer l\'email du compte', 'error'); return; }
+  try {
+    const methods = await fetchSignInMethodsForEmail(auth, email);
+    if (methods.includes('password')) {
+      const pwd = prompt(
+        `Un compte existe déjà avec l\'email ${email}.\n\n` +
+        `Pour lier votre compte ${label} à ce compte existant, saisissez votre mot de passe :`
+      );
+      if (!pwd) { toast('Liaison annulée', 'info'); return; }
+      loader(true);
+      const cred = await signInWithEmailAndPassword(auth, email, pwd);
+      // Récupérer le credential social depuis l'erreur
+      const pendingCred = (socialProvider === googleProvider)
+        ? GoogleAuthProvider.credentialFromError(error)
+        : FacebookAuthProvider.credentialFromError(error);
+      if (pendingCred) {
+        await linkWithCredential(cred.user, pendingCred);
+        toast(`✓ Compte ${label} lié — vous pouvez désormais vous connecter avec les deux méthodes`, 'success');
+      } else {
+        toast('Connecté. La liaison automatique n\'a pas abouti : utilisez Profil > Sécurité > Lier un compte.', 'info');
+      }
+      loader(false);
+    } else {
+      // L'email existe via un AUTRE fournisseur social (ex: Facebook puis Google)
+      const other = methods.join(', ');
+      toast(`Cet email est déjà associé à : ${other}. Connectez-vous avec cette méthode puis liez ${label} depuis Profil > Sécurité.`, 'info');
+    }
+  } catch (e2) {
+    loader(false);
+    if (e2.code === 'auth/wrong-password' || e2.code === 'auth/invalid-credential') {
+      toast('Mot de passe incorrect — liaison annulée', 'error');
+    } else {
+      toast(fbErr(e2), 'error');
+    }
+  }
+}
+
+/**
+ * Lie un fournisseur social au compte ACTUELLEMENT connecté.
+ * Appelé depuis Profil > Sécurité > « Lier un compte ».
+ */
+window.linkSocialAccount = async (providerName) => {
+  if (!currentUser) { toast('Veuillez vous connecter', 'error'); return; }
+  const provider = providerName === 'google' ? googleProvider : facebookProvider;
+  const label    = providerName === 'google' ? 'Google' : 'Facebook';
+  loader(true);
+  try {
+    await linkWithPopup(currentUser, provider);
+    toast(`✓ Compte ${label} lié avec succès`, 'success');
+    renderLinkedProviders();
+  } catch (e) {
+    if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
+      // annulé volontairement
+    } else if (e.code === 'auth/credential-already-in-use') {
+      toast(`Ce compte ${label} est déjà lié à un AUTRE compte MonBudget.`, 'error');
+    } else if (e.code === 'auth/provider-already-linked') {
+      toast(`${label} est déjà lié à votre compte.`, 'info');
+    } else if (e.code === 'auth/email-already-in-use') {
+      toast('Cet email est déjà utilisé par un autre compte.', 'error');
+    } else if (e.code === 'auth/requires-recent-login') {
+      toast('Reconnectez-vous puis réessayez la liaison.', 'error');
+    } else {
+      toast(fbErr(e), 'error');
+    }
+  }
+  loader(false);
+};
+
+/** Affiche la liste des méthodes de connexion liées au compte courant. */
+window.renderLinkedProviders = () => {
+  const box = document.getElementById('linkedProvidersList');
+  if (!box || !currentUser) return;
+  const names = { password: '📧 Email / Mot de passe', 'google.com': '🔵 Google', 'facebook.com': '🔵 Facebook', phone: '📱 Téléphone' };
+  const providers = (currentUser.providerData || []).map(p => p.providerId);
+  if (!providers.length) { box.innerHTML = '<div style="color:var(--muted);font-size:13px">Aucune méthode détectée</div>'; return; }
+  box.innerHTML = providers.map(pid => {
+    const known = names[pid] || pid;
+    const isSocial = pid === 'google.com' || pid === 'facebook.com';
+    return `<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 12px;background:var(--bg);border-radius:10px;margin-bottom:8px">
+      <span style="font-size:13px;font-weight:700">${known}</span>
+      ${isSocial ? `<button type="button" onclick="unlinkSocialAccount('${pid}')" style="border:none;background:rgba(239,68,68,.12);color:var(--danger);font-size:11px;font-weight:800;padding:6px 10px;border-radius:8px;cursor:pointer">Dissocier</button>` : '<span style="font-size:11px;color:var(--muted)">Principal</span>'}
+    </div>`;
+  }).join('');
+};
+
+/** Dissocie un fournisseur social (impossible de retirer la dernière méthode). */
+window.unlinkSocialAccount = async (providerId) => {
+  if (!currentUser) return;
+  if ((currentUser.providerData || []).length <= 1) {
+    toast('Impossible : c\'est votre seule méthode de connexion.', 'error');
+    return;
+  }
+  try {
+    const { unlink } = await import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js");
+    await unlink(currentUser, providerId);
+    toast('Méthode dissociée ✓', 'success');
+    renderLinkedProviders();
+  } catch (e) { toast(fbErr(e), 'error'); }
+};
 
 window.doForgotPwd = async () => {
   const email = $('#loginEmail').value.trim();
@@ -3855,10 +4006,10 @@ select.form-input option{background:var(--bg2)}
       <button class="btn-full btn-grad" onclick="doLogin()">Se connecter</button>
       <div class="auth-divider">ou continuer avec</div>
       <div class="auth-social-row">
-        <button class="auth-social-btn" onclick="toast('Connexion Google bientôt disponible','info')">
+        <button class="auth-social-btn" onclick="doSocialLogin('google')" type="button">
           <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" height="18" alt="G"/> Google
         </button>
-        <button class="auth-social-btn" onclick="toast('Connexion Facebook bientôt disponible','info')" style="color:#1877f2">
+        <button class="auth-social-btn" onclick="doSocialLogin('facebook')" type="button" style="color:#1877f2">
           <i class="fab fa-facebook" style="font-size:18px;color:#1877f2"></i> Facebook
         </button>
       </div>
@@ -3903,6 +4054,15 @@ select.form-input option{background:var(--bg2)}
       </div>
       <div class="form-err" id="signupErr"></div>
       <button class="btn-full btn-grad" onclick="doSignup()">Créer mon compte</button>
+      <div class="auth-divider">ou s'inscrire avec</div>
+      <div class="auth-social-row">
+        <button class="auth-social-btn" onclick="doSocialLogin('google')" type="button">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" height="18" alt="G"/> Google
+        </button>
+        <button class="auth-social-btn" onclick="doSocialLogin('facebook')" type="button" style="color:#1877f2">
+          <i class="fab fa-facebook" style="font-size:18px;color:#1877f2"></i> Facebook
+        </button>
+      </div>
     </div>
     <div class="auth-switch">Déjà un compte ? <a onclick="switchAuthTab('login')">Se connecter</a></div>
   </div>
@@ -6459,6 +6619,20 @@ document.addEventListener('DOMContentLoaded', () => {
         <i class="fas fa-trash"></i> <span data-i18n="sec_btn_remove_pin">Supprimer le code PIN</span>
       </button>
 
+      <h4 style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:24px 0 10px">🔗 Comptes liés</h4>
+      <div id="linkedProvidersList"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px">
+        <button class="aet-btn-secondary" onclick="linkSocialAccount('google')" type="button" style="display:flex;align-items:center;justify-content:center;gap:8px">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="16" height="16" alt="G"/> Lier Google
+        </button>
+        <button class="aet-btn-secondary" onclick="linkSocialAccount('facebook')" type="button" style="display:flex;align-items:center;justify-content:center;gap:8px;color:#1877f2">
+          <i class="fab fa-facebook"></i> Lier Facebook
+        </button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5">
+        Liez Google ou Facebook pour vous connecter plus rapidement. Toutes les méthodes liées accèdent au même compte et aux mêmes données.
+      </div>
+
       <h4 style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin:24px 0 10px" data-i18n="sec_sessions">📱 Sessions actives</h4>
       <div id="sessionsList" style="font-size:13px;color:var(--muted)" data-i18n="sec_loading">Chargement...</div>
     </div>
@@ -7272,6 +7446,7 @@ window.openSecurity = async () => {
   document.getElementById('newPin').value = '';
   openAetModal('securityModal');
   loadSessions();
+  if (window.renderLinkedProviders) renderLinkedProviders();
 };
 
 window.changePassword = async () => {

@@ -1,10 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <script src="https://sdk.minepi.com/pi-sdk.js"></script>
-  <script>
-    Pi.init({ version: "2.0", sandbox: true }); // sandbox:true pour Testnet, false pour Mainnet
-  </script>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
 <title>AET MonBudget — Gestion Financière Personnelle</title>
@@ -5211,102 +5207,6 @@ window.switchTab = function(tab) {
 
 <!-- ════════════════ FAB ════════════════ -->
 <button onclick="openTxModal()" style="position:fixed;bottom:26px;right:26px;width:56px;height:56px;border-radius:50%;background:var(--grad);border:none;font-size:24px;color:#fff;cursor:pointer;z-index:200;box-shadow:0 8px 28px rgba(99,102,241,.45);display:flex;align-items:center;justify-content:center;transition:transform .2s,box-shadow .2s" onmouseover="this.style.transform='scale(1.12)'" onmouseout="this.style.transform='none'">＋</button>
-
-<!-- ════════════════ BOUTON TÉLÉCHARGER APK FLOTTANT ════════════════ -->
-<style>
-#apkFab {
-  position: fixed;
-  bottom: 96px;
-  right: 16px;
-  z-index: 199;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 10px;
-}
-
-#apkFabBtn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 18px;
-  background: linear-gradient(135deg, #10b981, #059669);
-  border: none;
-  border-radius: 100px;
-  color: #fff;
-  font-family: 'Syne', sans-serif;
-  font-size: 13px;
-  font-weight: 800;
-  cursor: pointer;
-  box-shadow: 0 8px 28px rgba(16,185,129,.45);
-  transition: all .25s;
-  text-decoration: none;
-  white-space: nowrap;
-  animation: apkPulse 3s ease-in-out infinite;
-}
-#apkFabBtn:hover {
-  transform: translateY(-3px) scale(1.04);
-  box-shadow: 0 14px 36px rgba(16,185,129,.55);
-}
-#apkFabBtn i { font-size: 16px; }
-
-#apkFabTooltip {
-  background: rgba(15,23,42,.92);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(16,185,129,.3);
-  border-radius: 10px;
-  padding: 8px 12px;
-  font-size: 11px;
-  color: #94a3b8;
-  font-family: 'DM Mono', monospace;
-  text-align: right;
-  line-height: 1.5;
-  display: none;
-}
-#apkFabTooltip strong { color: #34d399; display: block; font-size: 12px; }
-
-#apkFabBtn:hover + #apkFabTooltip,
-#apkFabTooltip:hover { display: block; }
-
-#apkFabClose {
-  position: absolute;
-  top: -8px;
-  left: -8px;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: rgba(239,68,68,.85);
-  border: none;
-  color: #fff;
-  font-size: 10px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1;
-}
-
-@keyframes apkPulse {
-  0%, 100% { box-shadow: 0 8px 28px rgba(16,185,129,.45); }
-  50%       { box-shadow: 0 8px 40px rgba(16,185,129,.75), 0 0 0 8px rgba(16,185,129,.1); }
-}
-</style>
-
-<div id="apkFab">
-  <div style="position:relative;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
-    <button id="apkFabClose" onclick="document.getElementById('apkFab').style.display='none'" title="Masquer">✕</button>
-    <a id="apkFabBtn"
-       href="https://github.com/ALBAN3886/aet-monbudget-android/releases/latest/download/app-release.apk"
-       download>
-      <i class="fas fa-android"></i>
-      Télécharger l'APK
-    </a>
-    <div id="apkFabTooltip">
-      <strong>AET MonBudget v2.0.0</strong>
-      Android · Gratuit
-    </div>
-  </div>
-</div>
 
 <!-- ════════════════ ADMIN LOGIN ════════════════ -->
 <div id="adminLoginScreen" style="display:none;min-height:100vh;align-items:center;justify-content:center;padding:20px;background:var(--bg)">
@@ -12291,58 +12191,6 @@ body.aet-subpage-active #bottomNav,body.aet-subpage-active #appSidebar,body.aet-
 })();
 </script>
 
-  <!-- Bouton de test paiement Pi (étape 10 de validation Pi Network) -->
-  <div style="position:fixed;bottom:90px;right:16px;z-index:9999">
-    <button onclick="testPiPayment()" style="background:#7B2FF7;color:#fff;border:none;padding:12px 18px;border-radius:30px;font-weight:700;box-shadow:0 4px 12px rgba(0,0,0,0.2)">
-      Payer 1 π (test)
-    </button>
-  </div>
-
-  <script>
-    function testPiPayment() {
-      if (typeof Pi === "undefined") {
-        alert("Le SDK Pi n'est pas chargé. Ouvre cette page dans le Pi Browser.");
-        return;
-      }
-
-      Pi.authenticate(["payments"], onIncompletePaymentFound)
-        .then(function (auth) {
-          Pi.createPayment({
-            amount: 1,
-            memo: "Test transaction TogoSheets Pro",
-            metadata: { test: true }
-          }, {
-            onReadyForServerApproval: function (paymentId) {
-              fetch("/.netlify/functions/approve", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ paymentId: paymentId })
-              });
-            },
-            onReadyForServerCompletion: function (paymentId, txid) {
-              fetch("/.netlify/functions/complete", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ paymentId: paymentId, txid: txid })
-              }).then(function () {
-                alert("Paiement test terminé avec succès !");
-              });
-            },
-            onCancel: function (paymentId) {
-              console.log("Paiement annulé:", paymentId);
-            },
-            onError: function (error, payment) {
-              console.error("Erreur paiement:", error, payment);
-            }
-          });
-        })
-        .catch(function (err) {
-          console.error("Erreur d'authentification Pi:", err);
-        });
-    }
-
-    function onIncompletePaymentFound(payment) {
-      console.log("Paiement incomplet trouvé:", payment);
-    }
-  </script>
 </body>
+
+</html>

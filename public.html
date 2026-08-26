@@ -58,6 +58,20 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 /* ── Carte boutique ── */
 .shop-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:all .2s;box-shadow:var(--shadow)}
 .shop-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.12);border-color:var(--primary)}
+.view-toggle{display:flex;gap:8px;padding:0 16px 10px}
+.view-toggle button{flex:1;padding:9px;border-radius:12px;border:1.5px solid var(--border);background:var(--card);font-size:13px;font-weight:700;cursor:pointer;color:var(--muted)}
+.view-toggle button.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.product-card{background:var(--card);border:1.5px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:all .2s;box-shadow:var(--shadow);display:flex;flex-direction:column}
+.product-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.12);border-color:var(--primary)}
+.product-img{aspect-ratio:1/1;background:#f1f5f9;display:grid;place-items:center;overflow:hidden}
+.product-img img{width:100%;height:100%;object-fit:cover}
+.product-body{padding:10px 12px}
+.product-name{font-size:13px;font-weight:700;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.product-price{font-size:15px;font-weight:900;color:var(--primary);margin-top:2px}
+.product-shop{display:flex;align-items:center;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+.product-shop-logo{width:20px;height:20px;border-radius:6px;background:var(--bg);display:grid;place-items:center;font-size:10px;font-weight:800;color:var(--primary);flex-shrink:0;overflow:hidden}
+.product-shop-logo img{width:100%;height:100%;object-fit:cover}
+.product-shop-name{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .shop-banner{height:90px;background:linear-gradient(135deg,#ecfdf5,#d1fae5);display:grid;place-items:center;position:relative;overflow:hidden}
 .shop-banner img{width:100%;height:100%;object-fit:cover}
 .shop-banner-icon{font-size:36px}
@@ -163,7 +177,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
       <div class="hero-stat-n" id="statShops">—</div>
       <div class="hero-stat-l">Boutiques</div>
     </div>
-    <div class="hero-stat" style="display:none">
+    <div class="hero-stat" id="statProductsWrap">
       <div class="hero-stat-n" id="statProducts">—</div>
       <div class="hero-stat-l">Produits</div>
     </div>
@@ -180,6 +194,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
     <i class="fas fa-search"></i>
     <input type="text" id="searchInput" placeholder="Chercher une boutique, produit, ville…" oninput="applyFilters()">
     <i class="fas fa-times" style="cursor:pointer;color:var(--muted)" onclick="clearSearch()"></i>
+  </div>
+  <div class="view-toggle">
+    <button id="viewBtnProducts" class="active" onclick="setViewMode('products')">📦 Articles</button>
+    <button id="viewBtnShops" onclick="setViewMode('shops')">🏬 Boutiques</button>
   </div>
   <div class="filters" id="filtersBar">
     <div class="filter-chip active" data-cat="all" onclick="pickCat(this)">Tout</div>
@@ -320,6 +338,7 @@ async function loadShops(){
     });
 
     window._allShops = shops;
+    window.buildAllProducts();
     document.getElementById('statShops').textContent    = shops.length;
     document.getElementById('statProducts').textContent = totalProducts;
     document.getElementById('statCities').textContent   = cities.size || 1;
@@ -332,10 +351,80 @@ async function loadShops(){
   }
 }
 
+window._viewMode = 'products';
+
+window.setViewMode = function(mode){
+  window._viewMode = mode;
+  document.getElementById('viewBtnProducts').classList.toggle('active', mode === 'products');
+  document.getElementById('viewBtnShops').classList.toggle('active', mode === 'shops');
+  document.getElementById('searchInput').placeholder =
+    mode === 'products' ? 'Chercher un article, une boutique, une ville…' : 'Chercher une boutique, produit, ville…';
+  window.applyFilters();
+};
+
+// Aplatit tous les articles de toutes les boutiques, avec les infos de la boutique attachées à chaque article
+window.buildAllProducts = function(){
+  const out = [];
+  (window._allShops || []).forEach(s => {
+    (s.articles || []).forEach(a => {
+      out.push({
+        ...a,
+        shopUid: s.uid, shopId: s.shopId, shopName: s.name,
+        shopLogo: s.logo, shopCity: s.city, shopType: s.type, shopCustomType: s.customType
+      });
+    });
+  });
+  window._allProducts = out;
+};
+
+function renderProducts(list){
+  const grid = document.getElementById('shopsGrid');
+  if(!list.length){
+    grid.innerHTML = '<div class="empty" style="grid-column:1/-1"><i class="fas fa-box-open"></i><p>Aucun article trouvé</p></div>';
+    return;
+  }
+  grid.innerHTML = list.map(a => {
+    const price = (a.prixV != null) ? Number(a.prixV).toLocaleString('fr-FR') + ' F' : '';
+    const img = a.photo || a.imageUrl || a.image || '';
+    const logo = a.shopLogo || '';
+    return `
+    <div class="product-card" onclick="openShop('${esc(a.shopUid)}','${esc(a.shopId)}')">
+      <div class="product-img">
+        ${img ? `<img src="${esc(img)}" alt="">` : `<span style="font-size:32px">📦</span>`}
+      </div>
+      <div class="product-body">
+        <div class="product-name">${esc(a.name || 'Article')}</div>
+        <div class="product-price">${price}</div>
+        <div class="product-shop">
+          <div class="product-shop-logo">${logo ? `<img src="${esc(logo)}" alt="">` : esc((a.shopName||'B').slice(0,2).toUpperCase())}</div>
+          <div class="product-shop-name">${esc(a.shopName || 'Boutique')}${a.shopCity ? ' · ' + esc(a.shopCity) : ''}</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
 window.applyFilters = function(){
   const term  = (document.getElementById('searchInput').value||'').toLowerCase();
   const cat   = window._currentCat || 'all';
   const sort  = document.getElementById('sortSelect').value;
+
+  if(window._viewMode === 'products'){
+    let list = (window._allProducts || []).slice();
+    if(cat !== 'all') list = list.filter(a => a.shopType === cat || a.shopCustomType === cat);
+    if(term) list = list.filter(a =>
+      (a.name||'').toLowerCase().includes(term) ||
+      (a.shopName||'').toLowerCase().includes(term) ||
+      (a.shopCity||'').toLowerCase().includes(term)
+    );
+    if(sort === 'recent')   list.sort((a,b) => (b.createdAt||0) - (a.createdAt||0));
+    if(sort === 'products') list.sort((a,b) => (b.prixV||0) - (a.prixV||0));
+    if(sort === 'alpha')    list.sort((a,b) => (a.name||'').localeCompare(b.name||''));
+    document.getElementById('resultCount').textContent =
+      list.length ? `${list.length} article${list.length>1?'s':''}` : 'Aucun article';
+    renderProducts(list);
+    return;
+  }
 
   let list = window._allShops.slice();
 

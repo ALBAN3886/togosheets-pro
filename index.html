@@ -9480,13 +9480,13 @@ async function cmSaveRemote(){
     // pour que la boutique publique ne lise plus jamais commerce_data en entier.
     try{
       const publicShops = CM.shops.map(s => ({
-        id: s.id, name: s.name, type: s.type||'', addr: s.addr||''
+        id: s.id ?? null, name: s.name ?? null, type: s.type ?? '', addr: s.addr ?? ''
         // PIN et employés volontairement exclus
       }));
       const publicArticles = CM.articles.map(a => ({
-        id: a.id, shopId: a.shopId, name: a.name, cat: a.cat,
-        prixV: a.prixV, stock: a.stock, unit: a.unit, note: a.note,
-        photo: a.photo, code: a.code
+        id: a.id ?? null, shopId: a.shopId ?? null, name: a.name ?? null, cat: a.cat ?? '',
+        prixV: a.prixV ?? 0, stock: a.stock ?? 0, unit: a.unit ?? '', note: a.note ?? '',
+        photo: a.photo ?? null, code: a.code ?? null
         // prixA (prix d'achat / marge) volontairement exclu
       }));
       await fs.setDoc(fs.doc(db,'public_shops',uid), {
@@ -9494,11 +9494,7 @@ async function cmSaveRemote(){
         articles: publicArticles,
         updatedAt: fs.serverTimestamp()
       }, { merge:false });
-    }catch(e){
-      console.warn('CM public sync', e);
-      const msg = 'DEBUG public_shops: ' + (e && e.message ? e.message : String(e));
-      if(window.showToast) showToast(msg, 'error'); else alert(msg);
-    }
+    }catch(e){ console.warn('CM public sync', e); }
 
     cmSaveLocal({
       shops: CM.shops, articles: CM.articles, mouvements: CM.mouvements,

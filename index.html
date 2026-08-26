@@ -9512,13 +9512,19 @@ async function cmSaveRemote(){
     // pour que la boutique publique ne lise plus jamais commerce_data en entier.
     try{
       const publicShops = CM.shops.map(s => ({
-        id: s.id ?? null, name: s.name ?? null, type: s.type ?? null, addr: s.addr ?? null
+        id: s.id ?? null, name: s.name ?? null, type: s.type ?? null, addr: s.addr ?? null,
+        customType: s.customType ?? null, city: s.city ?? null, country: s.country ?? null,
+        logoUrl: (s.branding && s.branding.logoUrl) || s.logoUrl || null,
+        bgUrl: (s.branding && s.branding.bgUrl) || null,
+        slogan: (s.branding && s.branding.slogan) || null,
+        isPublic: s.isPublic !== false,
+        createdAt: s.createdAt ?? null
         // PIN et employés volontairement exclus
       }));
       const publicArticles = CM.articles.map(a => ({
         id: a.id ?? null, shopId: a.shopId ?? null, name: a.name ?? null, cat: a.cat ?? null,
         prixV: a.prixV ?? null, stock: a.stock ?? null, unit: a.unit ?? null, note: a.note ?? null,
-        photo: a.photo ?? null, code: a.code ?? null
+        photo: a.photo ?? null, code: a.code ?? null, createdAt: a.createdAt ?? null
         // prixA (prix d'achat / marge) volontairement exclu
       }));
       await fs.setDoc(fs.doc(db,'public_shops',uid), {

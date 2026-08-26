@@ -9475,6 +9475,27 @@ async function cmSaveRemote(){
       mergedArticles.forEach(a => { cmStockBaseline[a.id] = Number(a.stock||0); });
     });
     cmDataStamp = stamp;
+
+    // Écriture d'une copie publique nettoyée (sans PIN employés, mouvements, caisse, crédits)
+    // pour que la boutique publique ne lise plus jamais commerce_data en entier.
+    try{
+      const publicShops = CM.shops.map(s => ({
+        id: s.id, name: s.name, type: s.type||'', addr: s.addr||''
+        // PIN et employés volontairement exclus
+      }));
+      const publicArticles = CM.articles.map(a => ({
+        id: a.id, shopId: a.shopId, name: a.name, cat: a.cat,
+        prixV: a.prixV, stock: a.stock, unit: a.unit, note: a.note,
+        photo: a.photo, code: a.code
+        // prixA (prix d'achat / marge) volontairement exclu
+      }));
+      await fs.setDoc(fs.doc(db,'public_shops',uid), {
+        shops: publicShops,
+        articles: publicArticles,
+        updatedAt: fs.serverTimestamp()
+      }, { merge:false });
+    }catch(e){ console.warn('CM public sync', e); }
+
     cmSaveLocal({
       shops: CM.shops, articles: CM.articles, mouvements: CM.mouvements,
       currentShopId: CM.currentShopId, updatedAtMs: cmDataStamp, schemaVersion: 2

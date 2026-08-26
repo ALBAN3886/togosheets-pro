@@ -1268,7 +1268,7 @@ function startRealtimeWatch() {
     document.getElementById('productsGrid').innerHTML = '<div class="empty" style="grid-column:1/-1"><i class="fas fa-link-slash"></i><p>Paramètre <code>?tenant=UID</code> manquant.</p></div>';
     return;
   }
-  const ref = doc(db, 'commerce_data', tenantId);
+  const ref = doc(db, 'public_shops', tenantId);
   onSnapshot(ref, snap => {
     if (!snap.exists()) { showEmpty(); return; }
     applyData(snap.data() || {});

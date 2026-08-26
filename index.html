@@ -9168,13 +9168,25 @@ window.cmShowPatronPinEntry = function(){
   cmRenderAll();
 };
 
-window.cmSubmitIdentityPin = function(){
+window.cmSubmitIdentityPin = async function(){
   const pin = document.getElementById('cmIdentityPinInput').value.trim();
   const sel = CM._pendingIdentitySelection;
   if (!sel || sel.type !== 'employee') return;
   const employees = cmAllEmployees();
   const emp = employees.find(e => e.id === sel.employeeId);
-  if (!emp || emp.pin !== pin) {
+  if (!emp) { cmToast(t('cm_msg_wrong_pin'), 'error'); return; }
+
+  const lock = window.cmCheckPinLockout(emp.id);
+  if (lock.locked) {
+    const mins = Math.ceil(lock.remainingMs / 60000);
+    cmToast(`Trop de tentatives. Réessayez dans ${mins} min.`, 'error');
+    document.getElementById('cmIdentityPinInput').value = '';
+    return;
+  }
+
+  const ok = await window.cmVerifyEmployeePin(emp, pin);
+  window.cmRegisterPinAttempt(emp.id, ok);
+  if (!ok) {
     cmToast(t('cm_msg_wrong_pin'), 'error');
     document.getElementById('cmIdentityPinInput').value = '';
     return;
@@ -9240,7 +9252,8 @@ window.cmOpenEmployeeForm = function(employeeId){
     const emp = (shop.employees||[]).find(e => e.id === employeeId);
     if (emp) {
       document.getElementById('cmEmpName').value = emp.name;
-      document.getElementById('cmEmpPin').value = emp.pin;
+      document.getElementById('cmEmpPin').value = ''; // PIN jamais réaffiché (hashé)
+      document.getElementById('cmEmpPin').placeholder = 'Laisser vide pour garder le PIN actuel';
       document.getElementById('cmEmpWhatsapp').value = emp.whatsapp || '';
       cmPickEmpRole(emp.role);
     }
@@ -9263,7 +9276,7 @@ window.cmPickEmpRole = function(role){
   CM._pendingEmpRole = role;
 };
 
-window.cmSaveEmployee = function(){
+window.cmSaveEmployee = async function(){
   const shop = cmGetShop();
   if (!shop) return;
   const name = document.getElementById('cmEmpName').value.trim();
@@ -9271,18 +9284,37 @@ window.cmSaveEmployee = function(){
   const whatsapp = window.cmNormalizeWhatsapp(document.getElementById('cmEmpWhatsapp').value);
   const role = CM._pendingEmpRole || 'manager';
   if (!name) { cmToast(t('cm_msg_employee_name_required'),'error'); return; }
-  if (!/^\d{4}$/.test(pin)) { cmToast(t('cm_msg_pin_4digits'),'error'); return; }
 
-  const taken = cmAllEmployees().some(e => e.pin === pin && e.id !== CM.editingEmployeeId);
-  if (taken) { cmToast(t('cm_msg_pin_taken'),'error'); return; }
+  const isEditingExisting = !!CM.editingEmployeeId;
+  const pinProvided = pin.length > 0;
+
+  // En édition, le champ PIN peut rester vide pour ne pas le changer.
+  // En création, un PIN est obligatoire.
+  if (!isEditingExisting || pinProvided) {
+    if (!/^\d{4}$/.test(pin)) { cmToast(t('cm_msg_pin_4digits'),'error'); return; }
+    if (window.cmIsWeakPin(pin)) { cmToast('Ce PIN est trop simple (ex: 1234, 0000). Choisissez-en un autre.', 'error'); return; }
+  }
+
+  let pinHash = null;
+  if (pinProvided) {
+    pinHash = await window.cmHashPin(pin);
+    const existingHashes = cmAllEmployees()
+      .filter(e => e.id !== CM.editingEmployeeId)
+      .map(e => e.pinHash);
+    if (existingHashes.includes(pinHash)) { cmToast(t('cm_msg_pin_taken'),'error'); return; }
+  }
 
   if (!Array.isArray(shop.employees)) shop.employees = [];
 
   if (CM.editingEmployeeId) {
     const emp = shop.employees.find(e => e.id === CM.editingEmployeeId);
-    if (emp) Object.assign(emp, { name, pin, role, whatsapp });
+    if (emp) {
+      Object.assign(emp, { name, role, whatsapp });
+      if (pinHash) emp.pinHash = pinHash;
+      delete emp.pin; // nettoyage si migration depuis un ancien PIN en clair
+    }
   } else {
-    shop.employees.push({ id: cmUID(), name, pin, role, whatsapp, createdAt: Date.now() });
+    shop.employees.push({ id: cmUID(), name, pinHash, role, whatsapp, createdAt: Date.now() });
   }
   cmSave();
   cmRenderEmployeesList();
@@ -11252,6 +11284,62 @@ window.cmSetGenerateRole = function(role) {
   document.getElementById('cmGenRoleManager')?.classList.toggle('active', role === 'manager');
 };
 
+// ── Sécurité PIN : hashage, blocage des PIN faibles, limite de tentatives ──
+window.cmWeakPins = ['1234','0000','1111','2222','3333','4444','5555','6666','7777','8888','9999','1212','0001'];
+
+window.cmIsWeakPin = function(pin) {
+  return window.cmWeakPins.includes(String(pin));
+};
+
+window.cmHashPin = async function(pin) {
+  const enc = new TextEncoder().encode('TS_PIN_v1:' + String(pin));
+  const buf = await crypto.subtle.digest('SHA-256', enc);
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+};
+
+// Vérifie un PIN saisi contre un employé, avec migration automatique
+// (si l'employé a encore un ancien PIN en clair, on le migre vers un hash).
+window.cmVerifyEmployeePin = async function(emp, enteredPin) {
+  const hash = await window.cmHashPin(enteredPin);
+  if (emp.pinHash) return emp.pinHash === hash;
+  if (emp.pin && emp.pin === enteredPin) {
+    // Migration automatique : on hash et on retire le PIN en clair
+    emp.pinHash = hash;
+    delete emp.pin;
+    if (typeof window.cmSave === 'function') window.cmSave();
+    return true;
+  }
+  return false;
+};
+
+// Limite de tentatives (verrouillage local, par employé)
+window.cmPinLockKey = function(empId) { return 'ts_pin_lock_' + empId; };
+
+window.cmCheckPinLockout = function(empId) {
+  try {
+    const raw = localStorage.getItem(window.cmPinLockKey(empId));
+    if (!raw) return { locked: false };
+    const data = JSON.parse(raw);
+    if (data.lockedUntil && Date.now() < data.lockedUntil) {
+      return { locked: true, remainingMs: data.lockedUntil - Date.now() };
+    }
+    return { locked: false };
+  } catch(e) { return { locked: false }; }
+};
+
+window.cmRegisterPinAttempt = function(empId, success) {
+  const key = window.cmPinLockKey(empId);
+  if (success) { localStorage.removeItem(key); return; }
+  let data = { fails: 0, lockedUntil: 0 };
+  try { const raw = localStorage.getItem(key); if (raw) data = JSON.parse(raw); } catch(e){}
+  data.fails = (data.fails || 0) + 1;
+  if (data.fails >= 5) {
+    data.lockedUntil = Date.now() + 5 * 60 * 1000; // verrouillage 5 minutes
+    data.fails = 0;
+  }
+  localStorage.setItem(key, JSON.stringify(data));
+};
+
 window.cmGenerateUniquePin = function() {
   const used = new Set((typeof cmAllEmployees === 'function' ? cmAllEmployees() : []).map(e => String(e.pin || '')));
   for (let i = 0; i < 200; i++) {
@@ -11475,7 +11563,7 @@ window.cmRenderEmployeeLinkHistory = function(emp) {
   }).join('');
 };
 
-window.cmCreateAndGenerateEmployeeLink = function() {
+window.cmCreateAndGenerateEmployeeLink = async function() {
   const name = document.getElementById('cmGenLinkName')?.value.trim() || '';
   const shopId = document.getElementById('cmGenLinkShop')?.value || '';
   let pin = document.getElementById('cmGenLinkPin')?.value.trim() || '';
@@ -11487,6 +11575,7 @@ window.cmCreateAndGenerateEmployeeLink = function() {
   if (!shopId) { window.cmToast('Choisissez une boutique.', 'error'); return; }
   if (!pin) pin = window.cmAutofillGeneratePin();
   if (!/^\d{4}$/.test(pin)) { window.cmToast('Le PIN doit contenir 4 chiffres.', 'error'); return; }
+  if (window.cmIsWeakPin(pin)) { window.cmToast('Ce PIN est trop simple (ex: 1234, 0000). Choisissez-en un autre.', 'error'); return; }
 
   const shops = Array.isArray(window.CM_DEBUG?.shops) ? window.CM_DEBUG.shops : [];
   const shop = shops.find(s => String(s.id) === String(shopId));
@@ -11494,13 +11583,17 @@ window.cmCreateAndGenerateEmployeeLink = function() {
   if (!Array.isArray(shop.employees)) shop.employees = [];
 
   let emp = window.cmFindEmployeeByNameAndShop(name, shopId);
-  const pinTaken = (typeof window.cmAllEmployees === 'function' ? window.cmAllEmployees() : []).some(e => e.pin === pin && (!emp || e.id !== emp.id));
-  if (pinTaken) { window.cmToast('Ce PIN est déjà utilisé par un autre employé.', 'error'); return; }
+  const pinHash = await window.cmHashPin(pin);
+  const existingHashes = (typeof window.cmAllEmployees === 'function' ? window.cmAllEmployees() : [])
+    .filter(e => !emp || e.id !== emp.id)
+    .map(e => e.pinHash);
+  if (existingHashes.includes(pinHash)) { window.cmToast('Ce PIN est déjà utilisé par un autre employé.', 'error'); return; }
 
   if (emp) {
-    Object.assign(emp, { name, pin, role, whatsapp, updatedAt: Date.now() });
+    Object.assign(emp, { name, pinHash, role, whatsapp, updatedAt: Date.now() });
+    delete emp.pin; // nettoyage si migration depuis un ancien PIN en clair
   } else {
-    emp = { id: window.cmUID(), name, pin, role, whatsapp, createdAt: Date.now() };
+    emp = { id: window.cmUID(), name, pinHash, role, whatsapp, createdAt: Date.now() };
     shop.employees.push(emp);
   }
 
@@ -11509,7 +11602,7 @@ window.cmCreateAndGenerateEmployeeLink = function() {
   if (typeof window.cmSave === 'function') window.cmSave();
   if (typeof window.cmRenderEmployeesList === 'function') window.cmRenderEmployeesList();
   window.cmRenderGenerateLinkExistingEmployees();
-  window.cmGenerateLinkForEmp(emp.id, shop.id, emp.name, emp.role, emp.pin, emp.whatsapp || '');
+  window.cmGenerateLinkForEmp(emp.id, shop.id, emp.name, emp.role, pin, emp.whatsapp || '');
   window.cmToast('Lien prêt pour ' + emp.name + ' ✓', 'success');
 };
 

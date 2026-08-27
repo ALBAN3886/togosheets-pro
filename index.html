@@ -5365,8 +5365,8 @@ window.switchTab = function(tab) {
   </div>
 </div>
 
-<!-- ════════════════ FAB ════════════════ -->
-<button onclick="openTxModal()" style="position:fixed;bottom:26px;right:26px;width:56px;height:56px;border-radius:50%;background:var(--grad);border:none;font-size:24px;color:#fff;cursor:pointer;z-index:200;box-shadow:0 8px 28px rgba(99,102,241,.45);display:flex;align-items:center;justify-content:center;transition:transform .2s,box-shadow .2s" onmouseover="this.style.transform='scale(1.12)'" onmouseout="this.style.transform='none'">＋</button>
+<!-- Ancien bouton + flottant retiré : redondant avec le bouton + déjà intégré
+     à la barre de navigation du bas (id="bnavFab"), qui fait exactement la même action. -->
 
 <!-- ════════════════ ADMIN LOGIN ════════════════ -->
 <div id="adminLoginScreen" style="display:none;min-height:100vh;align-items:center;justify-content:center;padding:20px;background:var(--bg)">

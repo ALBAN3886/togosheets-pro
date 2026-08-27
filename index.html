@@ -1682,6 +1682,14 @@ const LANGS = {
     cm_shop_city:'Ville', cm_shop_choose_city:'Choisir une ville',
     cm_shop_address:'Adresse (optionnel)', cm_shop_seuil:'Seuil d\'alerte stock (par défaut)',
     cm_new_article:'Nouvel article', cm_edit_article:'Modifier article',
+    cm_tab_clients:'Clients', cm_new_client:'Nouveau client', cm_edit_client:'Modifier client',
+    cm_search_client:'Rechercher un client…', cm_client_name:'Nom du client *',
+    cm_client_phone:'Téléphone', cm_client_whatsapp:'WhatsApp (optionnel)',
+    cm_client_addr:'Adresse (optionnel)', cm_client_note:'Note (optionnel)',
+    cm_no_client:'Aucun client', cm_no_client_sub:'Cliquez sur "Nouveau client" pour commencer',
+    cm_msg_client_name_required:'Le nom du client est obligatoire',
+    cm_msg_client_saved:'Client enregistré ✓', cm_msg_client_deleted:'Client supprimé',
+    cm_confirm_delete_client:'Supprimer ce client ?',
     cm_art_name:'Nom de l\'article *', cm_art_cat:'Catégorie *',
     cm_art_prixa:'Prix d\'achat (unitaire)', cm_art_prixv:'Prix de vente *',
     cm_art_stock:'Stock initial', cm_art_unit:'Unité', cm_art_seuil:'Seuil alerte stock bas',
@@ -1973,6 +1981,14 @@ const LANGS = {
     cm_shop_city:'City', cm_shop_choose_city:'Choose a city',
     cm_shop_address:'Address (optional)', cm_shop_seuil:'Low stock alert threshold (default)',
     cm_new_article:'New item', cm_edit_article:'Edit item',
+    cm_tab_clients:'Customers', cm_new_client:'New customer', cm_edit_client:'Edit customer',
+    cm_search_client:'Search a customer…', cm_client_name:'Customer name *',
+    cm_client_phone:'Phone', cm_client_whatsapp:'WhatsApp (optional)',
+    cm_client_addr:'Address (optional)', cm_client_note:'Note (optional)',
+    cm_no_client:'No customers yet', cm_no_client_sub:'Click "New customer" to get started',
+    cm_msg_client_name_required:'Customer name is required',
+    cm_msg_client_saved:'Customer saved ✓', cm_msg_client_deleted:'Customer deleted',
+    cm_confirm_delete_client:'Delete this customer?',
     cm_art_name:'Item name *', cm_art_cat:'Category *',
     cm_art_prixa:'Purchase price (unit)', cm_art_prixv:'Selling price *',
     cm_art_stock:'Initial stock', cm_art_unit:'Unit', cm_art_seuil:'Low stock alert threshold',
@@ -8307,6 +8323,7 @@ if ('serviceWorker' in navigator) {
     <button class="cm-tab" data-cmtab="articles" onclick="cmSwitch('articles')"><i class="fas fa-box"></i><span data-i18n="cm_tab_articles">Articles</span></button>
     <button class="cm-tab" data-cmtab="mouvements" onclick="cmSwitch('mouvements')"><i class="fas fa-right-left"></i><span data-i18n="cm_tab_mouvements">Mouvements</span></button>
     <button class="cm-tab" data-cmtab="stock" onclick="cmSwitch('stock')"><i class="fas fa-warehouse"></i><span data-i18n="cm_tab_stock">Stock</span></button>
+    <button class="cm-tab" data-cmtab="clients" onclick="cmSwitch('clients')"><i class="fas fa-users"></i><span data-i18n="cm_tab_clients">Clients</span></button>
   </div>
 
   <!-- ═══ Section : Résumé ═══ -->
@@ -8391,9 +8408,47 @@ if ('serviceWorker' in navigator) {
     </div>
     <div id="cmStockList"></div>
   </div>
+
+  <!-- ═══ Section : Clients ═══ -->
+  <div class="cm-section" id="cm-sec-clients">
+    <div class="cm-search-box">
+      <i class="fas fa-search"></i>
+      <input type="text" id="cmClientSearch" data-i18n="cm_search_client" placeholder="Rechercher un client…" oninput="cmRenderClients()">
+    </div>
+    <div id="cmClientsList"></div>
+    <button data-cm-role-restrict="edit_article" style="width:100%;margin-top:8px;padding:14px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:12px;font-weight:800;cursor:pointer;" onclick="cmOpenClientModal()">
+      <i class="fas fa-plus"></i> <span data-i18n="cm_new_client">Nouveau client</span>
+    </button>
+  </div>
 </div>
 
-<!-- ═══ Modal : Boutique ═══ -->
+<!-- ═══ Modal : Client ═══ -->
+<div class="modal-overlay" id="cmClientModal">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-header">
+      <h3 id="cmClientModalTitle" data-i18n="cm_new_client">Nouveau client</h3>
+      <button class="modal-close" onclick="closeModal('cmClientModal')"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <label data-i18n="cm_client_name">Nom du client *</label>
+      <input type="text" id="cmClientName" placeholder="Ex: Kokou Mensah">
+      <label data-i18n="cm_client_phone" style="margin-top:12px">Téléphone</label>
+      <input type="text" id="cmClientPhone" placeholder="Ex: 90 00 00 00">
+      <label data-i18n="cm_client_whatsapp" style="margin-top:12px">WhatsApp (optionnel)</label>
+      <input type="text" id="cmClientWhatsapp" placeholder="Ex: 90 00 00 00">
+      <label data-i18n="cm_client_addr" style="margin-top:12px">Adresse (optionnel)</label>
+      <input type="text" id="cmClientAddr" placeholder="Ex: Adidogomé, Lomé">
+      <label data-i18n="cm_client_note" style="margin-top:12px">Note (optionnel)</label>
+      <textarea id="cmClientNote" rows="2" placeholder="Informations complémentaires…" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);font-family:inherit"></textarea>
+    </div>
+    <div class="modal-foot">
+      <button id="cmClientDeleteBtn" onclick="cmDeleteClient()" style="display:none;background:var(--grad-danger);color:#fff;border:none;padding:12px 16px;border-radius:10px;font-weight:700;cursor:pointer" data-i18n="btn_delete"><i class="fas fa-trash"></i></button>
+      <button class="btn-cancel-modal" onclick="closeModal('cmClientModal')" data-i18n="btn_cancel">Annuler</button>
+      <button class="btn-save-modal" onclick="cmSaveClient()" data-i18n="btn_save"><i class="fas fa-check"></i> Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="cmShopModal">
   <div class="modal-box" style="max-width:480px">
     <div class="modal-header">
@@ -9018,6 +9073,7 @@ let CM = {
   shops: [],           // {id,name,type,addr,seuil,createdAt,employees:[{id,name,pin,role,createdAt}]}
   articles: [],        // {id,shopId,name,cat,prixA,prixV,stock,unit,seuil,code,note,createdAt}
   mouvements: [],      // {id,shopId,artId,artName,type,qte,prix,total,date,person,note,createdAt}
+  clients: [],          // {id,shopId,name,phone,whatsapp,addr,note,createdAt}
   currentShopId: null,
   currentSection: 'resume',
   currentMvtType: 'vente',
@@ -9343,6 +9399,7 @@ function cmSnapshot(){
     shops: CM.shops,
     articles: CM.articles,
     mouvements: CM.mouvements,
+    clients: CM.clients,
     currentShopId: CM.currentShopId,
     updatedAtMs: Date.now(),
     schemaVersion: 2
@@ -9352,6 +9409,7 @@ function cmApplyData(d){
   CM.shops = Array.isArray(d?.shops) ? d.shops : [];
   CM.articles = Array.isArray(d?.articles) ? d.articles : [];
   CM.mouvements = Array.isArray(d?.mouvements) ? d.mouvements : [];
+  CM.clients = Array.isArray(d?.clients) ? d.clients : [];
   CM.currentShopId = d?.currentShopId || (CM.shops[0] && CM.shops[0].id) || null;
   cmDataStamp = Number(d?.updatedAtMs || 0);
   // Mémorise le stock "tel que connu" pour calculer un delta lors de la sauvegarde,
@@ -9372,7 +9430,7 @@ function cmLoad(){
       return;
     }
   }catch(e){ console.warn('CM load',e); }
-  cmApplyData({ shops:[], articles:[], mouvements:[], currentShopId:null, updatedAtMs:0 });
+  cmApplyData({ shops:[], articles:[], mouvements:[], clients:[], currentShopId:null, updatedAtMs:0 });
 }
 let cmRemoteUnsub = null;
 function cmIsEditing(){
@@ -9572,6 +9630,7 @@ function cmMonthOf(dateStr){ return (dateStr||'').slice(0,7); }
 function cmCurrentMonth(){ return new Date().toISOString().slice(0,7); }
 function cmGetShop(){ return CM.shops.find(s=>s.id===CM.currentShopId); }
 function cmGetShopArticles(){ return CM.articles.filter(a=>a.shopId===CM.currentShopId); }
+function cmGetShopClients(){ return CM.clients.filter(c=>c.shopId===CM.currentShopId); }
 function cmGetShopMvts(){ return CM.mouvements.filter(m=>m.shopId===CM.currentShopId); }
 function cmGetShopTypeLabel(shop){
   if(!shop) return '';
@@ -9811,7 +9870,7 @@ function cmRenderSection(){
   if(!cmGetShop()){
     ['cmStatVentes','cmStatAchats','cmStatMarge','cmStatStock'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent='—'; });
     const emptyMsg = '<div class="cm-empty"><i class="fas fa-store-slash"></i>Créez d\'abord une boutique<br><button onclick="cmOpenShopModal(true)" style="margin-top:12px;padding:10px 18px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;"><i class="fas fa-plus"></i> Nouvelle boutique</button></div>';
-    ['cmArticlesList','cmMvtList','cmStockList','cmTopArticles','cmAlerts'].forEach(id=>{
+    ['cmArticlesList','cmMvtList','cmStockList','cmTopArticles','cmAlerts','cmClientsList'].forEach(id=>{
       const el=document.getElementById(id);
       if(el) el.innerHTML = emptyMsg;
     });
@@ -9821,6 +9880,7 @@ function cmRenderSection(){
   if(CM.currentSection==='articles') cmRenderArticles();
   if(CM.currentSection==='mouvements') cmRenderMvts();
   if(CM.currentSection==='stock') cmRenderStock();
+  if(CM.currentSection==='clients') cmRenderClients();
 }
 
 /* ── Résumé ── */
@@ -9933,6 +9993,91 @@ window.cmRenderArticles = function(){
       <button class="cm-card-qr-btn" onclick="event.stopPropagation();cmShowQr('${a.id}')" title="Code QR"><i class="fas fa-qrcode"></i></button>
     </div>`;
   }).join('');
+};
+
+window.cmRenderClients = function(){
+  const c = document.getElementById('cmClientsList');
+  if(!c) return;
+  const search = (document.getElementById('cmClientSearch')?.value||'').toLowerCase();
+  let clients = cmGetShopClients();
+  if(search) clients = clients.filter(cl =>
+    cl.name.toLowerCase().includes(search) ||
+    (cl.phone||'').toLowerCase().includes(search) ||
+    (cl.whatsapp||'').toLowerCase().includes(search)
+  );
+  clients.sort((a,b)=>a.name.localeCompare(b.name));
+  if(clients.length===0){
+    c.innerHTML = `<div class="cm-empty"><i class="fas fa-users"></i>${t('cm_no_client')}<br><small>${t('cm_no_client_sub')}</small></div>`;
+    return;
+  }
+  c.innerHTML = clients.map(cl => `
+    <div class="cm-card">
+      <div onclick="cmEditClient('${cl.id}')" style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;cursor:pointer">
+        <div class="cm-card-icon"><i class="fas fa-user"></i></div>
+        <div class="cm-card-body">
+          <div class="cm-card-title">${cl.name}</div>
+          <div class="cm-card-sub">${cl.phone || cl.whatsapp || cl.addr || ''}</div>
+        </div>
+      </div>
+      ${cl.whatsapp ? `<a href="https://wa.me/${(cl.whatsapp||'').replace(/\D/g,'')}" onclick="event.stopPropagation()" class="cm-card-qr-btn" title="WhatsApp" style="color:#25d366"><i class="fab fa-whatsapp"></i></a>` : ''}
+    </div>`
+  ).join('');
+};
+
+window.cmOpenClientModal = function(){
+  CM.editingClientId = null;
+  document.getElementById('cmClientModalTitle').textContent = t('cm_new_client');
+  document.getElementById('cmClientName').value = '';
+  document.getElementById('cmClientPhone').value = '';
+  document.getElementById('cmClientWhatsapp').value = '';
+  document.getElementById('cmClientAddr').value = '';
+  document.getElementById('cmClientNote').value = '';
+  document.getElementById('cmClientDeleteBtn').style.display = 'none';
+  openModal('cmClientModal');
+};
+
+window.cmEditClient = function(id){
+  const cl = CM.clients.find(c => c.id === id);
+  if(!cl) return;
+  CM.editingClientId = id;
+  document.getElementById('cmClientModalTitle').textContent = t('cm_edit_client');
+  document.getElementById('cmClientName').value = cl.name || '';
+  document.getElementById('cmClientPhone').value = cl.phone || '';
+  document.getElementById('cmClientWhatsapp').value = cl.whatsapp || '';
+  document.getElementById('cmClientAddr').value = cl.addr || '';
+  document.getElementById('cmClientNote').value = cl.note || '';
+  document.getElementById('cmClientDeleteBtn').style.display = 'inline-block';
+  openModal('cmClientModal');
+};
+
+window.cmSaveClient = function(){
+  const name = document.getElementById('cmClientName').value.trim();
+  if(!name){ cmToast(t('cm_msg_client_name_required'),'error'); return; }
+  const phone = document.getElementById('cmClientPhone').value.trim();
+  const whatsapp = window.cmNormalizeWhatsapp ? window.cmNormalizeWhatsapp(document.getElementById('cmClientWhatsapp').value) : document.getElementById('cmClientWhatsapp').value.trim();
+  const addr = document.getElementById('cmClientAddr').value.trim();
+  const note = document.getElementById('cmClientNote').value.trim();
+
+  if(CM.editingClientId){
+    const cl = CM.clients.find(c => c.id === CM.editingClientId);
+    if(cl) Object.assign(cl, { name, phone, whatsapp, addr, note, updatedAt: Date.now() });
+  } else {
+    CM.clients.push({ id: cmUID(), shopId: CM.currentShopId, name, phone, whatsapp, addr, note, createdAt: Date.now() });
+  }
+  cmSave();
+  cmRenderClients();
+  closeModal('cmClientModal');
+  cmToast(t('cm_msg_client_saved'),'success');
+};
+
+window.cmDeleteClient = function(){
+  if(!CM.editingClientId) return;
+  if(!confirm(t('cm_confirm_delete_client'))) return;
+  CM.clients = CM.clients.filter(c => c.id !== CM.editingClientId);
+  cmSave();
+  cmRenderClients();
+  closeModal('cmClientModal');
+  cmToast(t('cm_msg_client_deleted'),'success');
 };
 
 /* ── Reçus & Devis ──

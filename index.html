@@ -5005,17 +5005,17 @@ select.form-input option{background:var(--bg2)}
 <nav class="bottom-nav" id="bottomNav" style="display:none">
   <div class="bottom-nav-grid">
     <button class="bnav-btn active" id="bnav-dashboard" onclick="bnavSwitch('dashboard')">
-      <i class="fas fa-house"></i><span>Accueil</span>
+      <i class="fas fa-house"></i><span data-i18n="nav_dashboard">Accueil</span>
     </button>
     <button class="bnav-btn" id="bnav-historique" onclick="bnavSwitch('historique')">
-      <i class="fas fa-receipt"></i><span>Transactions</span>
+      <i class="fas fa-receipt"></i><span data-i18n="nav_historique">Transactions</span>
     </button>
     <button class="bnav-btn bnav-fab-spacer" tabindex="-1" aria-hidden="true"></button>
     <button class="bnav-btn" id="bnav-epargne" onclick="bnavSwitch('epargne')">
-      <i class="fas fa-bullseye"></i><span>Objectifs</span>
+      <i class="fas fa-bullseye"></i><span data-i18n="nav_objectifs">Objectifs</span>
     </button>
     <button class="bnav-btn" id="bnav-more" onclick="openBnavDrawer()">
-      <i class="fas fa-user"></i><span>Profil</span>
+      <i class="fas fa-bars"></i><span data-i18n="nav_menu">Menu</span>
     </button>
   </div>
   <button class="bnav-fab" id="bnavFab" onclick="openTxModal()">

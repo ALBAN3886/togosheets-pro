@@ -1690,6 +1690,12 @@ const LANGS = {
     cm_msg_client_name_required:'Le nom du client est obligatoire',
     cm_msg_client_saved:'Client enregistré ✓', cm_msg_client_deleted:'Client supprimé',
     cm_confirm_delete_client:'Supprimer ce client ?',
+    cm_tab_fournisseurs:'Fournisseurs', cm_new_fourn:'Nouveau fournisseur', cm_edit_fourn:'Modifier fournisseur',
+    cm_search_fourn:'Rechercher un fournisseur…', cm_fourn_name:'Nom du fournisseur *',
+    cm_no_fourn:'Aucun fournisseur', cm_no_fourn_sub:'Cliquez sur "Nouveau fournisseur" pour commencer',
+    cm_msg_fourn_name_required:'Le nom du fournisseur est obligatoire',
+    cm_msg_fourn_saved:'Fournisseur enregistré ✓', cm_msg_fourn_deleted:'Fournisseur supprimé',
+    cm_confirm_delete_fourn:'Supprimer ce fournisseur ?',
     cm_art_name:'Nom de l\'article *', cm_art_cat:'Catégorie *',
     cm_art_prixa:'Prix d\'achat (unitaire)', cm_art_prixv:'Prix de vente *',
     cm_art_stock:'Stock initial', cm_art_unit:'Unité', cm_art_seuil:'Seuil alerte stock bas',
@@ -1989,6 +1995,12 @@ const LANGS = {
     cm_msg_client_name_required:'Customer name is required',
     cm_msg_client_saved:'Customer saved ✓', cm_msg_client_deleted:'Customer deleted',
     cm_confirm_delete_client:'Delete this customer?',
+    cm_tab_fournisseurs:'Suppliers', cm_new_fourn:'New supplier', cm_edit_fourn:'Edit supplier',
+    cm_search_fourn:'Search a supplier…', cm_fourn_name:'Supplier name *',
+    cm_no_fourn:'No suppliers yet', cm_no_fourn_sub:'Click "New supplier" to get started',
+    cm_msg_fourn_name_required:'Supplier name is required',
+    cm_msg_fourn_saved:'Supplier saved ✓', cm_msg_fourn_deleted:'Supplier deleted',
+    cm_confirm_delete_fourn:'Delete this supplier?',
     cm_art_name:'Item name *', cm_art_cat:'Category *',
     cm_art_prixa:'Purchase price (unit)', cm_art_prixv:'Selling price *',
     cm_art_stock:'Initial stock', cm_art_unit:'Unit', cm_art_seuil:'Low stock alert threshold',
@@ -8324,6 +8336,7 @@ if ('serviceWorker' in navigator) {
     <button class="cm-tab" data-cmtab="mouvements" onclick="cmSwitch('mouvements')"><i class="fas fa-right-left"></i><span data-i18n="cm_tab_mouvements">Mouvements</span></button>
     <button class="cm-tab" data-cmtab="stock" onclick="cmSwitch('stock')"><i class="fas fa-warehouse"></i><span data-i18n="cm_tab_stock">Stock</span></button>
     <button class="cm-tab" data-cmtab="clients" onclick="cmSwitch('clients')"><i class="fas fa-users"></i><span data-i18n="cm_tab_clients">Clients</span></button>
+    <button class="cm-tab" data-cmtab="fournisseurs" onclick="cmSwitch('fournisseurs')"><i class="fas fa-truck"></i><span data-i18n="cm_tab_fournisseurs">Fournisseurs</span></button>
   </div>
 
   <!-- ═══ Section : Résumé ═══ -->
@@ -8420,9 +8433,48 @@ if ('serviceWorker' in navigator) {
       <i class="fas fa-plus"></i> <span data-i18n="cm_new_client">Nouveau client</span>
     </button>
   </div>
+
+  <!-- ═══ Section : Fournisseurs ═══ -->
+  <div class="cm-section" id="cm-sec-fournisseurs">
+    <div class="cm-search-box">
+      <i class="fas fa-search"></i>
+      <input type="text" id="cmFournSearch" data-i18n="cm_search_fourn" placeholder="Rechercher un fournisseur…" oninput="cmRenderFournisseurs()">
+    </div>
+    <div id="cmFournisseursList"></div>
+    <button data-cm-role-restrict="edit_article" style="width:100%;margin-top:8px;padding:14px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:12px;font-weight:800;cursor:pointer;" onclick="cmOpenFournModal()">
+      <i class="fas fa-plus"></i> <span data-i18n="cm_new_fourn">Nouveau fournisseur</span>
+    </button>
+  </div>
 </div>
 
-<!-- ═══ Modal : Client ═══ -->
+<!-- ═══ Modal : Fournisseur ═══ -->
+<div class="modal-overlay" id="cmFournModal">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-header">
+      <h3 id="cmFournModalTitle" data-i18n="cm_new_fourn">Nouveau fournisseur</h3>
+      <button class="modal-close" onclick="closeModal('cmFournModal')"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <label data-i18n="cm_fourn_name">Nom du fournisseur *</label>
+      <input type="text" id="cmFournName" placeholder="Ex: Grossiste Adawlato">
+      <label data-i18n="cm_client_phone" style="margin-top:12px">Téléphone</label>
+      <input type="text" id="cmFournPhone" placeholder="Ex: 90 00 00 00">
+      <label data-i18n="cm_client_whatsapp" style="margin-top:12px">WhatsApp (optionnel)</label>
+      <input type="text" id="cmFournWhatsapp" placeholder="Ex: 90 00 00 00">
+      <label data-i18n="cm_client_addr" style="margin-top:12px">Adresse (optionnel)</label>
+      <input type="text" id="cmFournAddr" placeholder="Ex: Adawlato, Lomé">
+      <label data-i18n="cm_client_note" style="margin-top:12px">Note (optionnel)</label>
+      <textarea id="cmFournNote" rows="2" placeholder="Informations complémentaires…" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);font-family:inherit"></textarea>
+    </div>
+    <div class="modal-foot">
+      <button id="cmFournDeleteBtn" onclick="cmDeleteFourn()" style="display:none;background:var(--grad-danger);color:#fff;border:none;padding:12px 16px;border-radius:10px;font-weight:700;cursor:pointer" data-i18n="btn_delete"><i class="fas fa-trash"></i></button>
+      <button class="btn-cancel-modal" onclick="closeModal('cmFournModal')" data-i18n="btn_cancel">Annuler</button>
+      <button class="btn-save-modal" onclick="cmSaveFourn()" data-i18n="btn_save"><i class="fas fa-check"></i> Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+
 <div class="modal-overlay" id="cmClientModal">
   <div class="modal-box" style="max-width:480px">
     <div class="modal-header">
@@ -9074,6 +9126,7 @@ let CM = {
   articles: [],        // {id,shopId,name,cat,prixA,prixV,stock,unit,seuil,code,note,createdAt}
   mouvements: [],      // {id,shopId,artId,artName,type,qte,prix,total,date,person,note,createdAt}
   clients: [],          // {id,shopId,name,phone,whatsapp,addr,note,createdAt}
+  fournisseurs: [],      // {id,shopId,name,phone,whatsapp,addr,note,createdAt}
   currentShopId: null,
   currentSection: 'resume',
   currentMvtType: 'vente',
@@ -9400,6 +9453,7 @@ function cmSnapshot(){
     articles: CM.articles,
     mouvements: CM.mouvements,
     clients: CM.clients,
+    fournisseurs: CM.fournisseurs,
     currentShopId: CM.currentShopId,
     updatedAtMs: Date.now(),
     schemaVersion: 2
@@ -9410,6 +9464,7 @@ function cmApplyData(d){
   CM.articles = Array.isArray(d?.articles) ? d.articles : [];
   CM.mouvements = Array.isArray(d?.mouvements) ? d.mouvements : [];
   CM.clients = Array.isArray(d?.clients) ? d.clients : [];
+  CM.fournisseurs = Array.isArray(d?.fournisseurs) ? d.fournisseurs : [];
   CM.currentShopId = d?.currentShopId || (CM.shops[0] && CM.shops[0].id) || null;
   cmDataStamp = Number(d?.updatedAtMs || 0);
   // Mémorise le stock "tel que connu" pour calculer un delta lors de la sauvegarde,
@@ -9430,7 +9485,7 @@ function cmLoad(){
       return;
     }
   }catch(e){ console.warn('CM load',e); }
-  cmApplyData({ shops:[], articles:[], mouvements:[], clients:[], currentShopId:null, updatedAtMs:0 });
+  cmApplyData({ shops:[], articles:[], mouvements:[], clients:[], fournisseurs:[], currentShopId:null, updatedAtMs:0 });
 }
 let cmRemoteUnsub = null;
 function cmIsEditing(){
@@ -9631,6 +9686,7 @@ function cmCurrentMonth(){ return new Date().toISOString().slice(0,7); }
 function cmGetShop(){ return CM.shops.find(s=>s.id===CM.currentShopId); }
 function cmGetShopArticles(){ return CM.articles.filter(a=>a.shopId===CM.currentShopId); }
 function cmGetShopClients(){ return CM.clients.filter(c=>c.shopId===CM.currentShopId); }
+function cmGetShopFournisseurs(){ return CM.fournisseurs.filter(f=>f.shopId===CM.currentShopId); }
 function cmGetShopMvts(){ return CM.mouvements.filter(m=>m.shopId===CM.currentShopId); }
 function cmGetShopTypeLabel(shop){
   if(!shop) return '';
@@ -9870,7 +9926,7 @@ function cmRenderSection(){
   if(!cmGetShop()){
     ['cmStatVentes','cmStatAchats','cmStatMarge','cmStatStock'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent='—'; });
     const emptyMsg = '<div class="cm-empty"><i class="fas fa-store-slash"></i>Créez d\'abord une boutique<br><button onclick="cmOpenShopModal(true)" style="margin-top:12px;padding:10px 18px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;"><i class="fas fa-plus"></i> Nouvelle boutique</button></div>';
-    ['cmArticlesList','cmMvtList','cmStockList','cmTopArticles','cmAlerts','cmClientsList'].forEach(id=>{
+    ['cmArticlesList','cmMvtList','cmStockList','cmTopArticles','cmAlerts','cmClientsList','cmFournisseursList'].forEach(id=>{
       const el=document.getElementById(id);
       if(el) el.innerHTML = emptyMsg;
     });
@@ -9881,6 +9937,7 @@ function cmRenderSection(){
   if(CM.currentSection==='mouvements') cmRenderMvts();
   if(CM.currentSection==='stock') cmRenderStock();
   if(CM.currentSection==='clients') cmRenderClients();
+  if(CM.currentSection==='fournisseurs') cmRenderFournisseurs();
 }
 
 /* ── Résumé ── */
@@ -10078,6 +10135,91 @@ window.cmDeleteClient = function(){
   cmRenderClients();
   closeModal('cmClientModal');
   cmToast(t('cm_msg_client_deleted'),'success');
+};
+
+window.cmRenderFournisseurs = function(){
+  const c = document.getElementById('cmFournisseursList');
+  if(!c) return;
+  const search = (document.getElementById('cmFournSearch')?.value||'').toLowerCase();
+  let fourns = cmGetShopFournisseurs();
+  if(search) fourns = fourns.filter(f =>
+    f.name.toLowerCase().includes(search) ||
+    (f.phone||'').toLowerCase().includes(search) ||
+    (f.whatsapp||'').toLowerCase().includes(search)
+  );
+  fourns.sort((a,b)=>a.name.localeCompare(b.name));
+  if(fourns.length===0){
+    c.innerHTML = `<div class="cm-empty"><i class="fas fa-truck"></i>${t('cm_no_fourn')}<br><small>${t('cm_no_fourn_sub')}</small></div>`;
+    return;
+  }
+  c.innerHTML = fourns.map(f => `
+    <div class="cm-card">
+      <div onclick="cmEditFourn('${f.id}')" style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;cursor:pointer">
+        <div class="cm-card-icon"><i class="fas fa-truck"></i></div>
+        <div class="cm-card-body">
+          <div class="cm-card-title">${f.name}</div>
+          <div class="cm-card-sub">${f.phone || f.whatsapp || f.addr || ''}</div>
+        </div>
+      </div>
+      ${f.whatsapp ? `<a href="https://wa.me/${(f.whatsapp||'').replace(/\D/g,'')}" onclick="event.stopPropagation()" class="cm-card-qr-btn" title="WhatsApp" style="color:#25d366"><i class="fab fa-whatsapp"></i></a>` : ''}
+    </div>`
+  ).join('');
+};
+
+window.cmOpenFournModal = function(){
+  CM.editingFournId = null;
+  document.getElementById('cmFournModalTitle').textContent = t('cm_new_fourn');
+  document.getElementById('cmFournName').value = '';
+  document.getElementById('cmFournPhone').value = '';
+  document.getElementById('cmFournWhatsapp').value = '';
+  document.getElementById('cmFournAddr').value = '';
+  document.getElementById('cmFournNote').value = '';
+  document.getElementById('cmFournDeleteBtn').style.display = 'none';
+  openModal('cmFournModal');
+};
+
+window.cmEditFourn = function(id){
+  const f = CM.fournisseurs.find(x => x.id === id);
+  if(!f) return;
+  CM.editingFournId = id;
+  document.getElementById('cmFournModalTitle').textContent = t('cm_edit_fourn');
+  document.getElementById('cmFournName').value = f.name || '';
+  document.getElementById('cmFournPhone').value = f.phone || '';
+  document.getElementById('cmFournWhatsapp').value = f.whatsapp || '';
+  document.getElementById('cmFournAddr').value = f.addr || '';
+  document.getElementById('cmFournNote').value = f.note || '';
+  document.getElementById('cmFournDeleteBtn').style.display = 'inline-block';
+  openModal('cmFournModal');
+};
+
+window.cmSaveFourn = function(){
+  const name = document.getElementById('cmFournName').value.trim();
+  if(!name){ cmToast(t('cm_msg_fourn_name_required'),'error'); return; }
+  const phone = document.getElementById('cmFournPhone').value.trim();
+  const whatsapp = window.cmNormalizeWhatsapp ? window.cmNormalizeWhatsapp(document.getElementById('cmFournWhatsapp').value) : document.getElementById('cmFournWhatsapp').value.trim();
+  const addr = document.getElementById('cmFournAddr').value.trim();
+  const note = document.getElementById('cmFournNote').value.trim();
+
+  if(CM.editingFournId){
+    const f = CM.fournisseurs.find(x => x.id === CM.editingFournId);
+    if(f) Object.assign(f, { name, phone, whatsapp, addr, note, updatedAt: Date.now() });
+  } else {
+    CM.fournisseurs.push({ id: cmUID(), shopId: CM.currentShopId, name, phone, whatsapp, addr, note, createdAt: Date.now() });
+  }
+  cmSave();
+  cmRenderFournisseurs();
+  closeModal('cmFournModal');
+  cmToast(t('cm_msg_fourn_saved'),'success');
+};
+
+window.cmDeleteFourn = function(){
+  if(!CM.editingFournId) return;
+  if(!confirm(t('cm_confirm_delete_fourn'))) return;
+  CM.fournisseurs = CM.fournisseurs.filter(x => x.id !== CM.editingFournId);
+  cmSave();
+  cmRenderFournisseurs();
+  closeModal('cmFournModal');
+  cmToast(t('cm_msg_fourn_deleted'),'success');
 };
 
 /* ── Reçus & Devis ──

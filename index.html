@@ -27,7 +27,7 @@
 import { initializeApp }                                         from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signInWithEmailAndPassword,
          createUserWithEmailAndPassword, signOut, updateProfile,
-         sendPasswordResetEmail, EmailAuthProvider,
+         sendPasswordResetEmail, sendEmailVerification, EmailAuthProvider,
          reauthenticateWithCredential, updatePassword,
          GoogleAuthProvider, FacebookAuthProvider, signInWithPopup,
          linkWithPopup, linkWithCredential, fetchSignInMethodsForEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -277,6 +277,9 @@ onAuthStateChanged(auth, user => {
     $('#userName').textContent = name;
     const _uat = document.getElementById('userAvatarText'); if(_uat) _uat.textContent = name.charAt(0).toUpperCase();
     const _ed=document.getElementById('userEmailDisp'); if(_ed) _ed.textContent=user.email;
+    // ── Bandeau de rappel : email non vérifié (les comptes Google/Facebook sont déjà vérifiés) ──
+    const veb = document.getElementById('verifyEmailBanner');
+    if(veb) veb.style.display = (!user.emailVerified) ? 'flex' : 'none';
     // ── Enregistrer la session de connexion ──
     addDoc(collection(db,'sessions'), {
       userId:      user.uid,
@@ -331,6 +334,23 @@ onAuthStateChanged(auth, user => {
     checkAdminMode();
   }
 });
+
+window._lastVerifyEmailSent = 0;
+window.resendVerificationEmail = async function(){
+  if(!auth.currentUser){ return; }
+  const now = Date.now();
+  if(now - window._lastVerifyEmailSent < 60000){
+    toast('Patiente une minute avant de renvoyer un nouvel email.', 'error');
+    return;
+  }
+  try {
+    await sendEmailVerification(auth.currentUser);
+    window._lastVerifyEmailSent = now;
+    toast('Email de vérification envoyé ✓ Vérifie ta boîte mail (et les spams).', 'success');
+  } catch(e) {
+    toast('Impossible d\'envoyer l\'email pour le moment. Réessaie plus tard.', 'error');
+  }
+};
 
 // ──────── SÉLECTION DE LANGUE AU PREMIER LANCEMENT ────────
 // Distincte de 'aet_lang' (qui a toujours une valeur par défaut 'fr') :
@@ -420,6 +440,8 @@ window.doSignup = async () => {
   try {
     const cred = await createUserWithEmailAndPassword(auth, email, pwd);
     await updateProfile(cred.user, { displayName: name });
+    try { await sendEmailVerification(cred.user); } catch(e){ /* non bloquant */ }
+    toast('Compte créé ! Vérifie ta boîte mail pour confirmer ton adresse 📧', 'success');
   } catch(e) {
     err.textContent = fbErr(e);
   }
@@ -4184,6 +4206,14 @@ select.form-input option{background:var(--bg2)}
 
 <!-- ════════════════ APP ════════════════ -->
 <div id="app" style="display:none">
+
+  <!-- ════ Bandeau : email non vérifié (discret, non bloquant) ════ -->
+  <div id="verifyEmailBanner" style="display:none;background:#f59e0b;color:#fff;padding:10px 14px;align-items:center;gap:10px;font-size:13px;position:relative;z-index:50">
+    <i class="fas fa-envelope"></i>
+    <span style="flex:1">Confirme ton adresse email pour sécuriser ton compte.</span>
+    <button onclick="resendVerificationEmail()" style="background:rgba(255,255,255,.25);border:none;color:#fff;padding:6px 12px;border-radius:8px;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap">Renvoyer</button>
+    <button onclick="document.getElementById('verifyEmailBanner').style.display='none'" style="background:none;border:none;color:#fff;font-size:16px;cursor:pointer;padding:0 4px" aria-label="Fermer"><i class="fas fa-xmark"></i></button>
+  </div>
 
   <!-- ════ SIDEBAR (menu latéral) ════ -->
   <div id="sidebarOverlay" onclick="closeSidebarMobile()"></div>

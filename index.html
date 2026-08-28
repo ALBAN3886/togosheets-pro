@@ -1710,6 +1710,13 @@ const LANGS = {
     cm_msg_credit_payment_too_high:'Ce montant dépasse le reste à payer',
     cm_msg_payment_added:'Paiement ajouté ✓',
     cm_confirm_delete_credit:'Supprimer ce crédit ?',
+    cm_tab_caisse:'Caisse',
+    cm_caisse_info:"Les sessions de caisse sont ouvertes et fermées par tes employés depuis leur espace (Caisse POS). Ici, tu vois uniquement l'historique et les écarts.",
+    cm_no_caisse:'Aucune session de caisse', cm_no_caisse_sub:'Les sessions apparaîtront ici dès qu\\'un employé ouvrira la caisse',
+    cm_caisse_operator:'Opérateur', cm_caisse_open:'En cours', cm_caisse_closed:'Clôturée',
+    cm_caisse_opened_at:'Ouverte le', cm_caisse_closed_at:'fermée le',
+    cm_caisse_fond:'Fond initial', cm_caisse_ventes:'Ventes', cm_caisse_attendu:'Attendu', cm_caisse_compte:'Compté',
+    cm_caisse_exact:'Caisse exacte', cm_caisse_manque:'Manque', cm_caisse_excedent:'Excédent',
     cm_art_name:'Nom de l\'article *', cm_art_cat:'Catégorie *',
     cm_art_prixa:'Prix d\'achat (unitaire)', cm_art_prixv:'Prix de vente *',
     cm_art_stock:'Stock initial', cm_art_unit:'Unité', cm_art_seuil:'Seuil alerte stock bas',
@@ -2029,6 +2036,13 @@ const LANGS = {
     cm_msg_credit_payment_too_high:'This amount exceeds the remaining balance',
     cm_msg_payment_added:'Payment added ✓',
     cm_confirm_delete_credit:'Delete this credit?',
+    cm_tab_caisse:'Cash register',
+    cm_caisse_info:'Cash sessions are opened and closed by your employees from their POS app. Here you only see history and discrepancies.',
+    cm_no_caisse:'No cash sessions yet', cm_no_caisse_sub:'Sessions will appear here once an employee opens the register',
+    cm_caisse_operator:'Operator', cm_caisse_open:'Open', cm_caisse_closed:'Closed',
+    cm_caisse_opened_at:'Opened at', cm_caisse_closed_at:'closed at',
+    cm_caisse_fond:'Opening float', cm_caisse_ventes:'Sales', cm_caisse_attendu:'Expected', cm_caisse_compte:'Counted',
+    cm_caisse_exact:'Exact match', cm_caisse_manque:'Shortage', cm_caisse_excedent:'Surplus',
     cm_art_name:'Item name *', cm_art_cat:'Category *',
     cm_art_prixa:'Purchase price (unit)', cm_art_prixv:'Selling price *',
     cm_art_stock:'Initial stock', cm_art_unit:'Unit', cm_art_seuil:'Low stock alert threshold',
@@ -8366,6 +8380,7 @@ if ('serviceWorker' in navigator) {
     <button class="cm-tab" data-cmtab="clients" onclick="cmSwitch('clients')"><i class="fas fa-users"></i><span data-i18n="cm_tab_clients">Clients</span></button>
     <button class="cm-tab" data-cmtab="fournisseurs" onclick="cmSwitch('fournisseurs')"><i class="fas fa-truck"></i><span data-i18n="cm_tab_fournisseurs">Fournisseurs</span></button>
     <button class="cm-tab" data-cmtab="credits" onclick="cmSwitch('credits')"><i class="fas fa-hand-holding-dollar"></i><span data-i18n="cm_tab_credits">Crédits</span></button>
+    <button class="cm-tab" data-cmtab="caisse" onclick="cmSwitch('caisse')"><i class="fas fa-cash-register"></i><span data-i18n="cm_tab_caisse">Caisse</span></button>
   </div>
 
   <!-- ═══ Section : Résumé ═══ -->
@@ -8486,9 +8501,18 @@ if ('serviceWorker' in navigator) {
       <i class="fas fa-plus"></i> <span data-i18n="cm_new_credit">Nouveau crédit</span>
     </button>
   </div>
+
+  <!-- ═══ Section : Caisse (lecture seule — ouverte/fermée uniquement par les employés) ═══ -->
+  <div class="cm-section" id="cm-sec-caisse">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px;font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:flex-start">
+      <i class="fas fa-circle-info" style="margin-top:2px;color:#2563eb"></i>
+      <span data-i18n="cm_caisse_info">Les sessions de caisse sont ouvertes et fermées par tes employés depuis leur espace (Caisse POS). Ici, tu vois uniquement l'historique et les écarts.</span>
+    </div>
+    <div id="cmCaisseList"></div>
+  </div>
 </div>
 
-<!-- ═══ Modal : Crédit ═══ -->
+
 <div class="modal-overlay" id="cmCreditModal">
   <div class="modal-box" style="max-width:480px">
     <div class="modal-header">
@@ -9204,6 +9228,8 @@ let CM = {
   clients: [],          // {id,shopId,name,phone,whatsapp,addr,note,createdAt}
   fournisseurs: [],      // {id,shopId,name,phone,whatsapp,addr,note,createdAt}
   credits: [],           // {id,shopId,clientId,clientName,montant,montantPaye,statut,dateEcheance,note,createdAt,paiements:[{montant,date}]}
+  cashSessions: [],      // LECTURE SEULE : sessions de caisse ouvertes/fermées par les employés (employe.html).
+                          // Jamais incluses dans cmSnapshot() pour ne jamais risquer de les écraser.
   currentShopId: null,
   currentSection: 'resume',
   currentMvtType: 'vente',
@@ -9544,6 +9570,7 @@ function cmApplyData(d){
   CM.clients = Array.isArray(d?.clients) ? d.clients : [];
   CM.fournisseurs = Array.isArray(d?.fournisseurs) ? d.fournisseurs : [];
   CM.credits = Array.isArray(d?.credits) ? d.credits : [];
+  CM.cashSessions = Array.isArray(d?.cashSessions) ? d.cashSessions : [];
   CM.currentShopId = d?.currentShopId || (CM.shops[0] && CM.shops[0].id) || null;
   cmDataStamp = Number(d?.updatedAtMs || 0);
   // Mémorise le stock "tel que connu" pour calculer un delta lors de la sauvegarde,
@@ -9564,7 +9591,7 @@ function cmLoad(){
       return;
     }
   }catch(e){ console.warn('CM load',e); }
-  cmApplyData({ shops:[], articles:[], mouvements:[], clients:[], fournisseurs:[], credits:[], currentShopId:null, updatedAtMs:0 });
+  cmApplyData({ shops:[], articles:[], mouvements:[], clients:[], fournisseurs:[], credits:[], cashSessions:[], currentShopId:null, updatedAtMs:0 });
 }
 let cmRemoteUnsub = null;
 function cmIsEditing(){
@@ -9767,6 +9794,9 @@ function cmGetShopArticles(){ return CM.articles.filter(a=>a.shopId===CM.current
 function cmGetShopClients(){ return CM.clients.filter(c=>c.shopId===CM.currentShopId); }
 function cmGetShopFournisseurs(){ return CM.fournisseurs.filter(f=>f.shopId===CM.currentShopId); }
 function cmGetShopCredits(){ return CM.credits.filter(c=>c.shopId===CM.currentShopId); }
+// Note : les sessions de caisse utilisent "storeId" (nommage venant de employe.html),
+// alors que le reste de l'app utilise "shopId" — nommage historique différent, mais même valeur.
+function cmGetShopCashSessions(){ return (CM.cashSessions||[]).filter(s=>s.storeId===CM.currentShopId); }
 function cmGetShopMvts(){ return CM.mouvements.filter(m=>m.shopId===CM.currentShopId); }
 function cmGetShopTypeLabel(shop){
   if(!shop) return '';
@@ -10006,7 +10036,7 @@ function cmRenderSection(){
   if(!cmGetShop()){
     ['cmStatVentes','cmStatAchats','cmStatMarge','cmStatStock'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent='—'; });
     const emptyMsg = '<div class="cm-empty"><i class="fas fa-store-slash"></i>Créez d\'abord une boutique<br><button onclick="cmOpenShopModal(true)" style="margin-top:12px;padding:10px 18px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;"><i class="fas fa-plus"></i> Nouvelle boutique</button></div>';
-    ['cmArticlesList','cmMvtList','cmStockList','cmTopArticles','cmAlerts','cmClientsList','cmFournisseursList','cmCreditsList'].forEach(id=>{
+    ['cmArticlesList','cmMvtList','cmStockList','cmTopArticles','cmAlerts','cmClientsList','cmFournisseursList','cmCreditsList','cmCaisseList'].forEach(id=>{
       const el=document.getElementById(id);
       if(el) el.innerHTML = emptyMsg;
     });
@@ -10019,6 +10049,7 @@ function cmRenderSection(){
   if(CM.currentSection==='clients') cmRenderClients();
   if(CM.currentSection==='fournisseurs') cmRenderFournisseurs();
   if(CM.currentSection==='credits') cmRenderCredits();
+  if(CM.currentSection==='caisse') cmRenderCaisse();
 }
 
 /* ── Résumé ── */
@@ -10454,6 +10485,54 @@ window.cmDeleteCredit = function(){
   cmRenderCredits();
   closeModal('cmCreditModal');
   cmToast(t('cm_msg_credit_deleted'),'success');
+};
+
+window.cmRenderCaisse = function(){
+  const c = document.getElementById('cmCaisseList');
+  if(!c) return;
+  const sessions = cmGetShopCashSessions().slice().sort((a,b)=>(b.openedAtMs||0)-(a.openedAtMs||0));
+  if(sessions.length===0){
+    c.innerHTML = `<div class="cm-empty"><i class="fas fa-cash-register"></i>${t('cm_no_caisse')}<br><small>${t('cm_no_caisse_sub')}</small></div>`;
+    return;
+  }
+  c.innerHTML = sessions.map(s => {
+    const ventes = CM.mouvements
+      .filter(m => m.cashSessionId === s.id && m.type === 'sale')
+      .reduce((sum,m) => sum + Number(m.total ?? m.grandTotal ?? 0), 0);
+    const attendu = Number(s.openingAmount||0) + ventes;
+    const isOpen = s.status === 'open';
+    const dateOuv = s.openedAtMs ? new Date(s.openedAtMs).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+    const dateFerm = s.closedAtMs ? new Date(s.closedAtMs).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+
+    let ecartHtml = '';
+    if(!isOpen && s.closingAmount != null){
+      const ecart = Number(s.closingAmount) - attendu;
+      const color = ecart === 0 ? '#10b981' : (ecart < 0 ? '#ef4444' : '#f59e0b');
+      const label = ecart === 0 ? t('cm_caisse_exact') : (ecart < 0 ? t('cm_caisse_manque') : t('cm_caisse_excedent'));
+      ecartHtml = `<div style="margin-top:6px;font-size:12px;font-weight:800;color:${color}">${label} : ${cmFmt(Math.abs(ecart))} FCFA</div>`;
+    }
+
+    return `
+    <div class="cm-card" style="flex-direction:column;align-items:stretch;gap:6px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="font-weight:800">${s.employeeName || t('cm_caisse_operator')}</div>
+        ${isOpen
+          ? `<span style="background:#10b98122;color:#10b981;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800"><i class="fas fa-circle" style="font-size:6px;margin-right:4px"></i>${t('cm_caisse_open')}</span>`
+          : `<span style="background:#64748b22;color:#64748b;padding:4px 10px;border-radius:999px;font-size:11px;font-weight:800">${t('cm_caisse_closed')}</span>`
+        }
+      </div>
+      <div style="font-size:12px;color:var(--muted)">${t('cm_caisse_opened_at')} ${dateOuv}${dateFerm ? ' · ' + t('cm_caisse_closed_at') + ' ' + dateFerm : ''}</div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-top:4px">
+        <span>${t('cm_caisse_fond')} : <strong>${cmFmt(s.openingAmount)} FCFA</strong></span>
+        <span>${t('cm_caisse_ventes')} : <strong>${cmFmt(ventes)} FCFA</strong></span>
+      </div>
+      ${!isOpen ? `<div style="display:flex;justify-content:space-between;font-size:13px">
+        <span>${t('cm_caisse_attendu')} : <strong>${cmFmt(attendu)} FCFA</strong></span>
+        <span>${t('cm_caisse_compte')} : <strong>${cmFmt(s.closingAmount)} FCFA</strong></span>
+      </div>` : ''}
+      ${ecartHtml}
+    </div>`;
+  }).join('');
 };
 
 /* ── Reçus & Devis ──

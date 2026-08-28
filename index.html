@@ -1725,6 +1725,12 @@ const LANGS = {
     cm_msg_inv_no_change:'Aucune quantité modifiée',
     cm_confirm_inv_validate:'Valider {n} correction(s) de stock ?',
     cm_msg_inv_saved:'Inventaire enregistré : {n} article(s) corrigé(s) ✓',
+    cm_tab_rapports:'Rapports',
+    cm_rap_today:"Aujourd'hui", cm_rap_7j:'7 jours', cm_rap_30j:'30 jours', cm_rap_all:'Tout',
+    cm_rap_ca:"Chiffre d'affaires", cm_rap_benefice:'Bénéfice', cm_rap_estime:'(estimé)',
+    cm_rap_nb_ventes:'Nombre de ventes', cm_rap_achats:'Total achats',
+    cm_rap_by_cat:'Ventes par catégorie', cm_rap_no_data:'Aucune donnée pour cette période',
+    cm_rap_export:'Exporter en CSV',
     cm_art_name:'Nom de l\'article *', cm_art_cat:'Catégorie *',
     cm_art_prixa:'Prix d\'achat (unitaire)', cm_art_prixv:'Prix de vente *',
     cm_art_stock:'Stock initial', cm_art_unit:'Unité', cm_art_seuil:'Seuil alerte stock bas',
@@ -2059,6 +2065,12 @@ const LANGS = {
     cm_msg_inv_no_change:'No quantity changed',
     cm_confirm_inv_validate:'Confirm {n} stock correction(s)?',
     cm_msg_inv_saved:'Inventory saved: {n} item(s) corrected ✓',
+    cm_tab_rapports:'Reports',
+    cm_rap_today:'Today', cm_rap_7j:'7 days', cm_rap_30j:'30 days', cm_rap_all:'All time',
+    cm_rap_ca:'Revenue', cm_rap_benefice:'Profit', cm_rap_estime:'(estimated)',
+    cm_rap_nb_ventes:'Number of sales', cm_rap_achats:'Total purchases',
+    cm_rap_by_cat:'Sales by category', cm_rap_no_data:'No data for this period',
+    cm_rap_export:'Export as CSV',
     cm_art_name:'Item name *', cm_art_cat:'Category *',
     cm_art_prixa:'Purchase price (unit)', cm_art_prixv:'Selling price *',
     cm_art_stock:'Initial stock', cm_art_unit:'Unit', cm_art_seuil:'Low stock alert threshold',
@@ -8288,6 +8300,9 @@ if ('serviceWorker' in navigator) {
 .cm-filter-bar::-webkit-scrollbar{display:none;}
 .cm-filter-chip{padding:6px 12px;border-radius:20px;background:var(--card);border:1px solid var(--border);color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;}
 .cm-filter-chip.active{background:linear-gradient(135deg,#10b981,#06b6d4);color:#fff;border-color:transparent;}
+.cm-rap-card{border-radius:14px;padding:14px;color:#fff;box-shadow:0 4px 14px rgba(0,0,0,.12)}
+.cm-rap-card-label{font-size:12px;opacity:.9;font-weight:600}
+.cm-rap-card-value{font-size:18px;font-weight:900;margin-top:4px;word-break:break-word}
 
 .cm-top-art{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;}
 .cm-top-art-name{font-weight:700;font-size:13px;}
@@ -8398,6 +8413,7 @@ if ('serviceWorker' in navigator) {
     <button class="cm-tab" data-cmtab="credits" onclick="cmSwitch('credits')"><i class="fas fa-hand-holding-dollar"></i><span data-i18n="cm_tab_credits">Crédits</span></button>
     <button class="cm-tab" data-cmtab="caisse" onclick="cmSwitch('caisse')"><i class="fas fa-cash-register"></i><span data-i18n="cm_tab_caisse">Caisse</span></button>
     <button class="cm-tab" data-cmtab="inventaire" onclick="cmSwitch('inventaire')"><i class="fas fa-clipboard-list"></i><span data-i18n="cm_tab_inventaire">Inventaire</span></button>
+    <button class="cm-tab" data-cmtab="rapports" onclick="cmSwitch('rapports')"><i class="fas fa-chart-pie"></i><span data-i18n="cm_tab_rapports">Rapports</span></button>
   </div>
 
   <!-- ═══ Section : Résumé ═══ -->
@@ -8541,6 +8557,25 @@ if ('serviceWorker' in navigator) {
 
     <div style="margin-top:24px;font-weight:800;font-size:15px" data-i18n="cm_inv_history">Historique des inventaires</div>
     <div id="cmInventaireHistory" style="margin-top:8px"></div>
+  </div>
+
+  <!-- ═══ Section : Rapports ═══ -->
+  <div class="cm-section" id="cm-sec-rapports">
+    <div class="cm-mvt-filters" id="cmRapPeriodBtns" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      <div class="cm-filter-chip" data-period="today" onclick="cmSetRapportPeriod('today',this)" data-i18n="cm_rap_today">Aujourd'hui</div>
+      <div class="cm-filter-chip" data-period="7j" onclick="cmSetRapportPeriod('7j',this)" data-i18n="cm_rap_7j">7 jours</div>
+      <div class="cm-filter-chip active" data-period="30j" onclick="cmSetRapportPeriod('30j',this)" data-i18n="cm_rap_30j">30 jours</div>
+      <div class="cm-filter-chip" data-period="all" onclick="cmSetRapportPeriod('all',this)" data-i18n="cm_rap_all">Tout</div>
+    </div>
+
+    <div id="cmRapCards" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px"></div>
+
+    <div style="font-weight:800;font-size:15px;margin-bottom:8px" data-i18n="cm_rap_by_cat">Ventes par catégorie</div>
+    <div id="cmRapByCat"></div>
+
+    <button style="width:100%;margin-top:16px;padding:14px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:12px;font-weight:800;cursor:pointer;" onclick="cmExportRapportCsv()">
+      <i class="fas fa-file-export"></i> <span data-i18n="cm_rap_export">Exporter en CSV</span>
+    </button>
   </div>
 </div>
 
@@ -10088,6 +10123,7 @@ function cmRenderSection(){
   if(CM.currentSection==='credits') cmRenderCredits();
   if(CM.currentSection==='caisse') cmRenderCaisse();
   if(CM.currentSection==='inventaire') cmRenderInventaire();
+  if(CM.currentSection==='rapports') cmRenderRapports();
 }
 
 /* ── Résumé ── */
@@ -10652,6 +10688,118 @@ window.cmValidateInventaire = function(){
   cmRenderArticles();
   cmRenderStock();
   cmToast(t('cm_msg_inv_saved', { n: corrections.length }), 'success');
+};
+
+CM.rapportPeriod = '30j';
+
+window.cmSetRapportPeriod = function(period, el){
+  CM.rapportPeriod = period;
+  document.querySelectorAll('#cmRapPeriodBtns .cm-filter-chip').forEach(c=>c.classList.remove('active'));
+  if(el) el.classList.add('active');
+  cmRenderRapports();
+};
+
+// Retourne les mouvements de la boutique dans la période sélectionnée
+function cmRapportMvts(){
+  const now = Date.now();
+  const bounds = {
+    today: now - 24*3600*1000,
+    '7j': now - 7*24*3600*1000,
+    '30j': now - 30*24*3600*1000,
+    all: 0
+  };
+  const since = bounds[CM.rapportPeriod] ?? bounds['30j'];
+  return cmGetShopMvts().filter(m => (m.createdAt||0) >= since);
+}
+
+window.cmRenderRapports = function(){
+  const cardsEl = document.getElementById('cmRapCards');
+  const catEl = document.getElementById('cmRapByCat');
+  if(!cardsEl || !catEl) return;
+
+  const mvts = cmRapportMvts();
+  const ventes = mvts.filter(m=>m.type==='vente');
+  const achats = mvts.filter(m=>m.type==='achat');
+
+  const ca = ventes.reduce((s,m)=>s+Number(m.total||0),0);
+  const totalAchats = achats.reduce((s,m)=>s+Number(m.total||0),0);
+  const nbVentes = ventes.length;
+
+  // Bénéfice estimé : prix de vente - prix d'achat ACTUEL de l'article (approximation,
+  // car le coût exact au moment de chaque vente n'est pas historisé).
+  const benefice = ventes.reduce((s,m)=>{
+    const art = CM.articles.find(a=>a.id===m.artId);
+    const cout = art ? Number(art.prixA||0) * Number(m.qte||0) : 0;
+    return s + (Number(m.total||0) - cout);
+  }, 0);
+
+  cardsEl.innerHTML = `
+    <div class="cm-rap-card" style="background:linear-gradient(135deg,#10b981,#059669)">
+      <div class="cm-rap-card-label">${t('cm_rap_ca')}</div>
+      <div class="cm-rap-card-value">${cmFmt(ca)} FCFA</div>
+    </div>
+    <div class="cm-rap-card" style="background:linear-gradient(135deg,#2563eb,#1d4ed8)">
+      <div class="cm-rap-card-label">${t('cm_rap_benefice')} ${t('cm_rap_estime')}</div>
+      <div class="cm-rap-card-value">${cmFmt(benefice)} FCFA</div>
+    </div>
+    <div class="cm-rap-card" style="background:linear-gradient(135deg,#f59e0b,#d97706)">
+      <div class="cm-rap-card-label">${t('cm_rap_nb_ventes')}</div>
+      <div class="cm-rap-card-value">${nbVentes}</div>
+    </div>
+    <div class="cm-rap-card" style="background:linear-gradient(135deg,#64748b,#475569)">
+      <div class="cm-rap-card-label">${t('cm_rap_achats')}</div>
+      <div class="cm-rap-card-value">${cmFmt(totalAchats)} FCFA</div>
+    </div>
+  `;
+
+  // Répartition des ventes par catégorie
+  const byCat = {};
+  ventes.forEach(m=>{
+    const art = CM.articles.find(a=>a.id===m.artId);
+    const cat = art ? (art.cat||'autre') : 'autre';
+    byCat[cat] = (byCat[cat]||0) + Number(m.total||0);
+  });
+  const entries = Object.entries(byCat).sort((a,b)=>b[1]-a[1]);
+  if(entries.length===0){
+    catEl.innerHTML = `<div class="cm-empty"><i class="fas fa-chart-pie"></i>${t('cm_rap_no_data')}</div>`;
+  } else {
+    const max = entries[0][1];
+    catEl.innerHTML = entries.map(([cat, total]) => `
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+          <span>${typeof cmCatLabel==='function' ? cmCatLabel(cat) : cat}</span>
+          <strong>${cmFmt(total)} FCFA</strong>
+        </div>
+        <div style="background:var(--border);border-radius:8px;height:8px;overflow:hidden">
+          <div style="background:linear-gradient(90deg,#10b981,#06b6d4);height:100%;width:${max>0?(total/max*100):0}%"></div>
+        </div>
+      </div>`
+    ).join('');
+  }
+};
+
+window.cmExportRapportCsv = function(){
+  const mvts = cmRapportMvts().slice().sort((a,b)=>(a.createdAt||0)-(b.createdAt||0));
+  if(mvts.length===0){ cmToast(t('cm_rap_no_data'),'error'); return; }
+
+  let csv = 'Date;Type;Article;Quantité;Prix unitaire;Total;Client/Personne;Note\n';
+  mvts.forEach(m=>{
+    const row = [
+      m.date||'', m.type==='vente'?'Vente':'Achat', m.artName||'',
+      m.qte||0, m.prix||0, m.total||0, m.person||'', (m.note||'').replace(/;/g,',')
+    ];
+    csv += row.join(';') + '\n';
+  });
+
+  const blob = new Blob(['\uFEFF'+csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `rapport-${cmToday()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 };
 
 /* ── Reçus & Devis ──

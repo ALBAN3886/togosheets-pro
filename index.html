@@ -2,11 +2,6 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8"/>
-<script>
-  window.addEventListener('error', function(e){
-    alert('DEBUG ERREUR JS:\n' + e.message + '\nFichier: ' + (e.filename||'?').split('/').pop() + '\nLigne: ' + e.lineno);
-  });
-</script>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
 <title>AET MonBudget — Gestion Financière Personnelle</title>
 <meta name="description" content="Application de gestion financière personnelle — Alban Eloh Technology"/>
@@ -36,7 +31,7 @@ import { getAuth, onAuthStateChanged, signInWithEmailAndPassword,
          reauthenticateWithCredential, updatePassword,
          GoogleAuthProvider, FacebookAuthProvider, signInWithPopup,
          linkWithPopup, linkWithCredential, fetchSignInMethodsForEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, addDoc, doc, deleteDoc,
+import { initializeFirestore, getFirestore, persistentLocalCache, persistentMultipleTabManager, collection, addDoc, doc, deleteDoc,
          updateDoc, query, where, orderBy, onSnapshot, getDocs,
          serverTimestamp, setDoc, getDoc, limit, runTransaction }               from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -54,7 +49,16 @@ const firebaseConfig = {
 window.__AET_FIREBASE_CONFIG__ = firebaseConfig;
 const fbApp = initializeApp(firebaseConfig);
 const auth  = getAuth(fbApp);
-const db    = initializeFirestore(fbApp, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+let db;
+try {
+  db = initializeFirestore(fbApp, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+} catch (e) {
+  // Le cache hors-ligne persistant peut échouer (navigation privée, stockage plein,
+  // restrictions navigateur...). On ne doit JAMAIS laisser ça bloquer toute l'application :
+  // on retombe sur un Firestore sans cache persistant (fonctionne normalement, juste sans mode hors-ligne avancé).
+  console.warn('Cache Firestore persistant indisponible, repli sans cache persistant :', e);
+  db = getFirestore(fbApp);
+}
 window.__AET_FBAPP__ = fbApp;
 window.__AET_AUTH__ = auth;
 window.__AET_DB__ = db;

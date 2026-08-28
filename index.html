@@ -2,6 +2,11 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8"/>
+<script>
+  window.addEventListener('error', function(e){
+    alert('DEBUG ERREUR JS:\n' + e.message + '\nFichier: ' + (e.filename||'?').split('/').pop() + '\nLigne: ' + e.lineno);
+  });
+</script>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
 <title>AET MonBudget — Gestion Financière Personnelle</title>
 <meta name="description" content="Application de gestion financière personnelle — Alban Eloh Technology"/>

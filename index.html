@@ -1717,6 +1717,14 @@ const LANGS = {
     cm_caisse_opened_at:'Ouverte le', cm_caisse_closed_at:'fermée le',
     cm_caisse_fond:'Fond initial', cm_caisse_ventes:'Ventes', cm_caisse_attendu:'Attendu', cm_caisse_compte:'Compté',
     cm_caisse_exact:'Caisse exacte', cm_caisse_manque:'Manque', cm_caisse_excedent:'Excédent',
+    cm_tab_inventaire:'Inventaire',
+    cm_inv_info:"Compte physiquement ton stock et indique la quantité réelle uniquement pour les articles où elle diffère. Laisse vide si le stock est correct.",
+    cm_inv_system_stock:'Stock système', cm_inv_validate:"Valider l'inventaire",
+    cm_inv_history:'Historique des inventaires', cm_inv_no_history:'Aucun inventaire réalisé pour l\\'instant',
+    cm_inv_corrections_single:'article corrigé', cm_inv_corrections_plural:'articles corrigés',
+    cm_msg_inv_no_change:'Aucune quantité modifiée',
+    cm_confirm_inv_validate:'Valider {n} correction(s) de stock ?',
+    cm_msg_inv_saved:'Inventaire enregistré : {n} article(s) corrigé(s) ✓',
     cm_art_name:'Nom de l\'article *', cm_art_cat:'Catégorie *',
     cm_art_prixa:'Prix d\'achat (unitaire)', cm_art_prixv:'Prix de vente *',
     cm_art_stock:'Stock initial', cm_art_unit:'Unité', cm_art_seuil:'Seuil alerte stock bas',
@@ -2043,6 +2051,14 @@ const LANGS = {
     cm_caisse_opened_at:'Opened at', cm_caisse_closed_at:'closed at',
     cm_caisse_fond:'Opening float', cm_caisse_ventes:'Sales', cm_caisse_attendu:'Expected', cm_caisse_compte:'Counted',
     cm_caisse_exact:'Exact match', cm_caisse_manque:'Shortage', cm_caisse_excedent:'Surplus',
+    cm_tab_inventaire:'Inventory',
+    cm_inv_info:"Physically count your stock and only fill in the real quantity where it differs. Leave blank if the stock is correct.",
+    cm_inv_system_stock:'System stock', cm_inv_validate:'Validate inventory',
+    cm_inv_history:'Inventory history', cm_inv_no_history:'No inventory done yet',
+    cm_inv_corrections_single:'item corrected', cm_inv_corrections_plural:'items corrected',
+    cm_msg_inv_no_change:'No quantity changed',
+    cm_confirm_inv_validate:'Confirm {n} stock correction(s)?',
+    cm_msg_inv_saved:'Inventory saved: {n} item(s) corrected ✓',
     cm_art_name:'Item name *', cm_art_cat:'Category *',
     cm_art_prixa:'Purchase price (unit)', cm_art_prixv:'Selling price *',
     cm_art_stock:'Initial stock', cm_art_unit:'Unit', cm_art_seuil:'Low stock alert threshold',
@@ -8381,6 +8397,7 @@ if ('serviceWorker' in navigator) {
     <button class="cm-tab" data-cmtab="fournisseurs" onclick="cmSwitch('fournisseurs')"><i class="fas fa-truck"></i><span data-i18n="cm_tab_fournisseurs">Fournisseurs</span></button>
     <button class="cm-tab" data-cmtab="credits" onclick="cmSwitch('credits')"><i class="fas fa-hand-holding-dollar"></i><span data-i18n="cm_tab_credits">Crédits</span></button>
     <button class="cm-tab" data-cmtab="caisse" onclick="cmSwitch('caisse')"><i class="fas fa-cash-register"></i><span data-i18n="cm_tab_caisse">Caisse</span></button>
+    <button class="cm-tab" data-cmtab="inventaire" onclick="cmSwitch('inventaire')"><i class="fas fa-clipboard-list"></i><span data-i18n="cm_tab_inventaire">Inventaire</span></button>
   </div>
 
   <!-- ═══ Section : Résumé ═══ -->
@@ -8509,6 +8526,21 @@ if ('serviceWorker' in navigator) {
       <span data-i18n="cm_caisse_info">Les sessions de caisse sont ouvertes et fermées par tes employés depuis leur espace (Caisse POS). Ici, tu vois uniquement l'historique et les écarts.</span>
     </div>
     <div id="cmCaisseList"></div>
+  </div>
+
+  <!-- ═══ Section : Inventaire ═══ -->
+  <div class="cm-section" id="cm-sec-inventaire">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:12px;font-size:13px;color:var(--muted);display:flex;gap:8px;align-items:flex-start">
+      <i class="fas fa-circle-info" style="margin-top:2px;color:#2563eb"></i>
+      <span data-i18n="cm_inv_info">Compte physiquement ton stock et indique la quantité réelle uniquement pour les articles où elle diffère. Laisse vide si le stock est correct.</span>
+    </div>
+    <div id="cmInventaireList"></div>
+    <button data-cm-role-restrict="edit_article" style="width:100%;margin-top:8px;padding:14px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:12px;font-weight:800;cursor:pointer;" onclick="cmValidateInventaire()">
+      <i class="fas fa-check-double"></i> <span data-i18n="cm_inv_validate">Valider l'inventaire</span>
+    </button>
+
+    <div style="margin-top:24px;font-weight:800;font-size:15px" data-i18n="cm_inv_history">Historique des inventaires</div>
+    <div id="cmInventaireHistory" style="margin-top:8px"></div>
   </div>
 </div>
 
@@ -9230,6 +9262,8 @@ let CM = {
   credits: [],           // {id,shopId,clientId,clientName,montant,montantPaye,statut,dateEcheance,note,createdAt,paiements:[{montant,date}]}
   cashSessions: [],      // LECTURE SEULE : sessions de caisse ouvertes/fermées par les employés (employe.html).
                           // Jamais incluses dans cmSnapshot() pour ne jamais risquer de les écraser.
+  inventaires: [],       // {id,shopId,date,createdAt,corrections:[{artId,artName,stockAvant,stockCompte,ecart}]}
+                          // Volontairement SÉPARÉ de mouvements (vente/achat) pour ne jamais fausser CA/bénéfice.
   currentShopId: null,
   currentSection: 'resume',
   currentMvtType: 'vente',
@@ -9558,6 +9592,7 @@ function cmSnapshot(){
     clients: CM.clients,
     fournisseurs: CM.fournisseurs,
     credits: CM.credits,
+    inventaires: CM.inventaires,
     currentShopId: CM.currentShopId,
     updatedAtMs: Date.now(),
     schemaVersion: 2
@@ -9571,6 +9606,7 @@ function cmApplyData(d){
   CM.fournisseurs = Array.isArray(d?.fournisseurs) ? d.fournisseurs : [];
   CM.credits = Array.isArray(d?.credits) ? d.credits : [];
   CM.cashSessions = Array.isArray(d?.cashSessions) ? d.cashSessions : [];
+  CM.inventaires = Array.isArray(d?.inventaires) ? d.inventaires : [];
   CM.currentShopId = d?.currentShopId || (CM.shops[0] && CM.shops[0].id) || null;
   cmDataStamp = Number(d?.updatedAtMs || 0);
   // Mémorise le stock "tel que connu" pour calculer un delta lors de la sauvegarde,
@@ -9591,7 +9627,7 @@ function cmLoad(){
       return;
     }
   }catch(e){ console.warn('CM load',e); }
-  cmApplyData({ shops:[], articles:[], mouvements:[], clients:[], fournisseurs:[], credits:[], cashSessions:[], currentShopId:null, updatedAtMs:0 });
+  cmApplyData({ shops:[], articles:[], mouvements:[], clients:[], fournisseurs:[], credits:[], cashSessions:[], inventaires:[], currentShopId:null, updatedAtMs:0 });
 }
 let cmRemoteUnsub = null;
 function cmIsEditing(){
@@ -9797,6 +9833,7 @@ function cmGetShopCredits(){ return CM.credits.filter(c=>c.shopId===CM.currentSh
 // Note : les sessions de caisse utilisent "storeId" (nommage venant de employe.html),
 // alors que le reste de l'app utilise "shopId" — nommage historique différent, mais même valeur.
 function cmGetShopCashSessions(){ return (CM.cashSessions||[]).filter(s=>s.storeId===CM.currentShopId); }
+function cmGetShopInventaires(){ return (CM.inventaires||[]).filter(i=>i.shopId===CM.currentShopId); }
 function cmGetShopMvts(){ return CM.mouvements.filter(m=>m.shopId===CM.currentShopId); }
 function cmGetShopTypeLabel(shop){
   if(!shop) return '';
@@ -10036,7 +10073,7 @@ function cmRenderSection(){
   if(!cmGetShop()){
     ['cmStatVentes','cmStatAchats','cmStatMarge','cmStatStock'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent='—'; });
     const emptyMsg = '<div class="cm-empty"><i class="fas fa-store-slash"></i>Créez d\'abord une boutique<br><button onclick="cmOpenShopModal(true)" style="margin-top:12px;padding:10px 18px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;"><i class="fas fa-plus"></i> Nouvelle boutique</button></div>';
-    ['cmArticlesList','cmMvtList','cmStockList','cmTopArticles','cmAlerts','cmClientsList','cmFournisseursList','cmCreditsList','cmCaisseList'].forEach(id=>{
+    ['cmArticlesList','cmMvtList','cmStockList','cmTopArticles','cmAlerts','cmClientsList','cmFournisseursList','cmCreditsList','cmCaisseList','cmInventaireList','cmInventaireHistory'].forEach(id=>{
       const el=document.getElementById(id);
       if(el) el.innerHTML = emptyMsg;
     });
@@ -10050,6 +10087,7 @@ function cmRenderSection(){
   if(CM.currentSection==='fournisseurs') cmRenderFournisseurs();
   if(CM.currentSection==='credits') cmRenderCredits();
   if(CM.currentSection==='caisse') cmRenderCaisse();
+  if(CM.currentSection==='inventaire') cmRenderInventaire();
 }
 
 /* ── Résumé ── */
@@ -10533,6 +10571,87 @@ window.cmRenderCaisse = function(){
       ${ecartHtml}
     </div>`;
   }).join('');
+};
+
+window.cmRenderInventaire = function(){
+  const c = document.getElementById('cmInventaireList');
+  if(!c) return;
+  const articles = cmGetShopArticles().slice().sort((a,b)=>a.name.localeCompare(b.name));
+  if(articles.length===0){
+    c.innerHTML = `<div class="cm-empty"><i class="fas fa-clipboard-list"></i>${t('cm_msg_create_article_first')}</div>`;
+  } else {
+    c.innerHTML = articles.map(a => `
+      <div class="cm-card" style="align-items:center">
+        <div style="flex:1;min-width:0">
+          <div class="cm-card-title">${a.name}</div>
+          <div class="cm-card-sub">${t('cm_inv_system_stock')} : ${cmFmt(a.stock)} ${a.unit||''}</div>
+        </div>
+        <input type="number" class="cm-inv-count-input" data-art-id="${a.id}" placeholder="${cmFmt(a.stock)}" min="0"
+               style="width:90px;padding:10px;border-radius:10px;border:1px solid var(--border);text-align:center;font-weight:700">
+      </div>`
+    ).join('');
+  }
+  cmRenderInventaireHistory();
+};
+
+window.cmRenderInventaireHistory = function(){
+  const h = document.getElementById('cmInventaireHistory');
+  if(!h) return;
+  const list = cmGetShopInventaires().slice().sort((a,b)=>(b.createdAt||0)-(a.createdAt||0)).slice(0,10);
+  if(list.length===0){
+    h.innerHTML = `<div style="font-size:13px;color:var(--muted)">${t('cm_inv_no_history')}</div>`;
+    return;
+  }
+  h.innerHTML = list.map(inv => {
+    const nb = inv.corrections.length;
+    const dateStr = inv.createdAt ? new Date(inv.createdAt).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
+    return `<div class="cm-card" style="flex-direction:column;align-items:stretch;gap:4px">
+      <div style="font-weight:700">${dateStr}</div>
+      <div style="font-size:12px;color:var(--muted)">${nb} ${t(nb>1?'cm_inv_corrections_plural':'cm_inv_corrections_single')}</div>
+    </div>`;
+  }).join('');
+};
+
+window.cmValidateInventaire = function(){
+  const inputs = document.querySelectorAll('.cm-inv-count-input');
+  const corrections = [];
+  inputs.forEach(inp => {
+    const val = inp.value.trim();
+    if(val === '') return; // laissé vide = pas de changement
+    const artId = inp.dataset.artId;
+    const art = CM.articles.find(a => a.id === artId);
+    if(!art) return;
+    const stockCompte = Number(val);
+    const stockAvant = Number(art.stock||0);
+    if(stockCompte === stockAvant) return; // même valeur, rien à corriger
+    corrections.push({ artId, artName: art.name, stockAvant, stockCompte, ecart: stockCompte - stockAvant });
+  });
+
+  if(corrections.length === 0){
+    cmToast(t('cm_msg_inv_no_change'), 'error');
+    return;
+  }
+
+  if(!confirm(t('cm_confirm_inv_validate', { n: corrections.length }))) return;
+
+  // Appliquer les corrections au stock réel
+  corrections.forEach(corr => {
+    const art = CM.articles.find(a => a.id === corr.artId);
+    if(art) art.stock = corr.stockCompte;
+  });
+
+  if(!Array.isArray(CM.inventaires)) CM.inventaires = [];
+  CM.inventaires.push({
+    id: cmUID(), shopId: CM.currentShopId,
+    date: cmToday(), createdAt: Date.now(),
+    corrections
+  });
+
+  cmSave();
+  cmRenderInventaire();
+  cmRenderArticles();
+  cmRenderStock();
+  cmToast(t('cm_msg_inv_saved', { n: corrections.length }), 'success');
 };
 
 /* ── Reçus & Devis ──

@@ -1731,6 +1731,14 @@ const LANGS = {
     cm_rap_nb_ventes:'Nombre de ventes', cm_rap_achats:'Total achats',
     cm_rap_by_cat:'Ventes par catégorie', cm_rap_no_data:'Aucune donnée pour cette période',
     cm_rap_export:'Exporter en CSV',
+    cm_tab_ia:'IA',
+    cm_ia_info:"Analyse automatique de tes données pour t'aider à décider — stock, crédits, ventes. Aucune donnée envoyée à un service externe.",
+    cm_ia_low_stock_title:'{n} article(s) en stock faible', cm_ia_see_stock:'Voir le stock',
+    cm_ia_late_credits_title:'{n} crédit(s) en retard', cm_ia_see_credits:'Voir les crédits',
+    cm_ia_top_article_title:'Article le plus vendu (30 jours)', cm_ia_units_sold:'unités vendues',
+    cm_ia_dormant_title:'{n} article(s) sans vente depuis 30 jours', cm_ia_see_articles:'Voir les articles',
+    cm_ia_trend_title:'Tendance des ventes (7 jours)', cm_ia_this_week:'cette semaine', cm_ia_vs_last_week:'vs semaine précédente',
+    cm_ia_all_good_title:'Tout va bien !', cm_ia_all_good_text:'Aucune alerte particulière pour le moment.',
     cm_art_name:'Nom de l\'article *', cm_art_cat:'Catégorie *',
     cm_art_prixa:'Prix d\'achat (unitaire)', cm_art_prixv:'Prix de vente *',
     cm_art_stock:'Stock initial', cm_art_unit:'Unité', cm_art_seuil:'Seuil alerte stock bas',
@@ -2071,6 +2079,14 @@ const LANGS = {
     cm_rap_nb_ventes:'Number of sales', cm_rap_achats:'Total purchases',
     cm_rap_by_cat:'Sales by category', cm_rap_no_data:'No data for this period',
     cm_rap_export:'Export as CSV',
+    cm_tab_ia:'AI',
+    cm_ia_info:'Automatic analysis of your data to help you decide — stock, credits, sales. No data sent to any external service.',
+    cm_ia_low_stock_title:'{n} item(s) low on stock', cm_ia_see_stock:'View stock',
+    cm_ia_late_credits_title:'{n} overdue credit(s)', cm_ia_see_credits:'View credits',
+    cm_ia_top_article_title:'Best-selling item (30 days)', cm_ia_units_sold:'units sold',
+    cm_ia_dormant_title:'{n} item(s) with no sales in 30 days', cm_ia_see_articles:'View items',
+    cm_ia_trend_title:'Sales trend (7 days)', cm_ia_this_week:'this week', cm_ia_vs_last_week:'vs last week',
+    cm_ia_all_good_title:'Everything looks good!', cm_ia_all_good_text:'No particular alerts right now.',
     cm_art_name:'Item name *', cm_art_cat:'Category *',
     cm_art_prixa:'Purchase price (unit)', cm_art_prixv:'Selling price *',
     cm_art_stock:'Initial stock', cm_art_unit:'Unit', cm_art_seuil:'Low stock alert threshold',
@@ -8414,6 +8430,7 @@ if ('serviceWorker' in navigator) {
     <button class="cm-tab" data-cmtab="caisse" onclick="cmSwitch('caisse')"><i class="fas fa-cash-register"></i><span data-i18n="cm_tab_caisse">Caisse</span></button>
     <button class="cm-tab" data-cmtab="inventaire" onclick="cmSwitch('inventaire')"><i class="fas fa-clipboard-list"></i><span data-i18n="cm_tab_inventaire">Inventaire</span></button>
     <button class="cm-tab" data-cmtab="rapports" onclick="cmSwitch('rapports')"><i class="fas fa-chart-pie"></i><span data-i18n="cm_tab_rapports">Rapports</span></button>
+    <button class="cm-tab" data-cmtab="ia" onclick="cmSwitch('ia')"><i class="fas fa-robot"></i><span data-i18n="cm_tab_ia">IA</span></button>
   </div>
 
   <!-- ═══ Section : Résumé ═══ -->
@@ -8576,6 +8593,15 @@ if ('serviceWorker' in navigator) {
     <button style="width:100%;margin-top:16px;padding:14px;background:var(--card);border:1px solid var(--border);color:var(--text);border-radius:12px;font-weight:800;cursor:pointer;" onclick="cmExportRapportCsv()">
       <i class="fas fa-file-export"></i> <span data-i18n="cm_rap_export">Exporter en CSV</span>
     </button>
+  </div>
+
+  <!-- ═══ Section : IA (analyse intelligente basée sur les données réelles, sans service externe) ═══ -->
+  <div class="cm-section" id="cm-sec-ia">
+    <div style="background:linear-gradient(135deg,#7c3aed15,#7c3aed05);border:1px solid #7c3aed30;border-radius:12px;padding:12px;margin-bottom:14px;font-size:13px;color:var(--text);display:flex;gap:8px;align-items:flex-start">
+      <i class="fas fa-robot" style="margin-top:2px;color:#7c3aed"></i>
+      <span data-i18n="cm_ia_info">Analyse automatique de tes données pour t'aider à décider — stock, crédits, ventes. Aucune donnée envoyée à un service externe.</span>
+    </div>
+    <div id="cmIAList"></div>
   </div>
 </div>
 
@@ -10124,6 +10150,7 @@ function cmRenderSection(){
   if(CM.currentSection==='caisse') cmRenderCaisse();
   if(CM.currentSection==='inventaire') cmRenderInventaire();
   if(CM.currentSection==='rapports') cmRenderRapports();
+  if(CM.currentSection==='ia') cmRenderIA();
 }
 
 /* ── Résumé ── */
@@ -10800,6 +10827,131 @@ window.cmExportRapportCsv = function(){
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
+};
+
+// Moteur d'analyse — génère des insights concrets à partir des vraies données de la boutique.
+// Purement local (aucun appel réseau, aucune donnée envoyée à un tiers).
+function cmBuildIAInsights(){
+  const insights = [];
+  const shop = cmGetShop();
+  if(!shop) return insights;
+
+  const articles = cmGetShopArticles();
+  const mvts = cmGetShopMvts();
+  const now = Date.now();
+  const j30 = now - 30*24*3600*1000;
+  const j7 = now - 7*24*3600*1000;
+  const j14 = now - 14*24*3600*1000;
+
+  // 1. Stock faible
+  const seuilDef = 5;
+  const lows = articles.filter(a => (a.stock||0) <= (a.seuil!==undefined ? a.seuil : seuilDef));
+  if(lows.length > 0){
+    insights.push({
+      icon: 'fa-triangle-exclamation', color: '#ef4444',
+      title: t('cm_ia_low_stock_title', {n: lows.length}),
+      text: lows.slice(0,3).map(a=>a.name).join(', ') + (lows.length>3 ? '…' : ''),
+      action: t('cm_ia_see_stock'), onAction: () => cmSwitch('stock')
+    });
+  }
+
+  // 2. Crédits en retard
+  const creditsRetard = cmGetShopCredits().filter(cr => cmCreditStatus(cr).statut === 'retard');
+  if(creditsRetard.length > 0){
+    insights.push({
+      icon: 'fa-hand-holding-dollar', color: '#f59e0b',
+      title: t('cm_ia_late_credits_title', {n: creditsRetard.length}),
+      text: creditsRetard.slice(0,3).map(cr=>cr.clientName).join(', ') + (creditsRetard.length>3 ? '…' : ''),
+      action: t('cm_ia_see_credits'), onAction: () => cmSwitch('credits')
+    });
+  }
+
+  // 3. Meilleur article vendu (30 derniers jours)
+  const ventes30j = mvts.filter(m => m.type==='vente' && (m.createdAt||0) >= j30);
+  if(ventes30j.length > 0){
+    const parArticle = {};
+    ventes30j.forEach(m => { parArticle[m.artId] = (parArticle[m.artId]||0) + Number(m.qte||0); });
+    const topId = Object.keys(parArticle).sort((a,b)=>parArticle[b]-parArticle[a])[0];
+    const topArt = articles.find(a=>a.id===topId);
+    if(topArt){
+      insights.push({
+        icon: 'fa-star', color: '#f59e0b',
+        title: t('cm_ia_top_article_title'),
+        text: `${topArt.name} — ${parArticle[topId]} ${t('cm_ia_units_sold')}`,
+        action: null
+      });
+    }
+  }
+
+  // 4. Articles en stock mais jamais vendus depuis 30 jours
+  const artIdsVendus30j = new Set(ventes30j.map(m=>m.artId));
+  const dormants = articles.filter(a => (a.stock||0) > 0 && !artIdsVendus30j.has(a.id));
+  if(dormants.length > 0){
+    insights.push({
+      icon: 'fa-box-archive', color: '#64748b',
+      title: t('cm_ia_dormant_title', {n: dormants.length}),
+      text: dormants.slice(0,3).map(a=>a.name).join(', ') + (dormants.length>3 ? '…' : ''),
+      action: t('cm_ia_see_articles'), onAction: () => cmSwitch('articles')
+    });
+  }
+
+  // 5. Tendance des ventes (7 derniers jours vs 7 jours précédents)
+  const ca7j = mvts.filter(m=>m.type==='vente' && (m.createdAt||0)>=j7).reduce((s,m)=>s+Number(m.total||0),0);
+  const ca7jPrec = mvts.filter(m=>m.type==='vente' && (m.createdAt||0)>=j14 && (m.createdAt||0)<j7).reduce((s,m)=>s+Number(m.total||0),0);
+  if(ca7j > 0 || ca7jPrec > 0){
+    let variation = null;
+    if(ca7jPrec > 0) variation = Math.round(((ca7j - ca7jPrec) / ca7jPrec) * 100);
+    const up = variation === null ? true : variation >= 0;
+    insights.push({
+      icon: up ? 'fa-arrow-trend-up' : 'fa-arrow-trend-down', color: up ? '#10b981' : '#ef4444',
+      title: t('cm_ia_trend_title'),
+      text: variation === null
+        ? `${cmFmt(ca7j)} FCFA ${t('cm_ia_this_week')}`
+        : `${cmFmt(ca7j)} FCFA (${variation>=0?'+':''}${variation}% ${t('cm_ia_vs_last_week')})`,
+      action: null
+    });
+  }
+
+  // Si tout va bien : message positif
+  if(insights.length === 0){
+    insights.push({
+      icon: 'fa-circle-check', color: '#10b981',
+      title: t('cm_ia_all_good_title'),
+      text: t('cm_ia_all_good_text'),
+      action: null
+    });
+  }
+
+  return insights;
+}
+
+window.cmRenderIA = function(){
+  const c = document.getElementById('cmIAList');
+  if(!c) return;
+  const insights = cmBuildIAInsights();
+
+  c.innerHTML = insights.map((ins, idx) => `
+    <div class="cm-card" style="flex-direction:column;align-items:stretch;gap:8px">
+      <div style="display:flex;gap:12px;align-items:flex-start">
+        <div style="width:38px;height:38px;border-radius:10px;background:${ins.color}18;color:${ins.color};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <i class="fas ${ins.icon}"></i>
+        </div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;font-size:14px">${ins.title}</div>
+          <div style="font-size:13px;color:var(--muted);margin-top:2px">${ins.text}</div>
+        </div>
+      </div>
+      ${ins.action ? `<button data-ia-idx="${idx}" onclick="cmIAAction(${idx})" style="align-self:flex-start;background:none;border:none;color:${ins.color};font-weight:700;font-size:13px;cursor:pointer;padding:0">${ins.action} →</button>` : ''}
+    </div>`
+  ).join('');
+
+  // Stocke les callbacks pour les boutons d'action (non sérialisables en HTML)
+  window._cmIAActions = insights.map(i => i.onAction || null);
+};
+
+window.cmIAAction = function(idx){
+  const fn = (window._cmIAActions||[])[idx];
+  if(typeof fn === 'function') fn();
 };
 
 /* ── Reçus & Devis ──

@@ -1696,6 +1696,20 @@ const LANGS = {
     cm_msg_fourn_name_required:'Le nom du fournisseur est obligatoire',
     cm_msg_fourn_saved:'Fournisseur enregistré ✓', cm_msg_fourn_deleted:'Fournisseur supprimé',
     cm_confirm_delete_fourn:'Supprimer ce fournisseur ?',
+    cm_tab_credits:'Crédits', cm_new_credit:'Nouveau crédit', cm_edit_credit:'Détails du crédit',
+    cm_search_credit:'Rechercher un crédit…', cm_credit_client:'Client *',
+    cm_credit_montant:'Montant total (FCFA) *', cm_credit_echeance:"Date d'échéance (optionnel)",
+    cm_credit_status:'Statut', cm_credit_add_payment:'Ajouter un paiement (FCFA)',
+    cm_credit_paid:'Payé', cm_credit_partial:'Partiel', cm_credit_late:'En retard', cm_credit_pending:'En attente',
+    cm_credit_no_client_yet:'Créez d\\'abord un client',
+    cm_no_credit:'Aucun crédit', cm_no_credit_sub:'Cliquez sur "Nouveau crédit" pour commencer',
+    cm_msg_credit_client_required:'Sélectionnez un client',
+    cm_msg_credit_montant_required:'Indiquez un montant valide',
+    cm_msg_credit_saved:'Crédit enregistré ✓', cm_msg_credit_deleted:'Crédit supprimé',
+    cm_msg_credit_payment_invalid:'Montant de paiement invalide',
+    cm_msg_credit_payment_too_high:'Ce montant dépasse le reste à payer',
+    cm_msg_payment_added:'Paiement ajouté ✓',
+    cm_confirm_delete_credit:'Supprimer ce crédit ?',
     cm_art_name:'Nom de l\'article *', cm_art_cat:'Catégorie *',
     cm_art_prixa:'Prix d\'achat (unitaire)', cm_art_prixv:'Prix de vente *',
     cm_art_stock:'Stock initial', cm_art_unit:'Unité', cm_art_seuil:'Seuil alerte stock bas',
@@ -2001,6 +2015,20 @@ const LANGS = {
     cm_msg_fourn_name_required:'Supplier name is required',
     cm_msg_fourn_saved:'Supplier saved ✓', cm_msg_fourn_deleted:'Supplier deleted',
     cm_confirm_delete_fourn:'Delete this supplier?',
+    cm_tab_credits:'Credits', cm_new_credit:'New credit', cm_edit_credit:'Credit details',
+    cm_search_credit:'Search a credit…', cm_credit_client:'Customer *',
+    cm_credit_montant:'Total amount (FCFA) *', cm_credit_echeance:'Due date (optional)',
+    cm_credit_status:'Status', cm_credit_add_payment:'Add a payment (FCFA)',
+    cm_credit_paid:'Paid', cm_credit_partial:'Partial', cm_credit_late:'Late', cm_credit_pending:'Pending',
+    cm_credit_no_client_yet:'Create a customer first',
+    cm_no_credit:'No credits yet', cm_no_credit_sub:'Click "New credit" to get started',
+    cm_msg_credit_client_required:'Select a customer',
+    cm_msg_credit_montant_required:'Enter a valid amount',
+    cm_msg_credit_saved:'Credit saved ✓', cm_msg_credit_deleted:'Credit deleted',
+    cm_msg_credit_payment_invalid:'Invalid payment amount',
+    cm_msg_credit_payment_too_high:'This amount exceeds the remaining balance',
+    cm_msg_payment_added:'Payment added ✓',
+    cm_confirm_delete_credit:'Delete this credit?',
     cm_art_name:'Item name *', cm_art_cat:'Category *',
     cm_art_prixa:'Purchase price (unit)', cm_art_prixv:'Selling price *',
     cm_art_stock:'Initial stock', cm_art_unit:'Unit', cm_art_seuil:'Low stock alert threshold',
@@ -8337,6 +8365,7 @@ if ('serviceWorker' in navigator) {
     <button class="cm-tab" data-cmtab="stock" onclick="cmSwitch('stock')"><i class="fas fa-warehouse"></i><span data-i18n="cm_tab_stock">Stock</span></button>
     <button class="cm-tab" data-cmtab="clients" onclick="cmSwitch('clients')"><i class="fas fa-users"></i><span data-i18n="cm_tab_clients">Clients</span></button>
     <button class="cm-tab" data-cmtab="fournisseurs" onclick="cmSwitch('fournisseurs')"><i class="fas fa-truck"></i><span data-i18n="cm_tab_fournisseurs">Fournisseurs</span></button>
+    <button class="cm-tab" data-cmtab="credits" onclick="cmSwitch('credits')"><i class="fas fa-hand-holding-dollar"></i><span data-i18n="cm_tab_credits">Crédits</span></button>
   </div>
 
   <!-- ═══ Section : Résumé ═══ -->
@@ -8445,9 +8474,56 @@ if ('serviceWorker' in navigator) {
       <i class="fas fa-plus"></i> <span data-i18n="cm_new_fourn">Nouveau fournisseur</span>
     </button>
   </div>
+
+  <!-- ═══ Section : Crédits ═══ -->
+  <div class="cm-section" id="cm-sec-credits">
+    <div class="cm-search-box">
+      <i class="fas fa-search"></i>
+      <input type="text" id="cmCreditSearch" data-i18n="cm_search_credit" placeholder="Rechercher un crédit…" oninput="cmRenderCredits()">
+    </div>
+    <div id="cmCreditsList"></div>
+    <button data-cm-role-restrict="edit_article" style="width:100%;margin-top:8px;padding:14px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:12px;font-weight:800;cursor:pointer;" onclick="cmOpenCreditModal()">
+      <i class="fas fa-plus"></i> <span data-i18n="cm_new_credit">Nouveau crédit</span>
+    </button>
+  </div>
 </div>
 
-<!-- ═══ Modal : Fournisseur ═══ -->
+<!-- ═══ Modal : Crédit ═══ -->
+<div class="modal-overlay" id="cmCreditModal">
+  <div class="modal-box" style="max-width:480px">
+    <div class="modal-header">
+      <h3 id="cmCreditModalTitle" data-i18n="cm_new_credit">Nouveau crédit</h3>
+      <button class="modal-close" onclick="closeModal('cmCreditModal')"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <label data-i18n="cm_credit_client">Client *</label>
+      <select id="cmCreditClientSelect" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:var(--text)"></select>
+      <label data-i18n="cm_credit_montant" style="margin-top:12px">Montant total (FCFA) *</label>
+      <input type="number" id="cmCreditMontant" placeholder="0" min="0">
+      <label data-i18n="cm_credit_echeance" style="margin-top:12px">Date d'échéance (optionnel)</label>
+      <input type="date" id="cmCreditEcheance">
+      <label data-i18n="cm_client_note" style="margin-top:12px">Note (optionnel)</label>
+      <textarea id="cmCreditNote" rows="2" placeholder="Ex: crédit sur marchandise…" style="width:100%;padding:10px;border-radius:10px;border:1px solid var(--border);font-family:inherit"></textarea>
+
+      <div id="cmCreditPaymentZone" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
+        <div style="font-weight:800;margin-bottom:8px" data-i18n="cm_credit_status">Statut</div>
+        <div id="cmCreditStatusBadge" style="margin-bottom:12px"></div>
+        <label data-i18n="cm_credit_add_payment">Ajouter un paiement (FCFA)</label>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <input type="number" id="cmCreditPaymentAmount" placeholder="0" min="0" style="flex:1">
+          <button onclick="cmAddCreditPayment()" style="background:#2563eb;color:#fff;border:none;padding:0 16px;border-radius:10px;font-weight:700;cursor:pointer" data-i18n="btn_add">Ajouter</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button id="cmCreditDeleteBtn" onclick="cmDeleteCredit()" style="display:none;background:var(--grad-danger);color:#fff;border:none;padding:12px 16px;border-radius:10px;font-weight:700;cursor:pointer" data-i18n="btn_delete"><i class="fas fa-trash"></i></button>
+      <button class="btn-cancel-modal" onclick="closeModal('cmCreditModal')" data-i18n="btn_cancel">Annuler</button>
+      <button class="btn-save-modal" onclick="cmSaveCredit()" data-i18n="btn_save"><i class="fas fa-check"></i> Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+
 <div class="modal-overlay" id="cmFournModal">
   <div class="modal-box" style="max-width:480px">
     <div class="modal-header">
@@ -9127,6 +9203,7 @@ let CM = {
   mouvements: [],      // {id,shopId,artId,artName,type,qte,prix,total,date,person,note,createdAt}
   clients: [],          // {id,shopId,name,phone,whatsapp,addr,note,createdAt}
   fournisseurs: [],      // {id,shopId,name,phone,whatsapp,addr,note,createdAt}
+  credits: [],           // {id,shopId,clientId,clientName,montant,montantPaye,statut,dateEcheance,note,createdAt,paiements:[{montant,date}]}
   currentShopId: null,
   currentSection: 'resume',
   currentMvtType: 'vente',
@@ -9454,6 +9531,7 @@ function cmSnapshot(){
     mouvements: CM.mouvements,
     clients: CM.clients,
     fournisseurs: CM.fournisseurs,
+    credits: CM.credits,
     currentShopId: CM.currentShopId,
     updatedAtMs: Date.now(),
     schemaVersion: 2
@@ -9465,6 +9543,7 @@ function cmApplyData(d){
   CM.mouvements = Array.isArray(d?.mouvements) ? d.mouvements : [];
   CM.clients = Array.isArray(d?.clients) ? d.clients : [];
   CM.fournisseurs = Array.isArray(d?.fournisseurs) ? d.fournisseurs : [];
+  CM.credits = Array.isArray(d?.credits) ? d.credits : [];
   CM.currentShopId = d?.currentShopId || (CM.shops[0] && CM.shops[0].id) || null;
   cmDataStamp = Number(d?.updatedAtMs || 0);
   // Mémorise le stock "tel que connu" pour calculer un delta lors de la sauvegarde,
@@ -9485,7 +9564,7 @@ function cmLoad(){
       return;
     }
   }catch(e){ console.warn('CM load',e); }
-  cmApplyData({ shops:[], articles:[], mouvements:[], clients:[], fournisseurs:[], currentShopId:null, updatedAtMs:0 });
+  cmApplyData({ shops:[], articles:[], mouvements:[], clients:[], fournisseurs:[], credits:[], currentShopId:null, updatedAtMs:0 });
 }
 let cmRemoteUnsub = null;
 function cmIsEditing(){
@@ -9687,6 +9766,7 @@ function cmGetShop(){ return CM.shops.find(s=>s.id===CM.currentShopId); }
 function cmGetShopArticles(){ return CM.articles.filter(a=>a.shopId===CM.currentShopId); }
 function cmGetShopClients(){ return CM.clients.filter(c=>c.shopId===CM.currentShopId); }
 function cmGetShopFournisseurs(){ return CM.fournisseurs.filter(f=>f.shopId===CM.currentShopId); }
+function cmGetShopCredits(){ return CM.credits.filter(c=>c.shopId===CM.currentShopId); }
 function cmGetShopMvts(){ return CM.mouvements.filter(m=>m.shopId===CM.currentShopId); }
 function cmGetShopTypeLabel(shop){
   if(!shop) return '';
@@ -9926,7 +10006,7 @@ function cmRenderSection(){
   if(!cmGetShop()){
     ['cmStatVentes','cmStatAchats','cmStatMarge','cmStatStock'].forEach(id=>{ const el=document.getElementById(id); if(el) el.textContent='—'; });
     const emptyMsg = '<div class="cm-empty"><i class="fas fa-store-slash"></i>Créez d\'abord une boutique<br><button onclick="cmOpenShopModal(true)" style="margin-top:12px;padding:10px 18px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;"><i class="fas fa-plus"></i> Nouvelle boutique</button></div>';
-    ['cmArticlesList','cmMvtList','cmStockList','cmTopArticles','cmAlerts','cmClientsList','cmFournisseursList'].forEach(id=>{
+    ['cmArticlesList','cmMvtList','cmStockList','cmTopArticles','cmAlerts','cmClientsList','cmFournisseursList','cmCreditsList'].forEach(id=>{
       const el=document.getElementById(id);
       if(el) el.innerHTML = emptyMsg;
     });
@@ -9938,6 +10018,7 @@ function cmRenderSection(){
   if(CM.currentSection==='stock') cmRenderStock();
   if(CM.currentSection==='clients') cmRenderClients();
   if(CM.currentSection==='fournisseurs') cmRenderFournisseurs();
+  if(CM.currentSection==='credits') cmRenderCredits();
 }
 
 /* ── Résumé ── */
@@ -10220,6 +10301,159 @@ window.cmDeleteFourn = function(){
   cmRenderFournisseurs();
   closeModal('cmFournModal');
   cmToast(t('cm_msg_fourn_deleted'),'success');
+};
+
+// Calcule le montant payé et le statut d'un crédit (paye / partiel / retard)
+function cmCreditStatus(credit){
+  const paye = (credit.paiements||[]).reduce((s,p)=>s+Number(p.montant||0),0);
+  const reste = Math.max(0, Number(credit.montant||0) - paye);
+  let statut = 'partiel';
+  if(reste <= 0) statut = 'paye';
+  else if(credit.dateEcheance && new Date(credit.dateEcheance) < new Date() && paye === 0) statut = 'retard';
+  else if(paye === 0) statut = 'attente';
+  return { paye, reste, statut };
+}
+
+function cmCreditStatusLabel(statut){
+  return { paye:t('cm_credit_paid'), partiel:t('cm_credit_partial'), retard:t('cm_credit_late'), attente:t('cm_credit_pending') }[statut] || statut;
+}
+function cmCreditStatusColor(statut){
+  return { paye:'#10b981', partiel:'#2563eb', retard:'#ef4444', attente:'#f59e0b' }[statut] || '#64748b';
+}
+
+window.cmRenderCredits = function(){
+  const c = document.getElementById('cmCreditsList');
+  if(!c) return;
+  const search = (document.getElementById('cmCreditSearch')?.value||'').toLowerCase();
+  let credits = cmGetShopCredits();
+  if(search) credits = credits.filter(cr => (cr.clientName||'').toLowerCase().includes(search));
+  credits.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  if(credits.length===0){
+    c.innerHTML = `<div class="cm-empty"><i class="fas fa-hand-holding-dollar"></i>${t('cm_no_credit')}<br><small>${t('cm_no_credit_sub')}</small></div>`;
+    return;
+  }
+  c.innerHTML = credits.map(cr => {
+    const { paye, reste, statut } = cmCreditStatus(cr);
+    return `
+    <div class="cm-card" onclick="cmEditCredit('${cr.id}')" style="cursor:pointer">
+      <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+        <div class="cm-card-icon"><i class="fas fa-hand-holding-dollar"></i></div>
+        <div class="cm-card-body">
+          <div class="cm-card-title">${cr.clientName}</div>
+          <div class="cm-card-sub">${cmFmt(reste)} FCFA restant / ${cmFmt(cr.montant)} FCFA</div>
+        </div>
+      </div>
+      <span style="background:${cmCreditStatusColor(statut)}22;color:${cmCreditStatusColor(statut)};padding:4px 10px;border-radius:999px;font-size:12px;font-weight:800;white-space:nowrap">${cmCreditStatusLabel(statut)}</span>
+    </div>`;
+  }).join('');
+};
+
+window.cmOpenCreditModal = function(){
+  CM.editingCreditId = null;
+  document.getElementById('cmCreditModalTitle').textContent = t('cm_new_credit');
+  document.getElementById('cmCreditMontant').value = '';
+  document.getElementById('cmCreditEcheance').value = '';
+  document.getElementById('cmCreditNote').value = '';
+  document.getElementById('cmCreditMontant').disabled = false;
+  document.getElementById('cmCreditPaymentZone').style.display = 'none';
+  document.getElementById('cmCreditDeleteBtn').style.display = 'none';
+
+  const sel = document.getElementById('cmCreditClientSelect');
+  const clients = cmGetShopClients();
+  if(clients.length===0){
+    sel.innerHTML = `<option value="">${t('cm_credit_no_client_yet')}</option>`;
+  } else {
+    sel.innerHTML = clients.map(cl => `<option value="${cl.id}">${cl.name}</option>`).join('');
+  }
+  sel.disabled = false;
+  openModal('cmCreditModal');
+};
+
+window.cmEditCredit = function(id){
+  const cr = CM.credits.find(x => x.id === id);
+  if(!cr) return;
+  CM.editingCreditId = id;
+  document.getElementById('cmCreditModalTitle').textContent = t('cm_edit_credit');
+
+  const sel = document.getElementById('cmCreditClientSelect');
+  sel.innerHTML = `<option value="${cr.clientId}">${cr.clientName}</option>`;
+  sel.disabled = true; // on ne change pas le client d'un crédit existant
+
+  document.getElementById('cmCreditMontant').value = cr.montant || 0;
+  document.getElementById('cmCreditMontant').disabled = true; // le montant total ne change plus une fois créé
+  document.getElementById('cmCreditEcheance').value = cr.dateEcheance || '';
+  document.getElementById('cmCreditNote').value = cr.note || '';
+  document.getElementById('cmCreditPaymentAmount').value = '';
+
+  const { statut } = cmCreditStatus(cr);
+  document.getElementById('cmCreditStatusBadge').innerHTML =
+    `<span style="background:${cmCreditStatusColor(statut)}22;color:${cmCreditStatusColor(statut)};padding:6px 12px;border-radius:999px;font-size:13px;font-weight:800">${cmCreditStatusLabel(statut)}</span>`;
+  document.getElementById('cmCreditPaymentZone').style.display = 'block';
+  document.getElementById('cmCreditDeleteBtn').style.display = 'inline-block';
+  openModal('cmCreditModal');
+};
+
+window.cmSaveCredit = function(){
+  const clientSel = document.getElementById('cmCreditClientSelect');
+  const clientId = clientSel.value;
+  if(!clientId){ cmToast(t('cm_msg_credit_client_required'),'error'); return; }
+  const montant = Number(document.getElementById('cmCreditMontant').value);
+  if(!montant || montant <= 0){ cmToast(t('cm_msg_credit_montant_required'),'error'); return; }
+  const dateEcheance = document.getElementById('cmCreditEcheance').value || null;
+  const note = document.getElementById('cmCreditNote').value.trim();
+
+  if(CM.editingCreditId){
+    const cr = CM.credits.find(x => x.id === CM.editingCreditId);
+    if(cr) Object.assign(cr, { dateEcheance, note, updatedAt: Date.now() });
+  } else {
+    const client = CM.clients.find(c => c.id === clientId);
+    CM.credits.push({
+      id: cmUID(), shopId: CM.currentShopId,
+      clientId, clientName: client ? client.name : '',
+      montant, dateEcheance, note, paiements: [], createdAt: Date.now()
+    });
+  }
+  cmSave();
+  cmRenderCredits();
+  closeModal('cmCreditModal');
+  cmToast(t('cm_msg_credit_saved'),'success');
+};
+
+window.cmAddCreditPayment = function(){
+  if(!CM.editingCreditId) return;
+  const cr = CM.credits.find(x => x.id === CM.editingCreditId);
+  if(!cr) return;
+  const amountInput = document.getElementById('cmCreditPaymentAmount');
+  const amount = Number(amountInput.value);
+  if(!amount || amount <= 0){ cmToast(t('cm_msg_credit_payment_invalid'),'error'); return; }
+
+  const { reste } = cmCreditStatus(cr);
+  if(amount > reste){ cmToast(t('cm_msg_credit_payment_too_high'),'error'); return; }
+
+  if(!Array.isArray(cr.paiements)) cr.paiements = [];
+  cr.paiements.push({ montant: amount, date: Date.now() });
+  cmSave();
+  amountInput.value = '';
+
+  const { statut } = cmCreditStatus(cr);
+  document.getElementById('cmCreditStatusBadge').innerHTML =
+    `<span style="background:${cmCreditStatusColor(statut)}22;color:${cmCreditStatusColor(statut)};padding:6px 12px;border-radius:999px;font-size:13px;font-weight:800">${cmCreditStatusLabel(statut)}</span>`;
+  cmRenderCredits();
+  cmToast(t('cm_msg_payment_added'),'success');
+
+  if(statut === 'paye'){
+    setTimeout(()=>closeModal('cmCreditModal'), 800);
+  }
+};
+
+window.cmDeleteCredit = function(){
+  if(!CM.editingCreditId) return;
+  if(!confirm(t('cm_confirm_delete_credit'))) return;
+  CM.credits = CM.credits.filter(x => x.id !== CM.editingCreditId);
+  cmSave();
+  cmRenderCredits();
+  closeModal('cmCreditModal');
+  cmToast(t('cm_msg_credit_deleted'),'success');
 };
 
 /* ── Reçus & Devis ──

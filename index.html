@@ -1096,8 +1096,9 @@ function renderDashboard() {
   const totalOut = mTx.filter(t=>t.flow==='out').reduce((s,t)=>s+t.amount,0);
   const totalSave= transactions.filter(t=>t.flow==='save').reduce((s,t)=>s+t.amount,0);
   const solde    = totalIn - totalOut;
-  const salRef   = (salaryConfig.total > 0) ? salaryConfig.total : ((salaryConfig.net||0)+(salaryConfig.prime_fixe||0)+(salaryConfig.autres_fixes||0)) || totalIn || 1;
-  const pctDep   = Math.min(100, Math.round(totalOut / salRef * 100));
+  const salRef   = (salaryConfig.total > 0) ? salaryConfig.total : ((salaryConfig.net||0)+(salaryConfig.prime_fixe||0)+(salaryConfig.autres_fixes||0)) || totalIn || 0;
+  const hasSalRef = salRef > 0;
+  const pctDep   = hasSalRef ? Math.min(100, Math.round(totalOut / salRef * 100)) : 0;
 
   setTxt('dSolde',    fmt(solde));
   setTxt('dIn',       fmt(totalIn));
@@ -1107,7 +1108,7 @@ function renderDashboard() {
   setTxt('dSalaire',  fmt(salM));
   setTxt('dPrime',    fmt(priM));
   setTxt('dAutresIn', fmt(autM));
-  setTxt('dPctLabel', pctDep + '% du salaire dépensé');
+  setTxt('dPctLabel', hasSalRef ? (pctDep + '% du salaire dépensé') : 'Renseigne ton salaire pour voir ce suivi');
   setTxt('dMonthLabel', formatMonth(m));
   document.getElementById('dSolde').className = 'stat-value ' + (solde >= 0 ? 'pos':'neg');
 

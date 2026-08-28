@@ -639,6 +639,19 @@ function fbErr(e) {
   return m[e.code] || e.message || 'Erreur inconnue';
 }
 
+// Traduit une erreur Firestore/technique en message compréhensible pour l'utilisateur.
+// Le détail exact reste dans la console pour le débogage, jamais affiché directement.
+function friendlyErr(e) {
+  console.error(e);
+  const m = {
+    'permission-denied':"Vous n'avez pas la permission d'effectuer cette action.",
+    'unavailable':'Service temporairement indisponible. Réessayez.',
+    'network-request-failed':'Erreur réseau. Vérifiez votre connexion.',
+    'not-found':"Élément introuvable (peut-être déjà supprimé).",
+  };
+  return m[e?.code] || 'Une erreur est survenue. Veuillez réessayer.';
+}
+
 const LANG_DICT = {
   fr: {
     dashboard:'Tableau de bord', revenus:'Revenus', depenses:'Dépenses', epargne:'Épargne',
@@ -907,7 +920,7 @@ window.saveTx = async () => {
       toast('Opération enregistrée ✓','success');
     }
     closeModal('txModal');
-  } catch(e) { toast(e.message,'error'); }
+  } catch(e) { toast(friendlyErr(e),'error'); }
   loader(false);
 };
 
@@ -917,7 +930,7 @@ window.delTx = async (id) => {
     loader(true);
     await deleteDoc(doc(db,'transactions',id));
     toast('Supprimé','info');
-  } catch(e) { toast(e.message,'error'); }
+  } catch(e) { toast(friendlyErr(e),'error'); }
   loader(false);
 };
 
@@ -931,13 +944,13 @@ window.addBudget = async () => {
     await addDoc(collection(db,'budgets'),{ userId:currentUser.uid, cat, limit });
     $('#budCat').value=''; $('#budLimit').value='';
     toast('Budget ajouté ✓','success');
-  } catch(e) { toast(e.message,'error'); }
+  } catch(e) { toast(friendlyErr(e),'error'); }
   loader(false);
 };
 window.delBudget = async (id) => {
   if (!confirm('Supprimer ce budget ?')) return;
   try { await deleteDoc(doc(db,'budgets',id)); toast('Budget supprimé','info'); }
-  catch(e) { toast(e.message,'error'); }
+  catch(e) { toast(friendlyErr(e),'error'); }
 };
 
 // ══ EXPORT CSV ══

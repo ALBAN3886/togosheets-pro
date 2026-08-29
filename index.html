@@ -411,6 +411,35 @@ window.skipOnboarding = function() {
   localStorage.setItem('aet_ob_done','1');
 };
 // ──────── TOGGLE PASSWORD EYE ────────
+// ──────── BOUTON "RETOUR EN HAUT" (apparaît après un peu de défilement) ────────
+window.addEventListener('scroll', () => {
+  const btn = document.getElementById('scrollTopBtn');
+  if (!btn) return;
+  btn.style.display = (window.scrollY > 300) ? 'flex' : 'none';
+  if(btn.style.display==='flex'){ btn.style.alignItems='center'; btn.style.justifyContent='center'; }
+}, { passive: true });
+
+// ──────── TOUCHE ENTRÉE : valide le formulaire ouvert (modale ou écran de connexion) ────────
+// Ne s'applique pas dans les <textarea> (où Entrée doit créer une nouvelle ligne).
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+  const active = document.activeElement;
+  if (!active || active.tagName === 'TEXTAREA') return;
+
+  const openModalEl = document.querySelector('.modal-overlay.open');
+  if (openModalEl) {
+    const saveBtn = openModalEl.querySelector('.btn-save-modal, .btn-save, [data-modal-primary]');
+    if (saveBtn) { e.preventDefault(); saveBtn.click(); }
+    return;
+  }
+
+  const authScreen = document.getElementById('authScreen');
+  if (authScreen && authScreen.style.display !== 'none') {
+    if (active.id && active.id.startsWith('login') && window.doLogin) { e.preventDefault(); window.doLogin(); }
+    else if (active.id && active.id.startsWith('signup') && window.doSignup) { e.preventDefault(); window.doSignup(); }
+  }
+});
+
 window.togglePwdEye = function(inputId, btn) {
   const inp = document.getElementById(inputId);
   if (!inp) return;
@@ -4238,6 +4267,15 @@ select.form-input option{background:var(--bg2)}
     <button onclick="document.getElementById('verifyEmailBanner').style.display='none'" style="background:none;border:none;color:#fff;font-size:16px;cursor:pointer;padding:0 4px" aria-label="Fermer"><i class="fas fa-xmark"></i></button>
   </div>
 
+  <!-- ════ Bouton flottant : Retour en haut (apparaît dès qu'on défile) ════ -->
+  <button id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})"
+    style="display:none;position:fixed;bottom:90px;right:16px;width:46px;height:46px;border-radius:50%;
+           background:var(--grad,linear-gradient(135deg,#10b981,#059669));color:#fff;border:none;
+           box-shadow:0 6px 18px rgba(0,0,0,.25);font-size:18px;z-index:400;cursor:pointer"
+    aria-label="Retour en haut">
+    <i class="fas fa-arrow-up"></i>
+  </button>
+
   <!-- ════ SIDEBAR (menu latéral) ════ -->
   <div id="sidebarOverlay" onclick="closeSidebarMobile()"></div>
   <nav id="appSidebar">
@@ -7081,6 +7119,7 @@ const _db = _getDb(_app);
 
 // ──────── ÉTAT EXTENSION ────────
 let userProfile = { displayName:'', phone:'', job:'', city:'', birth:'', avatar:'👤', email:'' };
+window.userProfile = userProfile;
 let userSettings = { lang:'fr', dateFmt:'dmy', theme:'light', notif:true, budgetAlert:true, pinEnabled:false, pin:'', fingerprint:false, autoSync:true };
 let userGoals = [];
 let userTontines = [];
@@ -7263,6 +7302,7 @@ async function loadProfile() {
     }
     userProfile.email = _auth.currentUser.email;
     if (!userProfile.displayName) userProfile.displayName = _auth.currentUser.displayName || _auth.currentUser.email.split('@')[0];
+    window.userProfile = userProfile;
   } catch(e) { console.warn('loadProfile', e); }
 }
 
@@ -7333,6 +7373,7 @@ window.saveProfileEdit = async () => {
       await _upProfile(_auth.currentUser, { displayName: newProfile.displayName });
     }
     userProfile = { ...userProfile, ...newProfile };
+    window.userProfile = userProfile;
     // Update top bar name
     const un = document.getElementById('userName'); if (un) un.textContent = newProfile.displayName;
     applyAvatarDisplay('userAvatarText','userAvatarImg', newProfile.displayName);

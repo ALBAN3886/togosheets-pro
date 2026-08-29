@@ -440,6 +440,42 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// ──────── BOUTON RETOUR (Android + navigateur) : ferme le menu/modale ouvert(e) ────────
+// au lieu de quitter toute l'app. On observe les changements de classe "open" (peu importe
+// comment ils se produisent — bouton, tap en dehors, X...) pour rester synchronisé automatiquement.
+let _aetHistDepth = 0;
+let _aetInPopstate = false;
+
+function _aetAnyOverlayOpen(){
+  return !!document.querySelector('.modal-overlay.open') ||
+         !!document.getElementById('appSidebar')?.classList.contains('open');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const observer = new MutationObserver(() => {
+    const isOpen = _aetAnyOverlayOpen();
+    if (isOpen && _aetHistDepth === 0) {
+      _aetHistDepth = 1;
+      history.pushState({ aetOverlay: true }, '', location.href);
+    } else if (!isOpen && _aetHistDepth === 1) {
+      _aetHistDepth = 0;
+      if (!_aetInPopstate) history.back(); // fermé via X/tap : on "consomme" l'entrée
+    }
+  });
+  document.querySelectorAll('.modal-overlay, #appSidebar, #sidebarOverlay').forEach(el => {
+    observer.observe(el, { attributes: true, attributeFilter: ['class'] });
+  });
+});
+
+window.addEventListener('popstate', () => {
+  if (_aetHistDepth === 1) {
+    _aetInPopstate = true;
+    document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+    if (typeof window.closeSidebarMobile === 'function') window.closeSidebarMobile();
+    _aetInPopstate = false;
+  }
+});
+
 window.togglePwdEye = function(inputId, btn) {
   const inp = document.getElementById(inputId);
   if (!inp) return;

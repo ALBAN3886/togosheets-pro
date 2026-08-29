@@ -466,9 +466,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!_aetInPopstate) history.back(); // fermé via X/tap : on "consomme" l'entrée
     }
   });
-  document.querySelectorAll('#aetMobilePanel, .aet-modal-overlay, .modal-overlay, #pinOverlay, #successOverlay, #appSidebar, #sidebarOverlay').forEach(el => {
-    observer.observe(el, { attributes: true, attributeFilter: ['class'] });
-  });
+  // On observe TOUT le document (subtree) plutôt qu'une liste figée d'éléments,
+  // car certains panneaux (ex: #aetMobilePanel) sont créés dynamiquement en JS
+  // et n'existent pas encore dans la page au moment du chargement initial.
+  observer.observe(document.body, { attributes: true, attributeFilter: ['class'], subtree: true, childList: true });
 });
 
 window.addEventListener('popstate', () => {

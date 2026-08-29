@@ -446,8 +446,12 @@ document.addEventListener('keydown', (e) => {
 let _aetHistDepth = 0;
 let _aetInPopstate = false;
 
+// Sélecteur officiel repris de syncSubpageState() : la liste faisant autorité de
+// tous les systèmes de fenêtres/panneaux de l'app (évite d'en oublier un).
+const _AET_OVERLAY_SELECTOR = '#aetMobilePanel.open,.aet-modal-overlay.show,.modal-overlay.open,#pinOverlay.show,#successOverlay.show';
+
 function _aetAnyOverlayOpen(){
-  return !!document.querySelector('.modal-overlay.open') ||
+  return !!document.querySelector(_AET_OVERLAY_SELECTOR) ||
          !!document.getElementById('appSidebar')?.classList.contains('open');
 }
 
@@ -462,7 +466,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!_aetInPopstate) history.back(); // fermé via X/tap : on "consomme" l'entrée
     }
   });
-  document.querySelectorAll('.modal-overlay, #appSidebar, #sidebarOverlay').forEach(el => {
+  document.querySelectorAll('#aetMobilePanel, .aet-modal-overlay, .modal-overlay, #pinOverlay, #successOverlay, #appSidebar, #sidebarOverlay').forEach(el => {
     observer.observe(el, { attributes: true, attributeFilter: ['class'] });
   });
 });
@@ -470,8 +474,14 @@ document.addEventListener('DOMContentLoaded', () => {
 window.addEventListener('popstate', () => {
   if (_aetHistDepth === 1) {
     _aetInPopstate = true;
+    document.getElementById('aetMobilePanel')?.classList.remove('open');
+    document.querySelectorAll('.aet-modal-overlay.show, #pinOverlay.show, #successOverlay.show').forEach(m => {
+      m.classList.remove('show');
+      document.body.style.overflow = '';
+    });
     document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
     if (typeof window.closeSidebarMobile === 'function') window.closeSidebarMobile();
+    if (typeof window.syncSubpageState === 'function') { try { window.syncSubpageState(); } catch(e){} }
     _aetInPopstate = false;
   }
 });

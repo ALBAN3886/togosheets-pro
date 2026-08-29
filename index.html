@@ -2,11 +2,6 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8"/>
-<script>
-  window.addEventListener('error', function(e){
-    alert('DEBUG2 ERREUR JS:\n' + e.message + '\nFichier: ' + (e.filename||'?').split('/').pop() + '\nLigne: ' + e.lineno);
-  });
-</script>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
 <title>AET MonBudget — Gestion Financière Personnelle</title>
 <meta name="description" content="Application de gestion financière personnelle — Alban Eloh Technology"/>
@@ -1751,7 +1746,7 @@ const LANGS = {
     cm_credit_montant:'Montant total (FCFA) *', cm_credit_echeance:"Date d'échéance (optionnel)",
     cm_credit_status:'Statut', cm_credit_add_payment:'Ajouter un paiement (FCFA)',
     cm_credit_paid:'Payé', cm_credit_partial:'Partiel', cm_credit_late:'En retard', cm_credit_pending:'En attente',
-    cm_credit_no_client_yet:'Créez d\\'abord un client',
+    cm_credit_no_client_yet:'Créez d\'abord un client',
     cm_no_credit:'Aucun crédit', cm_no_credit_sub:'Cliquez sur "Nouveau crédit" pour commencer',
     cm_msg_credit_client_required:'Sélectionnez un client',
     cm_msg_credit_montant_required:'Indiquez un montant valide',

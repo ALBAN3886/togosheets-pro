@@ -7338,12 +7338,10 @@ window.saveProfileEdit = async () => {
     applyAvatarDisplay('userAvatarText','userAvatarImg', newProfile.displayName);
     renderProfileTab();
     closeAetModal('profileEditModal');
-    alert('✅ PROFIL ENREGISTRÉ AVEC SUCCÈS');
     showSuccess('Profil mis à jour !','Vos informations ont été enregistrées et l\'ancienne version a été archivée.');
   } catch(e) {
     console.error(e);
-    alert('ERREUR PROFIL : ' + e.code + ' — ' + e.message);
-    toast('Erreur : ' + e.message, 'error');
+    toast(friendlyErr(e), 'error');
   }
   loader(false);
 };
@@ -7378,7 +7376,7 @@ window.showProfileHistory = async () => {
     list.innerHTML = html;
   } catch(e) {
     console.error(e);
-    list.innerHTML = `<div style="color:var(--danger);padding:14px">Erreur : ${e.message}</div>`;
+    list.innerHTML = `<div style="color:var(--danger);padding:14px">${friendlyErr(e)}</div>`;
   }
 };
 
@@ -7633,7 +7631,7 @@ window.changePassword = async () => {
     document.getElementById('newPwd').value='';
     document.getElementById('newPwd2').value='';
   } catch(e) {
-    toast(t('msg_generic_error')+' '+(e.code==='auth/wrong-password'?t('sec_msg_pwd_wrong'):e.message),'error');
+    toast(e.code==='auth/wrong-password' ? t('sec_msg_pwd_wrong') : friendlyErr(e), 'error');
   }
   loader(false);
 };

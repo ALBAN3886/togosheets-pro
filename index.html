@@ -830,7 +830,7 @@ window.saveSalary = async () => {
     renderAll();
     await setDoc(doc(db,'salary_config',currentUser.uid), cfg);
     toast('✅ Salaire enregistré — Dashboard mis à jour !','success');
-  } catch(e) { toast('Erreur: '+e.message,'error'); }
+  } catch(e) { toast(friendlyErr(e),'error'); }
   loader(false);
 };
 
@@ -3444,7 +3444,7 @@ window.saveNote = async () => {
     }
     closeModal('noteModal');
     toast('Note enregistrée ✓','success');
-  } catch(e) { toast('Erreur: '+e.message,'error'); }
+  } catch(e) { toast(friendlyErr(e),'error'); }
   loader(false);
 };
 
@@ -3457,7 +3457,7 @@ window.deleteCurrentNote = async () => {
     await deleteDoc(doc(db,'notes',existing.id));
     closeModal('noteModal');
     toast('Note supprimée','info');
-  } catch(e) { toast('Erreur: '+e.message,'error'); }
+  } catch(e) { toast(friendlyErr(e),'error'); }
   loader(false);
 };
 </script>
@@ -7676,7 +7676,7 @@ async function loadSessions() {
       </div>`;
     });
     el.innerHTML = html;
-  } catch(e) { el.innerHTML = t('msg_generic_error')+' '+e.message; }
+  } catch(e) { el.innerHTML = friendlyErr(e); }
 }
 
 // ──────── PIN LOCK ────────
@@ -7916,7 +7916,7 @@ window.saveGoal = async () => {
     }
     closeAetModal('goalModal');
     showSuccess(t('goal_msg_saved_title'),t('goal_msg_saved_body'));
-  } catch(e) { toast(t('goal_msg_error')+' '+e.message,'error'); }
+  } catch(e) { toast(friendlyErr(e),'error'); }
   loader(false);
 };
 window.addToGoal = async (id) => {
@@ -7928,7 +7928,7 @@ window.addToGoal = async (id) => {
   try {
     await _upDoc(_doc(_db,'goals',id), { saved:(g.saved||0)+amt, updatedAt:_ts() });
     showSuccess(t('goal_msg_added_title'), t('goal_msg_added_body',{amt:formatMoneyXOF(amt),name:g.name}));
-  } catch(e) { toast(t('goal_msg_error')+' '+e.message,'error'); }
+  } catch(e) { toast(friendlyErr(e),'error'); }
   loader(false);
 };
 window.deleteGoal = async (id) => {
@@ -7939,7 +7939,7 @@ window.deleteGoal = async (id) => {
   try {
     await _delDoc(_doc(_db,'goals',id));
     toast(t('goal_msg_deleted'),'info');
-  } catch(e) { toast('Erreur : '+e.message,'error'); }
+  } catch(e) { toast(friendlyErr(e),'error'); }
   loader(false);
 };
 
@@ -8056,7 +8056,7 @@ window.saveTontine = async () => {
     }
     closeAetModal('tontineModal');
     showSuccess(t('tont_msg_saved_title'),t('tont_msg_saved_body'));
-  } catch(e) { alert('ERREUR TONTINE : ' + e.code + ' — ' + e.message); toast(t('goal_msg_error')+' '+e.message,'error'); }
+  } catch(e) { toast(friendlyErr(e),'error'); }
   loader(false);
 };
 window.deleteTontine = async (id) => {
@@ -8067,7 +8067,7 @@ window.deleteTontine = async (id) => {
   try {
     await _delDoc(_doc(_db,'tontines',id));
     toast(t('tont_msg_deleted'),'info');
-  } catch(e) { toast(t('goal_msg_error')+' '+e.message,'error'); }
+  } catch(e) { toast(friendlyErr(e),'error'); }
   loader(false);
 };
 
@@ -8085,7 +8085,7 @@ window.sendFeedback = async () => {
     });
     document.getElementById('feedbackTxt').value='';
     showSuccess(t('help_msg_feedback_sent_title'),t('help_msg_feedback_sent_body'));
-  } catch(e) { toast(t('msg_generic_error')+' '+e.message,'error'); }
+  } catch(e) { toast(friendlyErr(e),'error'); }
   loader(false);
 };
 window.sendFeedbackWhatsApp = () => {

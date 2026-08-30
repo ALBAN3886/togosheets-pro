@@ -1622,6 +1622,11 @@ body.dark #cpSearchBox, html[data-theme=dark] #cpSearchBox { background: #111827
   let _cpCharts = {};
 
   function cpRenderDashboard() {
+    // Ne rien faire si la section Commerce n'est pas réellement affichée à l'écran
+    // (évite tout effet de bord quand l'utilisateur navigue ailleurs dans l'app).
+    const kpiEl = document.getElementById('cpKpiDay');
+    if (!kpiEl || !kpiEl.offsetParent) return;
+
     const mvts = CP.getMvts();
     const arts = CP.getArticles();
     const today = CP.today();
@@ -1657,7 +1662,9 @@ body.dark #cpSearchBox, html[data-theme=dark] #cpSearchBox { background: #111827
 
   function cpRenderChartVentes(mvts) {
     const ctx = document.getElementById('cpChartVentes');
-    if (!ctx || typeof Chart === 'undefined') return;
+    // On ne redessine que si le canevas est réellement visible à l'écran en ce moment
+    // (sinon un observateur en arrière-plan peut déclencher ça pendant qu'on est sur un autre onglet).
+    if (!ctx || typeof Chart === 'undefined' || !ctx.offsetParent) return;
     if (_cpCharts.ventes) { try { _cpCharts.ventes.destroy(); } catch (e) { } }
 
     const labels = [];
@@ -2141,7 +2148,7 @@ body.dark #cpSearchBox, html[data-theme=dark] #cpSearchBox { background: #111827
 
   function cpRenderChartCaisse(ops) {
     const ctx = document.getElementById('cpChartCaisse');
-    if (!ctx || typeof Chart === 'undefined') return;
+    if (!ctx || typeof Chart === 'undefined' || !ctx.offsetParent) return;
     if (_cpCharts.caisse) { try { _cpCharts.caisse.destroy(); } catch (e) { } }
 
     const labels = [];

@@ -463,7 +463,9 @@ document.addEventListener('DOMContentLoaded', () => {
       history.pushState({ aetOverlay: true }, '', location.href);
     } else if (!isOpen && _aetHistDepth === 1) {
       _aetHistDepth = 0;
-      if (!_aetInPopstate) history.back(); // fermé via X/tap : on "consomme" l'entrée
+      // Pas d'appel à history.back() ici : ça perturbait la fermeture normale du menu.
+      // On laisse simplement l'entrée d'historique "orpheline" — sans effet visible,
+      // juste une pression supplémentaire sur retour sera absorbée silencieusement.
     }
   });
   // On observe TOUT le document (subtree) plutôt qu'une liste figée d'éléments,

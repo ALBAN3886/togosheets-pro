@@ -1073,7 +1073,10 @@ body.dark #cpSearchBox, html[data-theme=dark] #cpSearchBox { background: #111827
     ];
 
     newTabs.forEach(tab => {
+      // Ne pas injecter en double si un onglet avec ce data-cmtab existe déjà
+      // (peu importe qu'il ait été créé ici ou ailleurs dans la page).
       if (document.getElementById('cm-tab-' + tab.id)) return;
+      if (document.querySelector('.cm-tab[data-cmtab="' + tab.id + '"]')) return;
       const btn = document.createElement('button');
       btn.className = 'cm-tab';
       btn.id = 'cm-tab-' + tab.id;

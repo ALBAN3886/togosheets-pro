@@ -138,6 +138,24 @@ import { getMessaging, getToken, onMessage, isSupported as messagingIsSupported 
   }
 
   function addNavigationEntry(tab, label, icon, color) {
+    // "Rapports avancés" rejoint le tiroir "Analyse" (avec Plan de Gestion + Historique)
+    // au lieu de la liste plate "Modules avancés".
+    if (tab === 'rapports') {
+      const analyseDrawer = document.getElementById('sbAnalyseDrawer');
+      if (analyseDrawer && !document.getElementById('sb-' + tab)) {
+        appendHTML(analyseDrawer, `<div class="sidebar-link" id="sb-${tab}" onclick="mainMenuSwitch('${tab}','${label}','${icon}')" style="--sb-ic:${color}"><i class="fas ${icon}"></i><span>${label}</span></div>`);
+      }
+      const drawer2 = document.getElementById('bnavDrawer')?.querySelector('.bnav-drawer-grid');
+      const menu2   = document.getElementById('mm-commerce')?.parentElement;
+      if (drawer2 && !document.getElementById('bnd-' + tab)) {
+        appendHTML(drawer2, `<div class="bnav-drawer-item" id="bnd-${tab}" onclick="switchTab('${tab}');closeBnavDrawer()"><i class="fas ${icon}"></i>${label}</div>`, 'afterbegin');
+      }
+      if (menu2 && !document.getElementById('mm-' + tab)) {
+        appendHTML(menu2, `<div class="main-menu-item" id="mm-${tab}" onclick="mainMenuSwitch('${tab}','${label}','${icon}')"><i class="fas ${icon}"></i><span>${label}</span></div>`);
+      }
+      return;
+    }
+
     let sidebarTarget = document.getElementById('aetx-sb-section');
     if (!sidebarTarget) {
       const sbScroll = document.getElementById('sb-profil')?.closest('.sb-scroll');

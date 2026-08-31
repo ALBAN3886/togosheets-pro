@@ -12313,8 +12313,10 @@ window.CM_DEBUG = CM;
     document.getElementById('sidebarOverlay')?.classList.toggle('open');
   };
   window.closeSidebarMobile = function(){
+    alert('DEBUG4: closeSidebarMobile() appelée !');
     document.getElementById('appSidebar')?.classList.remove('open');
     document.getElementById('sidebarOverlay')?.classList.remove('open');
+    alert('DEBUG4: classe open retirée. Sidebar a maintenant: ' + document.getElementById('appSidebar')?.className);
   };
 
   // On enrobe les fonctions de navigation existantes (peu importe l'ordre des

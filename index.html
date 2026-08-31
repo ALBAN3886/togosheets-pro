@@ -481,6 +481,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('click', (e) => {
     const link = e.target.closest('.sidebar-link');
     if (!link) return;
+    if (link.id === 'sb-analyse-toggle') return; // ouvre/ferme le tiroir, ne doit pas fermer tout le menu
     setTimeout(() => {
       document.getElementById('appSidebar')?.classList.remove('open');
       document.getElementById('sidebarOverlay')?.classList.remove('open');
@@ -502,6 +503,16 @@ window.addEventListener('popstate', () => {
     _aetInPopstate = false;
   }
 });
+
+// ──────── Tiroir dépliable "Analyse" dans le menu latéral ────────
+window.toggleSbAnalyse = function(){
+  const drawer = document.getElementById('sbAnalyseDrawer');
+  const chevron = document.getElementById('sbAnalyseChevron');
+  if (!drawer) return;
+  const isOpen = drawer.style.display !== 'none';
+  drawer.style.display = isOpen ? 'none' : 'block';
+  if (chevron) chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+};
 
 window.togglePwdEye = function(inputId, btn) {
   const inp = document.getElementById(inputId);
@@ -4378,12 +4389,22 @@ select.form-input option{background:var(--bg2)}
       <div class="sidebar-link" id="sb-tontines" onclick="bnavSwitchExt('tontines')" style="--sb-ic:#8b5cf6">
         <i class="fas fa-people-group"></i><span data-i18n="nav_tontines">Tontines</span>
       </div>
-      <div class="sidebar-link" id="sb-plangestion" onclick="switchTab('plangestion')" style="--sb-ic:#8b5cf6">
-        <i class="fas fa-map-signs"></i><span data-i18n="nav_plangestion">Plan de Gestion</span>
+
+      <!-- ═══ Tiroir dépliable : Analyse (regroupe Plan de Gestion, Historique, Rapports avancés) ═══ -->
+      <div class="sidebar-link" id="sb-analyse-toggle" onclick="toggleSbAnalyse()" style="--sb-ic:#8b5cf6">
+        <i class="fas fa-chart-line"></i><span>Analyse</span>
+        <i class="fas fa-chevron-down" id="sbAnalyseChevron" style="margin-left:auto;font-size:11px;transition:transform .2s"></i>
       </div>
-      <div class="sidebar-link" id="sb-historique" onclick="switchTab('historique')" style="--sb-ic:var(--muted)">
-        <i class="fas fa-clock-rotate-left"></i><span data-i18n="nav_historique">Historique</span>
+      <div id="sbAnalyseDrawer" style="display:none;padding-left:14px;border-left:2px solid var(--border);margin:2px 0 4px 20px">
+        <div class="sidebar-link" id="sb-plangestion" onclick="switchTab('plangestion')" style="--sb-ic:#8b5cf6">
+          <i class="fas fa-map-signs"></i><span data-i18n="nav_plangestion">Plan de Gestion</span>
+        </div>
+        <div class="sidebar-link" id="sb-historique" onclick="switchTab('historique')" style="--sb-ic:var(--muted)">
+          <i class="fas fa-clock-rotate-left"></i><span data-i18n="nav_historique">Historique</span>
+        </div>
+        <!-- "Rapports avancés" (sb-rapports) est ajouté ici dynamiquement par aet-enhancements.js -->
       </div>
+
       <div class="sidebar-link" id="sb-notes" onclick="switchTab('notes')" style="--sb-ic:#06b6d4">
         <i class="fas fa-calendar-pen"></i><span data-i18n="nav_notes">Notes</span>
       </div>

@@ -101,24 +101,12 @@ import { getMessaging, getToken, onMessage, isSupported as messagingIsSupported 
   }
 
   function injectBaseUI() {
-    if (document.getElementById('aetx-smart-dashboard')) return;
+    if (window._aetBaseUIInjected) return;
+    window._aetBaseUIInjected = true;
 
-    const resume = document.getElementById('dp-resume');
-    if (resume) {
-      appendHTML(resume, `
-        <section class="aetx-section" id="aetx-smart-dashboard">
-          <div class="aetx-section-title">
-            <div>
-              <div class="aetx-kicker">Intelligence financière</div>
-              <h3>Tableau de bord avancé</h3>
-            </div>
-            <span class="aetx-chip"><i class="fas fa-wand-magic-sparkles"></i> Prévisions & alertes</span>
-          </div>
-          <div id="aetx-dashboard-content"></div>
-        </section>
-      `, 'afterbegin');
-    }
-
+    // Section "Tableau de bord avancé" désactivée : jugée redondante avec le reste
+    // du dashboard (Résumé hebdomadaire, Objectifs d'épargne déjà affichés ailleurs).
+    // Le reste de cette fonction (menus, paramètres...) continue normalement ci-dessous.
     addNavigationEntry('dettes', 'Dettes & créances', 'fa-hand-holding-dollar', '#f59e0b');
     addNavigationEntry('factures', 'Factures récurrentes', 'fa-bolt', '#06b6d4');
     addNavigationEntry('rapports', 'Rapports avancés', 'fa-file-invoice', '#7c3aed');

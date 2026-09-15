@@ -2292,25 +2292,48 @@ onAuthStateChanged(auth, async user => {
     return;
   }
 
-  // Charger rôle/permissions
+  // Charger rôle/permissions.
+  // ⚠️ Il n'existe aujourd'hui aucun système d'employés alimenté (rien n'écrit
+  // dans tenants/{id}/roleBindings) : tant que ce n'est pas construit, le SEUL
+  // accès légitime et vérifiable est celui du propriétaire de la boutique
+  // (auth.uid === tenantId). On ne fait plus confiance par défaut à un
+  // paramètre d'URL ?tenant=... venant d'un inconnu.
   const tid = tenantId || user.uid;
+  let roleDoc = null;
   try {
-    const roleDoc = await getDoc(doc(db,'tenants',tid,'roleBindings',user.uid));
-    if (roleDoc.exists()) {
-      const rb = roleDoc.data();
-      state.context = {
-        tenantId: tid, authUser: user,
-        role: rb.role || 'employee',
-        storeIds: rb.storeIds || [],
-        employeeId: rb.employeeId || user.uid,
-        can: () => true,
-      };
-    } else {
-      state.context = { tenantId: tid, authUser: user, role: 'employee', storeIds: [], employeeId: user.uid, can: () => true };
-    }
-  } catch(e) {
-    state.context = { tenantId: tid, authUser: user, role: 'employee', storeIds: [], employeeId: user.uid, can: () => true };
+    roleDoc = await getDoc(doc(db,'tenants',tid,'roleBindings',user.uid));
+  } catch(e) { /* pas de roleBindings déployé pour l'instant : normal */ }
+
+  const isOwner = user.uid === tid;
+  const rb = (roleDoc && roleDoc.exists()) ? roleDoc.data() : null;
+
+  if (!isOwner && !rb) {
+    // Ni propriétaire, ni entrée de rôle vérifiable côté serveur : accès refusé.
+    currentPage = 'login';
+    document.getElementById('app').innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;text-align:center;font-family:inherit">
+        <div>
+          <h2 style="margin-bottom:8px">⛔ Accès refusé</h2>
+          <p style="color:#64748b;max-width:340px">
+            Ce compte n'est pas reconnu comme propriétaire ou employé de cette boutique.
+            Demande au propriétaire de t'inviter, ou connecte-toi avec le bon compte.
+          </p>
+        </div>
+      </div>`;
+    return;
   }
+
+  const role = isOwner ? 'owner' : (rb.role || 'employee');
+  state.context = {
+    tenantId: tid, authUser: user,
+    role,
+    storeIds: rb ? (rb.storeIds || []) : [],
+    employeeId: rb ? (rb.employeeId || user.uid) : user.uid,
+    // Rôle réel désormais utilisé : le propriétaire peut tout faire,
+    // un employé/manager est limité par ce que rb.role autorise plus haut
+    // dans le code (à étoffer si des actions plus fines doivent être bloquées).
+    can: () => isOwner || role === 'manager' || role === 'employee',
+  };
 
   await loadData();
   renderShell();

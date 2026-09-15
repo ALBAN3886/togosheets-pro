@@ -1,0 +1,126 @@
+rules_version = '2';
+
+// ═══════════════════════════════════════════════════════════════
+// Règles Firestore — schéma RÉEL utilisé par index.html (MonBudget),
+// public.html (Marketplace), boutique.html et employe.html (Commerce).
+//
+// ⚠️ Ceci remplace les règles par défaut de la console Firebase.
+// Le fichier historique commerce-lot5/firebase/firestore.rules protège
+// un schéma "tenants/{id}/..." qui n'est utilisé par AUCUNE page active :
+// ne pas le déployer tel quel, il laisserait tout le reste sans protection.
+//
+// ⚠️ IMPORTANT sur employe.html : le système d'employés (tenants/{id}/
+// roleBindings) n'est PAS alimenté aujourd'hui — personne n'y écrit.
+// tenantId vient d'un simple paramètre d'URL (?tenant=...), donc on ne
+// peut pas encore distinguer un vrai employé d'un inconnu qui devine
+// l'UID du propriétaire. En attendant une vraie gestion d'employés,
+// ces règles limitent l'accès à commerce_data au PROPRIÉTAIRE
+// uniquement (auth.uid == tenantId). Voir la note en bas de fichier
+// pour activer un accès employé réel plus tard.
+// ═══════════════════════════════════════════════════════════════
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() { return request.auth != null; }
+    function isSelf(uid)  { return isSignedIn() && request.auth.uid == uid; }
+
+    function myUserDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && (myUserDoc().isAdmin == true || myUserDoc().role == 'admin');
+    }
+
+    // ── users/{uid} : profil, statut premium, flag isAdmin ──
+    match /users/{uid} {
+      allow read:   if isSelf(uid) || isAdmin();
+      // Un utilisateur ne peut jamais s'auto-attribuer isAdmin ou le statut premium :
+      // ces champs ne doivent être modifiés que par une Cloud Function (App Check / admin SDK).
+      allow create: if isSelf(uid)
+                    && request.resource.data.isAdmin != true
+                    && (!('isPremium' in request.resource.data) || request.resource.data.isPremium == false);
+      allow update: if isSelf(uid)
+                    && request.resource.data.isAdmin == resource.data.isAdmin
+                    && request.resource.data.get('isPremium', false) == resource.data.get('isPremium', false)
+                    || isAdmin();
+      allow delete: if isSelf(uid) || isAdmin();
+    }
+
+    // ── Finances personnelles (MonBudget) : un doc par opération, champ userId ──
+    match /transactions/{id} {
+      allow read, list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /budgets/{id} {
+      allow read, list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /notes/{id} {
+      allow read, list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    match /sessions/{id} {
+      // Journal de connexion : un utilisateur crée sa propre ligne, seul l'admin peut tout lister.
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read:   if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list:   if isAdmin();
+      allow update, delete: if isAdmin();
+    }
+
+    match /salary_config/{uid} {
+      allow read, write: if isSelf(uid) || isAdmin();
+    }
+
+    match /premiumRequests/{id} {
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read:   if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list, update, delete: if isAdmin();
+    }
+
+    // ── Chat support/vendeur ──
+    match /chats_flat/{id} {
+      allow read, write: if isSignedIn()
+        && (request.auth.uid in resource.data.get('participants', [])
+            || request.auth.uid == resource.data.get('userId', null)
+            || isAdmin());
+      allow create: if isSignedIn();
+    }
+
+    // ── Commerce : un gros document par boutique, clé = uid du propriétaire ──
+    match /commerce_data/{tenantId} {
+      allow read, write: if isSelf(tenantId) || isAdmin();
+      // Pour activer un vrai accès employé plus tard, remplacer la ligne
+      // ci-dessus par quelque chose comme :
+      //   allow read, write: if isSelf(tenantId) || isAdmin()
+      //     || (isSignedIn() && request.auth.uid in resource.data.get('employeeUids', []));
+      // à condition d'ajouter réellement un champ employeeUids géré par le propriétaire.
+    }
+
+    // ── Vitrine publique de chaque boutique (lecture publique, écriture propriétaire) ──
+    match /public_shops/{tenantId} {
+      allow read: if true;
+      allow write: if isSelf(tenantId) || isAdmin();
+    }
+
+    // ── Commandes marketplace : créées par n'importe quel acheteur, lues par le vendeur/l'admin ──
+    match /public_orders/{orderId} {
+      allow create: if request.resource.data.keys().hasAll(['tenantId'])
+                    && request.resource.data.tenantId is string;
+      allow read:   if isSignedIn()
+                    && (resource.data.tenantId == request.auth.uid
+                        || resource.data.get('buyerId', null) == request.auth.uid
+                        || isAdmin());
+      allow list:   if isAdmin();
+      allow update, delete: if isSignedIn() && resource.data.tenantId == request.auth.uid || isAdmin();
+    }
+  }
+}

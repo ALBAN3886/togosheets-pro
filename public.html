@@ -773,14 +773,14 @@ body{
           metadata: { test: true }
         }, {
           onReadyForServerApproval: function(paymentId) {
-            fetch("/.netlify/functions/approve", {
+            fetch("https://us-central1-gestion-salaire-9d3e9.cloudfunctions.net/approve", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ paymentId: paymentId })
             });
           },
           onReadyForServerCompletion: function(paymentId, txid) {
-            fetch("/.netlify/functions/complete", {
+            fetch("https://us-central1-gestion-salaire-9d3e9.cloudfunctions.net/complete", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ paymentId: paymentId, txid: txid })

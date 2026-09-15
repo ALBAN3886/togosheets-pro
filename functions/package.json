@@ -1,0 +1,11 @@
+{
+  "name": "aet-functions",
+  "description": "Cloud Functions Firebase pour togosheets-pro (remplace les fonctions Netlify)",
+  "engines": { "node": "20" },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-functions": "^5.0.0",
+    "firebase-admin": "^12.0.0"
+  },
+  "private": true
+}

@@ -9977,7 +9977,7 @@ async function cmSaveRemote(){
       const publicArticles = CM.articles.map(a => ({
         id: a.id ?? null, shopId: a.shopId ?? null, name: a.name ?? null, cat: a.cat ?? null,
         prixV: a.prixV ?? null, stock: a.stock ?? null, unit: a.unit ?? null, note: a.note ?? null,
-        photo: a.photo ?? null, code: a.code ?? null, createdAt: a.createdAt ?? null
+        imageUrl: a.imageUrl ?? null, code: a.code ?? null, createdAt: a.createdAt ?? null
         // prixA (prix d'achat / marge) volontairement exclu
       }));
       await fs.setDoc(fs.doc(db,'public_shops',uid), {
@@ -11512,8 +11512,6 @@ window.cmScanForQuickSale = function(){
 window._cmArtPhotoUrls = [];
 
 window.cmHandlePhotoUpload = async function(input){
-  // ⚠️ Remplace cette clé par une clé ImgBB toute neuve (api.imgbb.com) — l'ancienne
-  // (155b88b18a51f6b368d0630a988d3f9b) a été compromise et ne doit plus jamais être utilisée.
   const IMGBB_KEY = 'faff0d271a3f6d05e3c27ad2de0c74e1';
   const files = Array.from(input.files).slice(0, 8 - window._cmArtPhotoUrls.length);
   if(!files.length) return;

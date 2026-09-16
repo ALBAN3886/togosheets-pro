@@ -9034,20 +9034,7 @@ if ('serviceWorker' in navigator) {
         <textarea id="cmArtSpecs" class="cm-modal-input" rows="3" placeholder="Ex:&#10;• Matière : Coton 100%&#10;• Poids : 500g&#10;• Dimensions : 30×20×10 cm&#10;• Garantie : 1 an"></textarea>
 
         <label class="cm-modal-label">Photos de l'article (jusqu'à 8 photos)</label>
-        <!-- Upload direct Firebase Storage -->
-        <!-- Onglets source photo -->
-        <div style="display:flex;gap:8px;margin-bottom:10px">
-          <button type="button" id="cmPhotoTabGallery" onclick="cmSwitchPhotoTab('gallery')"
-            style="flex:1;padding:8px;border-radius:10px;border:1.5px solid var(--primary);background:var(--primary);color:#fff;font-size:12px;font-weight:700;cursor:pointer">
-            <i class="fas fa-image" style="margin-right:4px"></i>Galerie
-          </button>
-          <button type="button" id="cmPhotoTabUrl" onclick="cmSwitchPhotoTab('url')"
-            style="flex:1;padding:8px;border-radius:10px;border:1.5px solid var(--border);background:var(--card);color:var(--muted);font-size:12px;font-weight:700;cursor:pointer">
-            <i class="fab fa-github" style="margin-right:4px"></i>URL GitHub
-          </button>
-        </div>
-
-        <!-- Panel Galerie (upload imgbb) -->
+        <!-- Upload direct depuis la galerie du téléphone (ou appareil photo) -->
         <div id="cmPhotoTabGalleryPanel">
           <div id="cmArtPhotoUploadBox" style="border:2px dashed var(--border);border-radius:14px;padding:16px;text-align:center;cursor:pointer;transition:border-color .2s;background:var(--bg)" onclick="document.getElementById('cmArtPhotoInput').click()">
             <i class="fas fa-cloud-upload-alt" style="font-size:28px;color:var(--primary);margin-bottom:6px;display:block"></i>
@@ -9067,31 +9054,7 @@ if ('serviceWorker' in navigator) {
           </div>
         </div>
 
-        <!-- Panel URL GitHub -->
-        <div id="cmPhotoTabUrlPanel" style="display:none">
-          <div style="background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:12px">
-            <div style="font-size:12px;color:var(--muted);margin-bottom:8px">
-              <i class="fab fa-github" style="margin-right:4px"></i>
-              Colle l'URL raw GitHub de ta photo :
-            </div>
-            <div style="background:#0d1117;border-radius:8px;padding:8px 10px;font-size:11px;color:#58a6ff;margin-bottom:10px;word-break:break-all">
-              https://raw.githubusercontent.com/ALBAN3886/togosheets-pro/main/photo.jpg
-            </div>
-            <div style="display:flex;gap:8px">
-              <input type="url" id="cmArtGithubUrl" class="cm-modal-input" style="flex:1;margin:0"
-                placeholder="https://raw.githubusercontent.com/…">
-              <button type="button" onclick="cmAddGithubUrl()"
-                style="padding:8px 14px;background:var(--primary);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">
-                <i class="fas fa-plus"></i> Ajouter
-              </button>
-            </div>
-            <div style="font-size:11px;color:var(--muted);margin-top:8px">
-              💡 Dans GitHub → clique sur la photo → clique <strong>Raw</strong> → copie l'URL
-            </div>
-          </div>
-        </div>
-
-        <!-- Prévisualisation photos (galerie + github mélangées) -->
+        <!-- Prévisualisation photos -->
         <div id="cmArtPhotosPreview" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px"></div>
         <!-- Compteur -->
         <div id="cmArtPhotoCount" style="font-size:11px;color:var(--muted);margin-top:4px;text-align:right"></div>
@@ -11548,30 +11511,10 @@ window.cmScanForQuickSale = function(){
 /* ── Upload photos vers Firebase Storage ── */
 window._cmArtPhotoUrls = [];
 
-/* ── Onglets source photo ── */
-window.cmSwitchPhotoTab = function(tab){
-  const isGallery = tab === 'gallery';
-  document.getElementById('cmPhotoTabGalleryPanel').style.display = isGallery ? '' : 'none';
-  document.getElementById('cmPhotoTabUrlPanel').style.display     = isGallery ? 'none' : '';
-  const btnG = document.getElementById('cmPhotoTabGallery');
-  const btnU = document.getElementById('cmPhotoTabUrl');
-  if(btnG){ btnG.style.background = isGallery ? 'var(--primary)' : 'var(--card)'; btnG.style.color = isGallery ? '#fff' : 'var(--muted)'; btnG.style.borderColor = isGallery ? 'var(--primary)' : 'var(--border)'; }
-  if(btnU){ btnU.style.background = isGallery ? 'var(--card)' : 'var(--primary)'; btnU.style.color = isGallery ? 'var(--muted)' : '#fff'; btnU.style.borderColor = isGallery ? 'var(--border)' : 'var(--primary)'; }
-};
-
-window.cmAddGithubUrl = function(){
-  const input = document.getElementById('cmArtGithubUrl');
-  const url = (input.value||'').trim();
-  if(!url){ alert('Colle une URL valide'); return; }
-  if(!url.startsWith('http')){ alert('URL invalide — doit commencer par https://'); return; }
-  if(window._cmArtPhotoUrls.length >= 8){ alert('Maximum 8 photos atteint'); return; }
-  window._cmArtPhotoUrls.push(url);
-  cmRenderUploadedPhotos();
-  document.getElementById('cmArtPhotos').value = window._cmArtPhotoUrls.join('\n');
-  input.value = '';
-};
-
 window.cmHandlePhotoUpload = async function(input){
+  // ⚠️ Remplace cette clé par une clé ImgBB toute neuve (api.imgbb.com) — l'ancienne
+  // (155b88b18a51f6b368d0630a988d3f9b) a été compromise et ne doit plus jamais être utilisée.
+  const IMGBB_KEY = 'COLLE_TA_NOUVELLE_CLE_IMGBB_ICI';
   const files = Array.from(input.files).slice(0, 8 - window._cmArtPhotoUrls.length);
   if(!files.length) return;
 
@@ -11600,20 +11543,24 @@ window.cmHandlePhotoUpload = async function(input){
 
       bar.style.width = '40%';
 
-      // Envoyer via la Cloud Function (la clé ImgBB reste côté serveur, jamais dans le navigateur)
-      const resp = await fetch('https://us-central1-gestion-salaire-9d3e9.cloudfunctions.net/uploadImage', {
+      // Envoyer à imgbb
+      const form = new FormData();
+      form.append('key', IMGBB_KEY);
+      form.append('image', base64);
+      form.append('name', `art_${Date.now()}`);
+
+      const resp = await fetch('https://api.imgbb.com/1/upload', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ base64, name: `art_${Date.now()}` })
+        body: form
       });
 
       bar.style.width = '90%';
 
       if(!resp.ok) throw new Error('Erreur réseau ' + resp.status);
       const json = await resp.json();
-      if(!json.url) throw new Error(json.error || 'Échec upload');
+      if(!json.success) throw new Error(json.error?.message || 'Échec upload');
 
-      const url = json.url;
+      const url = json.data.display_url;
       window._cmArtPhotoUrls.push(url);
       cmRenderUploadedPhotos();
 

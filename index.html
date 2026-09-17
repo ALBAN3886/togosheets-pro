@@ -13292,6 +13292,8 @@ window.cmShowGenLinkQR = function() {
 .official-open-feature strong{display:block;font-size:13px;color:#0f172a}
 .official-open-feature span{display:block;font-size:11px;color:#64748b;line-height:1.55;margin-top:4px}
 .official-auth-tabs{max-width:1040px;margin:14px auto 0;padding:0 18px;display:flex;gap:10px;flex-wrap:wrap;box-sizing:border-box}
+.official-premium-note{max-width:1040px;margin:12px auto 0;padding:12px 18px;display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:14px;box-sizing:border-box}
+.official-premium-note i{color:#d97706}
 .official-auth-tab{border:none;background:#e2e8f0;color:#334155;padding:12px 16px;border-radius:14px;font-weight:800;font-size:13px;font-family:Poppins,sans-serif;display:inline-flex;align-items:center;gap:8px;cursor:pointer;transition:all .2s ease;box-shadow:0 8px 20px rgba(15,23,42,.05)}
 .official-auth-tab.active{background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;box-shadow:0 14px 28px rgba(37,99,235,.22)}
 .official-auth-tab.ghost{background:#fff;border:1px solid #dbeafe;color:#2563eb}
@@ -13327,30 +13329,6 @@ window.cmShowGenLinkQR = function() {
     authScreen.classList.add('official-v51');
 
     const header = authScreen.querySelector('.auth-header');
-    if(header && !document.getElementById('officialOpenHero')){
-      header.insertAdjacentHTML('afterend',
-        '<div class="official-open-shell" id="officialOpenHero">'
-        + '<div class="official-open-cover">'
-        + '<div class="official-open-chip"><i class="fas fa-shield-halved"></i><span>Ouverture officielle</span></div>'
-        + '<div class="official-open-head">'
-        + '<div class="official-open-logo"><i class="fas fa-chart-pie"></i></div>'
-        + '<div><div class="official-open-title">AET MonBudget — Portail officiel</div><div class="official-open-sub" id="officialOpenSub">Retrouvez le même affichage premium et moderne que dans l’espace employé, avec une entrée plus propre pour la connexion et l’inscription.</div></div>'
-        + '</div>'
-        + '<div class="official-open-stats">'
-        + '<div class="official-open-stat"><div class="n">Budget</div><div class="l">Suivi financier</div></div>'
-        + '<div class="official-open-stat"><div class="n">Commerce</div><div class="l">Gestion boutique</div></div>'
-        + '<div class="official-open-stat"><div class="n">Salaire</div><div class="l">Espace pro</div></div>'
-        + '</div>'
-        + '</div>'
-        + '<div class="official-open-features">'
-        + '<div class="official-open-feature"><i class="fas fa-mobile-screen-button"></i><strong>Affichage mobile premium</strong><span>Une ouverture visuelle plus moderne, proche de l’expérience employé.</span></div>'
-        + '<div class="official-open-feature"><i class="fas fa-lock"></i><strong>Accès sécurisé</strong><span>Connexion rapide avec les champs essentiels et mot de passe protégé.</span></div>'
-        + '<div class="official-open-feature"><i class="fas fa-layer-group"></i><strong>Modules centralisés</strong><span>Budget, commerce, salaire et outils de gestion depuis le portail principal.</span></div>'
-        + '<div class="official-open-feature"><i class="fas fa-sparkles"></i><strong>Design harmonisé</strong><span>Couleurs, cartes et navigation alignées avec l’espace employé version 5.</span></div>'
-        + '</div>'
-        + '</div>'
-      );
-    }
 
     if(!document.getElementById('officialAuthTabs')){
       const shell = document.createElement('div');
@@ -13359,35 +13337,16 @@ window.cmShowGenLinkQR = function() {
       shell.innerHTML = ''
         + '<button type="button" class="official-auth-tab" data-auth-v51="login" onclick="switchAuthTab(\'login\')"><i class="fas fa-right-to-bracket"></i>Connexion</button>'
         + '<button type="button" class="official-auth-tab ghost" data-auth-v51="signup" onclick="switchAuthTab(\'signup\')"><i class="fas fa-user-plus"></i>Créer un compte</button>';
-      const hero = document.getElementById('officialOpenHero');
-      if(hero) hero.insertAdjacentElement('afterend', shell);
+      if(header) header.insertAdjacentElement('afterend', shell);
     }
 
-    const login = document.getElementById('authBody-login');
-    const signup = document.getElementById('authBody-signup');
-    if(login && signup && !document.getElementById('officialAuthAside')){
-      const grid = document.createElement('div');
-      grid.className = 'official-auth-grid';
-      const formHost = document.createElement('div');
-      formHost.id = 'officialAuthFormHost';
-      const aside = document.createElement('div');
-      aside.className = 'official-auth-panel';
-      aside.id = 'officialAuthAside';
-      aside.innerHTML = ''
-        + '<h3>Pourquoi cette version 5.1</h3>'
-        + '<div class="official-auth-list">'
-        + '<div class="official-auth-item"><i class="fas fa-eye"></i><div><strong>Ouverture identique à l’espace employé</strong><span>Le portail officiel adopte le même niveau de présentation premium dès l’écran d’entrée.</span></div></div>'
-        + '<div class="official-auth-item"><i class="fas fa-bolt"></i><div><strong>Lecture plus rapide</strong><span>Les zones de connexion et d’inscription sont visuellement mieux séparées pour éviter toute confusion.</span></div></div>'
-        + '<div class="official-auth-item"><i class="fas fa-receipt"></i><div><strong>Continuité visuelle</strong><span>Les reçus vendeurs, les profils employés et le site officiel gardent maintenant la même logique graphique.</span></div></div>'
-        + '<div class="official-auth-item"><i class="fas fa-wand-magic-sparkles"></i><div><strong>Base prête pour 5.1+</strong><span>Cette ouverture peut accueillir ensuite un logo boutique, une animation ou des statistiques dynamiques.</span></div></div>'
-        + '</div>';
-
-      const authParent = login.parentNode;
-      authParent.insertBefore(grid, login);
-      grid.appendChild(formHost);
-      formHost.appendChild(login);
-      formHost.appendChild(signup);
-      grid.appendChild(aside);
+    if(!document.getElementById('officialPremiumNote')){
+      const tabs = document.getElementById('officialAuthTabs');
+      const note = document.createElement('div');
+      note.id = 'officialPremiumNote';
+      note.className = 'official-premium-note';
+      note.innerHTML = '<i class="fas fa-crown"></i> Passez Premium pour débloquer l’identité visuelle personnalisée et les fonctionnalités avancées.';
+      if(tabs) tabs.insertAdjacentElement('afterend', note);
     }
   }
 

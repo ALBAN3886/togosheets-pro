@@ -9796,6 +9796,10 @@ let CM = {
   activeEmployee: null,
   editingEmployeeId: null,
 };
+// Exposé pour que d'autres scripts du fichier (ex: le bloc "Liens Commerce Pro" séparé
+// plus bas) puissent lire l'état courant (boutique active, slug…) sans dupliquer l'état.
+// C'est une référence à l'objet (pas une copie) : elle reste à jour automatiquement.
+window.CM = CM;
 
 /* ── Rôles & permissions ──
    Trois rôles : patron (tout), manager (sa boutique, sans suppression ni
@@ -12596,7 +12600,8 @@ window.CM_DEBUG = CM;
     try { return document.getElementById('cmShopSelect')?.value || ''; } catch(e){ return ''; }
   }
   window.cmOpenBoutique = function() {
-    const shop = CM.shops.find(x=>x.id===CM.currentShopId);
+    const shops = (window.CM && window.CM.shops) || [];
+    const shop = shops.find(x=>x.id===window.CM.currentShopId);
     const url = (shop && shop.slug)
       ? 'https://alban3886.github.io/togosheets-marketplace/' + shop.slug
       : 'https://alban3886.github.io/togosheets-marketplace/';
@@ -12609,7 +12614,8 @@ window.CM_DEBUG = CM;
     window.open(url, '_blank');
   };
   window.cmCopyBoutiqueLink = function() {
-    const shop = CM.shops.find(x=>x.id===CM.currentShopId);
+    const shops = (window.CM && window.CM.shops) || [];
+    const shop = shops.find(x=>x.id===window.CM.currentShopId);
     const url = (shop && shop.slug)
       ? 'https://alban3886.github.io/togosheets-marketplace/' + shop.slug
       : 'https://alban3886.github.io/togosheets-marketplace/';

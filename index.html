@@ -31,7 +31,7 @@ import { getAuth, onAuthStateChanged, signInWithEmailAndPassword,
          createUserWithEmailAndPassword, signOut, updateProfile,
          sendPasswordResetEmail, sendEmailVerification, EmailAuthProvider,
          reauthenticateWithCredential, updatePassword,
-         GoogleAuthProvider, FacebookAuthProvider, signInWithPopup,
+         GoogleAuthProvider, FacebookAuthProvider, signInWithPopup, signInWithCredential,
          linkWithPopup, linkWithCredential, fetchSignInMethodsForEmail } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { initializeFirestore, getFirestore, persistentLocalCache, persistentMultipleTabManager, collection, addDoc, doc, deleteDoc,
          updateDoc, query, where, orderBy, onSnapshot, getDocs,
@@ -788,10 +788,20 @@ facebookProvider.setCustomParameters({ display: 'popup' });
  * automatiquement au compte existant après authentification par mot de passe.
  */
 window.doSocialLogin = async (providerName) => {
-  const provider = providerName === 'google' ? googleProvider : facebookProvider;
   const label    = providerName === 'google' ? 'Google' : 'Facebook';
   const errEl    = $('#loginErr');
   if (errEl) errEl.textContent = '';
+
+  // ── Connexion Google dans l'app Android : Google bloque volontairement la connexion
+  // OAuth depuis une WebView (message "This browser or app may not be secure"), donc
+  // on passe par le SDK Google natif d'Android au lieu de signInWithPopup.
+  if (providerName === 'google' && window.AndroidAuth && typeof window.AndroidAuth.googleSignIn === 'function') {
+    loader(true);
+    window.AndroidAuth.googleSignIn();
+    return; // la suite se passe dans window.onGoogleSignInResult ci-dessous
+  }
+
+  const provider = providerName === 'google' ? googleProvider : facebookProvider;
   loader(true);
   try {
     await signInWithPopup(auth, provider);
@@ -811,6 +821,29 @@ window.doSocialLogin = async (providerName) => {
       if (errEl) errEl.textContent = label + ' n\'est pas encore activé dans la console Firebase.';
     } else {
       if (errEl) errEl.textContent = fbErr(e);
+    }
+  }
+  loader(false);
+};
+
+// Rappelé depuis MainActivity.java (Android) après la connexion Google native.
+// idTokenOrMessage contient soit l'idToken Google (succès), soit un message d'erreur.
+window.onGoogleSignInResult = async (success, idTokenOrMessage) => {
+  const errEl = $('#loginErr');
+  if (!success) {
+    loader(false);
+    if (errEl) errEl.textContent = idTokenOrMessage || 'Connexion Google annulée';
+    return;
+  }
+  try {
+    const credential = GoogleAuthProvider.credential(idTokenOrMessage);
+    await signInWithCredential(auth, credential);
+    // onAuthStateChanged prend le relais (bienvenue, chargement données, etc.)
+  } catch (e) {
+    if (e.code === 'auth/account-exists-with-different-credential') {
+      await handleAccountLinking(e, googleProvider, 'Google');
+    } else if (errEl) {
+      errEl.textContent = fbErr(e);
     }
   }
   loader(false);

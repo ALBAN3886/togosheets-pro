@@ -924,16 +924,28 @@ window.unlinkSocialAccount = async (providerId) => {
   } catch (e) { toast(fbErr(e), 'error'); }
 };
 
+window.openForgotPwdModal = () => {
+  const prefill = $('#loginEmail') ? $('#loginEmail').value.trim() : '';
+  $('#forgotPwdEmail').value = prefill;
+  $('#forgotPwdErr').textContent = '';
+  openModal('forgotPwdModal');
+};
+
 window.doForgotPwd = async () => {
-  const email = $('#loginEmail').value.trim();
-  if (!email) { $('#loginErr').textContent = 'Saisissez votre email d\'abord'; return; }
+  const email = $('#forgotPwdEmail').value.trim();
+  const err   = $('#forgotPwdErr');
+  err.textContent = '';
+  if (!email) { err.textContent = 'Saisissez votre email'; return; }
+  loader(true);
   try {
     await sendPasswordResetEmail(auth, email, {
       url: 'https://alban3886.github.io/togosheets-pro/reset-password.html',
       handleCodeInApp: true,
     });
+    closeModal('forgotPwdModal');
     toast('Email de réinitialisation envoyé ✓','success');
-  } catch(e) { toast(fbErr(e),'error'); }
+  } catch(e) { err.textContent = fbErr(e); }
+  loader(false);
 };
 
 window.doChangePwd = async () => {
@@ -4481,7 +4493,7 @@ select.form-input option{background:var(--bg2)}
           <button class="form-input-eye" onclick="togglePwdEye('loginPwd',this)" type="button"><i class="fas fa-eye"></i></button>
         </div>
       </div>
-      <div class="auth-forgot"><a onclick="doForgotPwd()">Mot de passe oublié ?</a></div>
+      <div class="auth-forgot"><a onclick="openForgotPwdModal()">Mot de passe oublié ?</a></div>
       <div class="form-err" id="loginErr"></div>
       <button class="btn-full btn-grad" onclick="doLogin()">Se connecter</button>
       <div class="auth-divider">ou continuer avec</div>
@@ -5813,6 +5825,23 @@ window.switchTab = function(tab) {
 </div>
 
 <!-- ════════════════ MODAL : CHANGER MOT DE PASSE ════════════════ -->
+<!-- ════════════════ MODAL : MOT DE PASSE OUBLIÉ ════════════════ -->
+<div class="modal-overlay" id="forgotPwdModal">
+  <div class="modal-box" style="max-width:400px">
+    <div class="modal-title">🔒 Mot de passe oublié</div>
+    <p style="font-size:13px;color:var(--muted);margin:-6px 0 16px">Indique ton adresse email, on t'envoie un lien pour créer un nouveau mot de passe.</p>
+    <div class="form-group">
+      <label class="form-label">Email</label>
+      <input type="email" class="form-input" id="forgotPwdEmail" placeholder="votre@email.com" autocomplete="email"/>
+    </div>
+    <div class="form-err" id="forgotPwdErr"></div>
+    <div class="modal-foot">
+      <button class="btn-cancel" onclick="closeModal('forgotPwdModal')">Annuler</button>
+      <button class="btn-save-modal" onclick="doForgotPwd()"><i class="fas fa-paper-plane"></i> Envoyer le lien</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="changePwdModal">
   <div class="modal-box" style="max-width:400px">
     <div class="modal-title">🔑 Changer le mot de passe</div>

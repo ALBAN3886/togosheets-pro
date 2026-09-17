@@ -6,6 +6,8 @@
 <title>AET MonBudget — Gestion Financière Personnelle</title>
 <meta name="description" content="Application de gestion financière personnelle — Alban Eloh Technology"/>
 <link rel="canonical" href="https://alban3886.github.io/togosheets-pro/"/>
+<!-- EmailJS : envoi d'email directement depuis le navigateur, sans serveur -->
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <meta name="theme-color" content="#2563eb"/>
 <link rel="manifest" href="manifest.json"/>
 <link rel="icon" href="icon-192.png" type="image/png"/>
@@ -272,42 +274,253 @@ window.requestPremiumActivation = async function() {
 // updateDoc(doc(db,'users', uid), { isPremium:true, subscriptionPlan:'premium',
 //   premiumExpiresAt: Timestamp.fromDate(new Date(Date.now()+30*24*60*60*1000)) })
 
+// ── Chargement normal de l'app pour un utilisateur déjà vérifié ──
+function enterAppAsVerifiedUser(user) {
+  const scr = document.getElementById('emailCodeScreen'); if (scr) scr.style.display = 'none';
+  $('#authScreen').style.display = 'none';
+  $('#app').style.display = 'block';
+  if (window.checkPinAtStart) window.checkPinAtStart();
+  const bn = document.getElementById('bottomNav');
+  if (bn) bn.style.display = '';
+  const name = user.displayName || user.email.split('@')[0];
+  $('#userName').textContent = name;
+  const _uat = document.getElementById('userAvatarText'); if(_uat) _uat.textContent = name.charAt(0).toUpperCase();
+  const _ed=document.getElementById('userEmailDisp'); if(_ed) _ed.textContent=user.email;
+  const veb = document.getElementById('verifyEmailBanner');
+  if(veb) veb.style.display = 'none';
+  // ── Enregistrer la session de connexion ──
+  addDoc(collection(db,'sessions'), {
+    userId:      user.uid,
+    email:       user.email,
+    displayName: user.displayName || '',
+    loginAt:     serverTimestamp(),
+    userAgent:   navigator.userAgent,
+  }).catch(()=>{});
+  // ── Mettre à jour le profil utilisateur ──
+  setDoc(doc(db,'users', user.uid), {
+    userId:      user.uid,
+    email:       user.email,
+    displayName: user.displayName || '',
+    lastSeen:    serverTimestamp(),
+  }, { merge: true }).catch(()=>{});
+  ensurePremiumFields(user.uid);
+  watchPremiumStatus(user.uid);
+  loadAll();
+  toast(`Bienvenue ${name} ! 👋`, 'success');
+}
+
+// ══ VÉRIFICATION EMAIL PAR CODE À 6 CHIFFRES (via EmailJS, envoi direct navigateur, sans serveur) ══
+// Configuration EmailJS (dashboard.emailjs.com) — Public Key : visible et sans risque à exposer,
+// c'est le fonctionnement normal d'EmailJS (comme une clé Firebase).
+const EMAILJS_PUBLIC_KEY  = 'wY5yUiXlCZOkMwy04';
+const EMAILJS_SERVICE_ID  = 'service_caf1vqs';
+const EMAILJS_TEMPLATE_ID = 'template_dnii0zg';
+if (window.emailjs) emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+
+let _emailCodeUser = null;
+let _emailCodeTimer = null;
+let _resendCooldownTimer = null;
+
+// Génère un code, l'enregistre sur le doc utilisateur (lisible/modifiable par lui seul,
+// voir firestore.rules) et l'envoie par email directement via EmailJS (aucun serveur requis).
+async function sendEmailVerificationCode(user, displayName) {
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutes
+  await setDoc(doc(db, 'users', user.uid), {
+    userId: user.uid,
+    email: user.email,
+    emailVerified: false,
+    emailVerifyCode: code,
+    emailVerifyExpiresAt: expiresAt,
+  }, { merge: true });
+
+  if (!window.emailjs) throw new Error('EmailJS ne s\'est pas chargé (vérifie ta connexion internet)');
+  await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {
+    to_email: user.email,
+    to_name: displayName || user.email.split('@')[0],
+    verification_code: code,
+  });
+  return expiresAt;
+}
+
+function clearEmailCodeInputs() {
+  document.querySelectorAll('.ecode-box').forEach(b => b.value = '');
+  const first = document.querySelector('.ecode-box[data-i="0"]');
+  if (first) setTimeout(() => first.focus(), 100);
+}
+
+function startEmailCodeCountdown(expiresAt) {
+  if (_emailCodeTimer) clearInterval(_emailCodeTimer);
+  const el = document.getElementById('emailCodeCountdown');
+  function tick() {
+    const remain = Math.max(0, Math.floor((expiresAt - Date.now()) / 1000));
+    const m = String(Math.floor(remain / 60)).padStart(2, '0');
+    const s = String(remain % 60).padStart(2, '0');
+    if (el) el.textContent = m + ':' + s;
+    if (remain <= 0) {
+      clearInterval(_emailCodeTimer);
+      const errEl = document.getElementById('emailCodeErr');
+      if (errEl) errEl.textContent = 'Code expiré — demande-en un nouveau ci-dessous.';
+    }
+  }
+  tick();
+  _emailCodeTimer = setInterval(tick, 1000);
+}
+
+function startResendCooldown() {
+  const btn = document.getElementById('resendCodeBtn');
+  if (!btn) return;
+  let secs = 60;
+  btn.disabled = true;
+  btn.textContent = `Renvoyer le code (${secs}s)`;
+  if (_resendCooldownTimer) clearInterval(_resendCooldownTimer);
+  _resendCooldownTimer = setInterval(() => {
+    secs--;
+    if (secs <= 0) {
+      clearInterval(_resendCooldownTimer);
+      btn.disabled = false;
+      btn.textContent = 'Renvoyer le code';
+    } else {
+      btn.textContent = `Renvoyer le code (${secs}s)`;
+    }
+  }, 1000);
+}
+
+async function showEmailCodeScreen(user) {
+  _emailCodeUser = user;
+  document.getElementById('authScreen').style.display = 'none';
+  document.getElementById('app').style.display = 'none';
+  const scr = document.getElementById('emailCodeScreen');
+  scr.style.display = 'flex';
+  document.getElementById('emailCodeTarget').textContent = 'Un code a été envoyé à ' + user.email;
+  document.getElementById('emailCodeStatus').textContent = 'Vérification de votre email';
+  document.getElementById('emailCodeErr').textContent = '';
+  clearEmailCodeInputs();
+
+  try {
+    // Réutilise un code encore valide si l'utilisateur revient sur cet écran (évite de spammer
+    // Resend), sinon en envoie un nouveau.
+    const uSnap = await getDoc(doc(db, 'users', user.uid));
+    const data = uSnap.exists() ? uSnap.data() : {};
+    const stillValid = data.emailVerifyCode && data.emailVerifyExpiresAt && data.emailVerifyExpiresAt > Date.now();
+    const expiresAt = stillValid ? data.emailVerifyExpiresAt : await sendEmailVerificationCode(user, user.displayName);
+    document.getElementById('emailCodeStatus').textContent = 'Code envoyé avec succès';
+    startEmailCodeCountdown(expiresAt);
+  } catch (e) {
+    document.getElementById('emailCodeStatus').textContent = 'Échec de l\'envoi';
+    document.getElementById('emailCodeErr').textContent = e.message || String(e);
+  }
+  startResendCooldown();
+}
+
+window.resendEmailCode = async function () {
+  if (!_emailCodeUser) return;
+  const btn = document.getElementById('resendCodeBtn');
+  if (btn && btn.disabled) return;
+  document.getElementById('emailCodeErr').textContent = '';
+  try {
+    const expiresAt = await sendEmailVerificationCode(_emailCodeUser, _emailCodeUser.displayName);
+    startEmailCodeCountdown(expiresAt);
+    clearEmailCodeInputs();
+    toast('Nouveau code envoyé 📧', 'success');
+  } catch (e) {
+    document.getElementById('emailCodeErr').textContent = e.message || String(e);
+  }
+  startResendCooldown();
+};
+
+window.submitEmailCode = async function () {
+  if (!_emailCodeUser) return;
+  const boxes = Array.from(document.querySelectorAll('.ecode-box'));
+  const entered = boxes.map(b => b.value.trim()).join('');
+  const errEl = document.getElementById('emailCodeErr');
+  errEl.textContent = '';
+  if (!/^\d{6}$/.test(entered)) { errEl.textContent = 'Entre les 6 chiffres du code'; return; }
+  loader(true);
+  try {
+    const uSnap = await getDoc(doc(db, 'users', _emailCodeUser.uid));
+    const data = uSnap.exists() ? uSnap.data() : {};
+    if (!data.emailVerifyCode || !data.emailVerifyExpiresAt || data.emailVerifyExpiresAt < Date.now()) {
+      errEl.textContent = 'Code expiré — demande-en un nouveau.';
+      loader(false); return;
+    }
+    if (String(data.emailVerifyCode) !== entered) {
+      errEl.textContent = 'Code incorrect';
+      loader(false); return;
+    }
+    await updateDoc(doc(db, 'users', _emailCodeUser.uid), {
+      emailVerified: true,
+      emailVerifyCode: null,
+      emailVerifyExpiresAt: null,
+    });
+    if (_emailCodeTimer) clearInterval(_emailCodeTimer);
+    if (_resendCooldownTimer) clearInterval(_resendCooldownTimer);
+    toast('Email confirmé ! Bienvenue 🎉', 'success');
+    enterAppAsVerifiedUser(_emailCodeUser);
+  } catch (e) {
+    errEl.textContent = 'Erreur : ' + (e.message || e);
+  }
+  loader(false);
+};
+
+window.cancelEmailCodeVerification = async function () {
+  if (_emailCodeTimer) clearInterval(_emailCodeTimer);
+  if (_resendCooldownTimer) clearInterval(_resendCooldownTimer);
+  await signOut(auth);
+  document.getElementById('emailCodeScreen').style.display = 'none';
+};
+
+// Saisie du code : avance automatique au champ suivant, retour arrière, et collage du code entier.
+document.addEventListener('input', e => {
+  if (!e.target.classList || !e.target.classList.contains('ecode-box')) return;
+  e.target.value = e.target.value.replace(/\D/g, '').slice(0, 1);
+  if (e.target.value && e.target.dataset.i !== '5') {
+    const next = document.querySelector(`.ecode-box[data-i="${Number(e.target.dataset.i) + 1}"]`);
+    if (next) next.focus();
+  }
+});
+document.addEventListener('keydown', e => {
+  if (!e.target.classList || !e.target.classList.contains('ecode-box')) return;
+  if (e.key === 'Backspace' && !e.target.value && e.target.dataset.i !== '0') {
+    const prev = document.querySelector(`.ecode-box[data-i="${Number(e.target.dataset.i) - 1}"]`);
+    if (prev) prev.focus();
+  }
+});
+document.addEventListener('paste', e => {
+  if (!e.target.classList || !e.target.classList.contains('ecode-box')) return;
+  const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '').slice(0, 6);
+  if (!text) return;
+  e.preventDefault();
+  const boxes = document.querySelectorAll('.ecode-box');
+  text.split('').forEach((ch, i) => { if (boxes[i]) boxes[i].value = ch; });
+  const last = boxes[Math.min(text.length, 6) - 1];
+  if (last) last.focus();
+});
+
 // ══ AUTH ══
-onAuthStateChanged(auth, user => {
+onAuthStateChanged(auth, async user => {
   if (user) {
     currentUser = user;
     window.currentUser = user;
-    $('#authScreen').style.display = 'none';
-    $('#app').style.display = 'block';
-    if (window.checkPinAtStart) window.checkPinAtStart();
-    const bn = document.getElementById('bottomNav');
-    if (bn) bn.style.display = '';
-    const name = user.displayName || user.email.split('@')[0];
-    $('#userName').textContent = name;
-    const _uat = document.getElementById('userAvatarText'); if(_uat) _uat.textContent = name.charAt(0).toUpperCase();
-    const _ed=document.getElementById('userEmailDisp'); if(_ed) _ed.textContent=user.email;
-    // ── Bandeau de rappel : email non vérifié (les comptes Google/Facebook sont déjà vérifiés) ──
-    const veb = document.getElementById('verifyEmailBanner');
-    if(veb) veb.style.display = (!user.emailVerified) ? 'flex' : 'none';
-    // ── Enregistrer la session de connexion ──
-    addDoc(collection(db,'sessions'), {
-      userId:      user.uid,
-      email:       user.email,
-      displayName: user.displayName || '',
-      loginAt:     serverTimestamp(),
-      userAgent:   navigator.userAgent,
-    }).catch(()=>{});
-    // ── Mettre à jour le profil utilisateur ──
-    setDoc(doc(db,'users', user.uid), {
-      userId:      user.uid,
-      email:       user.email,
-      displayName: user.displayName || '',
-      lastSeen:    serverTimestamp(),
-    }, { merge: true }).catch(()=>{});
-    ensurePremiumFields(user.uid);
-    watchPremiumStatus(user.uid);
-    loadAll();
-    toast(`Bienvenue ${name} ! 👋`, 'success');
+
+    // ── Vérification de l'email par code à 6 chiffres (remplace l'ancien lien Firebase) ──
+    // Les comptes Google/Facebook sont déjà vérifiés par le fournisseur : jamais bloqués ici.
+    const isSocialAccount = user.providerData.some(p => p.providerId === 'google.com' || p.providerId === 'facebook.com');
+    if (!isSocialAccount) {
+      let alreadyVerified = false;
+      try {
+        const uSnap = await getDoc(doc(db, 'users', user.uid));
+        alreadyVerified = uSnap.exists() && uSnap.data().emailVerified === true;
+      } catch(e) {
+        // Erreur réseau en lisant Firestore : on ne bloque pas l'utilisateur pour ça.
+        alreadyVerified = true;
+      }
+      if (!alreadyVerified) {
+        showEmailCodeScreen(user);
+        return; // on ne charge pas l'app tant que le code n'est pas validé
+      }
+    }
+    enterAppAsVerifiedUser(user);
   } else {
     currentUser = null;
     window.currentUser = null;
@@ -552,7 +765,7 @@ window.doSignup = async () => {
   try {
     const cred = await createUserWithEmailAndPassword(auth, email, pwd);
     await updateProfile(cred.user, { displayName: name });
-    try { await sendEmailVerification(cred.user); } catch(e){ /* non bloquant */ }
+    await sendEmailVerificationCode(cred.user, name);
     toast('Compte créé ! Vérifie ta boîte mail pour confirmer ton adresse 📧', 'success');
   } catch(e) {
     err.textContent = fbErr(e);
@@ -4330,6 +4543,33 @@ select.form-input option{background:var(--bg2)}
     </div>
     <div class="auth-switch">Déjà un compte ? <a onclick="switchAuthTab('login')">Se connecter</a></div>
   </div>
+</div>
+
+<!-- ════════════════ VÉRIFICATION EMAIL PAR CODE ════════════════ -->
+<div id="emailCodeScreen" style="display:none;min-height:100vh;background:#0f172a;color:#fff;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:inherit">
+  <div style="width:64px;height:64px;border-radius:16px;background:linear-gradient(135deg,var(--primary,#2563eb),#7c3aed);display:flex;align-items:center;justify-content:center;font-size:28px;margin-bottom:16px">📧</div>
+  <h2 style="margin:0 0 4px;font-size:20px;font-weight:800">AET MonBudget</h2>
+  <div style="color:#94a3b8;font-size:12px;font-weight:700;letter-spacing:1px;margin-bottom:24px">VÉRIFICATION DE VOTRE EMAIL</div>
+
+  <div id="emailCodeStatus" style="color:#fbbf24;font-weight:700;margin-bottom:6px">Code envoyé avec succès</div>
+  <div id="emailCodeTarget" style="color:#94a3b8;font-size:13px;margin-bottom:24px">Veuillez consulter votre boîte de réception.</div>
+
+  <div style="font-size:12px;color:#94a3b8;margin-bottom:10px">Code reçu (6 chiffres)</div>
+  <div style="display:flex;gap:8px;margin-bottom:16px">
+    <input maxlength="1" inputmode="numeric" class="ecode-box" data-i="0" style="width:42px;height:52px;text-align:center;font-size:22px;font-weight:800;border-radius:10px;border:1.5px solid #334155;background:#1e293b;color:#fff">
+    <input maxlength="1" inputmode="numeric" class="ecode-box" data-i="1" style="width:42px;height:52px;text-align:center;font-size:22px;font-weight:800;border-radius:10px;border:1.5px solid #334155;background:#1e293b;color:#fff">
+    <input maxlength="1" inputmode="numeric" class="ecode-box" data-i="2" style="width:42px;height:52px;text-align:center;font-size:22px;font-weight:800;border-radius:10px;border:1.5px solid #334155;background:#1e293b;color:#fff">
+    <input maxlength="1" inputmode="numeric" class="ecode-box" data-i="3" style="width:42px;height:52px;text-align:center;font-size:22px;font-weight:800;border-radius:10px;border:1.5px solid #334155;background:#1e293b;color:#fff">
+    <input maxlength="1" inputmode="numeric" class="ecode-box" data-i="4" style="width:42px;height:52px;text-align:center;font-size:22px;font-weight:800;border-radius:10px;border:1.5px solid #334155;background:#1e293b;color:#fff">
+    <input maxlength="1" inputmode="numeric" class="ecode-box" data-i="5" style="width:42px;height:52px;text-align:center;font-size:22px;font-weight:800;border-radius:10px;border:1.5px solid #334155;background:#1e293b;color:#fff">
+  </div>
+  <div id="emailCodeErr" style="color:#f87171;font-size:12px;min-height:16px;margin-bottom:8px"></div>
+  <div style="color:#f87171;font-size:13px;margin-bottom:20px">Expire dans : <strong id="emailCodeCountdown">10:00</strong></div>
+
+  <button class="btn-full btn-grad" style="max-width:320px" onclick="submitEmailCode()">Valider mon inscription</button>
+
+  <button id="resendCodeBtn" onclick="resendEmailCode()" style="background:none;border:none;color:#94a3b8;margin-top:18px;font-size:13px;cursor:pointer">Renvoyer le code</button>
+  <a onclick="cancelEmailCodeVerification()" style="color:#60a5fa;margin-top:8px;font-size:13px;cursor:pointer">Annuler et se déconnecter</a>
 </div>
 
 <!-- ════════════════ APP ════════════════ -->

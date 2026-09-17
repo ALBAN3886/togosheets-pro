@@ -928,7 +928,10 @@ window.doForgotPwd = async () => {
   const email = $('#loginEmail').value.trim();
   if (!email) { $('#loginErr').textContent = 'Saisissez votre email d\'abord'; return; }
   try {
-    await sendPasswordResetEmail(auth, email);
+    await sendPasswordResetEmail(auth, email, {
+      url: 'https://alban3886.github.io/togosheets-pro/reset-password.html',
+      handleCodeInApp: true,
+    });
     toast('Email de réinitialisation envoyé ✓','success');
   } catch(e) { toast(fbErr(e),'error'); }
 };

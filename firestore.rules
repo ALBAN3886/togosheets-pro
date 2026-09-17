@@ -111,6 +111,16 @@ service cloud.firestore {
       allow write: if isSelf(tenantId) || isAdmin();
     }
 
+    // ── Lien personnalisé de boutique (ex: /togosheets-marketplace/aetshop) ──
+    // Le document lui-même ne contient que la référence vers le vrai tenant/store :
+    // {tenantId, storeId}. Lecture publique (nécessaire pour résoudre le lien avant même
+    // que le visiteur soit identifié), écriture réservée au propriétaire de ce tenantId.
+    match /shop_slugs/{slug} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.tenantId == request.auth.uid;
+      allow update, delete: if isSignedIn() && resource.data.tenantId == request.auth.uid || isAdmin();
+    }
+
     // ── Commandes marketplace : créées par n'importe quel acheteur, lues par le vendeur/l'admin ──
     match /public_orders/{orderId} {
       allow create: if request.resource.data.keys().hasAll(['tenantId'])

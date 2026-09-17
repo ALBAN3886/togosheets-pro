@@ -64,7 +64,7 @@ try {
 window.__AET_FBAPP__ = fbApp;
 window.__AET_AUTH__ = auth;
 window.__AET_DB__ = db;
-window.__AET_FIRESTORE__ = { doc, getDoc, setDoc, serverTimestamp, runTransaction, onSnapshot };
+window.__AET_FIRESTORE__ = { doc, getDoc, setDoc, deleteDoc, serverTimestamp, runTransaction, onSnapshot };
 
 // ══ CATÉGORIES COMPLÈTES ══
 const CATS = {
@@ -9242,6 +9242,16 @@ if ('serviceWorker' in navigator) {
         </label>
       </div>
 
+      <!-- Lien personnalisé (ex: togosheets-marketplace.github.io/aetshop) -->
+      <div id="cmSlugSection" style="display:none;margin-top:10px">
+        <label class="cm-modal-label">Lien personnalisé de la boutique</label>
+        <div style="display:flex;align-items:center;gap:6px;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:0 10px">
+          <span style="font-size:11px;color:var(--muted);white-space:nowrap">marketplace/</span>
+          <input type="text" id="cmShopSlug" class="cm-modal-input" style="border:none;background:transparent;margin:0;padding:10px 0" placeholder="aetshop" maxlength="30">
+        </div>
+        <div id="cmSlugMsg" style="font-size:11px;margin-top:4px;min-height:14px"></div>
+      </div>
+
       <!-- Lien marketplace -->
       <div style="margin-top:10px;text-align:center">
         <a href="public.html" target="_blank" style="color:var(--primary);font-size:12px;font-weight:600;text-decoration:none"><i class="fas fa-arrow-up-right-from-square" style="margin-right:4px"></i>Voir la Marketplace publique</a>
@@ -10450,6 +10460,8 @@ window.cmOpenShopModal = async function(forceNew){
   document.getElementById('cmShopTypeOther').value = '';
   document.getElementById('cmShopAddr').value = '';
   document.getElementById('cmShopSeuil').value = '5';
+  const slugSection = document.getElementById('cmSlugSection');
+  if (slugSection) slugSection.style.display = 'none'; // le lien personnalisé n'a de sens qu'une fois la boutique créée
   cmHandleShopTypeChange();
   await cmInitShopGeoFields('', '');
   cmRenderShopList();
@@ -10488,6 +10500,12 @@ window.cmEditShop = async function(id){
   document.getElementById('cmShopTypeOther').value = s.customType||'';
   document.getElementById('cmShopAddr').value = s.addr||'';
   document.getElementById('cmShopSeuil').value = s.seuil||5;
+  const slugSection = document.getElementById('cmSlugSection');
+  if (slugSection) slugSection.style.display = '';
+  const slugInput = document.getElementById('cmShopSlug');
+  if (slugInput) slugInput.value = s.slug || '';
+  const slugMsg = document.getElementById('cmSlugMsg');
+  if (slugMsg) slugMsg.textContent = '';
   cmHandleShopTypeChange();
   await cmInitShopGeoFields(s.country||'', s.city||'');
 };
@@ -10521,7 +10539,7 @@ document.addEventListener('change', function(e){
   }
 });
 
-window.cmSaveShop = function(){
+window.cmSaveShop = async function(){
   const name = document.getElementById('cmShopName').value.trim();
   const type = document.getElementById('cmShopType').value;
   const customType = document.getElementById('cmShopTypeOther').value.trim();
@@ -10532,16 +10550,64 @@ window.cmSaveShop = function(){
   if(!name){ cmToast(t('cm_msg_shop_name_required'),'error'); return; }
   if(type==='autre' && !customType){ cmToast(t('cm_msg_shop_type_required'),'error'); return; }
   const isPublic = document.getElementById('cmShopPublic') ? document.getElementById('cmShopPublic').checked : true;
+
+  // ── Lien personnalisé (ex: marketplace/aetshop) — uniquement en édition d'une boutique existante ──
+  const slugInput = document.getElementById('cmShopSlug');
+  const slugMsg = document.getElementById('cmSlugMsg');
+  let newSlug = null;
+  if (CM.editingShopId && slugInput) {
+    const raw = slugInput.value.trim().toLowerCase();
+    if (raw) {
+      if (!/^[a-z0-9-]{3,30}$/.test(raw)) {
+        if (slugMsg) { slugMsg.textContent = '3 à 30 caractères : lettres minuscules, chiffres et tirets uniquement'; slugMsg.style.color = '#dc2626'; }
+        return;
+      }
+      const existingShop = CM.shops.find(x=>x.id===CM.editingShopId);
+      if (raw !== (existingShop && existingShop.slug)) {
+        const db = window.__AET_DB__, fs = window.__AET_FIRESTORE__;
+        const uid = window.currentUser && window.currentUser.uid;
+        if (db && fs && uid) {
+          try {
+            const snap = await fs.getDoc(fs.doc(db,'shop_slugs', raw));
+            if (snap.exists() && snap.data().tenantId !== uid) {
+              if (slugMsg) { slugMsg.textContent = 'Ce lien est déjà pris par une autre boutique'; slugMsg.style.color = '#dc2626'; }
+              return;
+            }
+          } catch(e) { /* si la vérification échoue, on tente quand même l'enregistrement plus bas */ }
+        }
+      }
+      newSlug = raw;
+    } else {
+      newSlug = '';
+    }
+  }
+
   const payload = { name, type, customType:type==='autre'?customType:'', country, city, addr, seuil, isPublic };
+  if (newSlug !== null) payload.slug = newSlug;
+
+  let oldSlug = null;
   if(CM.editingShopId){
     const s = CM.shops.find(x=>x.id===CM.editingShopId);
-    if(s) Object.assign(s, payload);
+    if(s){ oldSlug = s.slug || null; Object.assign(s, payload); }
     cmToast(t('cm_msg_shop_updated'),'success');
   } else {
     const id = cmUID();
     CM.shops.push({ id, ...payload, createdAt:Date.now() });
     if(!CM.currentShopId) CM.currentShopId = id;
     cmToast(t('cm_msg_shop_created'),'success');
+  }
+
+  // Synchronise la collection shop_slugs (pour que la page de redirection publique la trouve)
+  if (newSlug !== null) {
+    const db = window.__AET_DB__, fs = window.__AET_FIRESTORE__;
+    const uid = window.currentUser && window.currentUser.uid;
+    const shopId = CM.editingShopId;
+    if (db && fs && uid) {
+      try {
+        if (oldSlug && oldSlug !== newSlug) await fs.deleteDoc(fs.doc(db,'shop_slugs', oldSlug));
+        if (newSlug) await fs.setDoc(fs.doc(db,'shop_slugs', newSlug), { tenantId: uid, storeId: shopId });
+      } catch(e) { cmToast('Le lien personnalisé n\'a pas pu être enregistré','error'); }
+    }
   }
   CM.editingShopId = null;
   cmSave();
@@ -12530,7 +12596,11 @@ window.CM_DEBUG = CM;
     try { return document.getElementById('cmShopSelect')?.value || ''; } catch(e){ return ''; }
   }
   window.cmOpenBoutique = function() {
-    window.open('https://alban3886.github.io/togosheets-marketplace/', '_blank');
+    const shop = CM.shops.find(x=>x.id===CM.currentShopId);
+    const url = (shop && shop.slug)
+      ? 'https://alban3886.github.io/togosheets-marketplace/' + shop.slug
+      : 'https://alban3886.github.io/togosheets-marketplace/';
+    window.open(url, '_blank');
   };
   window.cmOpenEmploye = function() {
     const uid  = getCmUid();
@@ -12539,7 +12609,10 @@ window.CM_DEBUG = CM;
     window.open(url, '_blank');
   };
   window.cmCopyBoutiqueLink = function() {
-    const url = 'https://alban3886.github.io/togosheets-marketplace/';
+    const shop = CM.shops.find(x=>x.id===CM.currentShopId);
+    const url = (shop && shop.slug)
+      ? 'https://alban3886.github.io/togosheets-marketplace/' + shop.slug
+      : 'https://alban3886.github.io/togosheets-marketplace/';
     navigator.clipboard.writeText(url).then(() => {
       if(window.showToast) showToast('Lien boutique copié ! 🔗');
     }).catch(() => {

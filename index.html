@@ -13706,8 +13706,6 @@ body.aet-subpage-active #bottomNav,body.aet-subpage-active #appSidebar,body.aet-
   window.closeAetMobilePanel=function(){ var p=document.getElementById('aetMobilePanel'); if(p) p.classList.remove('open'); syncSubpageState(); };
   function renderProfileHome(){ var tab=document.getElementById('tab-profil'); if(!tab) return; tab.style.padding='0'; tab.innerHTML=''
     +'<div class="mobile-prof-shell">'
-    +'<div class="mobile-prof-cover"><div class="mobile-prof-top"><div class="mobile-prof-badge"><i class="fas fa-globe"></i> Français</div><button class="mobile-prof-gridbtn" type="button" onclick="openSettings()"><i class="fas fa-grip"></i></button></div>'
-    +'<div class="mobile-prof-user"><div class="mobile-prof-avatar">'+avatarMarkup()+'</div><div><div class="mobile-prof-name">'+esc(getName())+'</div><div class="mobile-prof-phone">'+esc(getPhone())+'</div><div class="mobile-prof-switch"><i class="fas fa-right-left"></i> Changer de compte</div></div></div></div>'
     +'<div class="mobile-prof-menu">'
     +'<div class="mobile-prof-item" onclick="openProfileHub()"><div class="mobile-prof-ic"><i class="fas fa-user"></i></div><div class="mobile-prof-lab">Mon profil</div><i class="fas fa-chevron-right mobile-prof-chev"></i></div>'
     +'<div class="mobile-prof-item" onclick="openSettings()"><div class="mobile-prof-ic"><i class="fas fa-gear"></i></div><div class="mobile-prof-lab">Mes paramètres</div><i class="fas fa-chevron-right mobile-prof-chev"></i></div>'

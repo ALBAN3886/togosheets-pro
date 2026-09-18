@@ -255,7 +255,7 @@ window._currentCat = 'all';
 // ── Charge toutes les boutiques ──
 async function loadShops(){
   try {
-    const snap = await getDocs(collection(db, 'commerce_data'));
+    const snap = await getDocs(collection(db, 'public_shops'));
     const shops = [];
     let totalProducts = 0;
     const cities = new Set();

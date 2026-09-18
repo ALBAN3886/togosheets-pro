@@ -150,6 +150,32 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 }
 </style>
 
+
+<style id="category-filter-images">
+.filter-chip img {
+  width: 28px;
+  height: 28px;
+  object-fit: cover;
+  border-radius: 7px;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+@media (max-width: 600px) {
+  .filter-chip img {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+  }
+}
+</style>
+
 </head>
 <body>
 
@@ -194,14 +220,38 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
   </div>
   <div class="filters" id="filtersBar">
     <div class="filter-chip active" data-cat="all" onclick="pickCat(this)">Tout</div>
-    <div class="filter-chip" data-cat="alimentaire" onclick="pickCat(this)">🍞 Alimentation</div>
-    <div class="filter-chip" data-cat="electronique" onclick="pickCat(this)">📱 Électronique</div>
-    <div class="filter-chip" data-cat="vetement" onclick="pickCat(this)">👗 Vêtements</div>
-    <div class="filter-chip" data-cat="beaute" onclick="pickCat(this)">💄 Beauté</div>
-    <div class="filter-chip" data-cat="maison" onclick="pickCat(this)">🏠 Maison</div>
-    <div class="filter-chip" data-cat="sante" onclick="pickCat(this)">💊 Santé</div>
-    <div class="filter-chip" data-cat="service" onclick="pickCat(this)">🔧 Services</div>
-    <div class="filter-chip" data-cat="autre" onclick="pickCat(this)">📦 Autres</div>
+    <div class="filter-chip" data-cat="alimentaire" onclick="pickCat(this)">
+      <img src="images/categories/alimentaire.jpg" alt="">
+      <span>Alimentation</span>
+    </div>
+    <div class="filter-chip" data-cat="electronique" onclick="pickCat(this)">
+      <img src="images/categories/electronique.jpg" alt="">
+      <span>Électronique</span>
+    </div>
+    <div class="filter-chip" data-cat="vetement" onclick="pickCat(this)">
+      <img src="images/categories/vetement.jpg" alt="">
+      <span>Vêtements</span>
+    </div>
+    <div class="filter-chip" data-cat="beaute" onclick="pickCat(this)">
+      <img src="images/categories/beaute.jpg" alt="">
+      <span>Beauté</span>
+    </div>
+    <div class="filter-chip" data-cat="maison" onclick="pickCat(this)">
+      <img src="images/categories/maison.jpg" alt="">
+      <span>Maison</span>
+    </div>
+    <div class="filter-chip" data-cat="sante" onclick="pickCat(this)">
+      <img src="images/categories/sante.jpg" alt="">
+      <span>Santé</span>
+    </div>
+    <div class="filter-chip" data-cat="service" onclick="pickCat(this)">
+      <img src="images/categories/service.jpg" alt="">
+      <span>Services</span>
+    </div>
+    <div class="filter-chip" data-cat="autre" onclick="pickCat(this)">
+      <img src="images/categories/autre.jpg" alt="">
+      <span>Autres</span>
+    </div>
   </div>
 </div>
 

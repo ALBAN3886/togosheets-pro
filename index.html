@@ -13953,6 +13953,222 @@ body.aet-subpage-active #bottomNav,body.aet-subpage-active #appSidebar,body.aet-
 })();
 </script>
 
+<!-- ═══ Vraies images de catégories à la place des emojis (type de boutique + sélecteur de boutique) ═══ -->
+<style id="aet-category-images-style">
+.cm-native-hidden{display:none !important}
+.cm-type-picker,.cm-shop-picker{position:relative}
+.cm-type-trigger,.cm-shop-trigger{
+  width:100%;display:flex;align-items:center;gap:10px;
+  padding:11px 14px;background:rgba(255,255,255,.05);
+  border:1px solid var(--border);border-radius:10px;color:var(--text);
+  font-size:14px;font-family:inherit;cursor:pointer;text-align:left;margin-bottom:10px;
+}
+.cm-shop-bar .cm-shop-trigger{background:transparent;border:none;padding:6px 4px;margin-bottom:0;font-weight:700}
+.cm-type-trigger:disabled,.cm-shop-trigger:disabled{opacity:.5;cursor:not-allowed}
+.cm-type-trigger img,.cm-shop-trigger img,.cm-type-option img,.cm-shop-option img{
+  width:26px;height:26px;border-radius:7px;object-fit:cover;flex-shrink:0;background:#0f172a;
+}
+.cm-type-trigger span,.cm-shop-trigger span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cm-type-trigger i,.cm-shop-trigger i{color:var(--muted);font-size:12px;flex-shrink:0}
+.cm-type-panel,.cm-shop-panel{
+  position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:80;
+  background:#0f172a;border:1px solid var(--border);border-radius:12px;
+  max-height:260px;overflow-y:auto;box-shadow:0 20px 40px rgba(0,0,0,.35);
+  padding:6px;display:none;
+}
+.cm-type-panel.open,.cm-shop-panel.open{display:block}
+.cm-type-option,.cm-shop-option{
+  display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;
+  cursor:pointer;color:#fff;font-size:13.5px;font-weight:600;
+}
+.cm-type-option:hover,.cm-shop-option:hover{background:rgba(255,255,255,.08)}
+.cm-type-option.active,.cm-shop-option.active{background:rgba(16,185,129,.18);color:#10b981}
+</style>
+<script id="aet-category-images-script">
+(function(){
+  var CM_TYPE_IMAGES = {
+    alimentaire:'images/categories/alimentaire.jpg',
+    bar:'images/categories/bar.jpg',
+    restaurant:'images/categories/restaurant.jpg',
+    boulangerie:'images/categories/boulangerie.jpg',
+    boucherie:'images/categories/boucherie.jpg',
+    cosmetique:'images/categories/cosmetique.jpg',
+    vetement:'images/categories/vetement.jpg',
+    chaussure:'images/categories/chaussure.jpg',
+    pharmacie:'images/categories/pharmacie.jpg',
+    quincaillerie:'images/categories/quincaillerie.jpg',
+    electronique:'images/categories/electronique.jpg',
+    papeterie:'images/categories/papeterie.jpg',
+    cyber:'images/categories/cyber.jpg',
+    coiffure:'images/categories/coiffure.jpg',
+    station:'images/categories/station.jpg',
+    autre:'images/categories/autre.jpg'
+  };
+  var CM_FALLBACK_IMG = 'images/categories/autre.jpg';
+  function typeImg(type){ return CM_TYPE_IMAGES[type] || CM_FALLBACK_IMG; }
+  function escHtml(v){ var d=document.createElement('div'); d.textContent=String(v==null?'':v); return d.innerHTML; }
+  // Repli si une image de catégorie est introuvable : bascule une seule fois vers autre.jpg
+  window.__aetCatImgErr = function(img){
+    if (!img.dataset.fb){ img.dataset.fb = '1'; img.src = CM_FALLBACK_IMG; }
+    else { img.onerror = null; }
+  };
+
+  /* ── Widget 1 : type de boutique (modal Nouvelle/Éditer boutique, ex-ligne ~9188) ── */
+  function buildTypePicker(){
+    var select = document.getElementById('cmShopType');
+    if (!select || select.dataset.aetImgPatched) return;
+    select.dataset.aetImgPatched = '1';
+    select.classList.add('cm-native-hidden');
+
+    var options = Array.from(select.options).map(function(o){
+      return { value:o.value, label:(o.textContent.replace(/^\S+\s*/, '').trim() || o.textContent.trim()) };
+    });
+
+    var picker = document.createElement('div');
+    picker.className = 'cm-type-picker';
+
+    var trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'cm-type-trigger';
+    trigger.innerHTML = '<img alt=""><span></span><i class="fas fa-chevron-down"></i>';
+
+    var panel = document.createElement('div');
+    panel.className = 'cm-type-panel';
+    panel.innerHTML = options.map(function(o){
+      return '<div class="cm-type-option" data-value="'+escHtml(o.value)+'">' +
+             '<img src="'+escHtml(typeImg(o.value))+'" alt="" onerror="__aetCatImgErr(this)">' +
+             '<span>'+escHtml(o.label)+'</span></div>';
+    }).join('');
+
+    picker.appendChild(trigger);
+    picker.appendChild(panel);
+    select.insertAdjacentElement('afterend', picker);
+
+    var triggerImg = trigger.querySelector('img');
+    var triggerLabel = trigger.querySelector('span');
+
+    function sync(){
+      var opt = options.find(function(o){ return o.value === select.value; }) || options[0];
+      if (!opt) return;
+      triggerImg.onerror = function(){ this.onerror=null; this.src = CM_FALLBACK_IMG; };
+      triggerImg.src = typeImg(opt.value);
+      triggerLabel.textContent = opt.label;
+      trigger.disabled = select.disabled;
+      panel.querySelectorAll('.cm-type-option').forEach(function(el){
+        el.classList.toggle('active', el.dataset.value === opt.value);
+      });
+    }
+    sync();
+
+    trigger.addEventListener('click', function(){
+      if (select.disabled) return;
+      panel.classList.toggle('open');
+    });
+    panel.addEventListener('click', function(e){
+      var row = e.target.closest('.cm-type-option');
+      if (!row) return;
+      select.value = row.dataset.value;
+      if (typeof window.cmHandleShopTypeChange === 'function') window.cmHandleShopTypeChange();
+      panel.classList.remove('open');
+    });
+    document.addEventListener('click', function(e){
+      if (!picker.contains(e.target)) panel.classList.remove('open');
+    });
+
+    // cmHandleShopTypeChange() est déjà appelée par le code existant à chaque
+    // changement programmatique de la valeur (ouverture modal, édition, reset) :
+    // on s'y accroche pour resynchroniser l'aperçu visuel, sans toucher à la fonction d'origine.
+    var origHandler = window.cmHandleShopTypeChange;
+    if (typeof origHandler === 'function' && !window.__aetTypeChangeWrapped) {
+      window.__aetTypeChangeWrapped = true;
+      window.cmHandleShopTypeChange = function(){
+        origHandler.apply(this, arguments);
+        sync();
+      };
+    }
+    // Reflète aussi le verrouillage du champ (session employé/manager verrouillée)
+    new MutationObserver(sync).observe(select, { attributes:true, attributeFilter:['disabled'] });
+  }
+
+  /* ── Widget 2 : sélecteur de boutique active (barre du haut, ex-ligne ~10440) ── */
+  function buildShopPicker(){
+    var select = document.getElementById('cmShopSelect');
+    if (!select || select.dataset.aetImgPatched) return;
+    select.dataset.aetImgPatched = '1';
+    select.classList.add('cm-native-hidden');
+
+    var picker = document.createElement('div');
+    picker.className = 'cm-shop-picker';
+    picker.style.flex = '1';
+
+    var trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'cm-shop-trigger';
+    trigger.innerHTML = '<img alt=""><span></span><i class="fas fa-chevron-down"></i>';
+
+    var panel = document.createElement('div');
+    panel.className = 'cm-shop-panel';
+
+    picker.appendChild(trigger);
+    picker.appendChild(panel);
+    select.insertAdjacentElement('afterend', picker);
+
+    var triggerImg = trigger.querySelector('img');
+    var triggerLabel = trigger.querySelector('span');
+
+    function render(){
+      var shops = (window.CM && window.CM.shops) || [];
+      var currentId = window.CM && window.CM.currentShopId;
+      if (!shops.length){
+        triggerImg.src = CM_FALLBACK_IMG;
+        triggerLabel.textContent = '— Aucune boutique —';
+        panel.innerHTML = '';
+        return;
+      }
+      panel.innerHTML = shops.map(function(s){
+        return '<div class="cm-shop-option'+(s.id===currentId?' active':'')+'" data-id="'+escHtml(s.id)+'">' +
+               '<img src="'+escHtml(typeImg(s.type))+'" alt="" onerror="__aetCatImgErr(this)">' +
+               '<span>'+escHtml(s.name)+'</span></div>';
+      }).join('');
+      var current = shops.find(function(s){ return s.id === currentId; }) || shops[0];
+      triggerImg.onerror = function(){ this.onerror=null; this.src = CM_FALLBACK_IMG; };
+      triggerImg.src = typeImg(current.type);
+      triggerLabel.textContent = current.name;
+      trigger.disabled = select.disabled;
+    }
+    render();
+
+    trigger.addEventListener('click', function(){
+      if (select.disabled) return;
+      panel.classList.toggle('open');
+    });
+    panel.addEventListener('click', function(e){
+      var row = e.target.closest('.cm-shop-option');
+      if (!row) return;
+      if (typeof window.cmSelectShop === 'function') window.cmSelectShop(row.dataset.id);
+      panel.classList.remove('open');
+    });
+    document.addEventListener('click', function(e){
+      if (!picker.contains(e.target)) panel.classList.remove('open');
+    });
+
+    // Le <select id="cmShopSelect"> est régénéré par l'app (fonction interne
+    // cmRenderShopSelect) à chaque changement de boutique : on observe ces
+    // changements pour garder notre vignette synchronisée, sans toucher à cette fonction.
+    new MutationObserver(render).observe(select, { childList:true });
+    new MutationObserver(render).observe(select, { attributes:true, attributeFilter:['disabled'] });
+  }
+
+  function initCategoryImages(){
+    buildTypePicker();
+    buildShopPicker();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initCategoryImages); else initCategoryImages();
+  var catImgObserver = new MutationObserver(function(){ initCategoryImages(); });
+  if (document.body) catImgObserver.observe(document.body, {childList:true, subtree:true});
+})();
+</script>
+
 </body>
 
 </html>

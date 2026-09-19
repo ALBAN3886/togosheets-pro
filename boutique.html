@@ -1379,7 +1379,7 @@ async function loadCustomerDataFromFirebase() {
 
     if (data.reviews && typeof data.reviews === 'object') {
       S.reviews = data.reviews;
-      localStorage.setItem('aet_reviews', JSON.stringify(S.reviews)); saveReviewsToFirebase();
+      localStorage.setItem('aet_reviews', JSON.stringify(S.reviews))
     }
 
     console.log('[CUSTOMER DATA FIREBASE LOAD]');
@@ -1476,13 +1476,14 @@ async function migrateClientData() {
   if (!uid) return;
 
   try {
-    // Panier local
+    // ── PANIER : migration seulement si Firebase n'a encore rien
     let localCart = [];
     try {
       localCart = JSON.parse(localStorage.getItem('aet_cart') || '[]');
     } catch (_) {}
 
     const cartRef = cartDocRef();
+
     if (cartRef) {
       const cartSnap = await getDoc(cartRef);
 
@@ -1496,19 +1497,42 @@ async function migrateClientData() {
       }
     }
 
-    // Favoris + avis
-    await saveCustomerDataToFirebase();
+    // ── FAVORIS + AVIS : Firebase est prioritaire
+    const customerRef = customerDocRef();
 
-    // Commandes existantes
-    const localOrders = Array.isArray(S.orders) ? S.orders : [];
+    if (customerRef) {
+      const customerSnap = await getDoc(customerRef);
 
-    if (localOrders.length) {
-      console.log('[CLIENT MIGRATION] commandes locales détectées:', localOrders.length);
+      if (!customerSnap.exists()) {
+        // Aucun profil Firebase : première migration depuis l'appareil
+        await setDoc(customerRef, {
+          favorites: Array.isArray(S.favorites) ? S.favorites : [],
+          reviews: S.reviews || {},
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+
+        console.log('[CLIENT MIGRATION] favoris + avis créés depuis le local');
+      } else {
+        const data = customerSnap.data() || {};
+
+        // Si Firebase possède déjà les données, on NE les écrase pas
+        if (Array.isArray(data.favorites)) {
+          S.favorites = data.favorites;
+          localStorage.setItem('aet_favs', JSON.stringify(S.favorites));
+        }
+
+        if (data.reviews && typeof data.reviews === 'object') {
+          S.reviews = data.reviews;
+          localStorage.setItem('aet_reviews', JSON.stringify(S.reviews));
+        }
+
+        console.log('[CLIENT MIGRATION] Firebase prioritaire');
+      }
     }
 
     localStorage.setItem('aet_cart', JSON.stringify(S.cart));
-    localStorage.setItem('aet_favs', JSON.stringify(S.favorites))
-    localStorage.setItem('aet_reviews', JSON.stringify(S.reviews)); saveReviewsToFirebase();
+    localStorage.setItem('aet_favs', JSON.stringify(S.favorites));
+    localStorage.setItem('aet_reviews', JSON.stringify(S.reviews));
 
     console.log('[CLIENT MIGRATION] OK');
   } catch (e) {

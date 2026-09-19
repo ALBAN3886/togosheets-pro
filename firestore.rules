@@ -105,6 +105,19 @@ service cloud.firestore {
       //   allow read, write: if isSelf(tenantId) || isAdmin()
       //     || (isSignedIn() && request.auth.uid in resource.data.get('employeeUids', []));
       // à condition d'ajouter réellement un champ employeeUids géré par le propriétaire.
+
+      // Un client qui passe commande n'est jamais connecté avec le compte du
+      // propriétaire : sans cette règle, boutique.html ne peut jamais ajouter
+      // la commande dans pendingOrders, et l'espace employé (qui ne lit QUE ce
+      // champ, jamais public_orders) ne la voit jamais. On autorise donc, en
+      // plus du propriétaire, l'ajout d'UNE commande à la fin de pendingOrders
+      // — rien d'autre dans le document ne peut être touché par cette règle.
+      // Limite connue : Firestore ne permet pas de vérifier finement qu'aucune
+      // commande existante n'a été modifiée au passage (seule la taille du
+      // tableau est vérifiée) — acceptable ici vu la nature des données
+      // (commandes produits, pas d'information bancaire).
+      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pendingOrders','updatedAt'])
+        && request.resource.data.pendingOrders.size() == resource.data.get('pendingOrders', []).size() + 1;
     }
 
     // ── Vitrine publique de chaque boutique (lecture publique, écriture propriétaire) ──

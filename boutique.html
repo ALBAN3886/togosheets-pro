@@ -626,6 +626,9 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
       <div class="menu-item" onclick="shareStore()"><i class="fas fa-share-nodes ico green"></i><span class="label">Partager la boutique</span><i class="fas fa-chevron-right arrow"></i></div>
       <div class="menu-item" onclick="openDrawer('aboutDrawer')"><i class="fas fa-circle-info ico blue"></i><span class="label">À propos</span><i class="fas fa-chevron-right arrow"></i></div>
     </div>
+    <div class="menu-section" id="logoutSection" style="display:none">
+      <div class="menu-item" onclick="doLogout()"><i class="fas fa-right-from-bracket ico red"></i><span class="label">Se déconnecter</span><i class="fas fa-chevron-right arrow"></i></div>
+    </div>
   </div>
 </div>
 
@@ -758,14 +761,40 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
     </div>
   </div>
   <div class="drawer-body">
-    <div style="text-align:center;margin-bottom:20px">
-      <div style="width:60px;height:60px;border-radius:16px;background:linear-gradient(135deg,var(--orange),var(--orange2));display:grid;place-items:center;margin:0 auto 12px;font-size:26px;color:#fff"><i class="fas fa-user"></i></div>
-      <p style="font-size:13px;color:var(--muted);margin:0">Accédez à vos commandes et favoris</p>
+    <div id="authTabs" style="display:flex;gap:6px;background:#f1f5f9;border-radius:12px;padding:4px;margin-bottom:16px">
+      <button id="tabLogin" type="button" onclick="authTab('login')">Se connecter</button>
+      <button id="tabRegister" type="button" onclick="authTab('register')">Créer un compte</button>
     </div>
-    <div class="form-row"><label>Votre nom</label><input id="loginName" placeholder="Nom complet"/></div>
-    <div class="form-row"><label>Téléphone</label><input id="loginPhone" placeholder="+228 …" type="tel"/></div>
-    <button class="btn-full btn-primary" onclick="doLogin()" style="margin-top:4px">Continuer</button>
-    <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:12px">Votre numéro sert uniquement à retrouver vos commandes.</p>
+
+    <!-- Connexion -->
+    <div id="paneLogin">
+      <div class="form-row"><label>E-mail</label><input id="loginEmail" type="email" autocomplete="email" placeholder="vous@exemple.com"/></div>
+      <div class="form-row"><label>Mot de passe</label><input id="loginPwd" type="password" autocomplete="current-password" placeholder="Votre mot de passe"/></div>
+      <p id="errLogin" style="color:#dc2626;font-size:12.5px;margin:0 0 10px;min-height:16px"></p>
+      <button id="btnLogin" class="btn-full btn-primary" onclick="doLogin()">Se connecter</button>
+      <p style="text-align:center;margin:14px 0 0"><a href="#" onclick="authTab('forgot');return false" style="color:var(--orange);font-weight:700;font-size:13px;text-decoration:none">Mot de passe oublié ?</a></p>
+    </div>
+
+    <!-- Création de compte -->
+    <div id="paneRegister" style="display:none">
+      <div class="form-row"><label>Nom complet</label><input id="regName" autocomplete="name" placeholder="Prénom et nom"/></div>
+      <div class="form-row"><label>Téléphone</label><input id="regPhone" type="tel" autocomplete="tel" placeholder="+228 …"/></div>
+      <div class="form-row"><label>E-mail</label><input id="regEmail" type="email" autocomplete="email" placeholder="vous@exemple.com"/></div>
+      <div class="form-row"><label>Mot de passe</label><input id="regPwd" type="password" autocomplete="new-password" placeholder="6 caractères minimum"/></div>
+      <div class="form-row"><label>Confirmer le mot de passe</label><input id="regPwd2" type="password" autocomplete="new-password" placeholder="Retapez le mot de passe"/></div>
+      <p id="errRegister" style="color:#dc2626;font-size:12.5px;margin:0 0 10px;min-height:16px"></p>
+      <button id="btnRegister" class="btn-full btn-primary" onclick="doRegister()">Créer mon compte</button>
+      <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:12px">Un e-mail ne peut avoir qu'un seul compte. Il sert aussi à retrouver votre mot de passe.</p>
+    </div>
+
+    <!-- Mot de passe oublié -->
+    <div id="paneForgot" style="display:none">
+      <p style="font-size:13px;color:var(--muted);margin:0 0 14px">Saisissez l'e-mail de votre compte : nous vous enverrons un lien pour choisir un nouveau mot de passe.</p>
+      <div class="form-row"><label>E-mail</label><input id="forgotEmail" type="email" autocomplete="email" placeholder="vous@exemple.com"/></div>
+      <p id="msgForgot" style="font-size:12.5px;margin:0 0 10px;min-height:16px"></p>
+      <button id="btnForgot" class="btn-full btn-primary" onclick="doForgot()">Envoyer le lien</button>
+      <p style="text-align:center;margin:14px 0 0"><a href="#" onclick="authTab('login');return false" style="color:var(--orange);font-weight:700;font-size:13px;text-decoration:none">← Retour à la connexion</a></p>
+    </div>
   </div>
 </div>
 
@@ -804,6 +833,7 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
 <script type="module">
 import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, serverTimestamp, runTransaction } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
 const FIREBASE_CONFIG = window.__AET_FIREBASE_CONFIG__ || {
   apiKey: 'AIzaSyB5hpkRlFZ9HFRRbpQlvpHwMNDja37Nr2s',
@@ -830,7 +860,7 @@ const S = {
   favorites: JSON.parse(localStorage.getItem('aet_favs') || '[]'),
   orders: JSON.parse(localStorage.getItem('aet_orders') || '[]'),
   reviews: JSON.parse(localStorage.getItem('aet_reviews') || '{}'),
-  user: JSON.parse(localStorage.getItem('aet_user') || 'null'),
+  user: (() => { try { const u = JSON.parse(localStorage.getItem('aet_user') || 'null'); return (u && u.uid) ? u : null; } catch (e) { return null; } })(),
   currentReviewProductId: null,
   currentReviewStars: 5,
   activeCat: '',
@@ -1520,30 +1550,169 @@ window.autoResizeChat = el => { el.style.height = 'auto'; el.style.height = Math
 
 // ── COMPTE ────────────────────────────────────────────────────────────────
 window.loadAccount = () => {
+  const logoutSec = document.getElementById('logoutSection');
   if (S.user) {
     document.getElementById('accName').textContent = S.user.name||'Acheteur';
     document.getElementById('accPhone').textContent = S.user.phone||'';
     document.getElementById('guestPrompt').style.display = 'none';
+    if (logoutSec) logoutSec.style.display = '';
   } else {
+    document.getElementById('accName').textContent = 'Invité';
+    document.getElementById('accPhone').textContent = 'Non connecté';
     document.getElementById('guestPrompt').style.display = 'block';
+    if (logoutSec) logoutSec.style.display = 'none';
   }
   document.getElementById('accOrders').textContent = S.orders.length;
   document.getElementById('accFavs').textContent = S.favorites.length;
   document.getElementById('accReviews').textContent = Object.values(S.reviews).flat().filter(r=>r.mine).length;
 };
 
-window.openLoginForm = () => openDrawer('loginDrawer');
-window.doLogin = () => {
-  const name = document.getElementById('loginName').value.trim();
-  const phone = document.getElementById('loginPhone').value.trim();
-  if (!name||!phone) { showToast('⚠️ Nom et téléphone requis'); return; }
-  S.user = {name,phone,ts:Date.now()};
-  localStorage.setItem('aet_user',JSON.stringify(S.user));
-  closeDrawer('loginDrawer');
-  openDrawer('accountDrawer');
-  loadAccount();
-  showToast(`✅ Bienvenue, ${name} !`);
+// ── COMPTES CLIENTS (Firebase Auth + Firestore) ──────────────────────────────
+// Session client isolée (app Firebase nommée « customers ») : elle ne partage pas la
+// session d'un propriétaire connecté à togosheets-pro sur le même navigateur.
+// Unicité : uniquement par e-mail (garantie par Firebase Auth). Le nom et le téléphone
+// peuvent être identiques d'un client à l'autre.
+const custApp = getApps().some(a => a.name === 'customers') ? getApp('customers') : initializeApp(FIREBASE_CONFIG, 'customers');
+const auth    = getAuth(custApp);
+const custDb  = getFirestore(custApp);
+let registering = false;
+
+const $v = id => (document.getElementById(id)?.value || '').trim();
+const setMsg = (id, msg, ok = false) => {
+  const el = document.getElementById(id); if (!el) return;
+  el.textContent = msg || ''; el.style.color = ok ? '#16a34a' : '#dc2626';
 };
+const setBusy = (id, on, label) => {
+  const b = document.getElementById(id); if (!b) return;
+  b.disabled = on; b.style.opacity = on ? .6 : 1;
+  if (label) b.textContent = on ? 'Patientez…' : label;
+};
+const authErrMsg = e => ({
+  'auth/email-already-in-use': 'Cet e-mail a déjà un compte. Connectez-vous ou utilisez « Mot de passe oublié ».',
+  'auth/invalid-email': 'Adresse e-mail invalide.',
+  'auth/weak-password': 'Mot de passe trop faible (6 caractères minimum).',
+  'auth/invalid-credential': 'E-mail ou mot de passe incorrect.',
+  'auth/wrong-password': 'E-mail ou mot de passe incorrect.',
+  'auth/user-not-found': 'E-mail ou mot de passe incorrect.',
+  'auth/too-many-requests': 'Trop de tentatives. Réessayez dans quelques minutes.',
+  'auth/network-request-failed': 'Pas de connexion internet.'
+})[e && e.code] || 'Une erreur est survenue. Réessayez.';
+
+window.authTab = which => {
+  ['login', 'register', 'forgot'].forEach(k => {
+    const pane = document.getElementById('pane' + k[0].toUpperCase() + k.slice(1));
+    if (pane) pane.style.display = (k === which) ? '' : 'none';
+  });
+  const tabs = document.getElementById('authTabs');
+  if (tabs) tabs.style.display = (which === 'forgot') ? 'none' : 'flex';
+  const on  = 'flex:1;border:0;border-radius:9px;padding:9px;font-weight:800;font-size:13px;cursor:pointer;background:#fff;color:var(--orange);box-shadow:0 1px 3px rgba(0,0,0,.12)';
+  const off = 'flex:1;border:0;border-radius:9px;padding:9px;font-weight:700;font-size:13px;cursor:pointer;background:transparent;color:#64748b';
+  document.getElementById('tabLogin').style.cssText    = (which === 'login')    ? on : off;
+  document.getElementById('tabRegister').style.cssText = (which === 'register') ? on : off;
+  document.getElementById('loginTitle').textContent = { login: 'Se connecter', register: 'Créer un compte', forgot: 'Mot de passe oublié' }[which];
+  ['errLogin', 'errRegister', 'msgForgot'].forEach(id => setMsg(id, ''));
+};
+window.openLoginForm = () => { authTab('login'); openDrawer('loginDrawer'); };
+
+window.doRegister = async () => {
+  const name  = $v('regName').replace(/\s+/g, ' ');
+  const phone = $v('regPhone');
+  const email = $v('regEmail').toLowerCase();
+  const pwd   = document.getElementById('regPwd').value;
+  const pwd2  = document.getElementById('regPwd2').value;
+
+  if (name.length < 3)                                  { setMsg('errRegister', 'Saisissez votre nom complet.'); return; }
+  if (!/^\d{8,15}$/.test(phone.replace(/\D/g, '')))     { setMsg('errRegister', 'Numéro de téléphone invalide.'); return; }
+  if (!/^\S+@\S+\.\S+$/.test(email))                   { setMsg('errRegister', 'Adresse e-mail invalide.'); return; }
+  if (pwd.length < 6)                                   { setMsg('errRegister', 'Mot de passe : 6 caractères minimum.'); return; }
+  if (pwd !== pwd2)                                     { setMsg('errRegister', 'Les mots de passe ne correspondent pas.'); return; }
+
+  setMsg('errRegister', ''); setBusy('btnRegister', true);
+  registering = true;
+  let cred = null;
+  try {
+    cred = await createUserWithEmailAndPassword(auth, email, pwd);   // refuse si l'e-mail a déjà un compte
+    const uid = cred.user.uid;
+    await setDoc(doc(custDb, 'customers', uid), { name, phone, email, createdAt: serverTimestamp() });
+    S.user = { uid, name, phone, email, ts: Date.now() };
+    localStorage.setItem('aet_user', JSON.stringify(S.user));
+    ['regPwd', 'regPwd2'].forEach(id => { document.getElementById(id).value = ''; });
+    closeDrawer('loginDrawer'); openDrawer('accountDrawer'); loadAccount();
+    showToast(`✅ Bienvenue, ${name} !`);
+  } catch (e) {
+    if (cred) {
+      // Le profil n'a pas pu être enregistré (réseau…) : on annule le compte créé pour pouvoir réessayer.
+      try { await cred.user.delete(); } catch (_) { try { await signOut(auth); } catch (__) {} }
+    }
+    setMsg('errRegister', authErrMsg(e));
+  } finally {
+    registering = false;
+    setBusy('btnRegister', false, 'Créer mon compte');
+  }
+};
+
+window.doLogin = async () => {
+  const email = $v('loginEmail').toLowerCase();
+  const pwd   = document.getElementById('loginPwd').value;
+  if (!email || !pwd) { setMsg('errLogin', 'E-mail et mot de passe requis.'); return; }
+  setMsg('errLogin', ''); setBusy('btnLogin', true);
+  try {
+    const cred = await signInWithEmailAndPassword(auth, email, pwd);
+    const snap = await getDoc(doc(custDb, 'customers', cred.user.uid));
+    if (!snap.exists()) {
+      await signOut(auth);
+      setMsg('errLogin', "Cet e-mail n'a pas de compte client ici. Créez un compte avec un autre e-mail.");
+    } else {
+      document.getElementById('loginPwd').value = '';
+      closeDrawer('loginDrawer'); openDrawer('accountDrawer');
+      showToast('✅ Connexion réussie');
+    }
+  } catch (e) {
+    setMsg('errLogin', authErrMsg(e));
+  }
+  setBusy('btnLogin', false, 'Se connecter');
+};
+
+window.doForgot = async () => {
+  const email = $v('forgotEmail').toLowerCase();
+  if (!email) { setMsg('msgForgot', 'Saisissez votre e-mail.'); return; }
+  setMsg('msgForgot', ''); setBusy('btnForgot', true);
+  try {
+    await sendPasswordResetEmail(auth, email, {
+      url: 'https://alban3886.github.io/togosheets-pro/reset-password.html?back=' + encodeURIComponent(location.origin + location.pathname + location.search),
+      handleCodeInApp: true
+    });
+  } catch (e) {
+    if (['auth/invalid-email', 'auth/network-request-failed', 'auth/too-many-requests'].includes(e && e.code)) {
+      setMsg('msgForgot', authErrMsg(e)); setBusy('btnForgot', false, 'Envoyer le lien'); return;
+    }
+    // Autres erreurs (ex. e-mail inconnu) : même message neutre, pour ne pas révéler quels e-mails ont un compte.
+  }
+  setMsg('msgForgot', "Si un compte existe avec cet e-mail, un lien de réinitialisation vient d'être envoyé. Pensez à vérifier vos spams.", true);
+  setBusy('btnForgot', false, 'Envoyer le lien');
+};
+
+window.doLogout = async () => {
+  try { await signOut(auth); } catch (e) {}
+  S.user = null; localStorage.removeItem('aet_user');
+  closeDrawer('accountDrawer'); loadAccount();
+  showToast('👋 Vous êtes déconnecté');
+};
+
+// Source de vérité de la session : Firebase Auth + profil customers/{uid}.
+onAuthStateChanged(auth, async u => {
+  if (registering) return;
+  if (!u) { S.user = null; localStorage.removeItem('aet_user'); loadAccount(); return; }
+  try {
+    const snap = await getDoc(doc(custDb, 'customers', u.uid));
+    if (snap.exists()) {
+      const d = snap.data();
+      S.user = { uid: u.uid, name: d.name, phone: d.phone, email: d.email || u.email, ts: Date.now() };
+      localStorage.setItem('aet_user', JSON.stringify(S.user));
+    } else { S.user = null; }
+  } catch (e) { console.warn('[auth profil]', e); }
+  loadAccount();
+});
 
 // ── AVIS ──────────────────────────────────────────────────────────────────
 window.openReview = (id, name) => {

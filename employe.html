@@ -1903,6 +1903,13 @@ function loadChatThreads() {
   chatThreadsUnsub = onSnapshot(q, snap => {
     chatThreads = [];
     snap.forEach(d => chatThreads.push({ id: d.id, ...d.data() }));
+    console.log('[CHAT THREADS FIREBASE]', chatThreads.map(t => ({
+      id: t.id,
+      clientId: t.clientId,
+      clientName: t.clientName,
+      clientPhone: t.clientPhone,
+      chatType: t.chatType
+    })));
     chatThreads.sort((a,b) => (b.updatedAt||0) - (a.updatedAt||0));
 
     const unread = chatThreads.filter(t => t.unreadEmployee).length;

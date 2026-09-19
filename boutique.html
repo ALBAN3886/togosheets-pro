@@ -1640,10 +1640,6 @@ window.doRegister = async () => {
     closeDrawer('loginDrawer'); openDrawer('accountDrawer'); loadAccount();
     showToast(`✅ Bienvenue, ${name} !`);
   } catch (e) {
-    if (cred) {
-      // Le profil n'a pas pu être enregistré (réseau…) : on annule le compte créé pour pouvoir réessayer.
-      try { await cred.user.delete(); } catch (_) { try { await signOut(auth); } catch (__) {} }
-    }
     setMsg('errRegister', authErrMsg(e));
   } finally {
     registering = false;

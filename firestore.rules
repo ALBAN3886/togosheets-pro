@@ -87,12 +87,14 @@ service cloud.firestore {
     }
 
     // ── Chat support/vendeur ──
+    // Le client (acheteur) n'est jamais authentifié avec Firebase pour cette
+    // fonctionnalité : il est identifié uniquement par un ID aléatoire stocké
+    // dans son navigateur (voir chatDocRef() dans boutique.html/employe.html).
+    // Une règle isSignedIn() bloquerait donc TOUJOURS le côté client — accès
+    // volontairement ouvert ici, comme c'était le cas avant l'ajout des règles
+    // de sécurité de cette session.
     match /chats_flat/{id} {
-      allow read, write: if isSignedIn()
-        && (request.auth.uid in resource.data.get('participants', [])
-            || request.auth.uid == resource.data.get('userId', null)
-            || isAdmin());
-      allow create: if isSignedIn();
+      allow read, write: if true;
     }
 
     // ── Commerce : un gros document par boutique, clé = uid du propriétaire ──

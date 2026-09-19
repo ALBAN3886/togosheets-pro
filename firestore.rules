@@ -35,6 +35,12 @@ service cloud.firestore {
     }
 
     // ── users/{uid} : profil, statut premium, flag isAdmin ──
+// ── customers/{uid} : profil client ──
+    match /customers/{uid} {
+      allow create, read, update: if isSignedIn() && request.auth.uid == uid;
+      allow delete: if false;
+    }
+
     match /users/{uid} {
       allow read:   if isSelf(uid) || isAdmin();
       // Un utilisateur ne peut jamais s'auto-attribuer isAdmin ou le statut premium :

@@ -2250,62 +2250,120 @@ window.doSale = async function() {
 window.doRejectOrder = async function(orderId) {
   if (!confirm('Êtes-vous sûr de vouloir rejeter cette commande ?')) return;
   try {
-    await runTransaction(db, async (tx) => {
-      const ref = cdRef();
-      const snap = await tx.get(ref);
-      const data = snap.exists() ? (snap.data() || {}) : {};
-      const pending = Array.isArray(data.pendingOrders) ? data.pendingOrders : [];
-      const oIdx = pending.findIndex(o => o.id === orderId);
-      if (oIdx >= 0) pending[oIdx] = { ...pending[oIdx], status: 'rejected', rejectedAt: Date.now(), rejectedBy: state.user?.email || 'employé' };
-      tx.set(ref, { pendingOrders: pending, updatedAt: serverTimestamp() }, { merge: true });
-    });
+    const order = state.orders.find(o => o.id === orderId);
+    if (!order) return;
+
+    if (order._source === 'public') {
+      await updateDoc(doc(db, 'public_orders', orderId), {
+        status: 'rejected',
+        rejectedAt: Date.now(),
+        rejectedBy: state.user?.email || 'employé',
+        updatedAt: serverTimestamp()
+      });
+    } else {
+      await runTransaction(db, async (tx) => {
+        const ref = cdRef();
+        const snap = await tx.get(ref);
+        const data = snap.exists() ? (snap.data() || {}) : {};
+        const pending = Array.isArray(data.pendingOrders) ? data.pendingOrders : [];
+        const oIdx = pending.findIndex(o => o.id === orderId);
+        if (oIdx >= 0) {
+          pending[oIdx] = {
+            ...pending[oIdx],
+            status: 'rejected',
+            rejectedAt: Date.now(),
+            rejectedBy: state.user?.email || 'employé'
+          };
+        }
+        tx.set(ref, { pendingOrders: pending, updatedAt: serverTimestamp() }, { merge: true });
+      });
+    }
+
     showToast('Commande rejetée', 'success');
     renderOrders();
-  } catch(e) { showToast(e.message||'Erreur', 'error'); }
+  } catch(e) {
+    showToast(e.message || 'Erreur', 'error');
+  }
 };
 
 window.doApproveOrder = async function(orderId) {
   const order = state.orders.find(o => o.id === orderId);
   if (!order) return;
+
   const sid = storeId || state.context?.storeIds?.[0] || '';
   const receiptNum = 'AET-' + Date.now();
+
   try {
     await runTransaction(db, async (tx) => {
       const ref = cdRef();
       const snap = await tx.get(ref);
       const data = snap.exists() ? (snap.data() || {}) : {};
-      const articles   = Array.isArray(data.articles) ? data.articles : [];
+      const articles = Array.isArray(data.articles) ? data.articles : [];
       const mouvements = Array.isArray(data.mouvements) ? data.mouvements : [];
-      const pending     = Array.isArray(data.pendingOrders) ? data.pendingOrders : [];
 
       for (const item of (order.items || [])) {
         const pid = item.articleId || item.productId;
         const idx = articles.findIndex(a => String(a.id) === String(pid));
         if (idx >= 0) {
           const current = Number(articles[idx].stock || 0);
-          articles[idx] = { ...articles[idx], stock: Math.max(0, current - Number(item.qty||0)) };
+          articles[idx] = {
+            ...articles[idx],
+            stock: Math.max(0, current - Number(item.qty || 0))
+          };
         }
       }
 
       mouvements.push({
-        id: empUID(), type: 'sale', shopId: order.shopId || sid,
+        id: empUID(),
+        type: 'sale',
+        shopId: order.shopId || sid,
         originOrderId: orderId,
         sellerEmployeeId: state.user?.uid,
         sellerName: state.user?.displayName || state.user?.email || 'Opérateur',
-        source: 'storefront-approved', paymentMethod: 'cash',
-        items: (order.items || []).map(normalizeSaleItem), total: order.grandTotal||order.total||0, grandTotal: order.grandTotal||order.total||0,
-        receiptNumber: receiptNum, status: 'completed',
-        createdAtMs: Date.now(),
+        source: 'storefront-approved',
+        paymentMethod: order.paymentMode || 'cash',
+        items: (order.items || []).map(normalizeSaleItem),
+        total: order.grandTotal || order.total || 0,
+        grandTotal: order.grandTotal || order.total || 0,
+        receiptNumber: receiptNum,
+        status: 'completed',
+        createdAtMs: Date.now()
       });
 
-      const oIdx = pending.findIndex(o => o.id === orderId);
-      if (oIdx >= 0) pending[oIdx] = { ...pending[oIdx], status: 'completed' };
-
-      tx.set(ref, { articles, mouvements, pendingOrders: pending, updatedAt: serverTimestamp() }, { merge: true });
+      tx.set(ref, {
+        articles,
+        mouvements,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
     });
+
+    if (order._source === 'public') {
+      await updateDoc(doc(db, 'public_orders', orderId), {
+        status: 'completed',
+        completedAt: Date.now(),
+        completedBy: state.user?.email || 'employé',
+        receiptNumber: receiptNum,
+        updatedAt: serverTimestamp()
+      });
+    } else {
+      await runTransaction(db, async (tx) => {
+        const ref = cdRef();
+        const snap = await tx.get(ref);
+        const data = snap.exists() ? (snap.data() || {}) : {};
+        const pending = Array.isArray(data.pendingOrders) ? data.pendingOrders : [];
+        const oIdx = pending.findIndex(o => o.id === orderId);
+        if (oIdx >= 0) {
+          pending[oIdx] = { ...pending[oIdx], status: 'completed' };
+        }
+        tx.set(ref, { pendingOrders: pending, updatedAt: serverTimestamp() }, { merge: true });
+      });
+    }
+
     showToast('Commande validée', 'success');
     navigate('receipts');
-  } catch(e) { showToast(e.message||'Erreur', 'error'); }
+  } catch(e) {
+    showToast(e.message || 'Erreur', 'error');
+  }
 };
 
 window.doPrint = function() {

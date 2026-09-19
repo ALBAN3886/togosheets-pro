@@ -1903,18 +1903,51 @@ function loadChatThreads() {
   chatThreadsUnsub = onSnapshot(q, snap => {
     chatThreads = [];
     snap.forEach(d => chatThreads.push({ id: d.id, ...d.data() }));
-    const chatDiag = chatThreads.map(t =>
-      `${t.clientName || 'Client'} | ${t.clientPhone || '-'} | ${t.clientId || '-'} | ${t.chatType || '-'} | ${t.id}`
-    ).join('\\n');
 
-    let diagBox = document.getElementById('chatDiagnosticBox');
-    if (!diagBox) {
-      diagBox = document.createElement('pre');
-      diagBox.id = 'chatDiagnosticBox';
-      diagBox.style.cssText = 'position:fixed;left:5px;right:5px;bottom:5px;max-height:45vh;overflow:auto;background:#111;color:#0f0;padding:10px;z-index:99999;font-size:11px;white-space:pre-wrap;border-radius:8px;';
-      document.body.appendChild(diagBox);
+    // Regrouper les anciennes discussions d'un même client.
+    // Priorité au document UID Firebase comme conversation principale.
+    const grouped = new Map();
+
+    for (const thread of chatThreads) {
+      const type = thread.chatType || 'support';
+      const phone = String(thread.clientPhone || '').replace(/\\D/g, '');
+      const name = String(thread.clientName || '').trim().toLowerCase();
+      const key = type + '|' + (phone || name || thread.clientId || thread.id);
+
+      if (!grouped.has(key)) {
+        grouped.set(key, { ...thread, _allIds: [thread.id] });
+        continue;
+      }
+
+      const current = grouped.get(key);
+      const currentIsUid = String(current.clientId || '').startsWith('uid_');
+      const threadIsUid = String(thread.clientId || '').startsWith('uid_');
+
+      // Le document UID devient le document principal.
+      if (!currentIsUid && threadIsUid) {
+        const oldMessages = current.messages || [];
+        const newMessages = thread.messages || [];
+        grouped.set(key, {
+          ...thread,
+          messages: [...oldMessages, ...newMessages].sort((a,b) => (a.ts || 0) - (b.ts || 0)),
+          unreadEmployee: !!(current.unreadEmployee || thread.unreadEmployee),
+          unreadClient: !!(current.unreadClient || thread.unreadClient),
+          updatedAt: Math.max(current.updatedAt || 0, thread.updatedAt || 0),
+          _allIds: [...(current._allIds || []), thread.id]
+        });
+      } else {
+        const currentMessages = current.messages || [];
+        const threadMessages = thread.messages || [];
+        current.messages = [...currentMessages, ...threadMessages]
+          .sort((a,b) => (a.ts || 0) - (b.ts || 0));
+        current.unreadEmployee = !!(current.unreadEmployee || thread.unreadEmployee);
+        current.unreadClient = !!(current.unreadClient || thread.unreadClient);
+        current.updatedAt = Math.max(current.updatedAt || 0, thread.updatedAt || 0);
+        current._allIds = [...(current._allIds || []), thread.id];
+      }
     }
-    diagBox.textContent = 'DIAGNOSTIC DISCUSSIONS\\n\\n' + chatDiag;
+
+    chatThreads = Array.from(grouped.values());
     chatThreads.sort((a,b) => (b.updatedAt||0) - (a.updatedAt||0));
 
     const unread = chatThreads.filter(t => t.unreadEmployee).length;

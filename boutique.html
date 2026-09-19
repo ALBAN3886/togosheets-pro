@@ -2164,7 +2164,7 @@ window.submitReview = () => {
   const comment = document.getElementById('rvComment').value.trim();
   if (!S.reviews[id]) S.reviews[id] = [];
   S.reviews[id].unshift({stars,name,comment,ts:Date.now(),mine:true});
-  localStorage.setItem('aet_reviews',JSON.stringify(S.reviews));
+  localStorage.setItem('aet_reviews',JSON.stringify(S.reviews)); saveReviewsToFirebase();
   closeDrawer('reviewDrawer');
   showToast('⭐ Avis publié, merci !');
   renderProducts();

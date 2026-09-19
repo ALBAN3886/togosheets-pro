@@ -1690,7 +1690,25 @@ window.doLogout = async () => {
 // Source de vérité de la session : Firebase Auth + profil customers/{uid}.
 onAuthStateChanged(auth, async u => {
   if (registering) return;
-  if (!u) { S.user = null; localStorage.removeItem('aet_user'); loadAccount(); return; }
+  if (!u) {
+    // Nettoyer les listeners liés à l'ancien compte
+    if (typeof chatSummaryUnsubs !== 'undefined') {
+      chatSummaryUnsubs.forEach(fn => { try { fn(); } catch(_){} });
+      chatSummaryUnsubs = [];
+    }
+    S._chatSummaryStarted = false;
+
+    if (typeof chatUnsub === 'function') {
+      try { chatUnsub(); } catch(_) {}
+      chatUnsub = null;
+    }
+
+    S.chatDocs = {};
+    S.user = null;
+    localStorage.removeItem('aet_user');
+    loadAccount();
+    return;
+  }
   try {
     const snap = await getDoc(doc(custDb, 'customers', u.uid));
     if (snap.exists()) {
@@ -1700,6 +1718,27 @@ onAuthStateChanged(auth, async u => {
     } else { S.user = null; }
   } catch (e) { console.warn('[auth profil]', e); }
   loadAccount();
+
+  // 🔐 Après restauration de la session Firebase, le chat doit utiliser
+  // l'UID stable du client et non l'ancien identifiant local clt_...
+  if (typeof chatSummaryUnsubs !== 'undefined') {
+    chatSummaryUnsubs.forEach(fn => { try { fn(); } catch(_){} });
+    chatSummaryUnsubs = [];
+  }
+  S._chatSummaryStarted = false;
+
+  if (typeof chatUnsub === 'function') {
+    try { chatUnsub(); } catch(_) {}
+    chatUnsub = null;
+  }
+
+  if (tenantId && S.user?.uid) {
+    ensureChatSummaryWatch();
+    if (typeof currentChatType !== 'undefined' &&
+        document.getElementById('chatWindow')?.classList.contains('open')) {
+      startChatListener(currentChatType);
+    }
+  }
 });
 
 // ── AVIS ──────────────────────────────────────────────────────────────────

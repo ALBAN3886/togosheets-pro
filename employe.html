@@ -1903,13 +1903,18 @@ function loadChatThreads() {
   chatThreadsUnsub = onSnapshot(q, snap => {
     chatThreads = [];
     snap.forEach(d => chatThreads.push({ id: d.id, ...d.data() }));
-    console.log('[CHAT THREADS FIREBASE]', chatThreads.map(t => ({
-      id: t.id,
-      clientId: t.clientId,
-      clientName: t.clientName,
-      clientPhone: t.clientPhone,
-      chatType: t.chatType
-    })));
+    const chatDiag = chatThreads.map(t =>
+      `${t.clientName || 'Client'} | ${t.clientPhone || '-'} | ${t.clientId || '-'} | ${t.chatType || '-'} | ${t.id}`
+    ).join('\\n');
+
+    let diagBox = document.getElementById('chatDiagnosticBox');
+    if (!diagBox) {
+      diagBox = document.createElement('pre');
+      diagBox.id = 'chatDiagnosticBox';
+      diagBox.style.cssText = 'position:fixed;left:5px;right:5px;bottom:5px;max-height:45vh;overflow:auto;background:#111;color:#0f0;padding:10px;z-index:99999;font-size:11px;white-space:pre-wrap;border-radius:8px;';
+      document.body.appendChild(diagBox);
+    }
+    diagBox.textContent = 'DIAGNOSTIC DISCUSSIONS\\n\\n' + chatDiag;
     chatThreads.sort((a,b) => (b.updatedAt||0) - (a.updatedAt||0));
 
     const unread = chatThreads.filter(t => t.unreadEmployee).length;

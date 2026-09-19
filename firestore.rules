@@ -87,35 +87,34 @@ service cloud.firestore {
     }
 
     // ── Chat support/vendeur ──
-    // Le client (acheteur) n'est jamais authentifié avec Firebase pour cette
-    // fonctionnalité : il est identifié uniquement par un ID aléatoire stocké
-    // dans son navigateur (voir chatDocRef() dans boutique.html/employe.html).
-    // Une règle isSignedIn() bloquerait donc TOUJOURS le côté client — accès
-    // volontairement ouvert ici, comme c'était le cas avant l'ajout des règles
-    // de sécurité de cette session.
+    // Le chat client reste accessible même sans compte Firebase.
     match /chats_flat/{id} {
       allow read, write: if true;
     }
 
-    // ── Commerce : un gros document par boutique, clé = uid du propriétaire ──
-    match /commerce_data/{tenantId} {
-      allow read, write: if isSelf(tenantId) || isAdmin();
-      // Pour activer un vrai accès employé plus tard, remplacer la ligne
-      // ci-dessus par quelque chose comme :
-      //   allow read, write: if isSelf(tenantId) || isAdmin()
-      //     || (isSignedIn() && request.auth.uid in resource.data.get('employeeUids', []));
-      // à condition d'ajouter réellement un champ employeeUids géré par le propriétaire.
+    // ── Liaisons employés : seul le propriétaire peut gérer ses employés ──
+    match /tenants/{tenantId}/roleBindings/{employeeUid} {
+      allow read: if isSignedIn()
+        && (request.auth.uid == tenantId
+            || request.auth.uid == employeeUid
+            || isAdmin());
 
-      // Un client qui passe commande n'est jamais connecté avec le compte du
-      // propriétaire : sans cette règle, boutique.html ne peut jamais ajouter
-      // la commande dans pendingOrders, et l'espace employé (qui ne lit QUE ce
-      // champ, jamais public_orders) ne la voit jamais. On autorise donc, en
-      // plus du propriétaire, l'ajout d'UNE commande à la fin de pendingOrders
-      // — rien d'autre dans le document ne peut être touché par cette règle.
-      // Limite connue : Firestore ne permet pas de vérifier finement qu'aucune
-      // commande existante n'a été modifiée au passage (seule la taille du
-      // tableau est vérifiée) — acceptable ici vu la nature des données
-      // (commandes produits, pas d'information bancaire).
+      allow create, update, delete: if isSignedIn()
+        && (request.auth.uid == tenantId || isAdmin());
+    }
+
+    // ── Commerce : propriétaire OU employé autorisé par roleBinding ──
+    match /commerce_data/{tenantId} {
+      allow read, write: if isSelf(tenantId)
+        || isAdmin()
+        || (
+          isSignedIn()
+          && exists(/databases/$(database)/documents/tenants/$(tenantId)/roleBindings/$(request.auth.uid))
+          && get(/databases/$(database)/documents/tenants/$(tenantId)/roleBindings/$(request.auth.uid)).data.active == true
+        );
+
+      // Ancien mécanisme : autoriser au client l'ajout d'une commande
+      // dans pendingOrders sans lui donner accès aux autres données.
       allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pendingOrders','updatedAt'])
         && request.resource.data.pendingOrders.size() == resource.data.get('pendingOrders', []).size() + 1;
     }
@@ -140,12 +139,37 @@ service cloud.firestore {
     match /public_orders/{orderId} {
       allow create: if request.resource.data.keys().hasAll(['tenantId'])
                     && request.resource.data.tenantId is string;
-      allow read:   if isSignedIn()
-                    && (resource.data.tenantId == request.auth.uid
-                        || resource.data.get('buyerId', null) == request.auth.uid
-                        || isAdmin());
-      allow list:   if isAdmin();
-      allow update, delete: if isSignedIn() && resource.data.tenantId == request.auth.uid || isAdmin();
+
+      allow read: if isSignedIn()
+        && (
+          resource.data.tenantId == request.auth.uid
+          || resource.data.get('buyerId', null) == request.auth.uid
+          || isAdmin()
+          || (
+            exists(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/roleBindings/$(request.auth.uid))
+            && get(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/roleBindings/$(request.auth.uid)).data.active == true
+          )
+        );
+
+      allow list: if isSignedIn()
+        && (
+          isAdmin()
+          || resource.data.tenantId == request.auth.uid
+          || (
+            exists(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/roleBindings/$(request.auth.uid))
+            && get(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/roleBindings/$(request.auth.uid)).data.active == true
+          )
+        );
+
+      allow update, delete: if isSignedIn()
+        && (
+          resource.data.tenantId == request.auth.uid
+          || isAdmin()
+          || (
+            exists(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/roleBindings/$(request.auth.uid))
+            && get(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/roleBindings/$(request.auth.uid)).data.active == true
+          )
+        );
     }
   }
 }

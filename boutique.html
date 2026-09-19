@@ -1287,38 +1287,18 @@ window.submitOrder = async () => {
 
   let saved = false;
 
-  // 1ère tentative : transaction atomique sur commerce_data/{tenantId}
+  // Enregistrement officiel de la commande :
+  // Client -> public_orders -> vendeur/employé
   try {
-    await runTransaction(db, async tx => {
-      const ref = doc(db, 'commerce_data', tid);
-      const snap = await tx.get(ref);
-      const data = snap.exists() ? (snap.data()||{}) : {};
-      const pending = Array.isArray(data.pendingOrders) ? [...data.pendingOrders] : [];
-      pending.push(order);
-      tx.set(ref, { pendingOrders: pending, updatedAt: serverTimestamp() }, { merge: true });
+    await addDoc(collection(db, 'public_orders'), {
+      ...order,
+      buyerId: (auth.currentUser && auth.currentUser.uid) || null,
+      createdAt: serverTimestamp()
     });
     saved = true;
   } catch(e) {
-    console.warn('[checkout transaction]', e);
-    // 2ème tentative : écriture simple avec setDoc merge
-    try {
-      const ref = doc(db, 'commerce_data', tid);
-      const snap = await getDoc(ref);
-      const data = snap.exists() ? (snap.data()||{}) : {};
-      const pending = Array.isArray(data.pendingOrders) ? [...data.pendingOrders] : [];
-      pending.push(order);
-      await setDoc(ref, { pendingOrders: pending, updatedAt: serverTimestamp() }, { merge: true });
-      saved = true;
-    } catch(e2) {
-      console.warn('[checkout setDoc]', e2);
-    }
+    console.error('[public_orders]', e);
   }
-
-  // 3ème tentative : collection public_orders (si les règles l'autorisent)
-  try {
-    await addDoc(collection(db, 'public_orders'), { ...order, createdAt: serverTimestamp() });
-    saved = true;
-  } catch(e) { console.warn('[public_orders]', e); }
 
   if (!saved) {
     showToast('⚠️ Erreur enregistrement. Vérifiez la connexion.');

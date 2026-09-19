@@ -1122,8 +1122,11 @@ function loadData() {
   return new Promise((resolve) => {
     const tid = tenantId || state.user?.uid || '';
     if (!tid) { resolve(); return; }
+
     if (cmUnsub) cmUnsub();
+
     let first = true;
+
     cmUnsub = onSnapshot(cdRef(), snap => {
       cmData = snap.exists() ? (snap.data() || {}) : {};
       cmData.articles      = Array.isArray(cmData.articles) ? cmData.articles : [];
@@ -1131,12 +1134,65 @@ function loadData() {
       cmData.mouvements    = Array.isArray(cmData.mouvements) ? cmData.mouvements : [];
       cmData.pendingOrders = Array.isArray(cmData.pendingOrders) ? cmData.pendingOrders : [];
       cmData.cashSessions  = Array.isArray(cmData.cashSessions) ? cmData.cashSessions : [];
+
       deriveStateFromCmData();
-      if (first) { first = false; resolve(); }
-      else if (state.user) renderPage();
+
+      if (first) {
+        first = false;
+        resolve();
+      } else if (state.user) {
+        renderPage();
+      }
     }, err => {
-      console.error('[Employé]', err);
+      console.error('[Employé commerce_data]', err);
       resolve();
+    });
+
+    // Commandes marketplace : client -> public_orders -> employé
+    const ordersQuery = query(
+      collection(db, 'public_orders'),
+      where('tenantId', '==', tid)
+    );
+
+    onSnapshot(ordersQuery, snap => {
+      const publicOrders = [];
+
+      snap.forEach(d => {
+        publicOrders.push({
+          id: d.id,
+          ...d.data()
+        });
+      });
+
+      const sid = storeId || state.context?.storeIds?.[0] || '';
+
+      const oldOrders = Array.isArray(cmData.pendingOrders)
+        ? cmData.pendingOrders
+            .filter(o => !sid || String(o.shopId || '') === String(sid) || !o.shopId)
+            .map(o => ({ ...o, _source: 'legacy' }))
+        : [];
+
+      const newOrders = publicOrders
+        .filter(o => !sid || String(o.shopId || '') === String(sid) || !o.shopId)
+        .map(o => ({ ...o, _source: 'public' }));
+
+      // Fusion anciennes commandes + nouvelles commandes.
+      // Si une même commande existe dans les deux sources, on garde la version public.
+      const merged = new Map();
+
+      oldOrders.forEach(o => merged.set(String(o.id), o));
+      newOrders.forEach(o => merged.set(String(o.id), o));
+
+      state.orders = Array.from(merged.values())
+        .sort((a,b) => (b.createdAtMs || b.createdAt || 0) - (a.createdAtMs || a.createdAt || 0));
+
+      updateOrdersBadge();
+
+      if (state.user) {
+        renderPage();
+      }
+    }, err => {
+      console.error('[Employé public_orders]', err);
     });
   });
 }

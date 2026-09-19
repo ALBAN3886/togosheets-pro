@@ -9562,6 +9562,12 @@ if ('serviceWorker' in navigator) {
       <div id="cmEmployeeForm" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)">
         <label class="cm-modal-label" data-i18n="cm_employee_name">Nom de l'employé</label>
         <input type="text" id="cmEmpName" class="cm-modal-input" data-i18n="cm_employee_name_ph" placeholder="ex: Koffi Mensah">
+
+<label class="cm-modal-label">Email de connexion</label>
+<input type="email" id="cmEmpEmail" class="cm-modal-input" placeholder="ex: employe@email.com" autocomplete="off">
+
+<label class="cm-modal-label">Mot de passe de connexion</label>
+<input type="password" id="cmEmpPassword" class="cm-modal-input" placeholder="Minimum 6 caractères" autocomplete="new-password">
         <label class="cm-modal-label" data-i18n="cm_employee_role">Rôle</label>
         <div style="display:flex;gap:8px;margin-bottom:12px">
           <button type="button" class="cm-cat-chip active" id="cmEmpRoleManager" onclick="cmPickEmpRole('manager')" style="flex:1">
@@ -10042,43 +10048,146 @@ window.cmPickEmpRole = function(role){
 window.cmSaveEmployee = async function(){
   const shop = cmGetShop();
   if (!shop) return;
+
   const name = document.getElementById('cmEmpName').value.trim();
+  const email = document.getElementById('cmEmpEmail').value.trim().toLowerCase();
+  const password = document.getElementById('cmEmpPassword').value;
   const pin = document.getElementById('cmEmpPin').value.trim();
   const whatsapp = window.cmNormalizeWhatsapp(document.getElementById('cmEmpWhatsapp').value);
   const role = CM._pendingEmpRole || 'manager';
-  if (!name) { cmToast(t('cm_msg_employee_name_required'),'error'); return; }
+
+  if (!name) {
+    cmToast(t('cm_msg_employee_name_required'),'error');
+    return;
+  }
 
   const isEditingExisting = !!CM.editingEmployeeId;
   const pinProvided = pin.length > 0;
 
-  // En édition, le champ PIN peut rester vide pour ne pas le changer.
-  // En création, un PIN est obligatoire.
   if (!isEditingExisting || pinProvided) {
-    if (!/^\d{4}$/.test(pin)) { cmToast(t('cm_msg_pin_4digits'),'error'); return; }
-    if (window.cmIsWeakPin(pin)) { cmToast('Ce PIN est trop simple (ex: 1234, 0000). Choisissez-en un autre.', 'error'); return; }
+    if (!/^\d{4}$/.test(pin)) {
+      cmToast(t('cm_msg_pin_4digits'),'error');
+      return;
+    }
+    if (window.cmIsWeakPin(pin)) {
+      cmToast('Ce PIN est trop simple (ex: 1234, 0000). Choisissez-en un autre.', 'error');
+      return;
+    }
   }
 
   let pinHash = null;
+
   if (pinProvided) {
     pinHash = await window.cmHashPin(pin);
+
     const existingHashes = cmAllEmployees()
       .filter(e => e.id !== CM.editingEmployeeId)
       .map(e => e.pinHash);
-    if (existingHashes.includes(pinHash)) { cmToast(t('cm_msg_pin_taken'),'error'); return; }
+
+    if (existingHashes.includes(pinHash)) {
+      cmToast(t('cm_msg_pin_taken'),'error');
+      return;
+    }
   }
 
   if (!Array.isArray(shop.employees)) shop.employees = [];
 
   if (CM.editingEmployeeId) {
     const emp = shop.employees.find(e => e.id === CM.editingEmployeeId);
+
     if (emp) {
       Object.assign(emp, { name, role, whatsapp });
+
       if (pinHash) emp.pinHash = pinHash;
-      delete emp.pin; // nettoyage si migration depuis un ancien PIN en clair
+
+      delete emp.pin;
     }
   } else {
-    shop.employees.push({ id: cmUID(), name, pinHash, role, whatsapp, createdAt: Date.now() });
+    if (!email) {
+      cmToast('L’adresse email de connexion est obligatoire.', 'error');
+      return;
+    }
+
+    if (password.length < 6) {
+      cmToast('Le mot de passe doit contenir au moins 6 caractères.', 'error');
+      return;
+    }
+
+    try {
+      /*
+       * Application Firebase secondaire :
+       * elle crée le compte de l'employé sans déconnecter le patron.
+       */
+      const employeeAppName = 'employee-auth-creator';
+
+      let employeeApp;
+      try {
+        employeeApp = getApp(employeeAppName);
+      } catch (_) {
+        employeeApp = initializeApp(firebaseConfig, employeeAppName);
+      }
+
+      const employeeAuth = getAuth(employeeApp);
+
+      const cred = await createUserWithEmailAndPassword(
+        employeeAuth,
+        email,
+        password
+      );
+
+      const employeeUid = cred.user.uid;
+
+      await setDoc(
+        doc(window.__AET_DB__, 'tenants', window.currentUser.uid, 'roleBindings', employeeUid),
+        {
+          tenantId: window.currentUser.uid,
+          employeeId: cmUID(),
+          role: role,
+          storeIds: shop.id ? [shop.id] : [],
+          name: name,
+          email: email,
+          whatsapp: whatsapp || '',
+          active: true,
+          createdAt: serverTimestamp()
+        },
+        { merge: true }
+      );
+
+      shop.employees.push({
+        id: employeeUid,
+        name,
+        email,
+        pinHash,
+        role,
+        whatsapp,
+        authUid: employeeUid,
+        createdAt: Date.now()
+      });
+
+      try {
+        await signOut(employeeAuth);
+      } catch (_) {}
+
+    } catch (e) {
+      console.error('Création compte employé:', e);
+
+      let msg = 'Impossible de créer le compte employé.';
+
+      if (e && e.code === 'auth/email-already-in-use') {
+        msg = 'Cette adresse email est déjà utilisée.';
+      } else if (e && e.code === 'auth/invalid-email') {
+        msg = 'Adresse email invalide.';
+      } else if (e && e.code === 'auth/weak-password') {
+        msg = 'Mot de passe trop faible.';
+      } else if (e && e.code === 'permission-denied') {
+        msg = 'Création du compte réussie, mais les droits Firebase doivent encore être configurés.';
+      }
+
+      cmToast(msg, 'error');
+      return;
+    }
   }
+
   cmSave();
   cmRenderEmployeesList();
   window.cmCloseEmployeeForm();

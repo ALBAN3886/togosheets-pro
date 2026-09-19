@@ -1365,8 +1365,17 @@ let chatUnsub = null;
 let currentChatType = 'support';
 
 function getClientId() {
+  // Client connecté : identité Firebase stable sur tous les appareils
+  if (auth.currentUser?.uid) {
+    return 'uid_' + auth.currentUser.uid;
+  }
+
+  // Client invité : identifiant local conservé sur cet appareil
   let cid = localStorage.getItem('aet_chat_cid');
-  if (!cid) { cid = 'clt_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6); localStorage.setItem('aet_chat_cid', cid); }
+  if (!cid) {
+    cid = 'clt_' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+    localStorage.setItem('aet_chat_cid', cid);
+  }
   return cid;
 }
 
@@ -1520,6 +1529,8 @@ window.sendChatMsg = async () => {
       unreadClient: false,
       messages: purged,
     });
+    console.log('[CHAT FIREBASE OK]', ref.path, getClientId());
+    showToast('☁️ Message enregistré dans Firebase');
   } catch(e) {
     console.warn('[sendChatMsg]', e);
     showToast('⚠️ Message non envoyé — vérifiez votre connexion');

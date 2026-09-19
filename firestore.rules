@@ -39,6 +39,10 @@ service cloud.firestore {
     match /customers/{uid} {
       allow create, read, update: if isSignedIn() && request.auth.uid == uid;
       allow delete: if false;
+
+      match /cart/{cartId} {
+        allow read, write: if isSignedIn() && request.auth.uid == uid;
+      }
     }
 
     match /users/{uid} {
@@ -161,6 +165,7 @@ service cloud.firestore {
         && (
           isAdmin()
           || resource.data.tenantId == request.auth.uid
+          || resource.data.get('buyerId', null) == request.auth.uid
           || (
             exists(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/roleBindings/$(request.auth.uid))
             && get(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/roleBindings/$(request.auth.uid)).data.active == true

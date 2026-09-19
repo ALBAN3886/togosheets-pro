@@ -832,7 +832,7 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
 ══════════════════════════════════════════════════ -->
 <script type="module">
 import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, addDoc, serverTimestamp, runTransaction } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getFirestore, doc, setDoc, getDoc, getDocs, onSnapshot, collection, addDoc, serverTimestamp, runTransaction, deleteDoc, query, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
 const FIREBASE_CONFIG = window.__AET_FIREBASE_CONFIG__ || {
@@ -1156,7 +1156,7 @@ window.toggleFav = (id, btn) => {
   const idx = S.favorites.indexOf(String(id));
   if (idx>=0) S.favorites.splice(idx,1);
   else S.favorites.push(String(id));
-  localStorage.setItem('aet_favs', JSON.stringify(S.favorites));
+  localStorage.setItem('aet_favs', JSON.stringify(S.favorites)); saveFavoritesToFirebase();
   if (btn) { btn.classList.toggle('active', S.favorites.includes(String(id))); }
   showToast(S.favorites.includes(String(id)) ? '❤️ Ajouté aux favoris' : '🤍 Retiré des favoris');
   document.getElementById('accFavs').textContent = S.favorites.length;
@@ -1173,6 +1173,368 @@ window.openFavorites = () => {
   openDrawer('favsDrawer');
 };
 
+// ── CUSTOMER DATA SYNC FIREBASE ─────────────────────────────────────────────
+
+let cartSaveTimer = null;
+let cartWatchUnsub = null;
+let ordersWatchUnsub = null;
+let customerDataWatchUnsub = null;
+
+function currentCustomerUid() {
+  return auth.currentUser?.uid || S.user?.uid || null;
+}
+
+function cartDocRef() {
+  const uid = currentCustomerUid();
+  if (!uid) return null;
+  return doc(custDb, 'customers', uid, 'cart', 'current');
+}
+
+function customerDocRef() {
+  const uid = currentCustomerUid();
+  if (!uid) return null;
+  return doc(custDb, 'customers', uid);
+}
+
+// ── PANIER ─────────────────────────────────────────────────────────────────
+
+async function saveCartToFirebase() {
+  const ref = cartDocRef();
+
+  if (!ref) {
+    localStorage.setItem('aet_cart', JSON.stringify(S.cart));
+    return;
+  }
+
+  try {
+    await setDoc(ref, {
+      items: Array.isArray(S.cart) ? S.cart : [],
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    console.log('[CART FIREBASE OK]', ref.path);
+  } catch (e) {
+    console.warn('[CART FIREBASE SAVE]', e);
+    localStorage.setItem('aet_cart', JSON.stringify(S.cart));
+  }
+}
+
+function scheduleCartSave() {
+  clearTimeout(cartSaveTimer);
+  cartSaveTimer = setTimeout(() => {
+    saveCartToFirebase();
+  }, 300);
+}
+
+async function loadCartFromFirebase() {
+  const ref = cartDocRef();
+
+  if (!ref) {
+    try {
+      S.cart = JSON.parse(localStorage.getItem('aet_cart') || '[]');
+    } catch (_) {
+      S.cart = [];
+    }
+    renderCart();
+    return;
+  }
+
+  try {
+    const snap = await getDoc(ref);
+
+    if (snap.exists() && Array.isArray(snap.data().items)) {
+      S.cart = snap.data().items;
+    } else {
+      try {
+        S.cart = JSON.parse(localStorage.getItem('aet_cart') || '[]');
+      } catch (_) {
+        S.cart = [];
+      }
+
+      if (S.cart.length) {
+        await saveCartToFirebase();
+      }
+    }
+
+    localStorage.setItem('aet_cart', JSON.stringify(S.cart));
+    renderCart();
+
+    console.log('[CART FIREBASE LOAD]', S.cart.length, 'articles');
+  } catch (e) {
+    console.warn('[CART FIREBASE LOAD]', e);
+
+    try {
+      S.cart = JSON.parse(localStorage.getItem('aet_cart') || '[]');
+    } catch (_) {
+      S.cart = [];
+    }
+
+    renderCart();
+  }
+}
+
+function startCartWatch() {
+  if (cartWatchUnsub) {
+    try { cartWatchUnsub(); } catch (_) {}
+    cartWatchUnsub = null;
+  }
+
+  const ref = cartDocRef();
+  if (!ref) return;
+
+  cartWatchUnsub = onSnapshot(ref, snap => {
+    if (!snap.exists()) return;
+
+    const data = snap.data() || {};
+
+    if (Array.isArray(data.items)) {
+      S.cart = data.items;
+      localStorage.setItem('aet_cart', JSON.stringify(S.cart));
+      renderCart();
+
+      const count = S.cart.reduce((sum, item) => sum + Number(item.qty || 0), 0);
+      const badge = document.getElementById('cartCount');
+      if (badge) badge.textContent = count;
+    }
+  }, err => {
+    console.warn('[CART FIREBASE WATCH]', err);
+  });
+}
+
+function persistCart() {
+  localStorage.setItem('aet_cart', JSON.stringify(S.cart));
+  scheduleCartSave();
+}
+
+// ── FAVORIS ────────────────────────────────────────────────────────────────
+
+async function saveFavoritesToFirebase() {
+  const ref = customerDocRef();
+  if (!ref) return;
+
+  try {
+    await setDoc(ref, {
+      favorites: Array.isArray(S.favorites) ? S.favorites : [],
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    console.log('[FAVORITES FIREBASE OK]');
+  } catch (e) {
+    console.warn('[FAVORITES FIREBASE]', e);
+  }
+}
+
+// ── AVIS ───────────────────────────────────────────────────────────────────
+
+async function saveReviewsToFirebase() {
+  const ref = customerDocRef();
+  if (!ref) return;
+
+  try {
+    await setDoc(ref, {
+      reviews: S.reviews || {},
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    console.log('[REVIEWS FIREBASE OK]');
+  } catch (e) {
+    console.warn('[REVIEWS FIREBASE]', e);
+  }
+}
+
+// ── DONNÉES CLIENT ─────────────────────────────────────────────────────────
+
+async function saveCustomerDataToFirebase() {
+  const ref = customerDocRef();
+  if (!ref) return;
+
+  try {
+    await setDoc(ref, {
+      favorites: Array.isArray(S.favorites) ? S.favorites : [],
+      reviews: S.reviews || {},
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+
+    console.log('[CUSTOMER DATA FIREBASE OK]');
+  } catch (e) {
+    console.warn('[CUSTOMER DATA FIREBASE]', e);
+  }
+}
+
+async function loadCustomerDataFromFirebase() {
+  const ref = customerDocRef();
+  if (!ref) return;
+
+  try {
+    const snap = await getDoc(ref);
+
+    if (!snap.exists()) return;
+
+    const data = snap.data() || {};
+
+    if (Array.isArray(data.favorites)) {
+      S.favorites = data.favorites;
+      localStorage.setItem('aet_favs', JSON.stringify(S.favorites))
+    }
+
+    if (data.reviews && typeof data.reviews === 'object') {
+      S.reviews = data.reviews;
+      localStorage.setItem('aet_reviews', JSON.stringify(S.reviews)); saveReviewsToFirebase();
+    }
+
+    console.log('[CUSTOMER DATA FIREBASE LOAD]');
+  } catch (e) {
+    console.warn('[CUSTOMER DATA FIREBASE LOAD]', e);
+  }
+}
+
+// ── COMMANDES ──────────────────────────────────────────────────────────────
+
+async function loadOrdersFromFirebase() {
+  const uid = currentCustomerUid();
+
+  if (!uid) return;
+
+  try {
+    const q = query(
+      collection(custDb, 'public_orders'),
+      where('buyerId', '==', uid)
+    );
+
+    const snap = await getDocs(q);
+
+    const orders = [];
+
+    snap.forEach(d => {
+      const data = d.data() || {};
+      orders.push({
+        ...data,
+        firestoreId: d.id,
+        createdAtMs:
+          Number(data.createdAtMs || 0) ||
+          (data.createdAt?.seconds ? data.createdAt.seconds * 1000 : 0)
+      });
+    });
+
+    orders.sort((a, b) => Number(b.createdAtMs || 0) - Number(a.createdAtMs || 0));
+
+    if (orders.length) {
+      S.orders = orders;
+      localStorage.setItem('aet_orders', JSON.stringify(S.orders.slice(0, 50)));
+    }
+
+    console.log('[ORDERS FIREBASE LOAD]', S.orders.length);
+  } catch (e) {
+    console.warn('[ORDERS FIREBASE LOAD]', e);
+  }
+}
+
+function startOrdersWatch() {
+  if (ordersWatchUnsub) {
+    try { ordersWatchUnsub(); } catch (_) {}
+    ordersWatchUnsub = null;
+  }
+
+  const uid = currentCustomerUid();
+  if (!uid) return;
+
+  const q = query(
+    collection(custDb, 'public_orders'),
+    where('buyerId', '==', uid)
+  );
+
+  ordersWatchUnsub = onSnapshot(q, snap => {
+    const orders = [];
+
+    snap.forEach(d => {
+      const data = d.data() || {};
+
+      orders.push({
+        ...data,
+        firestoreId: d.id,
+        createdAtMs:
+          Number(data.createdAtMs || 0) ||
+          (data.createdAt?.seconds ? data.createdAt.seconds * 1000 : 0)
+      });
+    });
+
+    orders.sort((a, b) => Number(b.createdAtMs || 0) - Number(a.createdAtMs || 0));
+
+    S.orders = orders;
+    localStorage.setItem('aet_orders', JSON.stringify(S.orders.slice(0, 50)));
+
+    console.log('[ORDERS FIREBASE WATCH]', S.orders.length);
+  }, err => {
+    console.warn('[ORDERS FIREBASE WATCH]', err);
+  });
+}
+
+// ── MIGRATION LOCAL → FIREBASE ─────────────────────────────────────────────
+
+async function migrateClientData() {
+  const uid = currentCustomerUid();
+  if (!uid) return;
+
+  try {
+    // Panier local
+    let localCart = [];
+    try {
+      localCart = JSON.parse(localStorage.getItem('aet_cart') || '[]');
+    } catch (_) {}
+
+    const cartRef = cartDocRef();
+    if (cartRef) {
+      const cartSnap = await getDoc(cartRef);
+
+      if (!cartSnap.exists() && Array.isArray(localCart) && localCart.length) {
+        await setDoc(cartRef, {
+          items: localCart,
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+
+        S.cart = localCart;
+      }
+    }
+
+    // Favoris + avis
+    await saveCustomerDataToFirebase();
+
+    // Commandes existantes
+    const localOrders = Array.isArray(S.orders) ? S.orders : [];
+
+    if (localOrders.length) {
+      console.log('[CLIENT MIGRATION] commandes locales détectées:', localOrders.length);
+    }
+
+    localStorage.setItem('aet_cart', JSON.stringify(S.cart));
+    localStorage.setItem('aet_favs', JSON.stringify(S.favorites))
+    localStorage.setItem('aet_reviews', JSON.stringify(S.reviews)); saveReviewsToFirebase();
+
+    console.log('[CLIENT MIGRATION] OK');
+  } catch (e) {
+    console.warn('[CLIENT MIGRATION]', e);
+  }
+}
+
+// ── ARRÊT SYNCHRONISATION ──────────────────────────────────────────────────
+
+function stopCustomerDataSync() {
+  if (cartWatchUnsub) {
+    try { cartWatchUnsub(); } catch (_) {}
+    cartWatchUnsub = null;
+  }
+
+  if (ordersWatchUnsub) {
+    try { ordersWatchUnsub(); } catch (_) {}
+    ordersWatchUnsub = null;
+  }
+
+  if (customerDataWatchUnsub) {
+    try { customerDataWatchUnsub(); } catch (_) {}
+    customerDataWatchUnsub = null;
+  }
+}
+
 // ── CART ───────────────────────────────────────────────────────────────────
 window.addToCart = (id, toast=true) => {
   const p = S.products.find(x=>String(x.id)===String(id));
@@ -1180,6 +1542,7 @@ window.addToCart = (id, toast=true) => {
   const row = S.cart.find(x=>String(x.id)===String(id));
   if (row) row.qty = Math.min(p.stock, row.qty+1);
   else S.cart.push({id:p.id,name:p.name,price:p.salePrice,stock:p.stock,imageUrl:p.imageUrl,qty:1});
+  persistCart();
   renderCart();
   if (toast) { showToast(`🛒 ${p.name} ajouté`); openDrawer('cartDrawer'); }
   document.getElementById('cartCount').textContent = S.cart.reduce((s,i)=>s+i.qty,0);
@@ -1189,10 +1552,12 @@ window.changeQty = (id,d) => {
   const row = S.cart.find(x=>String(x.id)===String(id));
   if (!row) return;
   row.qty = Math.max(1, Math.min(row.stock, row.qty+d));
+  persistCart();
   renderCart();
 };
 window.removeFromCart = id => {
   S.cart = S.cart.filter(x=>String(x.id)!==String(id));
+  persistCart();
   renderCart();
 };
 
@@ -1703,6 +2068,11 @@ onAuthStateChanged(auth, async u => {
       chatUnsub = null;
     }
 
+    // Arrêter toutes les synchronisations du compte précédent
+    if (typeof stopCustomerDataSync === 'function') {
+      stopCustomerDataSync();
+    }
+
     S.chatDocs = {};
     S.user = null;
     localStorage.removeItem('aet_user');
@@ -1718,6 +2088,36 @@ onAuthStateChanged(auth, async u => {
     } else { S.user = null; }
   } catch (e) { console.warn('[auth profil]', e); }
   loadAccount();
+
+  // 🔄 Synchroniser toutes les données persistantes du client
+  if (typeof migrateClientData === 'function') {
+    await migrateClientData();
+  }
+
+  // 🛒 Charger le panier persistant du client connecté
+  if (typeof loadCartFromFirebase === 'function') {
+    await loadCartFromFirebase();
+  }
+
+  // ❤️ Charger les favoris et avis depuis Firebase
+  if (typeof loadCustomerDataFromFirebase === 'function') {
+    await loadCustomerDataFromFirebase();
+  }
+
+  // 📦 Charger les commandes du client
+  if (typeof loadOrdersFromFirebase === 'function') {
+    await loadOrdersFromFirebase();
+  }
+
+  // 🔴 Démarrer la synchronisation temps réel du panier
+  if (typeof startCartWatch === 'function') {
+    startCartWatch();
+  }
+
+  // 🔴 Démarrer la synchronisation temps réel des commandes
+  if (typeof startOrdersWatch === 'function') {
+    startOrdersWatch();
+  }
 
   // 🔐 Après restauration de la session Firebase, le chat doit utiliser
   // l'UID stable du client et non l'ancien identifiant local clt_...

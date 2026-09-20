@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AET — Diagnostic synchronisation (lecture seule)</title>
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#0f172a;color:#e2e8f0;margin:0;padding:18px;line-height:1.5}
+  h1{font-size:18px;margin:0 0 4px}
+  p.sub{color:#94a3b8;font-size:13px;margin:0 0 16px}
+  button{background:#10b981;color:#fff;border:0;border-radius:10px;padding:12px 18px;font-weight:700;font-size:14px;cursor:pointer}
+  button:disabled{opacity:.5}
+  #out{margin-top:16px;background:#111827;border:1px solid #1f2937;border-radius:12px;padding:14px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;white-space:pre-wrap;word-break:break-word}
+  .ok{color:#34d399}.warn{color:#fbbf24}.err{color:#f87171}.k{color:#93c5fd}
+  .note{background:#1e293b;border-left:3px solid #38bdf8;padding:10px 12px;border-radius:8px;font-size:12.5px;color:#cbd5e1;margin:14px 0}
+</style>
+</head>
+<body>
+<h1>AET MonBudget — Diagnostic de synchronisation</h1>
+<p class="sub">Outil de LECTURE SEULE : aucun document n'est créé, modifié ni supprimé.</p>
+
+<div class="note">
+  Ouvre cette page <b>dans le navigateur</b> (connecté avec le compte à vérifier), clique sur le bouton,
+  puis recommence dans l'<b>application APK</b> (menu ⋮ → « Ouvrir dans le navigateur » ou colle l'adresse
+  de cette page dans la WebView). Compare les deux rapports : ils doivent être identiques.
+</div>
+
+<button id="run">Lancer le diagnostic</button>
+<div id="out">En attente…</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const CONFIG = {
+  apiKey:            "AIzaSyB5hpkRlFZ9HFRRbpQlvpHwMNDja37Nr2s",
+  authDomain:        "gestion-salaire-9d3e9.firebaseapp.com",
+  projectId:         "gestion-salaire-9d3e9",
+  storageBucket:     "gestion-salaire-9d3e9.firebasestorage.app",
+  messagingSenderId: "1090226725870",
+  appId:             "1:1090226725870:web:d16c25eb46397b3f2de4ff"
+};
+const app  = initializeApp(CONFIG);
+const auth = getAuth(app);
+const db   = getFirestore(app);
+const out  = document.getElementById('out');
+const btn  = document.getElementById('run');
+
+function line(k, v, cls){ const c = cls || ''; return `${(k+':').padEnd(26)}<span class="${c}">${String(v)}</span>\n`; }
+
+btn.onclick = () => { btn.disabled = true; out.textContent = 'Lecture en cours…'; };
+btn.disabled = false;
+
+onAuthStateChanged(auth, async (user) => {
+  let L = '';
+  L += '<span class="k">═══ ENVIRONNEMENT ═══</span>\n';
+  L += line('URL', location.href);
+  L += line('Origine', location.origin);
+  L += line('Mode standalone (APK/PWA)', (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true));
+  L += line('User-Agent', navigator.userAgent);
+  L += line('Firebase projectId', CONFIG.projectId);
+
+  L += '\n<span class="k">═══ COMPTE ═══</span>\n';
+  if (!user) {
+    L += line('Connecté', 'NON — connecte-toi puis recharge la page', 'err');
+    L += line('uid', 'NON DÉTERMINÉ', 'warn');
+    out.innerHTML = L; return;
+  }
+  L += line('uid (auth)', user.uid, 'ok');
+  L += line('email', user.email || '(aucun)');
+  L += line('displayName', user.displayName || '(aucun)');
+
+  // Mêmes clés que index.html : 'aet_commerce_' + uid
+  const lsKey = 'aet_commerce_' + user.uid;
+  const raw   = localStorage.getItem(lsKey);
+  L += '\n<span class="k">═══ CACHE LOCAL (localStorage) ═══</span>\n';
+  if (!raw) {
+    L += line("aet_commerce_<uid>", 'ABSENT (état vide)', 'warn');
+  } else {
+    let d = {}; try { d = JSON.parse(raw); } catch(e) {}
+    L += line('clé présente', 'oui', 'ok');
+    L += line('shops', (d.shops||[]).length);
+    L += line('articles', (d.articles||[]).length);
+    L += line('mouvements', (d.mouvements||[]).length);
+    L += line('clients', (d.clients||[]).length);
+    L += line('updatedAtMs', d.updatedAtMs || 0);
+    (d.shops||[]).forEach(s => { L += line('  └ boutique', (s.name||'(sans nom)') + ' — id ' + (s.id||'?') + ' — ' + ((s.employees||[]).length) + ' employé(s)'); });
+  }
+
+  L += '\n<span class="k">═══ FIRESTORE ═══</span>\n';
+  L += line('chemin attendu', 'commerce_data/' + user.uid);
+  try {
+    const snap = await getDoc(doc(db, 'commerce_data', user.uid));
+    L += line('document existe', snap.exists() ? 'OUI' : 'NON', snap.exists() ? 'ok' : 'err');
+    if (snap.exists()) {
+      const r = snap.data() || {};
+      L += line('userId', r.userId || '(vide)');
+      L += line('shops', (Array.isArray(r.shops)?r.shops.length:'(absent)'));
+      L += line('articles', (Array.isArray(r.articles)?r.articles.length:'(absent)'));
+      L += line('mouvements', (Array.isArray(r.mouvements)?r.mouvements.length:'(absent)'));
+      L += line('clients', (Array.isArray(r.clients)?r.clients.length:'(absent)'));
+      L += line('updatedAtMs', r.updatedAtMs || 0);
+      const types = {};
+      (Array.isArray(r.mouvements)?r.mouvements:[]).forEach(m => { const k = String(m && m.type); types[k]=(types[k]||0)+1; });
+      L += line('types de mouvements', JSON.stringify(types));
+      (Array.isArray(r.shops)?r.shops:[]).forEach(s => { L += line('  └ boutique', (s.name||'(sans nom)') + ' — id ' + (s.id||'?')); });
+    }
+  } catch (e) {
+    L += line('LECTURE REFUSÉE', (e.code || '') + ' ' + (e.message || e), 'err');
+  }
+
+  // Ancien document Commerce Pro
+  try {
+    const p = await getDoc(doc(db, 'commerce_pro_data', user.uid));
+    if (p.exists()) {
+      const q = p.data() || {};
+      L += line('commerce_pro_data', 'PRÉSENT — clients ' + ((q.clients||[]).length) + ', fournisseurs ' + ((q.fournisseurs||[]).length) + ', caisse ' + ((q.caisse||[]).length), 'warn');
+    } else {
+      L += line('commerce_pro_data', 'absent');
+    }
+  } catch (e) {
+    L += line('commerce_pro_data', 'lecture refusée (' + (e.code||'') + ')', 'warn');
+  }
+
+  // État publié lu par la vitrine publique
+  try {
+    const ps = await getDoc(doc(db, 'public_shops', user.uid));
+    L += line('public_shops', ps.exists() ? ('PRÉSENT — ' + ((ps.data().shops||[]).length) + ' boutique(s)') : 'absent');
+  } catch (e) { L += line('public_shops', 'lecture refusée (' + (e.code||'') + ')', 'warn'); }
+
+  L += '\n<span class="k">═══ LIAISON EMPLOYÉ (tenants/…/roleBindings) ═══</span>\n';
+  const qs = new URLSearchParams(location.search);
+  const urlTenant = qs.get('tenant') || qs.get('uid') || '';
+  L += line('?tenant= dans URL', urlTenant || '(aucun)');
+  if (urlTenant && urlTenant !== user.uid) {
+    try {
+      const rb = await getDoc(doc(db, 'tenants', urlTenant, 'roleBindings', user.uid));
+      L += line('binding sous le tenant URL', rb.exists() ? 'OUI → tenantId = ' + urlTenant : 'NON', rb.exists() ? 'ok' : 'err');
+    } catch (e) { L += line('binding sous le tenant URL', 'lisible: NON (' + (e.code||'') + ')', 'warn'); }
+  } else {
+    L += line('rôle déduit', 'propriétaire (uid === tenantId)', 'ok');
+  }
+
+  L += '\n<span class="k">═══ CONCLUSION ═══</span>\n';
+  L += line('tenantId à utiliser', user.uid);
+  L += '\n' + new Date().toLocaleString('fr-FR');
+  out.innerHTML = L;
+});
+</script>
+</body>
+</html>

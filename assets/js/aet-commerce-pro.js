@@ -2102,12 +2102,23 @@ body.dark #cpSearchBox, html[data-theme=dark] #cpSearchBox { background: #111827
     if (!shopId) return;
     const caisseOps = CPData.caisse.filter(c => c.shopId === shopId).sort((a, b) => b.date.localeCompare(a.date));
 
-    // Calcul solde
-    const solde = caisseOps.reduce((s, op) => {
+    // Calcul solde : operations manuelles (entree/sortie/ouverture/fermeture)
+    // + ventes et achats issus de CM.mouvements (source unique, jamais dupliquee)
+    const soldeManuel = caisseOps.reduce((s, op) => {
       if (op.type === 'entree' || op.type === 'ouverture') return s + (op.montant || 0);
       if (op.type === 'sortie' || op.type === 'fermeture') return s - (op.montant || 0);
       return s;
     }, 0);
+
+    const mvts = (typeof CP.getMvts === 'function') ? CP.getMvts() : [];
+    const soldeVentesAchats = mvts.reduce((s, m) => {
+      if (m.shopId && m.shopId !== shopId) return s;
+      if (m.type === 'vente') return s + (m.total || 0);
+      if (m.type === 'achat') return s - (m.total || 0);
+      return s;
+    }, 0);
+
+    const solde = soldeManuel + soldeVentesAchats;
 
     const el = document.getElementById('cpCaisseBalance');
     if (el) el.textContent = CP.amt(solde);

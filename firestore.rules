@@ -130,6 +130,22 @@ service cloud.firestore {
     }
 
     // ── Vitrine publique de chaque boutique (lecture publique, écriture propriétaire) ──
+    // ── AET-PATCH-20260920 : profil utilisateur (index.html : loadProfile / saveProfileEdit) ──
+    match /profiles/{uid} {
+      allow read, write: if isSelf(uid) || isAdmin();
+    }
+
+    // Historique de profil : addDoc() => ID automatique + champ userId (jamais modifiable/supprimable).
+    match /profileHistory/{id} {
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+    }
+
+    // ── AET-PATCH-20260920 : Commerce Pro (clients, fournisseurs, crédits, caisse, inventaires) ──
+    match /commerce_pro_data/{uid} {
+      allow read, write: if isSelf(uid) || isAdmin();
+    }
+
     match /public_shops/{tenantId} {
       allow read: if true;
       allow write: if isSelf(tenantId) || isAdmin();

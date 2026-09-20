@@ -1222,8 +1222,8 @@ function loadData() {
 
       snap.forEach(d => {
         publicOrders.push({
-          id: d.id,
           ...d.data(),
+          id: d.id,
           _source: 'public'
         });
       });

@@ -10802,8 +10802,8 @@ async function cmStartOrdersWatch(force = false){
 
     cmOrdersUnsub = onSnapshot(q, snap => {
       CM.orders = snap.docs.map(d => ({
-        id: d.id,
-        ...d.data()
+        ...d.data(),
+        id: d.id
       }));
 
       CM.orders.sort((a, b) =>

@@ -320,7 +320,7 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
     </div>
     <button class="icon-pill" onclick="openDrawer('notifDrawer')">
       <i class="fas fa-bell"></i>
-      <span class="badge-dot"></span>
+      <span class="badge-dot" id="notifBadgeDot" style="display:none"></span>
     </button>
     <button class="icon-pill" onclick="openFavorites()" style="margin-left:4px">
       <i class="fas fa-heart"></i>
@@ -677,23 +677,8 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
       <button class="close-x" onclick="closeDrawer('notifDrawer')"><i class="fas fa-xmark"></i></button>
     </div>
   </div>
-  <div class="drawer-body">
-    <div class="notif-item">
-      <div class="notif-icon green"><i class="fas fa-check-circle"></i></div>
-      <div class="notif-info">
-        <h4>Bienvenue sur ALBAN STORE !</h4>
-        <p>Découvrez notre catalogue et profitez de nos meilleures offres.</p>
-        <time>Maintenant</time>
-      </div>
-    </div>
-    <div class="notif-item">
-      <div class="notif-icon orange"><i class="fas fa-tag"></i></div>
-      <div class="notif-info">
-        <h4>Nouvelles arrivées</h4>
-        <p>Des produits ont été ajoutés à la boutique. Consultez le catalogue !</p>
-        <time>Aujourd'hui</time>
-      </div>
-    </div>
+  <div class="drawer-body" id="notifList">
+    <div class="empty"><i class="fas fa-bell-slash"></i><p>Aucune notification pour le moment.</p></div>
   </div>
 </div>
 
@@ -1429,6 +1414,92 @@ async function loadOrdersFromFirebase() {
   }
 }
 
+// ── NOTIFICATIONS REELLES (changements de statut de commande) ──────────────
+function loadNotifState() {
+  let statusMap = {};
+  let list = [];
+  try { statusMap = JSON.parse(localStorage.getItem('aet_order_status_map') || '{}'); } catch(_) {}
+  try { list = JSON.parse(localStorage.getItem('aet_notifications') || '[]'); } catch(_) {}
+  return { statusMap, list };
+}
+
+function processOrderNotifications(orders) {
+  const { statusMap, list } = loadNotifState();
+  const newStatusMap = {};
+  let changed = false;
+
+  orders.forEach(o => {
+    const oid = o.id || o.firestoreId;
+    const status = o.status || 'pending';
+    newStatusMap[oid] = status;
+
+    const prevStatus = statusMap[oid];
+    if (prevStatus && prevStatus !== status && (status === 'completed' || status === 'rejected')) {
+      const isDone = status === 'completed';
+      list.unshift({
+        id: 'notif_' + oid + '_' + Date.now(),
+        orderId: oid,
+        title: isDone ? '✅ Commande validée' : '❌ Commande annulée',
+        message: isDone
+          ? `Votre commande ${oid} a été validée.`
+          : `Votre commande ${oid} a été annulée.`,
+        createdAtMs: Date.now(),
+        read: false
+      });
+      changed = true;
+    }
+  });
+
+  localStorage.setItem('aet_order_status_map', JSON.stringify(newStatusMap));
+
+  if (changed) {
+    S.notifications = list.slice(0, 30);
+    localStorage.setItem('aet_notifications', JSON.stringify(S.notifications));
+  } else if (!S.notifications) {
+    S.notifications = list.slice(0, 30);
+  }
+
+  renderNotifications();
+}
+
+function renderNotifications() {
+  const list = Array.isArray(S.notifications) ? S.notifications : [];
+  const badge = document.getElementById('notifBadgeDot');
+  const hasUnread = list.some(n => !n.read);
+  if (badge) badge.style.display = hasUnread ? 'block' : 'none';
+
+  const body = document.getElementById('notifList');
+  if (!body) return;
+
+  if (!list.length) {
+    body.innerHTML = '<div class="empty"><i class="fas fa-bell-slash"></i><p>Aucune notification pour le moment.</p></div>';
+    return;
+  }
+
+  body.innerHTML = list.map(n => `
+    <div class="notif-item" style="cursor:pointer${n.read ? '' : ';background:rgba(255,153,0,.06)'}" onclick="openNotification('${n.id}')">
+      <div class="notif-icon ${n.title.indexOf('✅')===0 ? 'green' : 'orange'}"><i class="fas ${n.title.indexOf('✅')===0 ? 'fa-check-circle' : 'fa-circle-xmark'}"></i></div>
+      <div class="notif-info">
+        <h4>${esc(n.title)}</h4>
+        <p>${esc(n.message)}</p>
+        <time>${esc(timeAgo(n.createdAtMs))}</time>
+      </div>
+    </div>
+  `).join('');
+}
+
+window.openNotification = (notifId) => {
+  const list = Array.isArray(S.notifications) ? S.notifications : [];
+  const n = list.find(x => x.id === notifId);
+  if (n) {
+    n.read = true;
+    localStorage.setItem('aet_notifications', JSON.stringify(list));
+  }
+  renderNotifications();
+  closeDrawer('notifDrawer');
+  openOrdersDrawer();
+};
+
 function startOrdersWatch() {
   if (ordersWatchUnsub) {
     try { ordersWatchUnsub(); } catch (_) {}
@@ -1459,6 +1530,8 @@ function startOrdersWatch() {
     });
 
     orders.sort((a, b) => Number(b.createdAtMs || 0) - Number(a.createdAtMs || 0));
+
+    processOrderNotifications(orders);
 
     S.orders = orders;
     localStorage.setItem('aet_orders', JSON.stringify(S.orders.slice(0, 50)));
@@ -1714,6 +1787,8 @@ window.submitOrder = async () => {
   if (wa) window.open('https://wa.me/'+wa.replace(/\D/g,'')+'?text='+encodeURIComponent(lines),'_blank');
 
   S.cart = [];
+  localStorage.setItem('aet_cart', '[]');
+  await saveCartToFirebase();
   renderCart();
   closeAllDrawers();
   showToast(`✅ Commande ${orderId} envoyée !`);
@@ -1726,10 +1801,10 @@ window.openOrdersDrawer = () => {
   if (!S.orders.length) {
     body.innerHTML = '<div class="empty"><i class="fas fa-box-open"></i><p>Aucune commande encore.</p></div>';
   } else {
-    const statusLabel = {pending:'En attente',confirmed:'Confirmée',delivered:'Livrée',cancelled:'Annulée'};
+    const statusLabel = {pending:'En attente',completed:'Validée',rejected:'Annulée'};
     body.innerHTML = S.orders.map(o=>{
-      const steps = ['pending','confirmed','delivered'];
-      const si = steps.indexOf(o.status);
+      const isDone = o.status === 'completed';
+      const isRejected = o.status === 'rejected';
       return `<div class="order-card">
         <div class="order-header">
           <span class="order-id">${esc(o.id)}</span>
@@ -1741,7 +1816,8 @@ window.openOrdersDrawer = () => {
           <div class="order-date">${esc(timeAgo(o.createdAtMs||Date.now()))}</div>
         </div>
         <div class="progress-bar">
-          ${steps.map((s,i)=>`<div class="prog-step ${i<si?'done':i===si?'active':''}"></div>`).join('')}
+          <div class="prog-step ${isRejected?'':(isDone?'done':'active')}"></div>
+          <div class="prog-step ${isDone?'done':''}"></div>
         </div>
       </div>`;
     }).join('');

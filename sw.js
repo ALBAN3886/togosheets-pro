@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aet-monbudget-v12-final';
+const CACHE_NAME = 'aet-monbudget-v13-final'; // AET-PATCH-20260920 : cache incrémenté (nouveaux index.html / aet-commerce-pro.js)
 const CORE_ASSETS = [
   './',
   './index.html',

@@ -1212,6 +1212,8 @@ function loadData() {
     });
 
     // Commandes marketplace : client -> public_orders -> employé
+    // Source officielle : public_orders.
+    // Le tenantId est l'identifiant du propriétaire.
     const ordersQuery = query(
       collection(db, 'public_orders'),
       where('tenantId', '==', tid)
@@ -1223,31 +1225,23 @@ function loadData() {
       snap.forEach(d => {
         publicOrders.push({
           id: d.id,
-          ...d.data()
+          ...d.data(),
+          _source: 'public'
         });
       });
 
-      const sid = storeId || state.context?.storeIds?.[0] || '';
+      // IMPORTANT :
+      // On ne filtre plus par shopId ici.
+      // Les anciennes commandes peuvent avoir shopId vide.
+      state.orders = publicOrders.sort((a, b) => {
+        const ta = Number(a.createdAtMs || 0);
+        const tb = Number(b.createdAtMs || 0);
+        return tb - ta;
+      });
 
-      const oldOrders = Array.isArray(cmData.pendingOrders)
-        ? cmData.pendingOrders
-            .filter(o => !sid || String(o.shopId || '') === String(sid) || !o.shopId)
-            .map(o => ({ ...o, _source: 'legacy' }))
-        : [];
-
-      const newOrders = publicOrders
-        .filter(o => !sid || String(o.shopId || '') === String(sid) || !o.shopId)
-        .map(o => ({ ...o, _source: 'public' }));
-
-      // Fusion anciennes commandes + nouvelles commandes.
-      // Si une même commande existe dans les deux sources, on garde la version public.
-      const merged = new Map();
-
-      oldOrders.forEach(o => merged.set(String(o.id), o));
-      newOrders.forEach(o => merged.set(String(o.id), o));
-
-      state.orders = Array.from(merged.values())
-        .sort((a,b) => (b.createdAtMs || b.createdAt || 0) - (a.createdAtMs || a.createdAt || 0));
+      console.log('[Employé] commandes public_orders:', state.orders.length);
+      console.log('[Employé] tenant:', tid);
+      console.log('[Employé] store URL:', storeId);
 
       updateOrdersBadge();
 
@@ -1256,6 +1250,12 @@ function loadData() {
       }
     }, err => {
       console.error('[Employé public_orders]', err);
+
+      state.orders = [];
+
+      if (state.user) {
+        renderPage();
+      }
     });
   });
 }

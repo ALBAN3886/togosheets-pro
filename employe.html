@@ -1097,10 +1097,8 @@ function deriveStateFromCmData() {
     reorderLevel: Number(a.seuil ?? 5),
   }));
 
-  const pending = Array.isArray(cmData.pendingOrders) ? cmData.pendingOrders : [];
-  state.orders = pending
-    .filter(o => !sid || String(o.shopId) === String(sid) || !o.shopId)
-    .map(o => ({ ...o }));
+  // Les commandes sont désormais chargées exclusivement depuis public_orders.
+  // Ne pas écraser state.orders avec l'ancien cmData.pendingOrders.
 
   const mvts = Array.isArray(cmData.mouvements) ? cmData.mouvements : [];
   state.sales = mvts
@@ -1403,7 +1401,7 @@ function renderPage() {
 }
 
 function updateBadges() {
-  const pending = (Array.isArray(cmData.pendingOrders) ? cmData.pendingOrders : [])
+  const pending = (Array.isArray(state.orders) ? state.orders : [])
     .filter(o => (o.status||'pending') === 'pending').length;
   ['ordersBadge', 'ordersBadgeM'].forEach(id => {
     const el = document.getElementById(id);
@@ -1665,9 +1663,8 @@ function renderStock() {
    PAGE : COMMANDES
 ═══════════════════════════════════════════════════════════════ */
 function renderOrders() {
-  const allPending = Array.isArray(cmData.pendingOrders) ? cmData.pendingOrders : [];
-  const sid = storeId || state.context?.storeIds?.[0] || '';
-  const all = allPending.filter(o => !sid || String(o.shopId) === String(sid) || !o.shopId);
+  // Source officielle : commandes récupérées depuis public_orders
+  const all = Array.isArray(state.orders) ? state.orders : [];
   const mobile = isMobileView();
 
   const filterLabel = { pending: 'En attente', completed: 'Validées', rejected: 'Rejetées' };

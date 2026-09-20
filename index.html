@@ -8900,6 +8900,7 @@ if ('serviceWorker' in navigator) {
   <!-- Onglets internes -->
   <div class="cm-tabs">
     <button class="cm-tab active" data-cmtab="resume" onclick="cmSwitch('resume')"><i class="fas fa-chart-line"></i><span data-i18n="cm_tab_resume">Résumé</span></button>
+    <button class="cm-tab" data-cmtab="commandes" onclick="cmSwitch('commandes')"><i class="fas fa-bag-shopping"></i><span>Commandes</span></button>
     <button class="cm-tab" data-cmtab="articles" onclick="cmSwitch('articles')"><i class="fas fa-box"></i><span data-i18n="cm_tab_articles">Articles</span></button>
     <button class="cm-tab" data-cmtab="mouvements" onclick="cmSwitch('mouvements')"><i class="fas fa-right-left"></i><span data-i18n="cm_tab_mouvements">Mouvements</span></button>
     <button class="cm-tab" data-cmtab="stock" onclick="cmSwitch('stock')"><i class="fas fa-warehouse"></i><span data-i18n="cm_tab_stock">Stock</span></button>
@@ -8949,6 +8950,31 @@ if ('serviceWorker' in navigator) {
   </div>
 
   <!-- ═══ Section : Articles ═══ -->
+  <div class="cm-section" id="cm-sec-commandes">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+      <div>
+        <h2 style="margin:0;font-size:20px;font-weight:800;">
+          <i class="fas fa-bag-shopping" style="color:#10b981;"></i>
+          Commandes clients
+        </h2>
+        <div style="margin-top:4px;color:#6b7280;font-size:13px;">
+          Commandes reçues depuis votre boutique en ligne
+        </div>
+      </div>
+
+      <button onclick="cmStartOrdersWatch(true)"
+        style="border:0;border-radius:10px;padding:10px 14px;background:#111827;color:#fff;font-weight:700;cursor:pointer;">
+        <i class="fas fa-rotate"></i> Actualiser
+      </button>
+    </div>
+
+    <div id="cmOrdersStats"
+      style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px;">
+    </div>
+
+    <div id="cmOrdersList"></div>
+  </div>
+
   <div class="cm-section" id="cm-sec-articles">
     <div class="cm-search-box">
       <i class="fas fa-search"></i>
@@ -9779,6 +9805,7 @@ let CM = {
   clients: [],          // {id,shopId,name,phone,whatsapp,addr,note,createdAt}
   fournisseurs: [],      // {id,shopId,name,phone,whatsapp,addr,note,createdAt}
   credits: [],           // {id,shopId,clientId,clientName,montant,montantPaye,statut,dateEcheance,note,createdAt,paiements:[{montant,date}]}
+  orders: [],             // commandes clients reçues depuis public_orders
   cashSessions: [],      // LECTURE SEULE : sessions de caisse ouvertes/fermées par les employés (employe.html).
                           // Jamais incluses dans cmSnapshot() pour ne jamais risquer de les écraser.
   inventaires: [],       // {id,shopId,date,createdAt,corrections:[{artId,artName,stockAvant,stockCompte,ecart}]}
@@ -10737,6 +10764,104 @@ window.cmSaveShop = async function(){
   cmRenderShopList();
 };
 
+/* ── Commandes clients Firebase ── */
+let cmOrdersUnsub = null;
+
+let cmOrdersWatchUid = null;
+
+async function cmStartOrdersWatch(force = false){
+  try {
+    const uid = (window.currentUser && window.currentUser.uid) || '';
+
+    if (!uid) {
+      cmStopOrdersWatch();
+      return;
+    }
+
+    if (cmOrdersUnsub && cmOrdersWatchUid === uid && !force) {
+      if (typeof cmRenderOrders === 'function') cmRenderOrders();
+      return;
+    }
+
+    if (cmOrdersUnsub) {
+      cmOrdersUnsub();
+      cmOrdersUnsub = null;
+    }
+
+    cmOrdersWatchUid = uid;
+    if (!db) {
+      CM.orders = [];
+      if (typeof cmRenderOrders === 'function') cmRenderOrders();
+      return;
+    }
+
+    const q = query(
+      collection(db, 'public_orders'),
+      where('tenantId', '==', uid)
+    );
+
+    cmOrdersUnsub = onSnapshot(q, snap => {
+      CM.orders = snap.docs.map(d => ({
+        id: d.id,
+        ...d.data()
+      }));
+
+      CM.orders.sort((a, b) =>
+        Number(b.createdAtMs || 0) - Number(a.createdAtMs || 0)
+      );
+
+      console.log('[COMMANDES] Firebase:', CM.orders.length);
+
+      if (typeof cmRenderOrders === 'function') {
+        cmRenderOrders();
+      }
+    }, err => {
+      console.error('[COMMANDES] Firebase listener:', err);
+      console.error('[COMMANDES] UID utilisé:', uid);
+      console.error('[COMMANDES] Requête: public_orders WHERE tenantId ==', uid);
+
+      CM.orders = [];
+
+      const list = document.getElementById('cmOrdersList');
+      if (list) {
+        list.innerHTML = `
+          <div style="padding:16px;border:1px solid #fecaca;background:#fef2f2;border-radius:12px;color:#991b1b;">
+            <strong>Erreur de chargement des commandes</strong>
+            <div style="margin-top:6px;font-size:13px;">
+              ${esc(err?.code || 'unknown')} — ${esc(err?.message || 'Erreur Firebase')}
+            </div>
+            <div style="margin-top:6px;font-size:12px;">
+              UID utilisé : ${esc(uid)}
+            </div>
+          </div>
+        `;
+      }
+
+      if (typeof cmRenderOrders === 'function' && !err) {
+        cmRenderOrders();
+      }
+    });
+
+  } catch(e) {
+    console.error('[COMMANDES] démarrage listener:', e);
+    CM.orders = [];
+    if (typeof cmRenderOrders === 'function') cmRenderOrders();
+  }
+}
+
+window.cmStartOrdersWatch = cmStartOrdersWatch;
+
+function cmStopOrdersWatch(){
+  if (cmOrdersUnsub) {
+    cmOrdersUnsub();
+    cmOrdersUnsub = null;
+  }
+  cmOrdersWatchUid = null;
+  CM.orders = [];
+}
+
+window.cmStopOrdersWatch = cmStopOrdersWatch;
+
 /* ── Switch sous-onglets ── */
 window.cmSwitch = function(sec){
   CM.currentSection = sec;
@@ -10748,6 +10873,206 @@ window.cmSwitch = function(sec){
   });
   cmRenderSection();
 };
+
+function cmOrderStatusLabel(status){
+  const map = {
+    pending: 'En attente',
+    confirmed: 'Confirmée',
+    preparing: 'En préparation',
+    delivered: 'Livrée',
+    cancelled: 'Annulée'
+  };
+  return map[status] || status || 'En attente';
+}
+
+function cmOrderStatusClass(status){
+  return {
+    pending: 'background:#fef3c7;color:#92400e;',
+    confirmed: 'background:#dbeafe;color:#1d4ed8;',
+    preparing: 'background:#ede9fe;color:#6d28d9;',
+    delivered: 'background:#dcfce7;color:#166534;',
+    cancelled: 'background:#fee2e2;color:#991b1b;'
+  }[status] || 'background:#f3f4f6;color:#374151;';
+}
+
+function cmOrderDate(order){
+  const ms = Number(order.createdAtMs || 0);
+  if (!ms) return 'Date inconnue';
+  return new Date(ms).toLocaleString('fr-FR', {
+    day:'2-digit',
+    month:'2-digit',
+    year:'numeric',
+    hour:'2-digit',
+    minute:'2-digit'
+  });
+}
+
+function cmRenderOrders(){
+  const stats = document.getElementById('cmOrdersStats');
+  const list = document.getElementById('cmOrdersList');
+
+  if (!stats || !list) return;
+
+  const shopId = CM.currentShopId;
+
+  const orders = (Array.isArray(CM.orders) ? CM.orders : [])
+    .filter(o => !shopId || String(o.shopId || '') === String(shopId));
+
+  const pending = orders.filter(o => o.status === 'pending').length;
+  const active = orders.filter(o => ['confirmed','preparing'].includes(o.status)).length;
+  const delivered = orders.filter(o => o.status === 'delivered').length;
+  const cancelled = orders.filter(o => o.status === 'cancelled').length;
+
+  stats.innerHTML = `
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px;">
+      <div style="font-size:12px;color:#6b7280;">Total</div>
+      <strong style="font-size:22px;">${orders.length}</strong>
+    </div>
+    <div style="background:#fff;border:1px solid #fde68a;border-radius:12px;padding:14px;">
+      <div style="font-size:12px;color:#92400e;">En attente</div>
+      <strong style="font-size:22px;color:#92400e;">${pending}</strong>
+    </div>
+    <div style="background:#fff;border:1px solid #ddd6fe;border-radius:12px;padding:14px;">
+      <div style="font-size:12px;color:#6d28d9;">En cours</div>
+      <strong style="font-size:22px;color:#6d28d9;">${active}</strong>
+    </div>
+    <div style="background:#fff;border:1px solid #bbf7d0;border-radius:12px;padding:14px;">
+      <div style="font-size:12px;color:#166534;">Livrées</div>
+      <strong style="font-size:22px;color:#166534;">${delivered}</strong>
+    </div>
+    <div style="background:#fff;border:1px solid #fecaca;border-radius:12px;padding:14px;">
+      <div style="font-size:12px;color:#991b1b;">Annulées</div>
+      <strong style="font-size:22px;color:#991b1b;">${cancelled}</strong>
+    </div>
+  `;
+
+  if (!orders.length) {
+    list.innerHTML = `
+      <div class="cm-empty">
+        <i class="fas fa-bag-shopping"></i>
+        Aucune commande reçue pour cette boutique.
+      </div>
+    `;
+    return;
+  }
+
+  list.innerHTML = orders.map(order => {
+    const customer = order.customer || {};
+    const items = Array.isArray(order.items) ? order.items : [];
+    const total = Number(order.grandTotal || order.subtotal || 0);
+    const status = order.status || 'pending';
+
+    return `
+      <div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.04);">
+        <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start;">
+          <div>
+            <div style="font-weight:800;font-size:15px;">
+              Commande #${esc(order.id || '')}
+            </div>
+            <div style="font-size:12px;color:#6b7280;margin-top:4px;">
+              ${cmOrderDate(order)}
+            </div>
+          </div>
+
+          <span style="padding:6px 10px;border-radius:999px;font-size:12px;font-weight:800;${cmOrderStatusClass(status)}">
+            ${esc(cmOrderStatusLabel(status))}
+          </span>
+        </div>
+
+        <div style="margin-top:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;">
+          <div>
+            <div style="font-size:11px;color:#9ca3af;">CLIENT</div>
+            <strong>${esc(customer.name || 'Client')}</strong>
+          </div>
+          <div>
+            <div style="font-size:11px;color:#9ca3af;">TÉLÉPHONE</div>
+            <strong>${esc(customer.phone || '—')}</strong>
+          </div>
+          <div>
+            <div style="font-size:11px;color:#9ca3af;">VILLE</div>
+            <strong>${esc(customer.city || '—')}</strong>
+          </div>
+          <div>
+            <div style="font-size:11px;color:#9ca3af;">PAIEMENT</div>
+            <strong>${esc(order.paymentMode || 'cash')}</strong>
+          </div>
+        </div>
+
+        <div style="margin-top:14px;padding:10px;background:#f9fafb;border-radius:10px;">
+          ${items.map(item => `
+            <div style="display:flex;justify-content:space-between;gap:10px;font-size:13px;padding:4px 0;">
+              <span>${esc(item.name || 'Article')} × ${Number(item.qty || 0)}</span>
+              <strong>${cmAmt(Number(item.total || 0))}</strong>
+            </div>
+          `).join('')}
+        </div>
+
+        ${customer.note ? `
+          <div style="margin-top:10px;font-size:13px;color:#4b5563;">
+            <i class="fas fa-note-sticky"></i> ${esc(customer.note)}
+          </div>
+        ` : ''}
+
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:14px;">
+          <strong style="font-size:18px;color:#059669;">
+            ${cmAmt(total)}
+          </strong>
+
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            ${status !== 'confirmed' && status !== 'cancelled' && status !== 'delivered' ? `
+              <button onclick="cmUpdateOrderStatus('${esc(order.id)}','confirmed')"
+                style="border:0;border-radius:8px;padding:8px 10px;background:#2563eb;color:#fff;font-weight:700;cursor:pointer;">
+                Confirmer
+              </button>
+            ` : ''}
+
+            ${status === 'confirmed' ? `
+              <button onclick="cmUpdateOrderStatus('${esc(order.id)}','preparing')"
+                style="border:0;border-radius:8px;padding:8px 10px;background:#7c3aed;color:#fff;font-weight:700;cursor:pointer;">
+                Préparer
+              </button>
+            ` : ''}
+
+            ${status === 'preparing' ? `
+              <button onclick="cmUpdateOrderStatus('${esc(order.id)}','delivered')"
+                style="border:0;border-radius:8px;padding:8px 10px;background:#059669;color:#fff;font-weight:700;cursor:pointer;">
+                Livrée
+              </button>
+            ` : ''}
+
+            ${!['delivered','cancelled'].includes(status) ? `
+              <button onclick="cmUpdateOrderStatus('${esc(order.id)}','cancelled')"
+                style="border:1px solid #fecaca;border-radius:8px;padding:8px 10px;background:#fff;color:#b91c1c;font-weight:700;cursor:pointer;">
+                Annuler
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function cmUpdateOrderStatus(orderId, status){
+  if (!orderId || !status) return;
+
+  try {
+    const ref = doc(db, 'public_orders', orderId);
+
+    await updateDoc(ref, {
+      status,
+      updatedAt: serverTimestamp(),
+      updatedAtMs: Date.now()
+    });
+
+    cmToast('Commande mise à jour', 'success');
+  } catch(e) {
+    console.error('[COMMANDES] statut:', e);
+    cmToast('Impossible de modifier la commande', 'error');
+  }
+}
+
+window.cmUpdateOrderStatus = cmUpdateOrderStatus;
 
 function cmRenderSection(){
   const intro = document.getElementById('cmFeaturesIntro');
@@ -10762,6 +11087,10 @@ function cmRenderSection(){
     return;
   }
   if(CM.currentSection==='resume') cmRenderResume();
+  if(CM.currentSection==='commandes') {
+    cmStartOrdersWatch();
+    cmRenderOrders();
+  }
   if(CM.currentSection==='articles') cmRenderArticles();
   if(CM.currentSection==='mouvements') cmRenderMvts();
   if(CM.currentSection==='stock') cmRenderStock();
@@ -12661,7 +12990,10 @@ function cmInit(){
   cmHookSwitchTab();
   cmRenderAll();
   cmEnsureCountryData();
-  if(window.currentUser && window.currentUser.uid) cmLoadRemote(true);
+  if(window.currentUser && window.currentUser.uid) {
+    cmLoadRemote(true);
+    cmStartOrdersWatch();
+  }
 }
 
 /* Re-init quand utilisateur se connecte (changement uid) */
@@ -12673,7 +13005,13 @@ setInterval(function(){
     if(cmRemoteUnsub){ cmRemoteUnsub(); cmRemoteUnsub = null; }
     cmLoad();
     cmRenderAll();
-    if(uid) cmLoadRemote(true);
+
+    if(uid) {
+      cmLoadRemote(true);
+      cmStartOrdersWatch();
+    } else {
+      cmStopOrdersWatch();
+    }
   }
   // S'assurer que l'item drawer est bien là
   if(!document.getElementById('bnd-commerce')) cmInjectMenu();

@@ -64,7 +64,9 @@ try {
 window.__AET_FBAPP__ = fbApp;
 window.__AET_AUTH__ = auth;
 window.__AET_DB__ = db;
-window.__AET_FIRESTORE__ = { doc, getDoc, setDoc, deleteDoc, serverTimestamp, runTransaction, onSnapshot };
+window.__AET_FIRESTORE__ = { doc, getDoc, setDoc, deleteDoc, serverTimestamp, runTransaction, onSnapshot,
+  /* AET-PATCH-20260920 : pont module -> IIFE Commerce (commandes clients) */
+  collection, query, where, orderBy, limit, getDocs, addDoc, updateDoc };
 
 // ══ CATÉGORIES COMPLÈTES ══
 const CATS = {
@@ -7682,19 +7684,29 @@ window.removeProfilePhoto = function() {
 
 async function loadProfile() {
   if (!_auth.currentUser) return;
+  /* AET-PATCH-20260920 : ne jamais mélanger le profil d'un compte précédent avec le suivant */
+  if (window._profileUid !== _auth.currentUser.uid) {
+    userProfile = { displayName:'', phone:'', job:'', city:'', birth:'', avatar:'👤', email:'' };
+    window._profileUid = _auth.currentUser.uid;
+  }
   try {
     const snap = await _getDoc(_doc(_db,'profiles',_auth.currentUser.uid));
     if (snap.exists()) {
       userProfile = { ...userProfile, ...snap.data() };
     }
+    window._profileLoadOk = true;
     userProfile.email = _auth.currentUser.email;
     if (!userProfile.displayName) userProfile.displayName = _auth.currentUser.displayName || _auth.currentUser.email.split('@')[0];
     window.userProfile = userProfile;
-  } catch(e) { console.warn('loadProfile', e); }
+  } catch(e) {
+    window._profileLoadOk = false;   /* saveProfileEdit refusera d'écraser un profil non lu */
+    console.warn('loadProfile', e);
+  }
 }
 
 window.openProfileEdit = async () => {
   await loadProfile();
+  if (window._profileLoadOk === false) toast('Lecture du profil impossible (droits Firestore ?). Enregistrement bloqué pour protéger vos données.', 'error');
   document.getElementById('editName').value  = userProfile.displayName || '';
   document.getElementById('editPhone').value = userProfile.phone || '';
   document.getElementById('editEmail').value = userProfile.email || '';
@@ -7714,6 +7726,14 @@ window.openProfileEdit = async () => {
 
 window.saveProfileEdit = async () => {
   if (!_auth.currentUser) return;
+  /* AET-PATCH-20260920 — ordre corrigé et photo jamais supprimée implicitement :
+     1) profil d'abord (l'essentiel) ; 2) historique ensuite, non bloquant ;
+     3) photoData n'est écrit QUE si nouvelle photo (valeur) ou suppression explicite (null) ;
+        sinon le champ est absent du payload et merge:true conserve la photo existante. */
+  if (window._profileLoadOk === false) {
+    toast('Profil non chargé : enregistrement bloqué pour ne pas écraser vos données. Réessayez.', 'error');
+    return;
+  }
   const newProfile = {
     displayName: document.getElementById('editName').value.trim(),
     phone:       document.getElementById('editPhone').value.trim(),
@@ -7724,49 +7744,62 @@ window.saveProfileEdit = async () => {
     email:       _auth.currentUser.email,
     updatedAt:   _ts(),
   };
-  // Photo de profil
   if (window._pendingPhotoData) {
-    newProfile.photoData = window._pendingPhotoData;
-  } else if (window._removePhoto) {
-    newProfile.photoData = null;
-  } else {
-    newProfile.photoData = userProfile.photoData || null;
-  }
+    newProfile.photoData = window._pendingPhotoData;      // nouvelle photo
+  } else if (window._removePhoto === true) {
+    newProfile.photoData = null;                          // suppression volontaire
+  }                                                        // sinon : champ absent => photo conservée
   if (!newProfile.displayName) { toast('Le nom est requis','error'); return; }
 
   loader(true);
+  let historyOk = true;
   try {
-    // Save snapshot of OLD profile in history (NEVER overwrites old data)
-    const oldSnap = await _getDoc(_doc(_db,'profiles',_auth.currentUser.uid));
-    const oldData = oldSnap.exists() ? oldSnap.data() : {};
-    const changes = {};
-    ['displayName','phone','job','city','birth','avatar'].forEach(k => {
-      if ((oldData[k]||'') !== (newProfile[k]||'')) {
-        changes[k] = { from: oldData[k]||'', to: newProfile[k]||'' };
-      }
-    });
-    if (Object.keys(changes).length > 0) {
-      await _addDoc(_col(_db,'profileHistory'), {
-        userId: _auth.currentUser.uid,
-        changes,
-        snapshot: oldData,
-        changedAt: _ts(),
-      });
-    }
-    // Update current
+    // Lecture de l'ancienne version (pour l'historique) — non bloquante
+    let oldData = null;
+    try {
+      const oldSnap = await _getDoc(_doc(_db,'profiles',_auth.currentUser.uid));
+      oldData = oldSnap.exists() ? oldSnap.data() : {};
+    } catch(e) { console.warn('profil: lecture ancienne version', e); }
+
+    // 1) Profil courant (jamais bloqué par l'historique)
     await _setDoc(_doc(_db,'profiles',_auth.currentUser.uid), newProfile, { merge:true });
+
+    // 2) Historique (l'ancienne version n'est JAMAIS écrasée) — échec toléré
+    if (oldData) {
+      const changes = {};
+      ['displayName','phone','job','city','birth','avatar'].forEach(k => {
+        if ((oldData[k]||'') !== (newProfile[k]||'')) {
+          changes[k] = { from: oldData[k]||'', to: newProfile[k]||'' };
+        }
+      });
+      if (Object.keys(changes).length > 0) {
+        try {
+          await _addDoc(_col(_db,'profileHistory'), {
+            userId: _auth.currentUser.uid,
+            changes,
+            snapshot: oldData,
+            changedAt: _ts(),
+          });
+        } catch(he) { historyOk = false; console.warn('profileHistory', he); }
+      }
+    }
+
     // Also update Firebase Auth displayName
     if (newProfile.displayName && newProfile.displayName !== _auth.currentUser.displayName) {
       await _upProfile(_auth.currentUser, { displayName: newProfile.displayName });
     }
     userProfile = { ...userProfile, ...newProfile };
     window.userProfile = userProfile;
+    window._pendingPhotoData = undefined;
+    window._removePhoto = false;
     // Update top bar name
     const un = document.getElementById('userName'); if (un) un.textContent = newProfile.displayName;
     applyAvatarDisplay('userAvatarText','userAvatarImg', newProfile.displayName);
     renderProfileTab();
     closeAetModal('profileEditModal');
-    showSuccess('Profil mis à jour !','Vos informations ont été enregistrées et l\'ancienne version a été archivée.');
+    showSuccess('Profil mis à jour !', historyOk
+      ? 'Vos informations ont été enregistrées et l\'ancienne version a été archivée.'
+      : 'Vos informations ont été enregistrées (l\'historique n\'a pas pu être archivé).');
   } catch(e) {
     console.error(e);
     toast(friendlyErr(e), 'error');
@@ -10487,7 +10520,109 @@ function cmGetShopCredits(){ return CM.credits.filter(c=>c.shopId===CM.currentSh
 // alors que le reste de l'app utilise "shopId" — nommage historique différent, mais même valeur.
 function cmGetShopCashSessions(){ return (CM.cashSessions||[]).filter(s=>s.storeId===CM.currentShopId); }
 function cmGetShopInventaires(){ return (CM.inventaires||[]).filter(i=>i.shopId===CM.currentShopId); }
-function cmGetShopMvts(){ return CM.mouvements.filter(m=>m.shopId===CM.currentShopId); }
+/* AET-PATCH-20260920 — ADAPTATEUR DE LECTURE des mouvements (unique, partagé avec CP.getMvts).
+   Ne modifie JAMAIS CM.mouvements et n'est JAMAIS réécrit dans Firestore : il renvoie des copies.
+   Formats compris :
+     ancien        {artId, artName, type:'vente'|'achat', qte, prix, total, date, createdAt, person, note, receiptNum}
+     intermédiaire {lignes[]:{artName|artNom, qte|qty, prix|prixUnit}}
+     courant       {type:'sale', items[]:{productId|articleId, name, qty, unitPrice|prixV, total}, total|grandTotal,
+                    createdAtMs, sellerName|employeeName, receiptNumber, paymentMethod} (employe.html) */
+function cmNormMvt(m){
+  const r = m || {};
+  const pick = function(){
+    for (let i = 0; i < arguments.length; i++){
+      const v = arguments[i];
+      if (v === undefined || v === null || v === '') continue;
+      const n = Number(v);
+      if (Number.isFinite(n)) return n;
+    }
+    return null;
+  };
+  const rawLines = (Array.isArray(r.items) && r.items.length) ? r.items
+                 : (Array.isArray(r.lignes) ? r.lignes : []);
+  const lines = rawLines.filter(Boolean).map(function(l){
+    const unit = pick(l.unitPrice, l.prixV, l.prix, l.prixUnit, l.price);
+    const tot  = pick(l.total);
+    let qty = pick(l.qty, l.qte, l.quantity);
+    if (qty === null) qty = (unit !== null || tot !== null) ? 1 : 0;
+    const unitF = unit !== null ? unit : (tot !== null && qty > 0 ? tot / qty : 0);
+    return {
+      id: l.productId || l.articleId || l.artId || l.id || '',
+      name: l.name || l.artName || l.artNom || l.nom || 'Article',
+      qty: qty,
+      unitPrice: unitF,
+      total: tot !== null ? tot : qty * unitF
+    };
+  });
+  const sumQty = lines.reduce(function(s, l){ return s + l.qty; }, 0);
+  const sumTot = lines.reduce(function(s, l){ return s + l.total; }, 0);
+
+  const qteRaw = pick(r.qte, r.qty);
+  const qte = qteRaw !== null ? qteRaw : sumQty;
+  const prixRaw = pick(r.prix, r.prixUnit, r.prixV, r.unitPrice);
+  const totRaw = pick(r.total, r.grandTotal);
+  const total = totRaw !== null ? totRaw : (lines.length ? sumTot : qte * (prixRaw || 0));
+  const prix = prixRaw !== null ? prixRaw
+             : (lines.length === 1 ? lines[0].unitPrice : (qte > 0 ? total / qte : 0));
+
+  let artName = r.artName || r.artNom || (lines[0] && lines[0].name) || 'Article';
+  if (lines.length > 1 && !r.artName && !r.artNom){
+    const n = lines.length - 1;
+    artName += ' + ' + n + ' autre' + (n > 1 ? 's' : '');
+  }
+
+  const t0 = String(r.type || '').toLowerCase();
+  const type = (t0 === 'sale' || t0 === 'vente') ? 'vente'
+             : (t0 === 'purchase' || t0 === 'achat' || t0 === 'reception') ? 'achat'
+             : (r.type || 'achat');
+
+  let createdAt = null;
+  const ca = r.createdAt;
+  if (ca && typeof ca.toMillis === 'function') createdAt = ca.toMillis();
+  else if (ca && typeof ca.seconds === 'number') createdAt = ca.seconds * 1000;
+  else createdAt = pick(ca, r.createdAtMs);
+  if (createdAt === null && r.date){
+    const p = Date.parse(r.date);
+    if (Number.isFinite(p)) createdAt = p;
+  }
+  createdAt = createdAt || 0;
+  const date = r.date || (createdAt ? new Date(createdAt).toISOString().slice(0, 10) : '');
+
+  return Object.assign({}, r, {
+    type: type,
+    artName: artName,
+    artId: r.artId || r.productId || r.articleId || (lines.length === 1 ? lines[0].id : ''),
+    qte: qte,
+    prix: prix,
+    total: total,
+    date: date,
+    createdAt: createdAt,
+    person: r.person || (r.customer && r.customer.name) || r.clientName || '',
+    note: r.note || (r.customer && r.customer.note) || '',
+    sellerName: r.sellerName || r.employeeName || (r.employee && r.employee.name) || '',
+    receiptNum: r.receiptNum || r.receiptNumber || r.docNumber || '',
+    paymentMethod: r.paymentMethod || r.paymentMode || '',
+    _lines: lines
+  });
+}
+window.cmNormMvt = cmNormMvt;
+
+/* Lignes d'un mouvement (ventes multi-articles => une ligne par article) */
+function cmMvtLines(m){
+  if (m && Array.isArray(m._lines) && m._lines.length > 1){
+    return m._lines.map(function(l){ return { artId: l.id, name: l.name, qte: l.qty, total: l.total }; });
+  }
+  return [{ artId: m.artId, name: m.artName, qte: m.qte, total: m.total }];
+}
+
+/* Quantité (nombre, pas un montant) */
+function cmFmtQty(n){
+  return (Number(n) || 0).toLocaleString('fr-FR', { maximumFractionDigits: 2 });
+}
+
+function cmGetShopMvts(){
+  return CM.mouvements.filter(function(m){ return m && m.shopId === CM.currentShopId; }).map(cmNormMvt);
+}
 function cmGetShopTypeLabel(shop){
   if(!shop) return '';
   return (shop.customType && shop.type==='autre') ? shop.customType : (CM_SHOP_LABELS[shop.type] || shop.type || '');
@@ -10771,6 +10906,15 @@ let cmOrdersWatchUid = null;
 
 async function cmStartOrdersWatch(force = false){
   try {
+    /* AET-PATCH-20260920 : ce code vit dans un script CLASSIQUE (IIFE) ; db/collection/query/where
+       sont importés dans le <script type="module"> et n'y sont pas visibles. Pont explicite : */
+    const db = window.__AET_DB__;
+    const _fs = window.__AET_FIRESTORE__ || {};
+    const { collection, query, where, onSnapshot } = _fs;
+    if (typeof collection !== 'function' || typeof query !== 'function' ||
+        typeof where !== 'function' || typeof onSnapshot !== 'function') {
+      throw new Error('Pont Firestore incomplet (window.__AET_FIRESTORE__)');
+    }
     const uid = (window.currentUser && window.currentUser.uid) || '';
 
     if (!uid) {
@@ -10885,6 +11029,11 @@ async function cmStartOrdersWatch(force = false){
     console.error('[COMMANDES] démarrage listener:', e);
     CM.orders = [];
     if (typeof cmRenderOrders === 'function') cmRenderOrders();
+    /* AET-PATCH-20260920 : ne plus échouer en silence */
+    const _l = document.getElementById('cmOrdersList');
+    if (_l) _l.insertAdjacentHTML('afterbegin',
+      '<div style="background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:10px;padding:10px;margin-bottom:10px;font-size:13px;">' +
+      'Impossible de charger les commandes : ' + esc((e && (e.code || e.message)) || e) + '</div>');
   }
 }
 
@@ -10912,6 +11061,22 @@ window.cmSwitch = function(sec){
   });
   cmRenderSection();
 };
+
+/* AET-PATCH-20260920 : helpers manquants dans l'IIFE Commerce (esc n'y était pas défini) */
+function esc(s){
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function(m){
+    return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m];
+  });
+}
+/* Statuts : le propriétaire écrit pending/confirmed/preparing/delivered/cancelled,
+   l'employé écrit completed/rejected. Lecture seule (rien n'est réécrit dans Firestore) :
+   completed -> delivered, rejected -> cancelled. */
+function cmNormOrderStatus(s){
+  const v = String(s || 'pending').toLowerCase();
+  if (v === 'completed') return 'delivered';
+  if (v === 'rejected' || v === 'canceled') return 'cancelled';
+  return v;
+}
 
 function cmOrderStatusLabel(status){
   const map = {
@@ -10956,10 +11121,10 @@ function cmRenderOrders(){
   // Certaines anciennes commandes ont shopId vide : ne pas les masquer.
   const orders = Array.isArray(CM.orders) ? CM.orders : [];
 
-  const pending = orders.filter(o => o.status === 'pending').length;
-  const active = orders.filter(o => ['confirmed','preparing'].includes(o.status)).length;
-  const delivered = orders.filter(o => o.status === 'delivered').length;
-  const cancelled = orders.filter(o => o.status === 'cancelled').length;
+  const pending = orders.filter(o => cmNormOrderStatus(o.status) === 'pending').length;
+  const active = orders.filter(o => ['confirmed','preparing'].includes(cmNormOrderStatus(o.status))).length;
+  const delivered = orders.filter(o => cmNormOrderStatus(o.status) === 'delivered').length;
+  const cancelled = orders.filter(o => cmNormOrderStatus(o.status) === 'cancelled').length;
 
   stats.innerHTML = `
     <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px;">
@@ -10998,7 +11163,7 @@ function cmRenderOrders(){
     const customer = order.customer || {};
     const items = Array.isArray(order.items) ? order.items : [];
     const total = Number(order.grandTotal || order.subtotal || 0);
-    const status = order.status || 'pending';
+    const status = cmNormOrderStatus(order.status);
 
     return `
       <div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.04);">
@@ -11095,6 +11260,12 @@ async function cmUpdateOrderStatus(orderId, status){
   if (!orderId || !status) return;
 
   try {
+    /* AET-PATCH-20260920 : pont module -> IIFE */
+    const db = window.__AET_DB__;
+    const { doc, updateDoc, serverTimestamp } = window.__AET_FIRESTORE__ || {};
+    if (!db || typeof doc !== 'function' || typeof updateDoc !== 'function') {
+      throw new Error('Pont Firestore indisponible');
+    }
     const ref = doc(db, 'public_orders', orderId);
 
     await updateDoc(ref, {
@@ -11158,9 +11329,12 @@ function cmRenderResume(){
   // Top articles vendus
   const top = {};
   cmGetShopMvts().filter(m=>m.type==='vente').forEach(m=>{
-    if(!top[m.artId]) top[m.artId] = {name:m.artName, qte:0, total:0};
-    top[m.artId].qte += (m.qte||0);
-    top[m.artId].total += (m.total||0);
+    cmMvtLines(m).forEach(l=>{           /* AET-PATCH-20260920 : ventes multi-articles */
+      const k = l.artId || l.name;
+      if(!top[k]) top[k] = {name:l.name, qte:0, total:0};
+      top[k].qte += (l.qte||0);
+      top[k].total += (l.total||0);
+    });
   });
   const topArr = Object.values(top).sort((a,b)=>b.total-a.total).slice(0,5);
   const topC = document.getElementById('cmTopArticles');
@@ -11958,15 +12132,20 @@ function cmNextDocNumber(prefix){
 // Construit l'objet reçu attaché à un mouvement déjà enregistré.
 function cmBuildReceipt(mvt, article){
   const shop = cmGetShop();
+  const m = cmNormMvt(mvt);   /* AET-PATCH-20260920 : même adaptateur que l'écran Mouvements */
   return {
-    docNumber: mvt.receiptNum,
-    type: mvt.type, // 'vente' | 'achat'
+    docNumber: m.receiptNum,
+    type: m.type, // 'vente' | 'achat'
     shopName: shop ? shop.name : '',
-    articleName: mvt.artName,
+    articleName: m.artName,
     unit: article ? (article.unit||'') : '',
-    qte: mvt.qte, prix: mvt.prix, total: mvt.total,
-    person: mvt.person, note: mvt.note, date: mvt.date,
-    createdAt: mvt.createdAt,
+    qte: m.qte, prix: m.prix, total: m.total,
+    lines: (m._lines || []).map(function(l){ return { name: l.name, qty: l.qty, unitPrice: l.unitPrice, total: l.total }; }),
+    person: m.person, note: m.note, date: m.date,
+    sellerName: m.sellerName,
+    sellerRole: m.sellerRole || m.employeeRole || '',
+    paymentMethod: m.paymentMethod,
+    createdAt: m.createdAt || Date.now(),
   };
 }
 
@@ -12006,22 +12185,36 @@ function cmDocHTML(doc){
   const d = doc.data;
   const dateStr = new Date(d.createdAt).toLocaleDateString(currentLang==='en'?'en-US':'fr-FR');
   const personLabel = isQuote ? t('cm_doc_client') : (d.type==='achat' ? t('cm_doc_supplier') : t('cm_doc_client'));
+  /* AET-PATCH-20260920 : ventes multi-articles + vendeur */
+  const multi = Array.isArray(d.lines) && d.lines.length > 1;
+  const articleRows = multi
+    ? d.lines.map(l => `<div class="cm-doc-row"><span>${esc(l.name)} ×${cmFmtQty(l.qty)}</span><span>${cmAmt(l.total)}</span></div>`).join('')
+    : `<div class="cm-doc-row"><span>${t('cm_doc_article')}</span><span>${esc(d.articleName)}</span></div>
+    <div class="cm-doc-row"><span>${t('cm_doc_qty')}</span><span>${cmFmtQty(d.qte)} ${esc(d.unit||'')}</span></div>
+    <div class="cm-doc-row"><span>${t('cm_doc_unit_price')}</span><span>${cmAmt(d.prix)}</span></div>`;
+  const sellerRow = (!isQuote && d.sellerName)
+    ? `<div class="cm-doc-row"><span>${currentLang==='en'?'Seller':'Vendu par'}</span><span>${esc(d.sellerName)}${d.sellerRole ? ' ('+esc(d.sellerRole)+')' : ''}</span></div>`
+    : '';
   return `
     <div class="cm-doc-head">
-      <div class="cm-doc-shop">${d.shopName||''}</div>
+      <div class="cm-doc-shop">${esc(d.shopName||'')}</div>
       <div class="cm-doc-type">${isQuote ? t('cm_doc_quote_title') : (d.type==='achat'?t('cm_doc_receipt_purchase'):t('cm_doc_receipt_sale'))}</div>
-      <div class="cm-doc-num">${t('cm_doc_no')} ${d.docNumber} — ${t('cm_doc_date')} ${dateStr}</div>
+      <div class="cm-doc-num">${t('cm_doc_no')} ${esc(d.docNumber)} — ${t('cm_doc_date')} ${dateStr}</div>
     </div>
-    ${d.person ? `<div class="cm-doc-row"><span>${personLabel}</span><span>${d.person}</span></div>` : ''}
-    <div class="cm-doc-row"><span>${t('cm_doc_article')}</span><span>${d.articleName}</span></div>
-    <div class="cm-doc-row"><span>${t('cm_doc_qty')}</span><span>${cmFmt(d.qte)} ${d.unit||''}</span></div>
-    <div class="cm-doc-row"><span>${t('cm_doc_unit_price')}</span><span>${cmAmt(d.prix)}</span></div>
+    ${d.person ? `<div class="cm-doc-row"><span>${personLabel}</span><span>${esc(d.person)}</span></div>` : ''}
+    ${sellerRow}
+    ${articleRows}
     <div class="cm-doc-row cm-doc-total"><span>${t('cm_doc_total')}</span><span>${cmAmt(d.total)}</span></div>
     ${isQuote && d.validUntil ? `<div class="cm-doc-row"><span>${t('cm_doc_valid_until')}</span><span>${new Date(d.validUntil).toLocaleDateString(currentLang==='en'?'en-US':'fr-FR')}</span></div>` : ''}
-    ${d.note ? `<div class="cm-doc-row"><span colspan="2" style="color:#666">${d.note}</span></div>` : ''}
+    ${d.note ? `<div class="cm-doc-row"><span colspan="2" style="color:#666">${esc(d.note)}</span></div>` : ''}
     <div class="cm-doc-foot">${isQuote ? t('cm_doc_quote_disclaimer') : t('cm_doc_thanks')}</div>
   `;
 }
+
+/* AET-PATCH-20260920 : ces fonctions sont LOCALES à l'IIFE ; on les expose explicitement pour que
+   les scripts suivants (v5/v52) lisent les vraies fonctions et non une globale fantôme. */
+window.cmBuildReceipt = cmBuildReceipt;
+window.cmDocHTML = cmDocHTML;
 
 function cmRenderDocPreview(){
   if (!CM_currentDoc) return;
@@ -12647,6 +12840,8 @@ window.cmFilterMvt = function(f, el){
 function cmRenderMvts(){
   const c = document.getElementById('cmMvtList');
   if(!c) return;
+  /* AET-PATCH-20260920 : cmGetShopMvts() renvoie déjà des copies normalisées (cmNormMvt) :
+     type sale->vente, artName, qte, prix, total, date, createdAt, sellerName, receiptNum. */
   let mvts = cmGetShopMvts().slice();
   if(CM.currentMvtFilter!=='all') mvts = mvts.filter(m=>m.type===CM.currentMvtFilter);
   mvts.sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
@@ -12657,29 +12852,32 @@ function cmRenderMvts(){
   c.innerHTML = mvts.map(m=>{
     const ic = m.type==='vente'?'fa-cash-register':'fa-truck-ramp-box';
     const sign = m.type==='vente'?'+':'−';
-    return `<div class="cm-mvt-card" onclick="cmDeleteMvt('${m.id}')">
+    const sellerLine = m.sellerName ? ' • ' + (currentLang==='en' ? 'Seller' : 'Vendu par') + ' ' + esc(m.sellerName) : '';
+    return `<div class="cm-mvt-card" onclick="cmDeleteMvt('${esc(m.id)}')">
       <div class="cm-mvt-icon ${m.type}"><i class="fas ${ic}"></i></div>
       <div class="cm-mvt-body">
-        <div class="cm-mvt-title">${m.artName} <span style="color:var(--muted);font-weight:500">×${cmFmt(m.qte)}</span></div>
-        <div class="cm-mvt-sub">${m.date}${m.person?' • '+m.person:''}${m.note?' • '+m.note:''}</div>
+        <div class="cm-mvt-title">${esc(m.artName)} <span style="color:var(--muted);font-weight:500">×${cmFmtQty(m.qte)}</span></div>
+        <div class="cm-mvt-sub">${esc(m.date||'—')}${m.person?' • '+esc(m.person):''}${sellerLine}${m.note?' • '+esc(m.note):''}</div>
       </div>
-      ${m.receiptNum ? `<button onclick="event.stopPropagation();cmViewMvtReceipt('${m.id}')" title="${t('cm_view_receipt')}" style="flex-shrink:0;width:30px;height:30px;border-radius:8px;border:none;background:rgba(37,99,235,.08);color:var(--primary);cursor:pointer;margin-right:6px"><i class="fas fa-receipt" style="font-size:12px"></i></button>` : ''}
+      ${m.receiptNum ? `<button onclick="event.stopPropagation();cmViewMvtReceipt('${esc(m.id)}')" title="${t('cm_view_receipt')}" style="flex-shrink:0;width:30px;height:30px;border-radius:8px;border:none;background:rgba(37,99,235,.08);color:var(--primary);cursor:pointer;margin-right:6px"><i class="fas fa-receipt" style="font-size:12px"></i></button>` : ''}
       <div class="cm-mvt-amt ${m.type}">${sign}${cmAmt(m.total)}</div>
     </div>`;
   }).join('');
 }
 
 window.cmViewMvtReceipt = function(mvtId){
-  const m = CM.mouvements.find(x=>x.id===mvtId);
+  const rawM = CM.mouvements.find(x=>x.id===mvtId);
+  const m = rawM ? cmNormMvt(rawM) : null;   /* AET-PATCH-20260920 : receiptNumber (employé) reconnu */
   if(!m || !m.receiptNum){ cmToast(t('cm_no_receipt'),'error'); return; }
   const a = CM.articles.find(x=>x.id===m.artId);
   cmShowReceipt(cmBuildReceipt(m, a));
 };
 
 window.cmDeleteMvt = function(id){
-  const m = CM.mouvements.find(x=>x.id===id);
+  const m = CM.mouvements.find(x=>x.id===id);   /* brut : la suite modifie l'enregistrement réel */
   if(!m) return;
-  if(!confirm(t('cm_confirm_delete_mvt',{type:(m.type==='vente'?t('cm_filter_ventes_sing'):t('cm_filter_achats_sing')),name:m.artName,qte:m.qte}))) return;
+  const nm = cmNormMvt(m);                      /* AET-PATCH-20260920 : libellé lisible (plus de "undefined") */
+  if(!confirm(t('cm_confirm_delete_mvt',{type:(nm.type==='vente'?t('cm_filter_ventes_sing'):t('cm_filter_achats_sing')),name:nm.artName,qte:nm.qte}))) return;
   // Annuler effet stock
   const art = CM.articles.find(a=>a.id===m.artId);
   if(art){
@@ -13757,115 +13955,7 @@ window.cmShowGenLinkQR = function() {
 };
 </script>
 
-<script id="aet-index-patch-v2">
-(function(){
-  if(window.__AET_INDEX_PATCH_V2__) return;
-  window.__AET_INDEX_PATCH_V2__ = true;
-  function normM(m){
-    const qte = Number(m?.qte ?? m?.qty ?? m?.lignes?.[0]?.qte ?? m?.lignes?.[0]?.qty ?? 0);
-    const prix = Number(m?.prix ?? m?.prixUnit ?? m?.lignes?.[0]?.prix ?? m?.lignes?.[0]?.prixUnit ?? 0);
-    const total = Number(m?.total ?? (qte * prix) ?? 0);
-    const artName = m?.artName || m?.artNom || m?.lignes?.[0]?.artName || m?.lignes?.[0]?.artNom || 'Article';
-    const sellerName = m?.sellerName || m?.employeeName || m?.employee?.name || '';
-    return Object.assign({}, m || {}, { artName, qte, prix, total, sellerName, person: m?.person || '', note: m?.note || '' });
-  }
-
-  cmBuildReceipt = function(mvt, article){
-    const mm = normM(mvt || {});
-    const shop = typeof cmGetShop === 'function' ? cmGetShop() : null;
-    return {
-      docNumber: mm.receiptNum || mm.docNumber || '',
-      type: mm.type || 'vente',
-      shopName: shop ? shop.name : '',
-      articleName: mm.artName,
-      unit: article ? (article.unit || '') : '',
-      qte: mm.qte,
-      prix: mm.prix,
-      total: mm.total,
-      person: mm.person,
-      sellerName: mm.sellerName,
-      note: mm.note,
-      date: mm.date,
-      createdAt: mm.createdAt || Date.now(),
-    };
-  };
-
-  cmDocHTML = function(doc){
-    const isQuote = doc.kind === 'quote';
-    const d = doc.data || {};
-    const dateStr = new Date(d.createdAt || Date.now()).toLocaleDateString(currentLang==='en'?'en-US':'fr-FR');
-    const personLabel = isQuote ? t('cm_doc_client') : (d.type==='achat' ? t('cm_doc_supplier') : t('cm_doc_client'));
-    const sellerLabel = currentLang === 'en' ? 'Seller' : 'Vendu par';
-    return `
-      <div class="cm-doc-head">
-        <div class="cm-doc-shop">${d.shopName||''}</div>
-        <div class="cm-doc-type">${isQuote ? t('cm_doc_quote_title') : (d.type==='achat'?t('cm_doc_receipt_purchase'):t('cm_doc_receipt_sale'))}</div>
-        <div class="cm-doc-num">${t('cm_doc_no')} ${d.docNumber} — ${t('cm_doc_date')} ${dateStr}</div>
-      </div>
-      ${d.person ? `<div class="cm-doc-row"><span>${personLabel}</span><span>${d.person}</span></div>` : ''}
-      ${d.sellerName ? `<div class="cm-doc-row"><span>${sellerLabel}</span><span>${d.sellerName}</span></div>` : ''}
-      <div class="cm-doc-row"><span>${t('cm_doc_article')}</span><span>${d.articleName || 'Article'}</span></div>
-      <div class="cm-doc-row"><span>${t('cm_doc_qty')}</span><span>${cmFmt(d.qte||0)} ${d.unit||''}</span></div>
-      <div class="cm-doc-row"><span>${t('cm_doc_unit_price')}</span><span>${cmAmt(d.prix||0)}</span></div>
-      <div class="cm-doc-row cm-doc-total"><span>${t('cm_doc_total')}</span><span>${cmAmt(d.total||0)}</span></div>
-      ${isQuote && d.validUntil ? `<div class="cm-doc-row"><span>${t('cm_doc_valid_until')}</span><span>${new Date(d.validUntil).toLocaleDateString(currentLang==='en'?'en-US':'fr-FR')}</span></div>` : ''}
-      ${d.note ? `<div class="cm-doc-row"><span colspan="2" style="color:#666">${d.note}</span></div>` : ''}
-      <div class="cm-doc-foot">${isQuote ? t('cm_doc_quote_disclaimer') : t('cm_doc_thanks')}</div>
-    `;
-  };
-
-  cmRenderMvts = function(){
-    const c = document.getElementById('cmMvtList');
-    if(!c) return;
-    let mvts = cmGetShopMvts().slice();
-    if(CM.currentMvtFilter!=='all') mvts = mvts.filter(m=>m.type===CM.currentMvtFilter);
-    mvts = mvts.map(normM).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
-    if(mvts.length===0){
-      c.innerHTML = `<div class="cm-empty"><i class="fas fa-right-left"></i>${t('cm_no_movement')}<br><small>${t('cm_no_movement_sub')}</small></div>`;
-      return;
-    }
-    c.innerHTML = mvts.map(m=>{
-      const ic = m.type==='vente'?'fa-cash-register':'fa-truck-ramp-box';
-      const sign = m.type==='vente'?'+':'−';
-      const sellerLine = m.sellerName ? ` • ${currentLang==='en' ? 'Seller' : 'Vendu par'} ${m.sellerName}` : '';
-      return `<div class="cm-mvt-card" onclick="cmDeleteMvt('${m.id}')">
-        <div class="cm-mvt-icon ${m.type}"><i class="fas ${ic}"></i></div>
-        <div class="cm-mvt-body">
-          <div class="cm-mvt-title">${m.artName} <span style="color:var(--muted);font-weight:500">×${cmFmt(m.qte)}</span></div>
-          <div class="cm-mvt-sub">${m.date || '—'}${m.person?' • '+m.person:''}${sellerLine}${m.note?' • '+m.note:''}</div>
-        </div>
-        ${m.receiptNum ? `<button onclick="event.stopPropagation();cmViewMvtReceipt('${m.id}')" title="${t('cm_view_receipt')}" style="flex-shrink:0;width:30px;height:30px;border-radius:8px;border:none;background:rgba(37,99,235,.08);color:var(--primary);cursor:pointer;margin-right:6px"><i class="fas fa-receipt" style="font-size:12px"></i></button>` : ''}
-        <div class="cm-mvt-amt ${m.type}">${sign}${cmAmt(m.total)}</div>
-      </div>`;
-    }).join('');
-  };
-  window.cmRenderMvts = cmRenderMvts;
-
-  window.cmViewMvtReceipt = function(mvtId){
-    const raw = CM.mouvements.find(x=>x.id===mvtId);
-    if(!raw || !raw.receiptNum){ cmToast(t('cm_no_receipt'),'error'); return; }
-    const m = normM(raw);
-    const a = CM.articles.find(x=>x.id===m.artId);
-    cmShowReceipt(cmBuildReceipt(m, a));
-  };
-
-  window.cmDeleteMvt = function(id){
-    const raw = CM.mouvements.find(x=>x.id===id);
-    if(!raw) return;
-    const m = normM(raw);
-    if(!confirm(t('cm_confirm_delete_mvt',{type:(m.type==='vente'?t('cm_filter_ventes_sing'):t('cm_filter_achats_sing')),name:m.artName,qte:m.qte}))) return;
-    const art = CM.articles.find(a=>a.id===m.artId);
-    if(art){
-      if(m.type==='vente') art.stock = (art.stock||0) + (m.qte||0);
-      else art.stock = (art.stock||0) - (m.qte||0);
-    }
-    CM.mouvements = CM.mouvements.filter(x=>x.id!==id);
-    cmSave();
-    cmRenderAll();
-    cmToast(t('cm_msg_mvt_deleted'),'success');
-  };
-})();
-</script>
+<script id="aet-index-patch-v2">/* AET-PATCH-20260920 : ancien patch v2 neutralisé. cmRenderMvts / cmBuildReceipt / cmDocHTML sont des fonctions LOCALES de l'IIFE Commerce : les affecter depuis ce script externe créait des globales jamais appelées. La normalisation vit maintenant dans cmNormMvt (IIFE Commerce), corrigée à la source. */</script>
 
 
 <script id="aet-index-patch-v5">

@@ -120,19 +120,10 @@
     getMvts: () => {
       const cm = window.CM_DEBUG;
       if (!cm) return [];
-      return (cm.mouvements || []).filter(m => m.shopId === cm.currentShopId).map(m => {
-        const qte = Number(m?.qte ?? m?.qty ?? m?.lignes?.[0]?.qte ?? m?.lignes?.[0]?.qty ?? 0);
-        const prix = Number(m?.prix ?? m?.prixUnit ?? m?.lignes?.[0]?.prix ?? m?.lignes?.[0]?.prixUnit ?? 0);
-        const total = Number(m?.total ?? (qte * prix) ?? 0);
-        return Object.assign({}, m, {
-          artName: m?.artName || m?.artNom || m?.lignes?.[0]?.artName || m?.lignes?.[0]?.artNom || 'Article',
-          qte,
-          prix,
-          total,
-          sellerName: m?.sellerName || m?.employeeName || m?.employee?.name || '',
-          person: m?.person || ''
-        });
-      });
+      // AET-PATCH-20260920 : adaptateur de lecture UNIQUE, défini dans index.html (cmNormMvt) — pas de 2e implémentation.
+      const norm = (typeof window.cmNormMvt === 'function') ? window.cmNormMvt : null;
+      if (!norm) console.warn('[CP] cmNormMvt indisponible : mouvements non normalisés');
+      return (cm.mouvements || []).filter(m => m && m.shopId === cm.currentShopId).map(m => norm ? norm(m) : m);
     },
     db: () => window.__AET_DB__,
     fs: () => window.__AET_FIRESTORE__,

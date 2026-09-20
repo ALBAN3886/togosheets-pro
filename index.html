@@ -11073,18 +11073,16 @@ function esc(s){
    completed -> delivered, rejected -> cancelled. */
 function cmNormOrderStatus(s){
   const v = String(s || 'pending').toLowerCase();
-  if (v === 'completed') return 'delivered';
-  if (v === 'rejected' || v === 'canceled') return 'cancelled';
+  if (v === 'confirmed' || v === 'preparing' || v === 'delivered') return 'completed';
+  if (v === 'cancelled' || v === 'canceled') return 'rejected';
   return v;
 }
 
 function cmOrderStatusLabel(status){
   const map = {
     pending: 'En attente',
-    confirmed: 'Confirmée',
-    preparing: 'En préparation',
-    delivered: 'Livrée',
-    cancelled: 'Annulée'
+    completed: 'Validée',
+    rejected: 'Rejetée'
   };
   return map[status] || status || 'En attente';
 }
@@ -11092,10 +11090,8 @@ function cmOrderStatusLabel(status){
 function cmOrderStatusClass(status){
   return {
     pending: 'background:#fef3c7;color:#92400e;',
-    confirmed: 'background:#dbeafe;color:#1d4ed8;',
-    preparing: 'background:#ede9fe;color:#6d28d9;',
-    delivered: 'background:#dcfce7;color:#166534;',
-    cancelled: 'background:#fee2e2;color:#991b1b;'
+    completed: 'background:#dcfce7;color:#166534;',
+    rejected: 'background:#fee2e2;color:#991b1b;'
   }[status] || 'background:#f3f4f6;color:#374151;';
 }
 
@@ -11122,9 +11118,8 @@ function cmRenderOrders(){
   const orders = Array.isArray(CM.orders) ? CM.orders : [];
 
   const pending = orders.filter(o => cmNormOrderStatus(o.status) === 'pending').length;
-  const active = orders.filter(o => ['confirmed','preparing'].includes(cmNormOrderStatus(o.status))).length;
-  const delivered = orders.filter(o => cmNormOrderStatus(o.status) === 'delivered').length;
-  const cancelled = orders.filter(o => cmNormOrderStatus(o.status) === 'cancelled').length;
+  const delivered = orders.filter(o => cmNormOrderStatus(o.status) === 'completed').length;
+  const cancelled = orders.filter(o => cmNormOrderStatus(o.status) === 'rejected').length;
 
   stats.innerHTML = `
     <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px;">
@@ -11135,16 +11130,12 @@ function cmRenderOrders(){
       <div style="font-size:12px;color:#92400e;">En attente</div>
       <strong style="font-size:22px;color:#92400e;">${pending}</strong>
     </div>
-    <div style="background:#fff;border:1px solid #ddd6fe;border-radius:12px;padding:14px;">
-      <div style="font-size:12px;color:#6d28d9;">En cours</div>
-      <strong style="font-size:22px;color:#6d28d9;">${active}</strong>
-    </div>
     <div style="background:#fff;border:1px solid #bbf7d0;border-radius:12px;padding:14px;">
-      <div style="font-size:12px;color:#166534;">Livrées</div>
+      <div style="font-size:12px;color:#166534;">Validées</div>
       <strong style="font-size:22px;color:#166534;">${delivered}</strong>
     </div>
     <div style="background:#fff;border:1px solid #fecaca;border-radius:12px;padding:14px;">
-      <div style="font-size:12px;color:#991b1b;">Annulées</div>
+      <div style="font-size:12px;color:#991b1b;">Rejetées</div>
       <strong style="font-size:22px;color:#991b1b;">${cancelled}</strong>
     </div>
   `;
@@ -11222,29 +11213,12 @@ function cmRenderOrders(){
           </strong>
 
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
-            ${status !== 'confirmed' && status !== 'cancelled' && status !== 'delivered' ? `
-              <button onclick="cmUpdateOrderStatus('${esc(order.id)}','confirmed')"
-                style="border:0;border-radius:8px;padding:8px 10px;background:#2563eb;color:#fff;font-weight:700;cursor:pointer;">
-                Confirmer
-              </button>
-            ` : ''}
-
-            ${status === 'confirmed' ? `
-              <button onclick="cmUpdateOrderStatus('${esc(order.id)}','preparing')"
-                style="border:0;border-radius:8px;padding:8px 10px;background:#7c3aed;color:#fff;font-weight:700;cursor:pointer;">
-                Préparer
-              </button>
-            ` : ''}
-
-            ${status === 'preparing' ? `
-              <button onclick="cmUpdateOrderStatus('${esc(order.id)}','delivered')"
+            ${status === 'pending' ? `
+              <button onclick="cmUpdateOrderStatus('${esc(order.id)}','completed')"
                 style="border:0;border-radius:8px;padding:8px 10px;background:#059669;color:#fff;font-weight:700;cursor:pointer;">
-                Livrée
+                Valider
               </button>
-            ` : ''}
-
-            ${!['delivered','cancelled'].includes(status) ? `
-              <button onclick="cmUpdateOrderStatus('${esc(order.id)}','cancelled')"
+              <button onclick="cmUpdateOrderStatus('${esc(order.id)}','rejected')"
                 style="border:1px solid #fecaca;border-radius:8px;padding:8px 10px;background:#fff;color:#b91c1c;font-weight:700;cursor:pointer;">
                 Annuler
               </button>

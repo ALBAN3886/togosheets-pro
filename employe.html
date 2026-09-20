@@ -1110,6 +1110,7 @@ function deriveStateFromCmData() {
       receiptNumber: m.receiptNumber || m.id,
       paymentMethod: m.paymentMethod || 'cash',
       sellerName: m.sellerName || '',
+      sellerEmployeeId: m.sellerEmployeeId || '',
       items: (m.items || []).map(normalizeSaleItem),
       grandTotal: m.total || m.grandTotal || 0,
       createdAtMs: m.createdAtMs || 0,
@@ -1452,52 +1453,35 @@ function renderLogin() {
    PAGE : POS / CAISSE
 ═══════════════════════════════════════════════════════════════ */
 function renderPOS() {
-  const session = activeSession();
   const total = state.cart.reduce((s,i) => s + Number(i.qty||0)*Number(i.unitPrice||0), 0);
   const itemCount = state.cart.reduce((s,i) => s + Number(i.qty||0), 0);
 
-  const sessionCard = session
-    ? `<div class="card">
+  // AET-PATCH-20260920-CAISSE-EMPLOYE : plus de fond de caisse manuel,
+  // affichage automatique du total vendu aujourd'hui par cet employe.
+  const myUid = state.user?.uid || '';
+  const todayStr = new Date().toISOString().slice(0,10);
+  const mySalesToday = state.sales.filter(s =>
+    s.sellerEmployeeId === myUid &&
+    new Date(s.createdAtMs||0).toISOString().slice(0,10) === todayStr
+  );
+  const myTotalToday = mySalesToday.reduce((s,x) => s + Number(x.grandTotal||0), 0);
+
+  const sessionCard = `<div class="card">
         <div class="card-head">
-          <h3><i class="fas fa-cash-register"></i> Session active</h3>
-          <span class="badge badge-success"><i class="fas fa-circle" style="font-size:8px"></i> Caisse ouverte</span>
+          <h3><i class="fas fa-cash-register"></i> Ma caisse</h3>
+          <span class="badge badge-success"><i class="fas fa-circle" style="font-size:8px"></i> Aujourd'hui</span>
         </div>
         <div class="card-body">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
             <div>
-              <div class="label" style="margin-bottom:4px">Session</div>
-              <div style="font-weight:800;font-size:15px">#${esc(session.id.slice(-6).toUpperCase())}</div>
+              <div class="label" style="margin-bottom:4px">Ventes aujourd'hui</div>
+              <div style="font-weight:800;font-size:15px">${esc(String(mySalesToday.length))}</div>
             </div>
             <div>
-              <div class="label" style="margin-bottom:4px">Fond de caisse</div>
-              <div style="font-weight:800;font-size:15px;color:var(--primary)">${esc(money(session.openingAmount||0))}</div>
+              <div class="label" style="margin-bottom:4px">Total encaissé</div>
+              <div style="font-weight:800;font-size:15px;color:var(--primary)">${esc(money(myTotalToday))}</div>
             </div>
           </div>
-          <div class="field" style="margin-bottom:8px">
-            <label class="label">Montant de clôture</label>
-            <input class="input" id="closingAmount" type="number" placeholder="0 XOF" inputmode="numeric"/>
-          </div>
-          <button class="btn btn-danger btn-block" onclick="doCloseSession('${esc(session.id)}')">
-            <i class="fas fa-power-off"></i> Clôturer la caisse
-          </button>
-        </div>
-      </div>`
-    : `<div class="card">
-        <div class="card-head">
-          <h3><i class="fas fa-door-open"></i> Ouvrir la caisse</h3>
-          <span class="badge badge-warning"><i class="fas fa-circle" style="font-size:8px"></i> Fermée</span>
-        </div>
-        <div class="card-body">
-          <p style="font-size:13px;color:var(--text-2);margin:0 0 14px">
-            Saisissez votre fond de caisse initial pour démarrer une nouvelle session.
-          </p>
-          <div class="field">
-            <label class="label">Fond de caisse (XOF)</label>
-            <input class="input" id="openingAmount" type="number" placeholder="0" inputmode="numeric"/>
-          </div>
-          <button class="btn btn-primary btn-block" onclick="doOpenSession()">
-            <i class="fas fa-key"></i> Ouvrir la caisse
-          </button>
         </div>
       </div>`;
 
@@ -1570,13 +1554,12 @@ function renderPOS() {
                 <option value="card">💳 Carte bancaire</option>
               </select>
             </div>
-            <button class="btn btn-primary btn-block" id="saleBtn" ${state.cart.length && session ? '' : 'disabled'} onclick="doSale()" style="margin-bottom:8px">
+            <button class="btn btn-primary btn-block" id="saleBtn" ${state.cart.length ? '' : 'disabled'} onclick="doSale()" style="margin-bottom:8px">
               <i class="fas fa-check"></i> Encaisser ${state.cart.length ? '— ' + money(total) : ''}
             </button>
             ${state.cart.length ? `<button class="btn btn-ghost btn-block btn-sm" onclick="state.cart=[];renderPage()">
               <i class="fas fa-trash"></i> Vider le panier
             </button>` : ''}
-            ${!session ? '<p style="color:var(--warning);font-size:12px;margin-top:10px;display:flex;align-items:center;gap:6px"><i class="fas fa-circle-exclamation"></i> Ouvrez d\'abord une caisse</p>' : ''}
           </div>
         </div>
       </div>
@@ -2304,8 +2287,6 @@ window.doCloseSession = async function(sessionId) {
    ACTIONS VENTE
 ═══════════════════════════════════════════════════════════════ */
 window.doSale = async function() {
-  const session = activeSession();
-  if (!session) { showToast('Ouvrez une caisse d\'abord', 'error'); return; }
   if (!state.cart.length) { showToast('Panier vide', 'error'); return; }
   const paymentMethod = document.getElementById('payMethod')?.value || 'cash';
   const sid           = storeId || state.context?.storeIds?.[0] || '';
@@ -2334,7 +2315,6 @@ window.doSale = async function() {
 
       mouvements.push({
         id: empUID(), type: 'sale', shopId: sid,
-        cashSessionId: session.id,
         sellerEmployeeId: state.user?.uid,
         sellerName: state.user?.displayName || state.user?.email || 'Opérateur',
         source: 'employee-pos', paymentMethod,

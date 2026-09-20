@@ -737,7 +737,7 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
 <!-- ══════════════════════════════════════════════════
   DRAWER : CONNEXION
 ══════════════════════════════════════════════════ -->
-<div id="loginDrawer" class="drawer">
+<div id="loginDrawer" class="drawer gate-mode open">
   <div class="drawer-head">
     <div class="handle"></div>
     <div class="drawer-head-row">
@@ -746,6 +746,18 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
     </div>
   </div>
   <div class="drawer-body">
+    <div class="gate-only" style="text-align:center;margin-bottom:20px">
+      <div style="width:60px;height:60px;border-radius:16px;background:var(--orange);display:flex;align-items:center;justify-content:center;margin:0 auto 10px">
+        <i class="fas fa-store" style="color:#fff;font-size:24px"></i>
+      </div>
+      <h2 style="margin:0;font-size:19px">Bienvenue</h2>
+      <p style="color:var(--muted);font-size:12.5px;margin:6px 0 0">Connectez-vous ou créez un compte pour accéder à la boutique.</p>
+    </div>
+    <button type="button" class="google-signin-btn" onclick="doGoogleSignIn()">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" style="width:18px;height:18px" alt=""/>
+      Continuer avec Google
+    </button>
+    <div class="auth-sep">ou</div>
     <div id="authTabs" style="display:flex;gap:6px;background:#f1f5f9;border-radius:12px;padding:4px;margin-bottom:16px">
       <button id="tabLogin" type="button" onclick="authTab('login')">Se connecter</button>
       <button id="tabRegister" type="button" onclick="authTab('register')">Créer un compte</button>
@@ -818,7 +830,7 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
 <script type="module">
 import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, doc, setDoc, getDoc, getDocs, onSnapshot, collection, addDoc, serverTimestamp, runTransaction, deleteDoc, query, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
 const FIREBASE_CONFIG = window.__AET_FIREBASE_CONFIG__ || {
   apiKey: 'AIzaSyB5hpkRlFZ9HFRRbpQlvpHwMNDja37Nr2s',
@@ -867,6 +879,8 @@ window.showToast = (msg, type='') => {
 };
 
 // ── DRAWER SYSTEM ──────────────────────────────────────────────────────────
+let authGateActive = true;
+
 window.openDrawer = id => {
   closeAllDrawers();
   document.getElementById('overlay').classList.add('show');
@@ -874,15 +888,33 @@ window.openDrawer = id => {
   S.activeDrawers = [id];
 };
 window.closeDrawer = id => {
+  if (id === 'loginDrawer' && authGateActive) return;
   document.getElementById(id).classList.remove('open');
   S.activeDrawers = S.activeDrawers.filter(d => d !== id);
   if (!S.activeDrawers.length) document.getElementById('overlay').classList.remove('show');
 };
 window.closeAllDrawers = () => {
-  document.querySelectorAll('.drawer.open').forEach(d => d.classList.remove('open'));
+  document.querySelectorAll('.drawer.open').forEach(d => {
+    if (d.id === 'loginDrawer' && authGateActive) return;
+    d.classList.remove('open');
+  });
   document.getElementById('overlay').classList.remove('show');
-  S.activeDrawers = [];
+  S.activeDrawers = authGateActive ? ['loginDrawer'] : [];
 };
+
+function setAuthGate(active) {
+  authGateActive = active;
+  const d = document.getElementById('loginDrawer');
+  if (!d) return;
+  if (active) {
+    d.classList.add('gate-mode');
+    if (typeof authTab === 'function') authTab('login');
+    openDrawer('loginDrawer');
+  } else {
+    d.classList.remove('gate-mode');
+    closeDrawer('loginDrawer');
+  }
+}
 
 // ── PAGE TABS ──────────────────────────────────────────────────────────────
 window.openPage = tab => {
@@ -2071,6 +2103,26 @@ window.authTab = which => {
 };
 window.openLoginForm = () => { authTab('login'); openDrawer('loginDrawer'); };
 
+window.doGoogleSignIn = async () => {
+  try {
+    const provider = new GoogleAuthProvider();
+    const cred = await signInWithPopup(auth, provider);
+    const uid = cred.user.uid;
+    const snap = await getDoc(doc(custDb, 'customers', uid));
+    if (!snap.exists()) {
+      await setDoc(doc(custDb, 'customers', uid), {
+        name: cred.user.displayName || '',
+        phone: '',
+        email: cred.user.email || '',
+        createdAt: serverTimestamp()
+      });
+    }
+  } catch (e) {
+    console.warn('[GOOGLE SIGNIN]', e);
+    showToast('❌ Connexion Google impossible : ' + (e.code || e.message || 'erreur'));
+  }
+};
+
 window.doRegister = async () => {
   const name  = $v('regName').replace(/\s+/g, ' ');
   const phone = $v('regPhone');
@@ -2156,6 +2208,7 @@ window.doLogout = async () => {
 onAuthStateChanged(auth, async u => {
   if (registering) return;
   if (!u) {
+    setAuthGate(true);
     // Nettoyer les listeners liés à l'ancien compte
     if (typeof chatSummaryUnsubs !== 'undefined') {
       chatSummaryUnsubs.forEach(fn => { try { fn(); } catch(_){} });
@@ -2188,6 +2241,7 @@ onAuthStateChanged(auth, async u => {
     } else { S.user = null; }
   } catch (e) { console.warn('[auth profil]', e); }
   loadAccount();
+  setAuthGate(false);
 
   // 🔄 Synchroniser toutes les données persistantes du client
   if (typeof migrateClientData === 'function') {
@@ -2377,6 +2431,21 @@ body{
 body.drawer-active .bottom-nav{opacity:.25;pointer-events:none;transform:translateX(-50%) translateY(8px)}
 body.keyboard-open .bottom-nav{opacity:0;pointer-events:none;transform:translateX(-50%) translateY(120px)}
 body.keyboard-open .drawer{max-height:calc(var(--vvh) - 2px) !important}
+.drawer.gate-mode{
+  left:0 !important;right:0 !important;top:0 !important;bottom:0 !important;
+  width:100% !important;max-width:100% !important;
+  max-height:100% !important;height:100% !important;
+  border-radius:0 !important;transform:none !important;
+  z-index:100000 !important;
+  display:flex !important;flex-direction:column;justify-content:center;
+}
+.drawer.gate-mode .drawer-head{display:none !important}
+.drawer.gate-mode .drawer-body{display:flex;flex-direction:column;justify-content:center;max-width:420px;margin:0 auto;width:100%}
+.gate-only{display:none}
+.drawer.gate-mode .gate-only{display:block}
+.google-signin-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:12px;border:1px solid var(--border);border-radius:12px;background:#fff;font-weight:700;cursor:pointer;margin-bottom:14px;font-size:14px}
+.auth-sep{display:flex;align-items:center;gap:10px;margin:4px 0 16px;color:var(--muted);font-size:12px}
+.auth-sep::before,.auth-sep::after{content:'';flex:1;height:1px;background:var(--border)}
 @media (min-width:900px){
   .grid{grid-template-columns:repeat(3,minmax(0,1fr)) !important}
 }

@@ -10952,10 +10952,9 @@ function cmRenderOrders(){
 
   if (!stats || !list) return;
 
-  const shopId = CM.currentShopId;
-
-  const orders = (Array.isArray(CM.orders) ? CM.orders : [])
-    .filter(o => !shopId || String(o.shopId || '') === String(shopId));
+  // Les commandes de la boutique en ligne sont rattachées au tenant.
+  // Certaines anciennes commandes ont shopId vide : ne pas les masquer.
+  const orders = Array.isArray(CM.orders) ? CM.orders : [];
 
   const pending = orders.filter(o => o.status === 'pending').length;
   const active = orders.filter(o => ['confirmed','preparing'].includes(o.status)).length;

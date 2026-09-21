@@ -10471,6 +10471,7 @@ async function cmSaveRemote(){
       await fs.setDoc(fs.doc(db,'public_shops',uid), {
         shops: publicShops,
         articles: publicArticles,
+        ownerEmail: (window.currentUser && window.currentUser.email) || null,
         updatedAt: fs.serverTimestamp()
       }, { merge:false });
     }catch(e){ console.warn('CM public sync', e); }

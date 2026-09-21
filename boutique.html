@@ -728,7 +728,6 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
     </div>
     <div class="menu-section">
       <div class="menu-item" onclick="window.open('tel:+22899812072')"><i class="fas fa-phone ico green"></i><span class="label">+228 99 81 20 72</span></div>
-      <div class="menu-item" onclick="window.open('https://wa.me/22899812072')"><i class="fab fa-whatsapp ico green"></i><span class="label">WhatsApp</span></div>
     </div>
     <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:16px">Propulsé par <strong>AET Technology</strong> • alban3886.github.io</p>
   </div>
@@ -848,7 +847,13 @@ const db  = getFirestore(app);
 const qs       = new URLSearchParams(location.search);
 const tenantId = qs.get('tenant') || qs.get('uid') || '';
 const storeId  = qs.get('store')  || qs.get('shop') || '';
-const wa       = qs.get('wa') || '22899812072';
+let ownerEmail = '';
+
+function openOwnerMail(subject, lines) {
+  if (!ownerEmail) { showToast('⚠️ E-mail du vendeur indisponible.'); return; }
+  const body = lines.join('\n');
+  window.open('mailto:' + ownerEmail + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body));
+}
 
 // ── STATE ──────────────────────────────────────────────────────────────────
 const S = {
@@ -908,11 +913,13 @@ function setAuthGate(active) {
   if (!d) return;
   if (active) {
     d.classList.add('gate-mode');
+    document.body.classList.add('drawer-active');
     if (typeof authTab === 'function') authTab('login');
     openDrawer('loginDrawer');
   } else {
     d.classList.remove('gate-mode');
     closeDrawer('loginDrawer');
+    document.body.classList.remove('drawer-active');
   }
 }
 
@@ -966,6 +973,8 @@ function applyData(data) {
       category: a.cat||a.category||'Divers',
       shopId: a.shopId||storeId,
     }));
+
+  ownerEmail = data.ownerEmail || '';
 
   const shop = shops.find(s => String(s.id)===String(storeId)) || shops[0];
   const shopName = shop?.name || 'ALBAN STORE';
@@ -1805,18 +1814,18 @@ window.submitOrder = async () => {
   localStorage.setItem('aet_orders', JSON.stringify(S.orders.slice(0,20)));
   if (S.user) { S.user.name=name; S.user.phone=phone; localStorage.setItem('aet_user',JSON.stringify(S.user)); }
 
-  // WhatsApp
+  // E-mail au proprietaire de la boutique
   const lines = [
-    `🛒 Commande ${orderId}`,
+    `Commande ${orderId}`,
     `Client: ${name}`,
-    `Tél: ${phone}`,
+    `Tel: ${phone}`,
     city ? `Adresse: ${city}` : '',
-    ...order.items.map(i=>`- ${i.name} ×${i.qty} = ${money(i.total)}`),
+    ...order.items.map(i=>`- ${i.name} x${i.qty} = ${money(i.total)}`),
     `Total: ${money(total)}`,
     note ? `Note: ${note}` : '',
     `Paiement: ${window._selectedPay||'cash'}`,
-  ].filter(Boolean).join('\n');
-  if (wa) window.open('https://wa.me/'+wa.replace(/\D/g,'')+'?text='+encodeURIComponent(lines),'_blank');
+  ].filter(Boolean);
+  openOwnerMail(`Nouvelle commande ${orderId}`, lines);
 
   S.cart = [];
   localStorage.setItem('aet_cart', '[]');
@@ -2332,11 +2341,11 @@ window.submitDevis = async () => {
   const qty = document.getElementById('dqQty').value.trim();
   const msg = document.getElementById('dqMsg').value.trim();
   if (!name||!phone||!product) { showToast('⚠️ Remplissez les champs obligatoires'); return; }
-  const lines = [`Demande de devis`,`Client: ${name}`,`Tél: ${phone}`,`Produit: ${product}`,qty?`Quantité: ${qty}`:'',msg?`Message: ${msg}`:''].filter(Boolean).join('\n');
-  if (wa) window.open('https://wa.me/'+wa.replace(/\D/g,'')+'?text='+encodeURIComponent(lines),'_blank');
+  const lines = [`Demande de devis`,`Client: ${name}`,`Tel: ${phone}`,`Produit: ${product}`,qty?`Quantite: ${qty}`:'',msg?`Message: ${msg}`:''].filter(Boolean);
+  openOwnerMail('Demande de devis', lines);
   ['dqName','dqPhone','dqProduct','dqQty','dqMsg'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   closeDrawer('devisDrawer');
-  showToast('✅ Demande envoyée par WhatsApp');
+  showToast('✅ Demande envoyee par e-mail');
 };
 
 // ── PARTAGE ───────────────────────────────────────────────────────────────

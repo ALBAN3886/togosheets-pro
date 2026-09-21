@@ -8933,7 +8933,7 @@ if ('serviceWorker' in navigator) {
   <!-- Onglets internes -->
   <div class="cm-tabs">
     <button class="cm-tab active" data-cmtab="resume" onclick="cmSwitch('resume')"><i class="fas fa-chart-line"></i><span data-i18n="cm_tab_resume">Résumé</span></button>
-    <button class="cm-tab" data-cmtab="commandes" onclick="cmSwitch('commandes')"><i class="fas fa-bag-shopping"></i><span>Commandes</span></button>
+    <button class="cm-tab" data-cmtab="commandes" onclick="cmSwitch('commandes')"><i class="fas fa-bag-shopping"></i><span>Commandes</span><span id="cmOrdersBadge" style="display:none;background:#ef4444;color:#fff;font-size:11px;font-weight:800;border-radius:999px;padding:1px 7px;margin-left:6px">0</span></button>
     <button class="cm-tab" data-cmtab="articles" onclick="cmSwitch('articles')"><i class="fas fa-box"></i><span data-i18n="cm_tab_articles">Articles</span></button>
     <button class="cm-tab" data-cmtab="mouvements" onclick="cmSwitch('mouvements')"><i class="fas fa-right-left"></i><span data-i18n="cm_tab_mouvements">Mouvements</span></button>
     <button class="cm-tab" data-cmtab="stock" onclick="cmSwitch('stock')"><i class="fas fa-warehouse"></i><span data-i18n="cm_tab_stock">Stock</span></button>
@@ -9284,6 +9284,9 @@ if ('serviceWorker' in navigator) {
 
       <label class="cm-modal-label" data-i18n="cm_shop_address">Adresse (optionnel)</label>
       <input type="text" id="cmShopAddr" class="cm-modal-input" placeholder="Quartier, rue, repère…">
+
+      <label class="cm-modal-label">Numéro de paiement Flooz/T-Money (obligatoire)</label>
+      <input type="tel" id="cmShopPayPhone" class="cm-modal-input" placeholder="Ex: 90123456">
 
       <label class="cm-modal-label" data-i18n="cm_shop_seuil">Seuil d'alerte stock (par défaut)</label>
       <input type="number" id="cmShopSeuil" class="cm-modal-input" value="5" min="0">
@@ -10454,6 +10457,7 @@ async function cmSaveRemote(){
     try{
       const publicShops = CM.shops.map(s => ({
         id: s.id ?? null, name: s.name ?? null, type: s.type ?? null, addr: s.addr ?? null,
+        payPhone: s.payPhone ?? null,
         customType: s.customType ?? null, city: s.city ?? null, country: s.country ?? null,
         logoUrl: (s.branding && s.branding.logoUrl) || s.logoUrl || null,
         bgUrl: (s.branding && s.branding.bgUrl) || null,
@@ -10775,6 +10779,7 @@ window.cmEditShop = async function(id){
   document.getElementById('cmShopType').value = s.type;
   document.getElementById('cmShopTypeOther').value = s.customType||'';
   document.getElementById('cmShopAddr').value = s.addr||'';
+  document.getElementById('cmShopPayPhone').value = s.payPhone||'';
   document.getElementById('cmShopSeuil').value = s.seuil||5;
   const slugSection = document.getElementById('cmSlugSection');
   if (slugSection) slugSection.style.display = '';
@@ -10822,9 +10827,11 @@ window.cmSaveShop = async function(){
   const country = document.getElementById('cmShopCountry').value;
   const city = document.getElementById('cmShopCity').value;
   const addr = document.getElementById('cmShopAddr').value.trim();
+  const payPhone = document.getElementById('cmShopPayPhone').value.trim();
   const seuil = parseInt(document.getElementById('cmShopSeuil').value)||5;
   if(!name){ cmToast(t('cm_msg_shop_name_required'),'error'); return; }
   if(type==='autre' && !customType){ cmToast(t('cm_msg_shop_type_required'),'error'); return; }
+  if(!/^\d{8}$/.test(payPhone.replace(/\D/g,''))){ cmToast('Numéro de paiement invalide (8 chiffres requis)','error'); return; }
   const isPublic = document.getElementById('cmShopPublic') ? document.getElementById('cmShopPublic').checked : true;
 
   // ── Lien personnalisé (ex: marketplace/aetshop) — uniquement en édition d'une boutique existante ──
@@ -10858,7 +10865,7 @@ window.cmSaveShop = async function(){
     }
   }
 
-  const payload = { name, type, customType:type==='autre'?customType:'', country, city, addr, seuil, isPublic };
+  const payload = { name, type, customType:type==='autre'?customType:'', country, city, addr, payPhone, seuil, isPublic };
   if (newSlug !== null) payload.slug = newSlug;
 
   let oldSlug = null;
@@ -10895,6 +10902,7 @@ window.cmSaveShop = async function(){
   document.getElementById('cmShopCity').innerHTML = `<option value="">${t('cm_shop_choose_city')}</option>`;
   document.getElementById('cmShopCity').disabled = true;
   document.getElementById('cmShopAddr').value = '';
+  document.getElementById('cmShopPayPhone').value = '';
   document.getElementById('cmShopModalTitle').textContent = t('cm_new_shop');
   cmHandleShopTypeChange();
   cmRenderShopList();
@@ -10979,6 +10987,40 @@ async function cmStartOrdersWatch(force = false){
           </div>
         `;
       }
+
+      // AET-PATCH-20260921 : alerte vendeur (badge + toast + son) a l'arrivee d'une commande
+      (function(){
+        const currentIds = new Set(CM.orders.map(o => o.id));
+        if (!window._cmKnownOrderIds) {
+          window._cmKnownOrderIds = currentIds;
+        } else {
+          const newIds = [...currentIds].filter(id => !window._cmKnownOrderIds.has(id));
+          if (newIds.length > 0) {
+            if (typeof cmToast === 'function') {
+              cmToast(newIds.length === 1 ? '🛒 Nouvelle commande reçue !' : `🛒 ${newIds.length} nouvelles commandes reçues !`, 'success');
+            }
+            try {
+              const ctx = new (window.AudioContext || window.webkitAudioContext)();
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              osc.type = 'sine';
+              osc.frequency.value = 880;
+              gain.gain.setValueAtTime(0.15, ctx.currentTime);
+              gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+              osc.connect(gain); gain.connect(ctx.destination);
+              osc.start(); osc.stop(ctx.currentTime + 0.4);
+            } catch(e) {}
+          }
+          window._cmKnownOrderIds = currentIds;
+        }
+
+        const pendingCount = CM.orders.filter(o => (o.status||'pending') === 'pending').length;
+        const badge = document.getElementById('cmOrdersBadge');
+        if (badge) {
+          if (pendingCount > 0) { badge.textContent = pendingCount; badge.style.display = 'inline-block'; }
+          else { badge.style.display = 'none'; }
+        }
+      })();
 
       if (typeof cmRenderOrders === 'function') {
         cmRenderOrders();

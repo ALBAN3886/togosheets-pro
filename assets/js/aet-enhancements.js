@@ -614,24 +614,118 @@ import { getMessaging, getToken, onMessage, isSupported as messagingIsSupported 
       </div>` : '<div class="aetx-empty">Le journal des connexions apparaîtra ici.</div>';
   }
 
+  function subInfo(u) {
+    const lifetime = u.isPremium === true &&
+      (u.subscriptionPlan === 'lifetime' || u.premiumLifetime === true);
+
+    const exp = u.premiumExpiresAt?.toDate ? u.premiumExpiresAt.toDate() : null;
+    const active = lifetime || (u.isPremium === true && exp && exp.getTime() > Date.now());
+
+    return {
+      lifetime,
+      active,
+      expired: u.isPremium === true && !active,
+      exp,
+      label: lifetime ? 'À vie'
+        : active ? ('Jusqu\'au ' + exp.toLocaleDateString('fr-FR'))
+        : u.isPremium === true ? 'Expiré'
+        : 'Gratuit'
+    };
+  }
+
   function renderAdmin() {
     const host = document.getElementById('aetx-adminplus-content');
     const tab = document.getElementById('tab-adminplus');
     if (!host || !tab) return;
+
     tab.style.display = state.isAdmin ? '' : 'none';
     if (!state.isAdmin) {
       host.innerHTML = '<div class="aetx-empty">Accès administrateur requis.</div>';
       return;
     }
+
+    const pending = state.premiumRequests.filter(r => (r.status || 'pending') === 'pending');
+    const treated = state.premiumRequests.filter(r => (r.status || 'pending') !== 'pending');
+
+    const subs = state.users.map(u => ({ u, info: subInfo(u) }));
+    const actives = subs.filter(x => x.info.active);
+    const lifetimes = subs.filter(x => x.info.lifetime);
+    const expired = subs.filter(x => x.info.expired);
+
+    const uid = (u) => esc(u.userId || u.id || '');
+    const who = (u) => esc(u.displayName || u.email || u.userId || '—');
+
     host.innerHTML = `
       <div class="aetx-admin-grid aetx-mb">
         <div class="aetx-card"><h4>Utilisateurs</h4><div class="value">${state.users.length}</div></div>
-        <div class="aetx-card"><h4>Demandes Premium</h4><div class="value">${state.premiumRequests.length}</div></div>
-        <div class="aetx-card"><h4>Transactions globales</h4><div class="value">${state.tx.length}</div></div>
+        <div class="aetx-card"><h4>Demandes en attente</h4><div class="value">${pending.length}</div></div>
+        <div class="aetx-card"><h4>Abonnements actifs</h4><div class="value">${actives.length}</div></div>
+        <div class="aetx-card"><h4>Abonnements à vie</h4><div class="value">${lifetimes.length}</div></div>
       </div>
+
+      <div class="aetx-card aetx-mb">
+        <div class="aetx-section-title"><h3>1. Demandes d'abonnement en attente</h3></div>
+        ${pending.length ? `<table class="aetx-table">
+          <thead><tr><th>Utilisateur</th><th>Email</th><th>Montant</th><th>Demandé le</th><th>Actions</th></tr></thead>
+          <tbody>${pending.map(r => `<tr>
+            <td>${esc(r.displayName || '—')}</td>
+            <td>${esc(r.email || '')}</td>
+            <td>${esc(fmt(r.amount || 0))}</td>
+            <td>${r.createdAt?.toDate ? esc(r.createdAt.toDate().toLocaleDateString('fr-FR')) : '—'}</td>
+            <td>
+              <button class="aetx-btn success" onclick="window.aetxApprovePremium('${esc(r.id)}','${esc(r.userId)}')">Valider 30 jours</button>
+              <button class="aetx-btn" onclick="window.aetxGrantLifetime('${esc(r.userId)}','${esc(r.id)}')">Accorder à vie</button>
+              <button class="aetx-btn" onclick="window.aetxRejectPremium('${esc(r.id)}')">Rejeter</button>
+            </td>
+          </tr>`).join('')}</tbody></table>`
+          : '<div class="aetx-empty">Aucune demande en attente.</div>'}
+      </div>
+
+      <div class="aetx-card aetx-mb">
+        <div class="aetx-section-title"><h3>2. Abonnements validés</h3></div>
+        ${actives.length ? `<table class="aetx-table">
+          <thead><tr><th>Utilisateur</th><th>Email</th><th>Formule</th><th>Validité</th><th>Actions</th></tr></thead>
+          <tbody>${actives.map(({u, info}) => `<tr>
+            <td>${who(u)}</td>
+            <td>${esc(u.email || '')}</td>
+            <td>${info.lifetime ? '<span class="aetx-chip">À vie</span>' : '<span class="aetx-chip">Mensuel</span>'}</td>
+            <td>${esc(info.label)}</td>
+            <td>
+              ${info.lifetime ? '' : `<button class="aetx-btn success" onclick="window.aetxExtendPremium('${uid(u)}')">+30 jours</button>
+              <button class="aetx-btn" onclick="window.aetxGrantLifetime('${uid(u)}')">Passer à vie</button>`}
+              <button class="aetx-btn" onclick="window.aetxRevokePremium('${uid(u)}')">Révoquer</button>
+            </td>
+          </tr>`).join('')}</tbody></table>`
+          : '<div class="aetx-empty">Aucun abonnement actif.</div>'}
+      </div>
+
+      <div class="aetx-card aetx-mb">
+        <div class="aetx-section-title"><h3>3. Abonnements expirés</h3></div>
+        ${expired.length ? `<table class="aetx-table">
+          <thead><tr><th>Utilisateur</th><th>Email</th><th>Statut</th><th>Actions</th></tr></thead>
+          <tbody>${expired.map(({u}) => `<tr>
+            <td>${who(u)}</td>
+            <td>${esc(u.email || '')}</td>
+            <td>Expiré</td>
+            <td>
+              <button class="aetx-btn success" onclick="window.aetxExtendPremium('${uid(u)}')">Réactiver 30 jours</button>
+              <button class="aetx-btn" onclick="window.aetxGrantLifetime('${uid(u)}')">Accorder à vie</button>
+            </td>
+          </tr>`).join('')}</tbody></table>`
+          : '<div class="aetx-empty">Aucun abonnement expiré.</div>'}
+      </div>
+
       <div class="aetx-card">
-        <div class="aetx-section-title"><h3>Validation Premium & supervision</h3></div>
-        ${state.premiumRequests.length ? `<table class="aetx-table"><thead><tr><th>Utilisateur</th><th>Email</th><th>Montant</th><th>Statut</th><th>Action</th></tr></thead><tbody>${state.premiumRequests.map(r => `<tr><td>${esc(r.displayName || '')}</td><td>${esc(r.email || '')}</td><td>${esc(fmt(r.amount || 0))}</td><td>${esc(r.status || 'pending')}</td><td><button class="aetx-btn success" onclick="window.aetxApprovePremium('${r.id}','${r.userId}')">Valider</button></td></tr>`).join('')}</tbody></table>` : '<div class="aetx-empty">Aucune demande Premium en attente.</div>'}
+        <div class="aetx-section-title"><h3>4. Historique des demandes traitées</h3></div>
+        ${treated.length ? `<table class="aetx-table">
+          <thead><tr><th>Utilisateur</th><th>Email</th><th>Statut</th><th>Traité le</th></tr></thead>
+          <tbody>${treated.map(r => `<tr>
+            <td>${esc(r.displayName || '—')}</td>
+            <td>${esc(r.email || '')}</td>
+            <td>${esc(r.status || '')}</td>
+            <td>${r.approvedAt?.toDate ? esc(r.approvedAt.toDate().toLocaleDateString('fr-FR')) : '—'}</td>
+          </tr>`).join('')}</tbody></table>`
+          : '<div class="aetx-empty">Aucun historique.</div>'}
       </div>
     `;
   }
@@ -1055,6 +1149,111 @@ import { getMessaging, getToken, onMessage, isSupported as messagingIsSupported 
         error.message || 'Impossible de valider cet abonnement',
         'error'
       );
+    }
+  };
+
+  async function setPremiumDays(userId, days) {
+    const userRef = doc(db, 'users', userId);
+
+    return runTransaction(db, async tx => {
+      const snap = await tx.get(userRef);
+      const data = snap.exists() ? (snap.data() || {}) : {};
+
+      const current = data.premiumExpiresAt?.toMillis
+        ? data.premiumExpiresAt.toMillis() : 0;
+
+      const start = Math.max(Date.now(), current);
+      const exp = Timestamp.fromMillis(start + days * 24 * 60 * 60 * 1000);
+
+      tx.set(userRef, {
+        isPremium: true,
+        premiumLifetime: false,
+        subscriptionPlan: 'premium',
+        premiumExpiresAt: exp,
+        premiumValidatedAt: serverTimestamp(),
+        premiumValidatedBy: state.uid
+      }, { merge: true });
+
+      return exp;
+    });
+  }
+
+  window.aetxExtendPremium = async function(userId) {
+    if (!state.isAdmin) return notify('Accès refusé', 'error');
+    try {
+      const exp = await setPremiumDays(userId, 30);
+      notify('Prolongé jusqu\'au ' + exp.toDate().toLocaleDateString('fr-FR'), 'success');
+    } catch (e) {
+      console.error('[EXTEND PREMIUM]', e);
+      notify(e.message || 'Prolongation impossible', 'error');
+    }
+  };
+
+  window.aetxGrantLifetime = async function(userId, requestId) {
+    if (!state.isAdmin) return notify('Accès refusé', 'error');
+    if (!confirm('Accorder un abonnement À VIE à cet utilisateur ?')) return;
+
+    try {
+      await setDoc(doc(db, 'users', userId), {
+        isPremium: true,
+        premiumLifetime: true,
+        subscriptionPlan: 'lifetime',
+        premiumExpiresAt: null,
+        premiumValidatedAt: serverTimestamp(),
+        premiumValidatedBy: state.uid
+      }, { merge: true });
+
+      if (requestId) {
+        await updateDoc(doc(db, 'premiumRequests', requestId), {
+          status: 'approved',
+          plan: 'lifetime',
+          approvedAt: serverTimestamp(),
+          approvedBy: state.uid
+        });
+      }
+
+      notify('Abonnement à vie accordé', 'success');
+    } catch (e) {
+      console.error('[GRANT LIFETIME]', e);
+      notify(e.message || 'Opération impossible', 'error');
+    }
+  };
+
+  window.aetxRevokePremium = async function(userId) {
+    if (!state.isAdmin) return notify('Accès refusé', 'error');
+    if (!confirm('Révoquer l\'abonnement de cet utilisateur ?')) return;
+
+    try {
+      await setDoc(doc(db, 'users', userId), {
+        isPremium: false,
+        premiumLifetime: false,
+        subscriptionPlan: 'free',
+        premiumExpiresAt: null,
+        premiumRevokedAt: serverTimestamp(),
+        premiumRevokedBy: state.uid
+      }, { merge: true });
+
+      notify('Abonnement révoqué', 'info');
+    } catch (e) {
+      console.error('[REVOKE PREMIUM]', e);
+      notify(e.message || 'Révocation impossible', 'error');
+    }
+  };
+
+  window.aetxRejectPremium = async function(requestId) {
+    if (!state.isAdmin) return notify('Accès refusé', 'error');
+    if (!confirm('Rejeter cette demande ?')) return;
+
+    try {
+      await updateDoc(doc(db, 'premiumRequests', requestId), {
+        status: 'rejected',
+        rejectedAt: serverTimestamp(),
+        rejectedBy: state.uid
+      });
+      notify('Demande rejetée', 'info');
+    } catch (e) {
+      console.error('[REJECT PREMIUM]', e);
+      notify(e.message || 'Rejet impossible', 'error');
     }
   };
 

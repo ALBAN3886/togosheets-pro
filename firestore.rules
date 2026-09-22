@@ -35,11 +35,21 @@ service cloud.firestore {
     }
 
     // Abonnement Commerce Premium actif pendant 30 jours.
+    function tenantDoc(tenantId) {
+      return get(/databases/$(database)/documents/users/$(tenantId)).data;
+    }
+
     function isPremiumTenant(tenantId) {
       return exists(/databases/$(database)/documents/users/$(tenantId))
-        && get(/databases/$(database)/documents/users/$(tenantId)).data.get('isPremium', false) == true
-        && get(/databases/$(database)/documents/users/$(tenantId)).data.get('premiumExpiresAt', null) != null
-        && get(/databases/$(database)/documents/users/$(tenantId)).data.get('premiumExpiresAt', null) > request.time;
+        && tenantDoc(tenantId).get('isPremium', false) == true
+        && (
+          tenantDoc(tenantId).get('premiumLifetime', false) == true
+          || tenantDoc(tenantId).get('subscriptionPlan', '') == 'lifetime'
+          || (
+            tenantDoc(tenantId).get('premiumExpiresAt', null) != null
+            && tenantDoc(tenantId).get('premiumExpiresAt', null) > request.time
+          )
+        );
     }
 
     // ── users/{uid} : profil, statut premium, flag isAdmin ──
@@ -77,6 +87,8 @@ service cloud.firestore {
                          == resource.data.get('subscriptionPlan', 'free')
                       && request.resource.data.get('premiumExpiresAt', null)
                          == resource.data.get('premiumExpiresAt', null)
+                      && request.resource.data.get('premiumLifetime', false)
+                         == resource.data.get('premiumLifetime', false)
                     )
                     || isAdmin();
 

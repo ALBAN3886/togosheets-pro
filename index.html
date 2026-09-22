@@ -197,15 +197,21 @@ function watchPremiumStatus(uid) {
 
     // Premium valable uniquement avec une date d'expiration future.
     // Les anciens abonnements sans date sont considérés comme expirés.
-    const isPremium =
+    const isLifetime =
+      data.isPremium === true &&
+      (data.subscriptionPlan === 'lifetime' || data.premiumLifetime === true);
+
+    const isPremium = isLifetime || (
       data.isPremium === true &&
       expiresAt instanceof Date &&
-      expiresAt.getTime() > Date.now();
+      expiresAt.getTime() > Date.now()
+    );
 
     premiumStatus = {
       isPremium,
+      lifetime: isLifetime,
       plan: isPremium ? (data.subscriptionPlan || 'premium') : 'free',
-      expiresAt
+      expiresAt: isLifetime ? null : expiresAt
     };
     window.isPremiumUser = isPremium;
     updatePremiumUI();
@@ -225,8 +231,12 @@ function updatePremiumUI() {
   const statusEl = document.getElementById('premiumModalStatus');
   if (statusEl) {
     if (premiumStatus.isPremium) {
-      const dateStr = premiumStatus.expiresAt ? fmtDate(premiumStatus.expiresAt) : '—';
-      statusEl.innerHTML = `<i class="fas fa-crown" style="color:#f59e0b"></i> Premium actif jusqu'au <strong>${dateStr}</strong>`;
+      if (premiumStatus.lifetime) {
+        statusEl.innerHTML = `<i class="fas fa-crown" style="color:#f59e0b"></i> Premium <strong>à vie</strong> — accès illimité`;
+      } else {
+        const dateStr = premiumStatus.expiresAt ? fmtDate(premiumStatus.expiresAt) : '—';
+        statusEl.innerHTML = `<i class="fas fa-crown" style="color:#f59e0b"></i> Premium actif jusqu'au <strong>${dateStr}</strong>`;
+      }
     } else {
       statusEl.innerHTML = `<i class="fas fa-circle-info"></i> Vous utilisez la version gratuite`;
     }
@@ -259,6 +269,13 @@ window.closePremiumModal = function() {
 window.requirePremiumForCommerce = function() {
   if (window.__AET_IS_ADMIN__ === true || window.isPremiumUser === true) {
     return true;
+  }
+
+  // Sécurité d'affichage : si un script a déjà ouvert l'onglet, on le referme.
+  const commerceTab = document.getElementById('tab-commerce');
+  if (commerceTab) {
+    commerceTab.classList.remove('active');
+    commerceTab.style.display = 'none';
   }
 
   if (typeof closeSidebarMobile === 'function') {
@@ -14101,18 +14118,39 @@ window.CM_DEBUG = CM;
   // patches précédents, on s'accroche en tout dernier pour rester la couche finale).
   const _finalSwitchTab = window.switchTab;
   if (typeof _finalSwitchTab === 'function') {
-    window.switchTab = function(tab){
-      if (
-        tab === 'commerce' &&
-        typeof window.requirePremiumForCommerce === 'function' &&
-        !window.requirePremiumForCommerce()
-      ) {
-        return;
-      }
+    // Verrou permanent : aucun script chargé plus tard (aet-commerce-pro.js
+    // notamment) ne peut retirer la vérification Premium, car toute
+    // réaffectation de window.switchTab est automatiquement ré-enrobée.
+    const _wrapWithPremiumGuard = (fn) => {
+      if (typeof fn !== 'function') return fn;
+      if (fn._aetPremiumGuarded) return fn;
 
-      _finalSwitchTab(tab);
-      syncSidebarActive(tab);
+      const guarded = function(tab){
+        if (
+          tab === 'commerce' &&
+          typeof window.requirePremiumForCommerce === 'function' &&
+          !window.requirePremiumForCommerce()
+        ) {
+          return;
+        }
+
+        const out = fn.apply(this, arguments);
+        try { syncSidebarActive(tab); } catch(e) {}
+        return out;
+      };
+
+      guarded._aetPremiumGuarded = true;
+      guarded._aetInner = fn;
+      return guarded;
     };
+
+    let _guardedSwitchTab = _wrapWithPremiumGuard(_finalSwitchTab);
+
+    Object.defineProperty(window, 'switchTab', {
+      configurable: true,
+      get() { return _guardedSwitchTab; },
+      set(fn) { _guardedSwitchTab = _wrapWithPremiumGuard(fn); }
+    });
   }
 
   const _finalBnavSwitchExt = window.bnavSwitchExt;

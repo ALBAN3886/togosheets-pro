@@ -835,7 +835,7 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
 <script type="module">
 import { initializeApp, getApps, getApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getFirestore, doc, setDoc, getDoc, getDocs, onSnapshot, collection, addDoc, serverTimestamp, runTransaction, deleteDoc, query, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
-import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, signInWithCredential } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
 const FIREBASE_CONFIG = window.__AET_FIREBASE_CONFIG__ || {
   apiKey: 'AIzaSyB5hpkRlFZ9HFRRbpQlvpHwMNDja37Nr2s',
@@ -2222,29 +2222,74 @@ window.authTab = which => {
 };
 window.openLoginForm = () => { authTab('login'); openDrawer('loginDrawer'); };
 
+async function ensureGoogleCustomerProfile(user) {
+  if (!user) return;
+
+  const ref = doc(custDb, 'customers', user.uid);
+  const snap = await getDoc(ref);
+
+  if (!snap.exists()) {
+    await setDoc(ref, {
+      name: user.displayName || '',
+      phone: '',
+      email: user.email || '',
+      createdAt: serverTimestamp()
+    });
+  }
+}
+
 window.doGoogleSignIn = async () => {
+  // Dans l'application Android : ouvrir directement le sélecteur
+  // des comptes Google enregistrés sur le téléphone.
+  if (window.AndroidAuth &&
+      typeof window.AndroidAuth.googleSignIn === 'function') {
+    try {
+      window.AndroidAuth.googleSignIn();
+    } catch (e) {
+      console.warn('[GOOGLE NATIVE START]', e);
+      showToast('❌ Impossible d’ouvrir la connexion Google');
+    }
+    return;
+  }
+
+  // Dans un navigateur classique : utiliser la popup Firebase.
   try {
     const provider = new GoogleAuthProvider();
-
-    // Toujours proposer les comptes Google déjà connectés dans le navigateur.
-    provider.setCustomParameters({
-      prompt: 'select_account'
-    });
+    provider.setCustomParameters({ prompt: 'select_account' });
 
     const cred = await signInWithPopup(auth, provider);
-    const uid = cred.user.uid;
-    const snap = await getDoc(doc(custDb, 'customers', uid));
-    if (!snap.exists()) {
-      await setDoc(doc(custDb, 'customers', uid), {
-        name: cred.user.displayName || '',
-        phone: '',
-        email: cred.user.email || '',
-        createdAt: serverTimestamp()
-      });
-    }
+    await ensureGoogleCustomerProfile(cred.user);
   } catch (e) {
     console.warn('[GOOGLE SIGNIN]', e);
-    showToast('❌ Connexion Google impossible : ' + (e.code || e.message || 'erreur'));
+
+    if (e.code !== 'auth/popup-closed-by-user' &&
+        e.code !== 'auth/cancelled-popup-request') {
+      showToast('❌ Connexion Google impossible : ' +
+        (e.code || e.message || 'erreur'));
+    }
+  }
+};
+
+// Fonction appelée par l’application Android après la sélection
+// d’un compte Google. Aucun e-mail ni mot de passe à saisir.
+window.onGoogleSignInResult = async (success, idTokenOrMessage) => {
+  if (!success) {
+    showToast(idTokenOrMessage || 'Connexion Google annulée');
+    return;
+  }
+
+  try {
+    const credential =
+      GoogleAuthProvider.credential(idTokenOrMessage);
+
+    const cred = await signInWithCredential(auth, credential);
+    await ensureGoogleCustomerProfile(cred.user);
+
+    showToast('✅ Connexion Google réussie');
+  } catch (e) {
+    console.warn('[GOOGLE NATIVE RESULT]', e);
+    showToast('❌ Connexion Google impossible : ' +
+      (e.code || e.message || 'erreur'));
   }
 };
 

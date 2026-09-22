@@ -2,7 +2,8 @@ import { initializeApp, getApp, getApps } from 'https://www.gstatic.com/firebase
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 import {
   getFirestore, collection, addDoc, doc, updateDoc, deleteDoc, setDoc, getDoc,
-  query, where, onSnapshot, orderBy, serverTimestamp, limit, getDocs, arrayUnion, arrayRemove
+  query, where, onSnapshot, orderBy, serverTimestamp, limit, getDocs, arrayUnion, arrayRemove,
+  runTransaction, Timestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getMessaging, getToken, onMessage, isSupported as messagingIsSupported }
   from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js';
@@ -976,10 +977,85 @@ import { getMessaging, getToken, onMessage, isSupported as messagingIsSupported 
   };
 
   window.aetxApprovePremium = async function(requestId, userId) {
-    if (!state.isAdmin) return notify('Accès refusé', 'error');
-    await updateDoc(doc(db, 'premiumRequests', requestId), { status:'approved', approvedAt: serverTimestamp(), approvedBy: state.uid });
-    await setDoc(doc(db, 'users', userId), { isPremium:true, subscriptionPlan:'premium', premiumValidatedAt: serverTimestamp() }, { merge:true });
-    notify('Abonnement Premium validé', 'success');
+    if (!state.isAdmin) {
+      return notify('Accès administrateur refusé', 'error');
+    }
+
+    if (!requestId || !userId) {
+      return notify('Demande Premium invalide', 'error');
+    }
+
+    try {
+      const requestRef = doc(db, 'premiumRequests', requestId);
+      const userRef = doc(db, 'users', userId);
+
+      const expiresAt = await runTransaction(db, async transaction => {
+        const requestSnap = await transaction.get(requestRef);
+
+        if (!requestSnap.exists()) {
+          throw new Error('Demande Premium introuvable');
+        }
+
+        const requestData = requestSnap.data() || {};
+
+        if (requestData.userId !== userId) {
+          throw new Error('Utilisateur Premium incohérent');
+        }
+
+        if (requestData.status === 'approved') {
+          throw new Error('Cette demande a déjà été validée');
+        }
+
+        if (requestData.status !== 'pending') {
+          throw new Error('Cette demande ne peut plus être validée');
+        }
+
+        const userSnap = await transaction.get(userRef);
+        const userData = userSnap.exists() ? (userSnap.data() || {}) : {};
+
+        const now = Date.now();
+        const currentExpiration =
+          userData.premiumExpiresAt?.toMillis
+            ? userData.premiumExpiresAt.toMillis()
+            : 0;
+
+        // Si un abonnement est encore actif, les 30 jours sont ajoutés
+        // à la date actuelle d'expiration et ne remplacent pas les jours restants.
+        const startAt = Math.max(now, currentExpiration);
+        const expiration = Timestamp.fromMillis(
+          startAt + (30 * 24 * 60 * 60 * 1000)
+        );
+
+        transaction.update(requestRef, {
+          status: 'approved',
+          approvedAt: serverTimestamp(),
+          approvedBy: state.uid,
+          premiumExpiresAt: expiration
+        });
+
+        transaction.set(userRef, {
+          isPremium: true,
+          subscriptionPlan: 'premium',
+          premiumValidatedAt: serverTimestamp(),
+          premiumExpiresAt: expiration
+        }, { merge: true });
+
+        return expiration;
+      });
+
+      const date = expiresAt.toDate().toLocaleDateString('fr-FR');
+
+      notify(
+        'Abonnement Premium validé jusqu’au ' + date,
+        'success'
+      );
+    } catch (error) {
+      console.error('[PREMIUM APPROVAL]', error);
+      notify(
+        error.message || 'Impossible de valider cet abonnement',
+        'error'
+      );
+    }
   };
 
   const savedTheme = localStorage.getItem('aetx_theme');

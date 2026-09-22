@@ -191,14 +191,22 @@ function watchPremiumStatus(uid) {
   if (unsubPremium) { unsubPremium(); unsubPremium = null; }
   unsubPremium = onSnapshot(doc(db, 'users', uid), snap => {
     const data = snap.data() || {};
-    let isPremium = !!data.isPremium;
-    const expiresAt = data.premiumExpiresAt ? data.premiumExpiresAt.toDate() : null;
-    // Rétrogradation automatique si l'abonnement est expiré
-    if (isPremium && expiresAt && new Date() > expiresAt) {
-      isPremium = false;
-      updateDoc(doc(db,'users', uid), { isPremium:false, subscriptionPlan:'free' }).catch(()=>{});
-    }
-    premiumStatus = { isPremium, plan: isPremium ? (data.subscriptionPlan||'premium') : 'free', expiresAt };
+    const expiresAt = data.premiumExpiresAt?.toDate
+      ? data.premiumExpiresAt.toDate()
+      : null;
+
+    // Premium valable uniquement avec une date d'expiration future.
+    // Les anciens abonnements sans date sont considérés comme expirés.
+    const isPremium =
+      data.isPremium === true &&
+      expiresAt instanceof Date &&
+      expiresAt.getTime() > Date.now();
+
+    premiumStatus = {
+      isPremium,
+      plan: isPremium ? (data.subscriptionPlan || 'premium') : 'free',
+      expiresAt
+    };
     window.isPremiumUser = isPremium;
     updatePremiumUI();
   }, err => console.warn('watchPremiumStatus', err));
@@ -243,6 +251,30 @@ window.openPremiumModal = function() {
 window.closePremiumModal = function() {
   const m = document.getElementById('premiumModal');
   if (m) m.style.display = 'none';
+};
+
+
+// Commerce est réservé aux abonnés Premium actifs.
+// Les administrateurs conservent un accès de supervision.
+window.requirePremiumForCommerce = function() {
+  if (window.__AET_IS_ADMIN__ === true || window.isPremiumUser === true) {
+    return true;
+  }
+
+  if (typeof closeSidebarMobile === 'function') {
+    closeSidebarMobile();
+  }
+
+  if (typeof openPremiumModal === 'function') {
+    openPremiumModal();
+  }
+
+  toast(
+    'Commerce est réservé aux abonnés Premium — 500 FCFA pour 30 jours.',
+    'warning'
+  );
+
+  return false;
 };
 
 // Demande d'activation Premium (solution transitoire en attendant l'intégration CinetPay/PayGate)
@@ -3481,7 +3513,9 @@ async function refreshAdminMenuAccess(user) {
     const allowed = data.isAdmin === true || data.role === 'admin';
 
     window.__AET_IS_ADMIN__ = allowed;
-    adminButton.style.display = allowed ? 'flex' : 'none';
+
+    // L’entrée Administration reste cachée jusqu’au déverrouillage PIN.
+    adminButton.style.display = 'none';
   } catch (e) {
     console.warn('[ADMIN MENU]', e);
     adminButton.style.display = 'none';
@@ -3489,6 +3523,13 @@ async function refreshAdminMenuAccess(user) {
 }
 
 window.openAdminPanelFromApp = async function() {
+  if (window.__AET_ADMIN_PIN_UNLOCKED__ !== true) {
+    if (typeof window.requestAdminPinUnlock === 'function') {
+      await window.requestAdminPinUnlock();
+    }
+    return;
+  }
+
   const user = auth.currentUser;
 
   if (!user) {
@@ -3540,6 +3581,257 @@ window.openAdminPanelFromApp = async function() {
   } catch (e) {
     console.error('[OPEN ADMIN PANEL]', e);
     toast(e.message || 'Impossible d’ouvrir l’administration.', 'error');
+  }
+};
+
+
+// ══ ACCÈS ADMINISTRATEUR CACHÉ PAR PIN ══
+// Le PIN protège uniquement l’ouverture de l’interface.
+// L’autorisation réelle reste le rôle isAdmin/role=admin dans Firestore.
+let adminSecretTapCount = 0;
+let adminSecretTapTimer = null;
+
+const ADMIN_SECRET_TAPS = 7;
+const ADMIN_PIN_ITERATIONS = 150000;
+
+function adminBytesToHex(bytes) {
+  return Array.from(bytes)
+    .map(byte => byte.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+function adminHexToBytes(hex) {
+  const parts = String(hex || '').match(/.{1,2}/g) || [];
+  return new Uint8Array(parts.map(part => parseInt(part, 16)));
+}
+
+function adminRandomHex(length = 16) {
+  const bytes = new Uint8Array(length);
+  crypto.getRandomValues(bytes);
+  return adminBytesToHex(bytes);
+}
+
+async function adminHashPin(pin, saltHex) {
+  if (!window.crypto || !crypto.subtle) {
+    throw new Error('Le chiffrement sécurisé du PIN est indisponible.');
+  }
+
+  const encoder = new TextEncoder();
+
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(String(pin)),
+    'PBKDF2',
+    false,
+    ['deriveBits']
+  );
+
+  const bits = await crypto.subtle.deriveBits({
+    name: 'PBKDF2',
+    salt: adminHexToBytes(saltHex),
+    iterations: ADMIN_PIN_ITERATIONS,
+    hash: 'SHA-256'
+  }, key, 256);
+
+  return adminBytesToHex(new Uint8Array(bits));
+}
+
+function adminPinStorageKey(uid) {
+  return 'aet_admin_pin_v1_' + uid;
+}
+
+function adminPinAttemptKey(uid) {
+  return 'aet_admin_pin_attempts_v1_' + uid;
+}
+
+async function verifyCurrentAdminRole() {
+  const user = auth.currentUser;
+  if (!user) return false;
+
+  try {
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    const data = snap.exists() ? (snap.data() || {}) : {};
+
+    return data.isAdmin === true || data.role === 'admin';
+  } catch (error) {
+    console.warn('[ADMIN ROLE CHECK]', error);
+    return false;
+  }
+}
+
+function readAdminPinAttempts(uid) {
+  try {
+    return JSON.parse(
+      sessionStorage.getItem(adminPinAttemptKey(uid)) || '{}'
+    );
+  } catch (_) {
+    return {};
+  }
+}
+
+function saveAdminPinAttempts(uid, data) {
+  sessionStorage.setItem(
+    adminPinAttemptKey(uid),
+    JSON.stringify(data || {})
+  );
+}
+
+window.adminSecretTap = function() {
+  adminSecretTapCount += 1;
+
+  clearTimeout(adminSecretTapTimer);
+  adminSecretTapTimer = setTimeout(() => {
+    adminSecretTapCount = 0;
+  }, 4000);
+
+  if (adminSecretTapCount < ADMIN_SECRET_TAPS) return;
+
+  clearTimeout(adminSecretTapTimer);
+  adminSecretTapCount = 0;
+
+  window.requestAdminPinUnlock();
+};
+
+window.requestAdminPinUnlock = async function() {
+  const user = auth.currentUser;
+
+  if (!user) {
+    toast('Connectez-vous avant d’accéder à l’administration.', 'error');
+    return;
+  }
+
+  const isAdminUser = await verifyCurrentAdminRole();
+
+  if (!isAdminUser) {
+    toast('Accès administrateur refusé.', 'error');
+    return;
+  }
+
+  const pinKey = adminPinStorageKey(user.uid);
+  let savedPin = null;
+
+  try {
+    savedPin = JSON.parse(localStorage.getItem(pinKey) || 'null');
+  } catch (_) {
+    localStorage.removeItem(pinKey);
+  }
+
+  // Première utilisation sur cet appareil : création du PIN.
+  if (!savedPin || !savedPin.salt || !savedPin.hash) {
+    const newPin = prompt(
+      'Créez votre PIN administrateur à 6 chiffres :'
+    );
+
+    if (newPin === null) return;
+
+    if (!/^\d{6}$/.test(newPin)) {
+      toast('Le PIN doit contenir exactement 6 chiffres.', 'error');
+      return;
+    }
+
+    const confirmation = prompt('Confirmez votre PIN administrateur :');
+
+    if (confirmation === null) return;
+
+    if (newPin !== confirmation) {
+      toast('Les deux PIN ne correspondent pas.', 'error');
+      return;
+    }
+
+    try {
+      const salt = adminRandomHex(16);
+      const hash = await adminHashPin(newPin, salt);
+
+      localStorage.setItem(pinKey, JSON.stringify({
+        version: 1,
+        salt,
+        hash,
+        iterations: ADMIN_PIN_ITERATIONS,
+        createdAt: Date.now()
+      }));
+
+      savedPin = { salt, hash };
+      toast('PIN administrateur configuré sur cet appareil.', 'success');
+    } catch (error) {
+      console.error('[ADMIN PIN CREATE]', error);
+      toast(error.message || 'Impossible de créer le PIN.', 'error');
+      return;
+    }
+  }
+
+  const attemptState = readAdminPinAttempts(user.uid);
+  const lockUntil = Number(attemptState.lockUntil || 0);
+
+  if (lockUntil > Date.now()) {
+    const seconds = Math.ceil((lockUntil - Date.now()) / 1000);
+    toast(
+      'Trop de tentatives. Réessayez dans ' + seconds + ' seconde(s).',
+      'error'
+    );
+    return;
+  }
+
+  const enteredPin = prompt('Saisissez votre PIN administrateur :');
+
+  if (enteredPin === null) return;
+
+  if (!/^\d{6}$/.test(enteredPin)) {
+    toast('Le PIN doit contenir exactement 6 chiffres.', 'error');
+    return;
+  }
+
+  try {
+    const enteredHash = await adminHashPin(
+      enteredPin,
+      savedPin.salt
+    );
+
+    if (enteredHash !== savedPin.hash) {
+      let failures = Number(attemptState.failures || 0) + 1;
+
+      if (failures >= 5) {
+        saveAdminPinAttempts(user.uid, {
+          failures: 0,
+          lockUntil: Date.now() + 60000
+        });
+
+        toast(
+          'PIN incorrect. Accès bloqué pendant une minute.',
+          'error'
+        );
+      } else {
+        saveAdminPinAttempts(user.uid, {
+          failures,
+          lockUntil: 0
+        });
+
+        toast(
+          'PIN incorrect — tentative ' + failures + ' sur 5.',
+          'error'
+        );
+      }
+
+      return;
+    }
+
+    sessionStorage.removeItem(adminPinAttemptKey(user.uid));
+
+    // Déverrouillage valable uniquement pendant cette session.
+    window.__AET_ADMIN_PIN_UNLOCKED__ = true;
+    window.__AET_IS_ADMIN__ = true;
+
+    const adminButton = document.getElementById('sb-admin');
+    if (adminButton) adminButton.style.display = 'flex';
+
+    toast('Administration déverrouillée.', 'success');
+
+    await window.openAdminPanelFromApp();
+  } catch (error) {
+    console.error('[ADMIN PIN VERIFY]', error);
+    toast(
+      error.message || 'Impossible de vérifier le PIN.',
+      'error'
+    );
   }
 };
 
@@ -4785,7 +5077,10 @@ select.form-input option{background:var(--bg2)}
   <div id="sidebarOverlay" onclick="closeSidebarMobile()"></div>
   <nav id="appSidebar">
     <div class="sb-brand">
-      <div class="sb-brand-icon"><i class="fas fa-chart-line"></i></div>
+      <div class="sb-brand-icon" id="adminSecretTrigger"
+        onclick="adminSecretTap()">
+        <i class="fas fa-chart-line"></i>
+      </div>
       <div class="sb-brand-text"><b>AET MonBudget</b><span>Gestion financière · Togo</span></div>
       <button class="sb-close" onclick="closeSidebarMobile()"><i class="fas fa-xmark"></i></button>
     </div>
@@ -13807,6 +14102,14 @@ window.CM_DEBUG = CM;
   const _finalSwitchTab = window.switchTab;
   if (typeof _finalSwitchTab === 'function') {
     window.switchTab = function(tab){
+      if (
+        tab === 'commerce' &&
+        typeof window.requirePremiumForCommerce === 'function' &&
+        !window.requirePremiumForCommerce()
+      ) {
+        return;
+      }
+
       _finalSwitchTab(tab);
       syncSidebarActive(tab);
     };

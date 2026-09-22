@@ -34,6 +34,14 @@ service cloud.firestore {
         && (myUserDoc().isAdmin == true || myUserDoc().role == 'admin');
     }
 
+    // Abonnement Commerce Premium actif pendant 30 jours.
+    function isPremiumTenant(tenantId) {
+      return exists(/databases/$(database)/documents/users/$(tenantId))
+        && get(/databases/$(database)/documents/users/$(tenantId)).data.get('isPremium', false) == true
+        && get(/databases/$(database)/documents/users/$(tenantId)).data.get('premiumExpiresAt', null) != null
+        && get(/databases/$(database)/documents/users/$(tenantId)).data.get('premiumExpiresAt', null) > request.time;
+    }
+
     // ── users/{uid} : profil, statut premium, flag isAdmin ──
 // ── customers/{uid} : profil client ──
     match /customers/{uid} {
@@ -46,16 +54,32 @@ service cloud.firestore {
     }
 
     match /users/{uid} {
-      allow read:   if isSelf(uid) || isAdmin();
-      // Un utilisateur ne peut jamais s'auto-attribuer isAdmin ou le statut premium :
-      // ces champs ne doivent être modifiés que par une Cloud Function (App Check / admin SDK).
+      allow read: if isSelf(uid) || isAdmin();
+
+      // Création du profil : impossible de devenir administrateur
+      // ou Premium depuis le navigateur.
       allow create: if isSelf(uid)
-                    && request.resource.data.isAdmin != true
-                    && (!('isPremium' in request.resource.data) || request.resource.data.isPremium == false);
-      allow update: if isSelf(uid)
-                    && request.resource.data.isAdmin == resource.data.isAdmin
-                    && request.resource.data.get('isPremium', false) == resource.data.get('isPremium', false)
+                    && request.resource.data.get('isAdmin', false) == false
+                    && request.resource.data.get('role', 'user') != 'admin'
+                    && request.resource.data.get('isPremium', false) == false;
+
+      // L'utilisateur peut modifier son profil, mais jamais ses droits,
+      // son rôle administrateur ou son abonnement Premium.
+      allow update: if (
+                      isSelf(uid)
+                      && request.resource.data.get('isAdmin', false)
+                         == resource.data.get('isAdmin', false)
+                      && request.resource.data.get('role', 'user')
+                         == resource.data.get('role', 'user')
+                      && request.resource.data.get('isPremium', false)
+                         == resource.data.get('isPremium', false)
+                      && request.resource.data.get('subscriptionPlan', 'free')
+                         == resource.data.get('subscriptionPlan', 'free')
+                      && request.resource.data.get('premiumExpiresAt', null)
+                         == resource.data.get('premiumExpiresAt', null)
+                    )
                     || isAdmin();
+
       allow delete: if isSelf(uid) || isAdmin();
     }
 
@@ -115,18 +139,18 @@ service cloud.firestore {
 
     // ── Commerce : propriétaire OU employé autorisé par roleBinding ──
     match /commerce_data/{tenantId} {
-      allow read, write: if isSelf(tenantId)
-        || isAdmin()
+      allow read, write: if isAdmin()
         || (
-          isSignedIn()
-          && exists(/databases/$(database)/documents/tenants/$(tenantId)/roleBindings/$(request.auth.uid))
-          && get(/databases/$(database)/documents/tenants/$(tenantId)/roleBindings/$(request.auth.uid)).data.active == true
+          isPremiumTenant(tenantId)
+          && (
+            isSelf(tenantId)
+            || (
+              isSignedIn()
+              && exists(/databases/$(database)/documents/tenants/$(tenantId)/roleBindings/$(request.auth.uid))
+              && get(/databases/$(database)/documents/tenants/$(tenantId)/roleBindings/$(request.auth.uid)).data.active == true
+            )
+          )
         );
-
-      // Ancien mécanisme : autoriser au client l'ajout d'une commande
-      // dans pendingOrders sans lui donner accès aux autres données.
-      allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnly(['pendingOrders','updatedAt'])
-        && request.resource.data.pendingOrders.size() == resource.data.get('pendingOrders', []).size() + 1;
     }
 
     // ── Vitrine publique de chaque boutique (lecture publique, écriture propriétaire) ──
@@ -143,12 +167,14 @@ service cloud.firestore {
 
     // ── AET-PATCH-20260920 : Commerce Pro (clients, fournisseurs, crédits, caisse, inventaires) ──
     match /commerce_pro_data/{uid} {
-      allow read, write: if isSelf(uid) || isAdmin();
+      allow read, write: if isAdmin()
+        || (isSelf(uid) && isPremiumTenant(uid));
     }
 
     match /public_shops/{tenantId} {
       allow read: if true;
-      allow write: if isSelf(tenantId) || isAdmin();
+      allow write: if isAdmin()
+        || (isSelf(tenantId) && isPremiumTenant(tenantId));
     }
 
     // ── Lien personnalisé de boutique (ex: /togosheets-marketplace/aetshop) ──

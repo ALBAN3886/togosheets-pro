@@ -305,6 +305,12 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
   .hero-stats{justify-content:center}
 }
 </style>
+<script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+  (function(){
+    if (window.emailjs) window.emailjs.init({ publicKey: 'wY5yUiXlCZOkMwy04' });
+  })();
+</script>
 </head>
 <body>
 
@@ -848,11 +854,16 @@ const qs       = new URLSearchParams(location.search);
 const tenantId = qs.get('tenant') || qs.get('uid') || '';
 const storeId  = qs.get('store')  || qs.get('shop') || '';
 let ownerEmail = '';
+let ownerPayPhone = '';
 
-function openOwnerMail(subject, lines) {
-  if (!ownerEmail) { showToast('⚠️ E-mail du vendeur indisponible.'); return; }
-  const body = lines.join('\n');
-  window.open('mailto:' + ownerEmail + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body));
+function sendOwnerOrderEmail(params) {
+  if (!ownerEmail || !window.emailjs) { console.warn('[EmailJS] indisponible'); return; }
+  window.emailjs.send('service_caf1vqs', 'template_81gc156', {
+    to_email: ownerEmail,
+    ...params
+  }).catch((e) => {
+    console.warn('[EmailJS] echec envoi (non bloquant)', e);
+  });
 }
 
 // ── STATE ──────────────────────────────────────────────────────────────────
@@ -977,6 +988,7 @@ function applyData(data) {
   ownerEmail = data.ownerEmail || '';
 
   const shop = shops.find(s => String(s.id)===String(storeId)) || shops[0];
+  ownerPayPhone = shop?.payPhone || '';
   const shopName = shop?.name || 'ALBAN STORE';
   document.getElementById('shopTitle').textContent = shopName;
   document.getElementById('shopName').textContent = shopName;
@@ -1457,41 +1469,61 @@ async function loadOrdersFromFirebase() {
 
 // ── NOTIFICATIONS REELLES (changements de statut de commande) ──────────────
 function loadNotifState() {
-  let statusMap = {};
+  let notifiedIds = [];
   let list = [];
-  try { statusMap = JSON.parse(localStorage.getItem('aet_order_status_map') || '{}'); } catch(_) {}
+  let baselined = false;
+  try { notifiedIds = JSON.parse(localStorage.getItem('aet_notified_order_ids') || '[]'); } catch(_) {}
   try { list = JSON.parse(localStorage.getItem('aet_notifications') || '[]'); } catch(_) {}
-  return { statusMap, list };
+  try { baselined = localStorage.getItem('aet_notif_baselined') === '1'; } catch(_) {}
+  return { notifiedIds, list, baselined };
 }
 
 function processOrderNotifications(orders) {
-  const { statusMap, list } = loadNotifState();
-  const newStatusMap = {};
+  const { notifiedIds, list, baselined } = loadNotifState();
+  const notifiedSet = new Set(notifiedIds);
+
+  if (!baselined) {
+    // Premiere ouverture sur cet appareil : pas de notification retroactive,
+    // on marque simplement ce qui existe deja comme connu.
+    orders.forEach(o => {
+      const oid = o.id || o.firestoreId;
+      const status = o.status || 'pending';
+      if (status === 'completed' || status === 'rejected') notifiedSet.add(oid);
+    });
+    localStorage.setItem('aet_notified_order_ids', JSON.stringify([...notifiedSet]));
+    localStorage.setItem('aet_notif_baselined', '1');
+    S.notifications = list.slice(0, 30);
+    renderNotifications();
+    return;
+  }
+
   let changed = false;
 
   orders.forEach(o => {
     const oid = o.id || o.firestoreId;
     const status = o.status || 'pending';
-    newStatusMap[oid] = status;
-
-    const prevStatus = statusMap[oid];
-    if (prevStatus && prevStatus !== status && (status === 'completed' || status === 'rejected')) {
+    if ((status === 'completed' || status === 'rejected') && !notifiedSet.has(oid)) {
       const isDone = status === 'completed';
+      const orderTotal = Number(o.grandTotal || o.total || 0);
+      const payPhone = o.payPhone || ownerPayPhone || '';
       list.unshift({
         id: 'notif_' + oid + '_' + Date.now(),
         orderId: oid,
         title: isDone ? '✅ Commande validée' : '❌ Commande annulée',
         message: isDone
-          ? `Votre commande ${oid} a été validée.`
+          ? (payPhone
+              ? `Votre commande a été validée — merci d'envoyer ${money(orderTotal)} au ${payPhone} (Flooz/T-Money).`
+              : `Votre commande ${oid} a été validée.`)
           : `Votre commande ${oid} a été annulée.`,
         createdAtMs: Date.now(),
         read: false
       });
+      notifiedSet.add(oid);
       changed = true;
     }
   });
 
-  localStorage.setItem('aet_order_status_map', JSON.stringify(newStatusMap));
+  localStorage.setItem('aet_notified_order_ids', JSON.stringify([...notifiedSet]));
 
   if (changed) {
     S.notifications = list.slice(0, 30);
@@ -1782,6 +1814,7 @@ window.submitOrder = async () => {
   const orderId = 'ORD-'+Date.now().toString(36).toUpperCase()+Math.random().toString(36).slice(2,5).toUpperCase();
   const order = {
     id: orderId, tenantId: tid, shopId: storeId||'',
+    chatClientId: getClientId(),
     customer: {name, phone, city: city||'', note: note||''},
     items: S.cart.map(i=>({articleId:String(i.id),name:i.name,qty:i.qty,prixV:i.price,total:i.qty*i.price})),
     subtotal: total, grandTotal: total, paymentMode: window._selectedPay||'cash',
@@ -1790,17 +1823,65 @@ window.submitOrder = async () => {
 
   let saved = false;
 
-  // Enregistrement officiel de la commande :
-  // Client -> public_orders -> vendeur/employé
+  // Enregistrement atomique dans Firebase :
+  // 1. la commande dans public_orders ;
+  // 2. sa carte permanente dans la discussion vendeur.
   try {
-    await addDoc(collection(db, 'public_orders'), {
-      ...order,
-      buyerId: (auth.currentUser && auth.currentUser.uid) || null,
-      createdAt: serverTimestamp()
+    const orderRef = doc(collection(db, 'public_orders'));
+    const sellerChatRef = chatDocRef('vendeur');
+    const now = Date.now();
+    const eventId = `order_${orderId}_created`;
+
+    await runTransaction(db, async transaction => {
+      // Toutes les lectures doivent avoir lieu avant les écritures.
+      const chatSnapshot = await transaction.get(sellerChatRef);
+      const chatData = chatSnapshot.exists() ? (chatSnapshot.data() || {}) : {};
+      const existingMessages = Array.isArray(chatData.messages)
+        ? chatData.messages
+        : [];
+
+      // La transaction peut être relancée automatiquement par Firestore.
+      // eventId évite donc de dupliquer la carte de commande.
+      const messages = purgeOldMessages(existingMessages)
+        .filter(message => message?.eventId !== eventId);
+
+      messages.push({
+        role: 'system',
+        type: 'order_created',
+        eventId,
+        orderId,
+        orderDocumentId: orderRef.id,
+        status: 'pending',
+        amount: total,
+        text: `🛒 Nouvelle commande ${orderId} — ${money(total)}`,
+        ts: now,
+        sender: 'Commande'
+      });
+
+      transaction.set(orderRef, {
+        ...order,
+        buyerId: (auth.currentUser && auth.currentUser.uid) || null,
+        createdAt: serverTimestamp()
+      });
+
+      transaction.set(sellerChatRef, {
+        clientId: getClientId(),
+        tenantId: tid,
+        shopId: storeId || '',
+        chatType: 'vendeur',
+        clientName: name,
+        clientPhone: phone,
+        updatedAt: now,
+        unreadEmployee: true,
+        // Préserver les réponses du vendeur que le client n'a pas encore lues.
+        unreadClient: Boolean(chatData.unreadClient),
+        messages
+      }, { merge: true });
     });
+
     saved = true;
   } catch(e) {
-    console.error('[public_orders]', e);
+    console.error('[ORDER + CHAT FIREBASE]', e);
     showToast('❌ Firebase: ' + (e.code || e.message || 'erreur inconnue'));
   }
 
@@ -1814,18 +1895,17 @@ window.submitOrder = async () => {
   localStorage.setItem('aet_orders', JSON.stringify(S.orders.slice(0,20)));
   if (S.user) { S.user.name=name; S.user.phone=phone; localStorage.setItem('aet_user',JSON.stringify(S.user)); }
 
-  // E-mail au proprietaire de la boutique
-  const lines = [
-    `Commande ${orderId}`,
-    `Client: ${name}`,
-    `Tel: ${phone}`,
-    city ? `Adresse: ${city}` : '',
-    ...order.items.map(i=>`- ${i.name} x${i.qty} = ${money(i.total)}`),
-    `Total: ${money(total)}`,
-    note ? `Note: ${note}` : '',
-    `Paiement: ${window._selectedPay||'cash'}`,
-  ].filter(Boolean);
-  openOwnerMail(`Nouvelle commande ${orderId}`, lines);
+  // E-mail automatique et silencieux au proprietaire de la boutique
+  sendOwnerOrderEmail({
+    shop_name: document.getElementById('shopName')?.textContent || 'Votre boutique',
+    client_name: name,
+    client_phone: phone,
+    client_city: city || '-',
+    order_items: order.items.map(i=>`${i.name} x${i.qty} = ${money(i.total)}`).join('\n'),
+    order_total: total,
+    payment_mode: window._selectedPay || 'cash',
+    order_id: orderId
+  });
 
   S.cart = [];
   localStorage.setItem('aet_cart', '[]');
@@ -1989,7 +2069,36 @@ function startChatListener(type) {
     msgs.innerHTML = messages.map(m => {
       const isClient = m.role === 'client';
       const t = m.ts ? new Date(m.ts).toLocaleTimeString('fr', {hour:'2-digit', minute:'2-digit'}) : '';
-      return `<div class="msg ${isClient?'mine':'theirs'}">${esc(m.text)}<span class="msg-time">${t}</span></div>`;
+
+      // Carte permanente liée à une commande, comme dans une messagerie marketplace.
+      if (m.role === 'system' && m.type === 'order_created') {
+        const orderNumber = m.orderId || 'Commande';
+        const amount = Number(m.amount || 0);
+        const statusLabels = {
+          pending: 'En attente',
+          confirmed: 'Confirmée',
+          preparing: 'En préparation',
+          shipped: 'Expédiée',
+          delivered: 'Livrée',
+          cancelled: 'Annulée'
+        };
+        const status = statusLabels[m.status] || m.status || 'En attente';
+
+        return `<div class="msg theirs" style="padding:0;overflow:hidden;max-width:88%;border:1px solid rgba(249,115,22,.25)">
+          <div style="padding:10px 12px;background:linear-gradient(135deg,#fff7ed,#ffedd5);color:#9a3412;font-weight:800">
+            🛒 Commande enregistrée
+          </div>
+          <div style="padding:11px 12px;line-height:1.7">
+            <div><strong>N° :</strong> ${esc(orderNumber)}</div>
+            <div><strong>Montant :</strong> ${esc(money(amount))}</div>
+            <div><strong>Statut :</strong> ${esc(status)}</div>
+            <div style="font-size:11px;color:#64748b;margin-top:5px">Cette information reste disponible dans votre discussion.</div>
+          </div>
+          <span class="msg-time" style="padding:0 12px 8px">${esc(t)}</span>
+        </div>`;
+      }
+
+      return `<div class="msg ${isClient?'mine':'theirs'}">${esc(m.text)}<span class="msg-time">${esc(t)}</span></div>`;
     }).join('');
     msgs.scrollTop = msgs.scrollHeight;
   }, err => console.warn('[chat listen]', err));
@@ -2341,11 +2450,19 @@ window.submitDevis = async () => {
   const qty = document.getElementById('dqQty').value.trim();
   const msg = document.getElementById('dqMsg').value.trim();
   if (!name||!phone||!product) { showToast('⚠️ Remplissez les champs obligatoires'); return; }
-  const lines = [`Demande de devis`,`Client: ${name}`,`Tel: ${phone}`,`Produit: ${product}`,qty?`Quantite: ${qty}`:'',msg?`Message: ${msg}`:''].filter(Boolean);
-  openOwnerMail('Demande de devis', lines);
+  sendOwnerOrderEmail({
+    shop_name: document.getElementById('shopName')?.textContent || 'Votre boutique',
+    client_name: name,
+    client_phone: phone,
+    client_city: '-',
+    order_items: `${product}${qty?' x'+qty:''}${msg?'\nMessage: '+msg:''}`,
+    order_total: 0,
+    payment_mode: 'devis',
+    order_id: 'DEVIS-' + Date.now()
+  });
   ['dqName','dqPhone','dqProduct','dqQty','dqMsg'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   closeDrawer('devisDrawer');
-  showToast('✅ Demande envoyee par e-mail');
+  showToast('✅ Demande envoyee');
 };
 
 // ── PARTAGE ───────────────────────────────────────────────────────────────

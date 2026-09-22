@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aet-monbudget-v14-final'; // AET-PATCH-20260921 : cache incremente (ownerEmail public_shops)
+const CACHE_NAME = 'aet-monbudget-v16-final'; // AET-PATCH-20260921 : envoi automatique EmailJS + notifications robustes
 const CORE_ASSETS = [
   './',
   './index.html',

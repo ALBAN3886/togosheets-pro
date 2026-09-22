@@ -2115,6 +2115,37 @@ window.openThread = function(threadId) {
     area.innerHTML = messages.map(m => {
       const isClient = m.role === 'client';
       const t = m.ts ? new Date(m.ts).toLocaleTimeString('fr',{hour:'2-digit',minute:'2-digit'}) : '';
+
+      // Événement permanent de commande dans la conversation du client.
+      if (m.role === 'system' && m.type === 'order_created') {
+        const orderNumber = m.orderId || 'Commande';
+        const amount = Number(m.amount || 0);
+        const amountText = new Intl.NumberFormat('fr-FR').format(
+          Number.isFinite(amount) ? amount : 0
+        );
+        const statusLabels = {
+          pending: 'En attente',
+          confirmed: 'Confirmée',
+          preparing: 'En préparation',
+          shipped: 'Expédiée',
+          delivered: 'Livrée',
+          cancelled: 'Annulée'
+        };
+        const status = statusLabels[m.status] || m.status || 'En attente';
+
+        return `<div class="msg-bubble msg-client" style="padding:0;overflow:hidden;border:1px solid rgba(249,115,22,.3);max-width:88%">
+          <div style="padding:10px 12px;background:linear-gradient(135deg,#fff7ed,#ffedd5);color:#9a3412;font-weight:800">
+            🛒 Nouvelle commande
+          </div>
+          <div style="padding:11px 12px;line-height:1.7">
+            <div><strong>N° :</strong> ${esc(orderNumber)}</div>
+            <div><strong>Montant :</strong> ${esc(amountText)} FCFA</div>
+            <div><strong>Statut :</strong> ${esc(status)}</div>
+          </div>
+          <div class="msg-meta" style="padding:0 12px 8px">Système · ${esc(t)}</div>
+        </div>`;
+      }
+
       return `<div class="msg-bubble ${isClient?'msg-client':'msg-employee'}">
         <div class="msg-meta">${isClient ? esc(m.sender||'Client') : 'Vous'} · ${esc(t)}</div>
         ${esc(m.text)}

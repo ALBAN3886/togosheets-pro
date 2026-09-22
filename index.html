@@ -11198,6 +11198,8 @@ function cmRenderOrders(){
     const items = Array.isArray(order.items) ? order.items : [];
     const total = Number(order.grandTotal || order.subtotal || 0);
     const status = cmNormOrderStatus(order.status);
+    const hasSale = (Array.isArray(CM.mouvements) ? CM.mouvements : [])
+      .some(m => m && String(m.originOrderId || '') === String(order.id || ''));
 
     return `
       <div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:16px;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,.04);">
@@ -11259,12 +11261,21 @@ function cmRenderOrders(){
             ${status === 'pending' ? `
               <button onclick="cmUpdateOrderStatus('${esc(order.id)}','completed')"
                 style="border:0;border-radius:8px;padding:8px 10px;background:#059669;color:#fff;font-weight:700;cursor:pointer;">
-                Valider
+                Valider et encaisser
               </button>
               <button onclick="cmUpdateOrderStatus('${esc(order.id)}','rejected')"
                 style="border:1px solid #fecaca;border-radius:8px;padding:8px 10px;background:#fff;color:#b91c1c;font-weight:700;cursor:pointer;">
                 Annuler
               </button>
+            ` : status === 'completed' && !hasSale ? `
+              <button onclick="cmUpdateOrderStatus('${esc(order.id)}','completed')"
+                style="border:0;border-radius:8px;padding:8px 10px;background:#f59e0b;color:#fff;font-weight:700;cursor:pointer;">
+                <i class="fas fa-cash-register"></i> Encaisser maintenant
+              </button>
+            ` : status === 'completed' && hasSale ? `
+              <span style="padding:7px 10px;border-radius:8px;background:#ecfdf5;color:#047857;font-size:12px;font-weight:800;">
+                <i class="fas fa-circle-check"></i> Encaissée
+              </span>
             ` : ''}
           </div>
         </div>
@@ -11277,24 +11288,214 @@ async function cmUpdateOrderStatus(orderId, status){
   if (!orderId || !status) return;
 
   try {
-    /* AET-PATCH-20260920 : pont module -> IIFE */
     const db = window.__AET_DB__;
-    const { doc, updateDoc, serverTimestamp } = window.__AET_FIRESTORE__ || {};
-    if (!db || typeof doc !== 'function' || typeof updateDoc !== 'function') {
+    const fs = window.__AET_FIRESTORE__ || {};
+    const { doc, runTransaction, serverTimestamp } = fs;
+    const uid = (window.currentUser && window.currentUser.uid) || '';
+
+    if (!db || !uid || typeof doc !== 'function' ||
+        typeof runTransaction !== 'function') {
       throw new Error('Pont Firestore indisponible');
     }
-    const ref = doc(db, 'public_orders', orderId);
 
-    await updateDoc(ref, {
-      status,
-      updatedAt: serverTimestamp(),
-      updatedAtMs: Date.now()
+    const orderRef = doc(db, 'public_orders', orderId);
+    const commerceRef = doc(db, 'commerce_data', uid);
+    const now = Date.now();
+
+    await runTransaction(db, async tx => {
+      // Toutes les lectures ont lieu avant les écritures.
+      const orderSnap = await tx.get(orderRef);
+      if (!orderSnap.exists()) {
+        throw new Error('Commande introuvable');
+      }
+
+      const liveOrder = orderSnap.data() || {};
+      if (String(liveOrder.tenantId || '') !== uid) {
+        throw new Error('Cette commande ne vous appartient pas');
+      }
+
+      const currentStatus = liveOrder.status || 'pending';
+
+      // Annulation : aucune vente ni modification de stock.
+      if (status === 'rejected') {
+        if (currentStatus !== 'pending') {
+          throw new Error('Commande déjà traitée');
+        }
+
+        tx.update(orderRef, {
+          status: 'rejected',
+          rejectedAt: now,
+          rejectedBy: window.currentUser?.email || 'propriétaire',
+          updatedAt: serverTimestamp(),
+          updatedAtMs: now
+        });
+        return;
+      }
+
+      if (status !== 'completed') {
+        throw new Error('Statut non pris en charge');
+      }
+
+      const commerceSnap = await tx.get(commerceRef);
+      const commerce = commerceSnap.exists() ? (commerceSnap.data() || {}) : {};
+      const articles = Array.isArray(commerce.articles)
+        ? commerce.articles.map(a => ({ ...a }))
+        : [];
+      const mouvements = Array.isArray(commerce.mouvements)
+        ? commerce.mouvements.slice()
+        : [];
+
+      // Protection absolue contre le double encaissement.
+      if (mouvements.some(m => m && m.originOrderId === orderId)) {
+        throw new Error('Cette commande a déjà été encaissée');
+      }
+
+      // Autorise aussi la régularisation d'une ancienne commande marquée
+      // completed par l'ancien code, mais qui n'avait créé aucune vente.
+      if (currentStatus !== 'pending' && currentStatus !== 'completed') {
+        throw new Error('Commande non encaissable (statut : ' + currentStatus + ')');
+      }
+
+      const items = Array.isArray(liveOrder.items) ? liveOrder.items : [];
+      if (!items.length) {
+        throw new Error('Commande vide');
+      }
+
+      // Cumuler les quantités lorsqu'un article apparaît plusieurs fois.
+      const required = new Map();
+
+      for (const raw of items) {
+        const articleId = String(
+          raw?.articleId || raw?.productId || raw?.id || ''
+        );
+        const qty = Number(raw?.qty ?? raw?.qte ?? 0);
+
+        if (!articleId) {
+          throw new Error('Article sans identifiant');
+        }
+        if (!Number.isFinite(qty) || qty <= 0) {
+          throw new Error('Quantité invalide pour ' + (raw?.name || articleId));
+        }
+
+        const previous = required.get(articleId) || {
+          qty: 0,
+          name: raw?.name || articleId
+        };
+        previous.qty += qty;
+        required.set(articleId, previous);
+      }
+
+      const problems = [];
+
+      for (const [articleId, requirement] of required) {
+        const index = articles.findIndex(
+          article => String(article?.id) === articleId
+        );
+
+        if (index < 0) {
+          problems.push('« ' + requirement.name + ' » : article introuvable');
+          continue;
+        }
+
+        const stock = Number(articles[index].stock || 0);
+        if (stock < requirement.qty) {
+          problems.push(
+            '« ' + requirement.name + ' » : demandé ' +
+            requirement.qty + ', disponible ' + stock
+          );
+        }
+      }
+
+      if (problems.length) {
+        throw new Error('Stock insuffisant — ' + problems.join(' ; '));
+      }
+
+      // Déduire le stock une seule fois.
+      for (const [articleId, requirement] of required) {
+        const index = articles.findIndex(
+          article => String(article?.id) === articleId
+        );
+        articles[index].stock =
+          Number(articles[index].stock || 0) - requirement.qty;
+      }
+
+      const total = Number(
+        liveOrder.grandTotal ?? liveOrder.total ?? liveOrder.subtotal ?? 0
+      );
+      const receiptNumber = 'AET-' + now;
+      const shopId = String(liveOrder.shopId || CM.currentShopId || '');
+
+      const saleItems = items.map(raw => {
+        const qty = Number(raw?.qty ?? raw?.qte ?? 0);
+        const lineTotal = Number(raw?.total ?? 0);
+        const unitPrice = Number(
+          raw?.unitPrice ??
+          raw?.prixV ??
+          raw?.price ??
+          (qty > 0 ? lineTotal / qty : 0)
+        );
+        const articleId = String(
+          raw?.articleId || raw?.productId || raw?.id || ''
+        );
+
+        return {
+          productId: articleId,
+          articleId,
+          name: raw?.name || raw?.artName || 'Article',
+          qty,
+          unitPrice,
+          prixV: unitPrice,
+          total: lineTotal || qty * unitPrice
+        };
+      });
+
+      mouvements.push({
+        id: cmUID(),
+        type: 'sale',
+        shopId,
+        originOrderId: orderId,
+        sellerEmployeeId: uid,
+        sellerName:
+          window.currentUser?.displayName ||
+          window.currentUser?.email ||
+          'Propriétaire',
+        source: 'storefront-approved',
+        paymentMethod: liveOrder.paymentMode || 'cash',
+        items: saleItems,
+        total,
+        grandTotal: total,
+        receiptNumber,
+        status: 'completed',
+        createdAtMs: now
+      });
+
+      // Vente, stock et statut sont enregistrés atomiquement dans Firebase.
+      tx.set(commerceRef, {
+        articles,
+        mouvements,
+        updatedAtMs: now,
+        updatedAt: serverTimestamp()
+      }, { merge: true });
+
+      tx.update(orderRef, {
+        status: 'completed',
+        completedAt: now,
+        completedBy: window.currentUser?.email || 'propriétaire',
+        receiptNumber,
+        updatedAt: serverTimestamp(),
+        updatedAtMs: now
+      });
     });
 
-    cmToast('Commande mise à jour', 'success');
+    cmToast(
+      status === 'completed'
+        ? 'Commande validée et encaissée'
+        : 'Commande annulée',
+      'success'
+    );
   } catch(e) {
-    console.error('[COMMANDES] statut:', e);
-    cmToast('Impossible de modifier la commande', 'error');
+    console.error('[COMMANDES] traitement:', e);
+    cmToast(e?.message || 'Impossible de traiter la commande', 'error');
   }
 }
 

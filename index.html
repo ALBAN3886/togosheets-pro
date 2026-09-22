@@ -696,7 +696,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('click', (e) => {
     const link = e.target.closest('.sidebar-link');
     if (!link) return;
-    if (link.id === 'sb-analyse-toggle') return; // ouvre/ferme le tiroir, ne doit pas fermer tout le menu
+    if (link.classList.contains('sb-group-toggle')) return; // ouvre un sous-menu sans fermer le menu
     setTimeout(() => {
       document.getElementById('appSidebar')?.classList.remove('open');
       document.getElementById('sidebarOverlay')?.classList.remove('open');
@@ -720,13 +720,44 @@ window.addEventListener('popstate', () => {
 });
 
 // ──────── Tiroir dépliable "Analyse" dans le menu latéral ────────
-window.toggleSbAnalyse = function(){
-  const drawer = document.getElementById('sbAnalyseDrawer');
-  const chevron = document.getElementById('sbAnalyseChevron');
+window.toggleSbGroup = function(drawerId, chevronId){
+  const drawer = document.getElementById(drawerId);
   if (!drawer) return;
-  const isOpen = drawer.style.display !== 'none';
-  drawer.style.display = isOpen ? 'none' : 'block';
-  if (chevron) chevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+
+  const wasOpen = drawer.style.display !== 'none';
+
+  const groups = [
+    ['sbFinancesDrawer', 'sbFinancesChevron'],
+    ['sbAnalyseDrawer', 'sbAnalyseChevron'],
+    ['sbCompteDrawer', 'sbCompteChevron']
+  ];
+
+  groups.forEach(([id, iconId]) => {
+    const panel = document.getElementById(id);
+    const icon = document.getElementById(iconId);
+
+    if (panel) panel.style.display = 'none';
+    if (icon) icon.style.transform = 'rotate(0deg)';
+  });
+
+  if (!wasOpen) {
+    drawer.style.display = 'block';
+
+    const chevron = document.getElementById(chevronId);
+    if (chevron) chevron.style.transform = 'rotate(180deg)';
+  }
+};
+
+window.toggleSbFinances = function(){
+  window.toggleSbGroup('sbFinancesDrawer', 'sbFinancesChevron');
+};
+
+window.toggleSbAnalyse = function(){
+  window.toggleSbGroup('sbAnalyseDrawer', 'sbAnalyseChevron');
+};
+
+window.toggleSbCompte = function(){
+  window.toggleSbGroup('sbCompteDrawer', 'sbCompteChevron');
 };
 
 window.togglePwdEye = function(inputId, btn) {
@@ -4652,67 +4683,140 @@ select.form-input option{background:var(--bg2)}
     </div>
 
     <div class="sb-scroll">
-      <div class="sb-section-label" data-i18n="nav_sec_apercu">Aperçu</div>
-      <div class="sidebar-link active" id="sb-dashboard" onclick="switchTab('dashboard')" style="--sb-ic:var(--primary)">
-        <i class="fas fa-house"></i><span data-i18n="nav_dashboard">Accueil</span>
-      </div>
-      <div class="sidebar-link" id="sb-revenus" onclick="switchTab('revenus')" style="--sb-ic:var(--success)">
-        <i class="fas fa-arrow-down-to-bracket"></i><span data-i18n="nav_revenus">Revenus</span>
-      </div>
-      <div class="sidebar-link" id="sb-depenses" onclick="switchTab('depenses')" style="--sb-ic:var(--danger)">
-        <i class="fas fa-arrow-up-from-bracket"></i><span data-i18n="nav_depenses">Dépenses</span>
-      </div>
-      <div class="sidebar-link" id="sb-epargne" onclick="switchTab('epargne')" style="--sb-ic:var(--success)">
-        <i class="fas fa-piggy-bank"></i><span data-i18n="nav_epargne">Épargne</span>
-      </div>
-      <div class="sidebar-link" id="sb-budget" onclick="switchTab('budget')" style="--sb-ic:var(--warning)">
-        <i class="fas fa-bullseye"></i><span data-i18n="nav_budget">Budget</span>
+
+      <!-- Accueil -->
+      <div class="sidebar-link active" id="sb-dashboard"
+           onclick="switchTab('dashboard')"
+           style="--sb-ic:var(--primary)">
+        <i class="fas fa-house"></i>
+        <span data-i18n="nav_dashboard">Accueil</span>
       </div>
 
-      <div class="sb-section-label" data-i18n="nav_sec_gestion">Gestion</div>
-      <div class="sidebar-link" id="sb-salaire" onclick="switchTab('salaire')" style="--sb-ic:var(--primary)">
-        <i class="fas fa-briefcase"></i><span data-i18n="nav_salaire">Salaire</span>
-      </div>
-      <div class="sidebar-link" id="sb-objectifs" onclick="bnavSwitchExt('objectifs')" style="--sb-ic:var(--warning)">
-        <i class="fas fa-flag"></i><span data-i18n="nav_objectifs">Objectifs</span>
-      </div>
-      <div class="sidebar-link" id="sb-tontines" onclick="bnavSwitchExt('tontines')" style="--sb-ic:#8b5cf6">
-        <i class="fas fa-people-group"></i><span data-i18n="nav_tontines">Tontines</span>
+      <!-- Finances -->
+      <div class="sidebar-link sb-group-toggle" id="sb-finances-toggle"
+           onclick="toggleSbFinances()"
+           style="--sb-ic:#10b981">
+        <i class="fas fa-wallet"></i>
+        <span>Finances</span>
+        <i class="fas fa-chevron-down" id="sbFinancesChevron"
+           style="margin-left:auto;font-size:11px;transition:transform .2s"></i>
       </div>
 
-      <!-- ═══ Tiroir dépliable : Analyse (regroupe Plan de Gestion, Historique, Rapports avancés) ═══ -->
-      <div class="sidebar-link" id="sb-analyse-toggle" onclick="toggleSbAnalyse()" style="--sb-ic:#8b5cf6">
-        <i class="fas fa-chart-line"></i><span>Analyse</span>
-        <i class="fas fa-chevron-down" id="sbAnalyseChevron" style="margin-left:auto;font-size:11px;transition:transform .2s"></i>
-      </div>
-      <div id="sbAnalyseDrawer" style="display:none;padding-left:14px;border-left:2px solid var(--border);margin:2px 0 4px 20px">
-        <div class="sidebar-link" id="sb-plangestion" onclick="switchTab('plangestion')" style="--sb-ic:#8b5cf6">
-          <i class="fas fa-map-signs"></i><span data-i18n="nav_plangestion">Plan de Gestion</span>
+      <div id="sbFinancesDrawer"
+           style="display:none;padding-left:12px;border-left:2px solid var(--border);margin:4px 0 8px 20px">
+
+        <div class="sidebar-link" id="sb-revenus"
+             onclick="switchTab('revenus')" style="--sb-ic:var(--success)">
+          <i class="fas fa-arrow-down-to-bracket"></i>
+          <span data-i18n="nav_revenus">Revenus</span>
         </div>
-        <div class="sidebar-link" id="sb-historique" onclick="switchTab('historique')" style="--sb-ic:var(--muted)">
-          <i class="fas fa-clock-rotate-left"></i><span data-i18n="nav_historique">Historique</span>
+
+        <div class="sidebar-link" id="sb-depenses"
+             onclick="switchTab('depenses')" style="--sb-ic:var(--danger)">
+          <i class="fas fa-arrow-up-from-bracket"></i>
+          <span data-i18n="nav_depenses">Dépenses</span>
         </div>
-        <!-- "Rapports avancés" (sb-rapports) est ajouté ici dynamiquement par aet-enhancements.js -->
+
+        <div class="sidebar-link" id="sb-epargne"
+             onclick="switchTab('epargne')" style="--sb-ic:var(--success)">
+          <i class="fas fa-piggy-bank"></i>
+          <span data-i18n="nav_epargne">Épargne</span>
+        </div>
+
+        <div class="sidebar-link" id="sb-budget"
+             onclick="switchTab('budget')" style="--sb-ic:var(--warning)">
+          <i class="fas fa-bullseye"></i>
+          <span data-i18n="nav_budget">Budget</span>
+        </div>
+
+        <div class="sidebar-link" id="sb-salaire"
+             onclick="switchTab('salaire')" style="--sb-ic:var(--primary)">
+          <i class="fas fa-briefcase"></i>
+          <span data-i18n="nav_salaire">Salaire</span>
+        </div>
+
+        <div class="sidebar-link" id="sb-objectifs"
+             onclick="bnavSwitchExt('objectifs')" style="--sb-ic:var(--warning)">
+          <i class="fas fa-flag"></i>
+          <span data-i18n="nav_objectifs">Objectifs</span>
+        </div>
+
+        <div class="sidebar-link" id="sb-tontines"
+             onclick="bnavSwitchExt('tontines')" style="--sb-ic:#8b5cf6">
+          <i class="fas fa-people-group"></i>
+          <span data-i18n="nav_tontines">Tontines</span>
+        </div>
       </div>
 
-      <div class="sidebar-link" id="sb-notes" onclick="switchTab('notes')" style="--sb-ic:#06b6d4">
-        <i class="fas fa-calendar-pen"></i><span data-i18n="nav_notes">Notes</span>
+      <!-- Commerce -->
+      <div class="sidebar-link" id="sb-commerce"
+           onclick="switchTab('commerce')" style="--sb-ic:var(--success)">
+        <i class="fas fa-store"></i>
+        <span data-i18n="nav_commerce">Commerce</span>
       </div>
 
-      <div class="sb-section-label" data-i18n="nav_sec_ressources">Ressources</div>
-      <div class="sidebar-link" id="sb-commerce" onclick="switchTab('commerce')" style="--sb-ic:var(--success)">
-        <i class="fas fa-store"></i><span data-i18n="nav_commerce">Commerce</span>
-      </div>
-      <div class="sidebar-link" id="sb-conseils" onclick="switchTab('conseils')" style="--sb-ic:#06b6d4">
-        <i class="fas fa-graduation-cap"></i><span data-i18n="nav_conseils">Conseils</span>
+      <!-- Analyse -->
+      <div class="sidebar-link sb-group-toggle" id="sb-analyse-toggle"
+           onclick="toggleSbAnalyse()" style="--sb-ic:#8b5cf6">
+        <i class="fas fa-chart-line"></i>
+        <span>Analyse</span>
+        <i class="fas fa-chevron-down" id="sbAnalyseChevron"
+           style="margin-left:auto;font-size:11px;transition:transform .2s"></i>
       </div>
 
-      <div class="sb-section-label" data-i18n="nav_sec_compte">Compte</div>
-      <div class="sidebar-link" id="sb-profil" onclick="bnavSwitchExt('profil')" style="--sb-ic:var(--primary)">
-        <i class="fas fa-gear"></i><span data-i18n="nav_settings">Paramètres</span>
+      <div id="sbAnalyseDrawer"
+           style="display:none;padding-left:12px;border-left:2px solid var(--border);margin:4px 0 8px 20px">
+
+        <div class="sidebar-link" id="sb-plangestion"
+             onclick="switchTab('plangestion')" style="--sb-ic:#8b5cf6">
+          <i class="fas fa-map-signs"></i>
+          <span data-i18n="nav_plangestion">Plan de Gestion</span>
+        </div>
+
+        <div class="sidebar-link" id="sb-historique"
+             onclick="switchTab('historique')" style="--sb-ic:var(--muted)">
+          <i class="fas fa-clock-rotate-left"></i>
+          <span data-i18n="nav_historique">Historique</span>
+        </div>
+
+        <div class="sidebar-link" id="sb-notes"
+             onclick="switchTab('notes')" style="--sb-ic:#06b6d4">
+          <i class="fas fa-calendar-pen"></i>
+          <span data-i18n="nav_notes">Notes</span>
+        </div>
+
+        <div class="sidebar-link" id="sb-conseils"
+             onclick="switchTab('conseils')" style="--sb-ic:#06b6d4">
+          <i class="fas fa-graduation-cap"></i>
+          <span data-i18n="nav_conseils">Conseils</span>
+        </div>
+
+        <!-- Rapports avancés ajouté dynamiquement ici -->
       </div>
-      <div class="sidebar-link" id="sb-logout" onclick="doLogout()" style="--sb-ic:var(--danger)">
-        <i class="fas fa-right-from-bracket"></i><span data-i18n="nav_logout">Déconnexion</span>
+
+      <!-- Compte -->
+      <div class="sidebar-link sb-group-toggle" id="sb-compte-toggle"
+           onclick="toggleSbCompte()" style="--sb-ic:var(--primary)">
+        <i class="fas fa-user-circle"></i>
+        <span>Compte</span>
+        <i class="fas fa-chevron-down" id="sbCompteChevron"
+           style="margin-left:auto;font-size:11px;transition:transform .2s"></i>
+      </div>
+
+      <div id="sbCompteDrawer"
+           style="display:none;padding-left:12px;border-left:2px solid var(--border);margin:4px 0 8px 20px">
+
+        <div class="sidebar-link" id="sb-profil"
+             onclick="bnavSwitchExt('profil')" style="--sb-ic:var(--primary)">
+          <i class="fas fa-gear"></i>
+          <span data-i18n="nav_settings">Paramètres</span>
+        </div>
+
+        <div class="sidebar-link" id="sb-logout"
+             onclick="doLogout()" style="--sb-ic:var(--danger)">
+          <i class="fas fa-right-from-bracket"></i>
+          <span data-i18n="nav_logout">Déconnexion</span>
+        </div>
       </div>
     </div>
 
@@ -4926,37 +5030,6 @@ select.form-input option{background:var(--bg2)}
             <canvas id="chartDoughnutResume"></canvas>
           </div>
           <div id="catLegendResume" style="display:flex;flex-direction:column;gap:6px;margin-top:10px;font-size:12px;"></div>
-        </div>
-
-        <!-- ═══ RACCOURCIS RAPIDES ═══ -->
-        <div style="margin-bottom:16px">
-          <div style="font-size:12px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px">Accès rapide</div>
-          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
-            <div onclick="bnavSwitchExt('tontines')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;background:var(--card);border:1px solid var(--border);border-radius:14px;cursor:pointer;transition:all .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
-              <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#f59e0b,#ef4444);display:flex;align-items:center;justify-content:center;font-size:18px">💰</div>
-              <span style="font-size:10px;font-weight:700;color:var(--text);text-align:center;line-height:1.2">Tontines</span>
-            </div>
-            <div onclick="mainMenuSwitch('commerce',t('nav_commerce'),'fa-store')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;background:var(--card);border:1px solid var(--border);border-radius:14px;cursor:pointer;transition:all .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
-              <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#10b981,#047857);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff"><i class="fas fa-store"></i></div>
-              <span style="font-size:10px;font-weight:700;color:var(--text);text-align:center;line-height:1.2">Commerce</span>
-            </div>
-            <div onclick="dashSubTab('graphes')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;background:var(--card);border:1px solid var(--border);border-radius:14px;cursor:pointer;transition:all .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
-              <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:18px">📊</div>
-              <span style="font-size:10px;font-weight:700;color:var(--text);text-align:center;line-height:1.2">Analyse</span>
-            </div>
-            <div onclick="bnavSwitchExt('objectifs')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;background:var(--card);border:1px solid var(--border);border-radius:14px;cursor:pointer;transition:all .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
-              <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;font-size:18px">🎯</div>
-              <span style="font-size:10px;font-weight:700;color:var(--text);text-align:center;line-height:1.2">Objectifs</span>
-            </div>
-            <div onclick="mainMenuSwitch('budget',t('nav_budget'),'fa-bullseye')" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;background:var(--card);border:1px solid var(--border);border-radius:14px;cursor:pointer;transition:all .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
-              <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#06b6d4,#0891b2);display:flex;align-items:center;justify-content:center;font-size:18px">📋</div>
-              <span style="font-size:10px;font-weight:700;color:var(--text);text-align:center;line-height:1.2">Budgets</span>
-            </div>
-            <div onclick="openSettings()" style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:12px 4px;background:var(--card);border:1px solid var(--border);border-radius:14px;cursor:pointer;transition:all .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform=''">
-              <div style="width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,#64748b,#475569);display:flex;align-items:center;justify-content:center;font-size:18px">⚙️</div>
-              <span style="font-size:10px;font-weight:700;color:var(--text);text-align:center;line-height:1.2">Paramètres</span>
-            </div>
-          </div>
         </div>
 
         <!-- Teaser Conseils -->

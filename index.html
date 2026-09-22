@@ -11337,6 +11337,20 @@ async function cmUpdateOrderStatus(orderId, status){
       }
 
       const commerceSnap = await tx.get(commerceRef);
+
+      // Retrouver la discussion vendeur liée à cette commande.
+      const chatClientId = String(
+        liveOrder.chatClientId ||
+        (liveOrder.buyerId ? `uid_${liveOrder.buyerId}` : '')
+      ).trim();
+      const chatRef = chatClientId
+        ? doc(db, 'chats_flat', `${uid}__${chatClientId}_vendeur`)
+        : null;
+      const chatSnap = chatRef ? await tx.get(chatRef) : null;
+      const chatData = chatSnap && chatSnap.exists()
+        ? (chatSnap.data() || {})
+        : {};
+
       const commerce = commerceSnap.exists() ? (commerceSnap.data() || {}) : {};
       const articles = Array.isArray(commerce.articles)
         ? commerce.articles.map(a => ({ ...a }))
@@ -11469,13 +11483,42 @@ async function cmUpdateOrderStatus(orderId, status){
         createdAtMs: now
       });
 
-      // Vente, stock et statut sont enregistrés atomiquement dans Firebase.
+      // Mettre à jour le statut dans la carte permanente de discussion.
+      let chatMessageUpdated = false;
+      const chatMessages = Array.isArray(chatData.messages)
+        ? chatData.messages.map(message => {
+            const sameOrder =
+              String(message?.orderDocumentId || '') === String(orderId) ||
+              String(message?.orderId || '') === String(liveOrder.id || '');
+
+            if (message?.type === 'order_created' && sameOrder) {
+              chatMessageUpdated = true;
+              return {
+                ...message,
+                status: 'completed',
+                validatedAt: now
+              };
+            }
+
+            return message;
+          })
+        : [];
+
+      // Vente, stock, discussion et statut sont enregistrés atomiquement.
       tx.set(commerceRef, {
         articles,
         mouvements,
         updatedAtMs: now,
         updatedAt: serverTimestamp()
       }, { merge: true });
+
+      if (chatRef && chatMessageUpdated) {
+        tx.set(chatRef, {
+          messages: chatMessages,
+          updatedAt: now,
+          unreadClient: true
+        }, { merge: true });
+      }
 
       tx.update(orderRef, {
         status: 'completed',

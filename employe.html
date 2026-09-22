@@ -2125,6 +2125,7 @@ window.openThread = function(threadId) {
         );
         const statusLabels = {
           pending: 'En attente',
+          completed: 'Validée',
           confirmed: 'Confirmée',
           preparing: 'En préparation',
           shipped: 'Expédiée',
@@ -2474,6 +2475,25 @@ window.doApproveOrder = async function(orderId) {
         if (pIdx < 0) throw new Error('Commande introuvable');
         live = pending[pIdx];
       }
+      // Retrouver la discussion vendeur associée à cette commande.
+      const chatClientId = String(
+        live.chatClientId ||
+        (live.buyerId ? `uid_${live.buyerId}` : '')
+      ).trim();
+      const orderChatTenantId = String(
+        live.tenantId || tenantId || state.context?.tenantId || ''
+      ).trim();
+      const orderChatRef = isPublic && chatClientId && orderChatTenantId
+        ? doc(db, 'chats_flat', `${orderChatTenantId}__${chatClientId}_vendeur`)
+        : null;
+      const orderChatSnap = orderChatRef
+        ? await tx.get(orderChatRef)
+        : null;
+      const orderChatData =
+        orderChatSnap && orderChatSnap.exists()
+          ? (orderChatSnap.data() || {})
+          : {};
+
       const liveStatus = live.status || 'pending';
       if (liveStatus !== 'pending') {
         throw new Error('Commande déjà traitée (statut : ' + liveStatus + ')');
@@ -2533,12 +2553,42 @@ window.doApproveOrder = async function(orderId) {
         createdAtMs: Date.now()
       });
 
+      // Mettre à jour la carte permanente de la commande dans la discussion.
+      let orderChatUpdated = false;
+      const orderChatMessages = Array.isArray(orderChatData.messages)
+        ? orderChatData.messages.map(message => {
+            const sameOrder =
+              String(message?.orderDocumentId || '') === String(orderId) ||
+              String(message?.orderId || '') === String(live.id || '');
+
+            if (message?.type === 'order_created' && sameOrder) {
+              orderChatUpdated = true;
+              return {
+                ...message,
+                status: 'completed',
+                validatedAt: Date.now()
+              };
+            }
+
+            return message;
+          })
+        : [];
+
       const patch = { articles, mouvements, updatedAt: serverTimestamp() };
       if (!isPublic) {
         pending[pIdx] = { ...pending[pIdx], status: 'completed' };
         patch.pendingOrders = pending;
       }
       tx.set(ref, patch, { merge: true });
+
+      if (orderChatRef && orderChatUpdated) {
+        tx.set(orderChatRef, {
+          messages: orderChatMessages,
+          updatedAt: Date.now(),
+          unreadClient: true
+        }, { merge: true });
+      }
+
       if (isPublic) {
         tx.update(orderRef, {
           status: 'completed',

@@ -2225,6 +2225,12 @@ window.openLoginForm = () => { authTab('login'); openDrawer('loginDrawer'); };
 window.doGoogleSignIn = async () => {
   try {
     const provider = new GoogleAuthProvider();
+
+    // Toujours proposer les comptes Google déjà connectés dans le navigateur.
+    provider.setCustomParameters({
+      prompt: 'select_account'
+    });
+
     const cred = await signInWithPopup(auth, provider);
     const uid = cred.user.uid;
     const snap = await getDoc(doc(custDb, 'customers', uid));

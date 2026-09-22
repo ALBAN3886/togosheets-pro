@@ -523,6 +523,7 @@ onAuthStateChanged(auth, async user => {
       }
     }
     enterAppAsVerifiedUser(user);
+    refreshAdminMenuAccess(user);
   } else {
     currentUser = null;
     window.currentUser = null;
@@ -3464,6 +3465,84 @@ let unsubAdminUsers = null, unsubAdminSessions = null, unsubAdminTx = null;
 let adminAllTx = [], adminAllSessions = [], adminAllUsers = [];
 let adminSelectedUser = null;
 
+
+async function refreshAdminMenuAccess(user) {
+  const adminButton = document.getElementById('sb-admin');
+  if (!adminButton) return;
+
+  adminButton.style.display = 'none';
+  window.__AET_IS_ADMIN__ = false;
+
+  if (!user) return;
+
+  try {
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    const data = snap.exists() ? (snap.data() || {}) : {};
+    const allowed = data.isAdmin === true || data.role === 'admin';
+
+    window.__AET_IS_ADMIN__ = allowed;
+    adminButton.style.display = allowed ? 'flex' : 'none';
+  } catch (e) {
+    console.warn('[ADMIN MENU]', e);
+    adminButton.style.display = 'none';
+  }
+}
+
+window.openAdminPanelFromApp = async function() {
+  const user = auth.currentUser;
+
+  if (!user) {
+    toast('Connectez-vous pour accéder à l’administration.', 'error');
+    return;
+  }
+
+  try {
+    let allowed = window.__AET_IS_ADMIN__ === true;
+
+    // Nouvelle vérification Firestore avant chaque ouverture.
+    if (!allowed) {
+      const snap = await getDoc(doc(db, 'users', user.uid));
+      const data = snap.exists() ? (snap.data() || {}) : {};
+      allowed = data.isAdmin === true || data.role === 'admin';
+    }
+
+    if (!allowed) {
+      toast('Accès administrateur refusé.', 'error');
+      return;
+    }
+
+    window.__AET_IS_ADMIN__ = true;
+    adminMode = true;
+
+    if (typeof closeSidebarMobile === 'function') {
+      closeSidebarMobile();
+    }
+
+    const app = document.getElementById('app');
+    const authScreen = document.getElementById('authScreen');
+    const adminLogin = document.getElementById('adminLoginScreen');
+    const adminPanel = document.getElementById('adminPanel');
+    const bottomNav = document.getElementById('bottomNav');
+
+    if (app) app.style.display = 'none';
+    if (authScreen) authScreen.style.display = 'none';
+    if (adminLogin) adminLogin.style.display = 'none';
+    if (bottomNav) bottomNav.style.display = 'none';
+
+    if (!adminPanel) {
+      throw new Error('Panneau administrateur introuvable');
+    }
+
+    adminPanel.style.display = 'block';
+    window.scrollTo({ top: 0, behavior: 'auto' });
+
+    loadAdminData();
+  } catch (e) {
+    console.error('[OPEN ADMIN PANEL]', e);
+    toast(e.message || 'Impossible d’ouvrir l’administration.', 'error');
+  }
+};
+
 function checkAdminMode() {
   const params = new URLSearchParams(window.location.search);
   if (params.has(ADMIN_PARAM)) {
@@ -4841,7 +4920,13 @@ select.form-input option{background:var(--bg2)}
           <span data-i18n="nav_settings">Paramètres</span>
         </div>
 
-        <div class="sidebar-link" id="sb-logout"
+        <div class="sidebar-link" id="sb-admin"
+        onclick="openAdminPanelFromApp()"
+        style="--sb-ic:#dc2626;display:none">
+        <i class="fas fa-shield-halved"></i>
+        <span>Administration +</span>
+      </div>
+      <div class="sidebar-link" id="sb-logout"
              onclick="doLogout()" style="--sb-ic:var(--danger)">
           <i class="fas fa-right-from-bracket"></i>
           <span data-i18n="nav_logout">Déconnexion</span>

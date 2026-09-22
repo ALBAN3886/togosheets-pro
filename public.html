@@ -113,6 +113,380 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 /* ── Toast ── */
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#1e293b;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;z-index:999;opacity:0;transition:opacity .3s}
 .toast.show{opacity:1}
+
+/* ═══════════ NAVIGATION MARKETPLACE MODERNE ═══════════ */
+html{
+  scroll-behavior:smooth;
+  scroll-padding-top:82px;
+}
+
+body{
+  -webkit-tap-highlight-color:transparent;
+}
+
+.header{
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+}
+
+.header-inner{
+  max-width:1100px;
+  height:68px;
+}
+
+.market-brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  min-width:0;
+  padding:0;
+  border:0;
+  background:transparent;
+  color:inherit;
+  text-align:left;
+  font-family:inherit;
+  cursor:pointer;
+}
+
+.market-brand-text{
+  min-width:0;
+}
+
+.desktop-nav{
+  display:flex;
+  align-items:center;
+  gap:4px;
+  margin-left:auto;
+}
+
+.desktop-nav-btn{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  min-height:40px;
+  padding:0 13px;
+  border:1px solid transparent;
+  border-radius:12px;
+  background:transparent;
+  color:rgba(255,255,255,.88);
+  font-family:inherit;
+  font-size:12px;
+  font-weight:750;
+  text-decoration:none;
+  white-space:nowrap;
+  cursor:pointer;
+  transition:
+    background .2s ease,
+    color .2s ease,
+    border-color .2s ease,
+    transform .2s ease;
+}
+
+.desktop-nav-btn:hover{
+  color:#fff;
+  background:rgba(255,255,255,.15);
+  border-color:rgba(255,255,255,.14);
+  transform:translateY(-1px);
+}
+
+.desktop-nav-btn.active{
+  color:#047857;
+  background:#fff;
+  box-shadow:0 8px 22px rgba(6,78,59,.18);
+}
+
+.desktop-space-btn{
+  margin-left:6px;
+  color:#fff;
+  background:rgba(255,255,255,.16);
+  border-color:rgba(255,255,255,.20);
+}
+
+/* Barre de navigation mobile */
+.mobile-nav{
+  position:fixed;
+  left:50%;
+  bottom:0;
+  z-index:180;
+  display:none;
+  width:100%;
+  max-width:540px;
+  min-height:68px;
+  padding:7px 7px calc(7px + env(safe-area-inset-bottom));
+  transform:translateX(-50%);
+  background:rgba(255,255,255,.96);
+  border-top:1px solid rgba(226,232,240,.95);
+  box-shadow:0 -12px 32px rgba(15,23,42,.12);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+}
+
+.mobile-nav-item{
+  position:relative;
+  flex:1;
+  min-width:0;
+  min-height:52px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+  padding:0 2px;
+  border:0;
+  border-radius:14px;
+  background:transparent;
+  color:#64748b;
+  font-family:inherit;
+  font-size:9.5px;
+  font-weight:750;
+  text-decoration:none;
+  cursor:pointer;
+  transition:
+    color .2s ease,
+    background .2s ease,
+    transform .15s ease;
+}
+
+.mobile-nav-item i{
+  font-size:18px;
+  transition:transform .2s ease;
+}
+
+.mobile-nav-item:active{
+  transform:scale(.94);
+}
+
+.mobile-nav-item.active{
+  color:var(--primary-d);
+  background:rgba(var(--primary-rgb),.10);
+}
+
+.mobile-nav-item.active i{
+  transform:translateY(-1px);
+}
+
+.mobile-nav-item.active::before{
+  content:"";
+  position:absolute;
+  top:3px;
+  width:22px;
+  height:3px;
+  border-radius:999px;
+  background:var(--primary);
+}
+
+.market-section{
+  scroll-margin-top:84px;
+}
+
+.filters.nav-highlight,
+.search-box.nav-highlight{
+  animation:marketNavHighlight 1.25s ease;
+}
+
+@keyframes marketNavHighlight{
+  0%,100%{
+    box-shadow:var(--shadow);
+  }
+  35%{
+    box-shadow:
+      0 0 0 5px rgba(var(--primary-rgb),.14),
+      0 12px 30px rgba(16,185,129,.18);
+  }
+}
+
+/* Grands écrans */
+@media(min-width:900px){
+  .search-wrap,
+  .sort-bar,
+  .grid{
+    max-width:1100px;
+  }
+
+  .grid{
+    grid-template-columns:repeat(3,minmax(0,1fr));
+    gap:18px;
+  }
+
+  .shop-banner{
+    height:130px;
+  }
+
+  .hero{
+    padding-top:34px;
+    padding-bottom:24px;
+  }
+
+  .hero h1{
+    font-size:30px;
+  }
+
+  .hero p{
+    font-size:14px;
+  }
+}
+
+/* Tablettes */
+@media(max-width:860px) and (min-width:701px){
+  .desktop-nav-btn span{
+    display:none;
+  }
+
+  .desktop-nav-btn{
+    width:40px;
+    padding:0;
+  }
+}
+
+/* Téléphones */
+@media(max-width:700px){
+  body{
+    padding-bottom:calc(74px + env(safe-area-inset-bottom));
+  }
+
+  .header-inner{
+    height:60px;
+  }
+
+  .desktop-nav{
+    display:none;
+  }
+
+  .mobile-nav{
+    display:flex;
+  }
+
+  .header-title{
+    font-size:15px;
+  }
+
+  .header-sub{
+    font-size:10px;
+  }
+
+  .hero{
+    padding-top:20px;
+  }
+
+  .hero h1{
+    font-size:21px;
+  }
+
+  .footer{
+    padding-bottom:24px;
+  }
+
+  .toast{
+    bottom:calc(88px + env(safe-area-inset-bottom));
+  }
+
+  .drawer{
+    padding-bottom:calc(88px + env(safe-area-inset-bottom));
+  }
+}
+
+@media(max-width:380px){
+  .mobile-nav-item{
+    font-size:8.5px;
+  }
+
+  .mobile-nav-item i{
+    font-size:17px;
+  }
+
+  .header-logo{
+    width:34px;
+    height:34px;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  html{
+    scroll-behavior:auto;
+  }
+
+  .desktop-nav-btn,
+  .mobile-nav-item,
+  .mobile-nav-item i{
+    transition:none;
+  }
+}
+
+
+/* ── Marketplace simplifiée : menu Boutiques uniquement ── */
+.sort-bar {
+  justify-content: flex-end !important;
+}
+
+#resultCount {
+  display: none !important;
+}
+
+.mobile-nav {
+  display: none !important;
+}
+
+.market-brand {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.market-brand-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+@media (max-width: 700px) {
+  body {
+    padding-bottom: 0 !important;
+  }
+
+  .header-inner {
+    height: 64px;
+  }
+
+  .desktop-nav {
+    display: flex !important;
+    flex-shrink: 0;
+  }
+
+  .desktop-nav-btn {
+    width: auto !important;
+    min-width: 0;
+    padding: 9px 12px !important;
+  }
+
+  .desktop-nav-btn span {
+    display: inline !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .header-title {
+    font-size: 14px;
+  }
+
+  .header-sub {
+    font-size: 9px;
+  }
+
+  .desktop-nav-btn {
+    padding: 9px 10px !important;
+  }
+}
+
 </style>
 
 <style id="category-images-style">
@@ -179,46 +553,42 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 </head>
 <body>
 
-<!-- Header -->
-<div class="header">
+<!-- Header simplifié Marketplace -->
+<header class="header">
   <div class="header-inner">
-    <div class="header-logo">AET</div>
-    <div style="flex:1">
-      <div class="header-title">Marketplace TogoSheets</div>
-      <div class="header-sub">Toutes les boutiques en ligne</div>
-    </div>
+    <button
+      type="button"
+      class="market-brand"
+      onclick="marketplaceNavigate('shops')"
+      aria-label="Afficher les boutiques">
+      <span class="header-logo">AET</span>
+      <span class="market-brand-copy">
+        <span class="header-title">Marketplace TogoSheets</span>
+        <span class="header-sub">Toutes les boutiques en ligne</span>
+      </span>
+    </button>
 
+    <nav class="desktop-nav" aria-label="Navigation Marketplace">
+      <button
+        type="button"
+        class="desktop-nav-btn active"
+        data-market-nav="shops"
+        onclick="marketplaceNavigate('shops')">
+        <i class="fas fa-store"></i>
+        <span>Boutiques</span>
+      </button>
+    </nav>
   </div>
-</div>
-
-<!-- Hero -->
-<div class="hero">
-  <h1>🛍️ Boutiques en ligne</h1>
-  <p>Découvrez et achetez chez les vendeurs de confiance</p>
-  <div class="hero-stats">
-    <div class="hero-stat">
-      <div class="hero-stat-n" id="statShops">—</div>
-      <div class="hero-stat-l">Boutiques</div>
-    </div>
-    <div class="hero-stat" style="display:none">
-      <div class="hero-stat-n" id="statProducts">—</div>
-      <div class="hero-stat-l">Produits</div>
-    </div>
-    <div class="hero-stat">
-      <div class="hero-stat-n" id="statCities">—</div>
-      <div class="hero-stat-l">Villes</div>
-    </div>
-  </div>
-</div>
+</header>
 
 <!-- Search -->
-<div class="search-wrap">
+<div class="search-wrap market-section" id="marketSearch">
   <div class="search-box">
     <i class="fas fa-search"></i>
     <input type="text" id="searchInput" placeholder="Chercher une boutique, produit, ville…" oninput="applyFilters()">
     <i class="fas fa-times" style="cursor:pointer;color:var(--muted)" onclick="clearSearch()"></i>
   </div>
-  <div class="filters" id="filtersBar">
+  <div class="filters market-section" id="filtersBar">
     <div class="filter-chip active" data-cat="all" onclick="pickCat(this)">Tout</div>
     <div class="filter-chip" data-cat="alimentaire" onclick="pickCat(this)">
       <img src="images/categories/alimentaire.jpg" alt="">
@@ -266,7 +636,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 </div>
 
 <!-- Grid -->
-<div class="grid" id="shopsGrid">
+<div class="grid market-section" id="shopsGrid">
   <div class="loader" style="grid-column:1/-1">
     <div class="dot"></div><div class="dot"></div><div class="dot"></div>
   </div>
@@ -357,6 +727,82 @@ const TYPE_BG = {
 window._allShops = [];
 window._currentCat = 'all';
 
+let marketplaceNavLockUntil = 0;
+
+function setMarketplaceNavActive(target) {
+  // Le menu Marketplace ne contient désormais que « Boutiques ».
+  target = 'shops';
+  document.querySelectorAll('[data-market-nav]').forEach(el => {
+    const active = el.dataset.marketNav === target;
+    el.classList.toggle('active', active);
+    if (active) el.setAttribute('aria-current', 'page');
+    else el.removeAttribute('aria-current');
+  });
+}
+
+function highlightMarketplaceElement(el) {
+  if (!el) return;
+  el.classList.remove('nav-highlight');
+  void el.offsetWidth;
+  el.classList.add('nav-highlight');
+  setTimeout(() => el.classList.remove('nav-highlight'), 1200);
+}
+
+window.marketplaceNavigate = function(target) {
+  marketplaceNavLockUntil = Date.now() + 1000;
+  setMarketplaceNavActive(target);
+
+  if (target === 'home') {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    return;
+  }
+
+  if (target === 'shops') {
+    document.getElementById('shopsGrid')?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    });
+    return;
+  }
+
+  if (target === 'categories') {
+    const filters = document.getElementById('filtersBar');
+    filters?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    highlightMarketplaceElement(filters);
+    return;
+  }
+
+  if (target === 'search') {
+    const section = document.getElementById('marketSearch');
+    const input = document.getElementById('searchInput');
+    section?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    highlightMarketplaceElement(section?.querySelector('.search-box'));
+
+    setTimeout(() => {
+      input?.focus({ preventScroll: true });
+    }, 450);
+  }
+};
+
+function updateMarketplaceNavOnScroll() {
+  if (Date.now() < marketplaceNavLockUntil) return;
+
+  const grid = document.getElementById('shopsGrid');
+  if (grid && grid.getBoundingClientRect().top < window.innerHeight * 0.55) {
+    setMarketplaceNavActive('shops');
+  } else {
+    setMarketplaceNavActive('home');
+  }
+}
+
+window.addEventListener('scroll', updateMarketplaceNavOnScroll, {
+  passive: true
+});
+
+document.getElementById('searchInput')?.addEventListener('focus', () => {
+  setMarketplaceNavActive('search');
+});
+
 // ── Charge toutes les boutiques ──
 async function loadShops(){
   try {
@@ -399,9 +845,6 @@ async function loadShops(){
     });
 
     window._allShops = shops;
-    document.getElementById('statShops').textContent    = shops.length;
-    document.getElementById('statProducts').textContent = totalProducts;
-    document.getElementById('statCities').textContent   = cities.size || 1;
 
     applyFilters();
   } catch(e){
@@ -547,6 +990,8 @@ window.pickCat = function(el){
   document.querySelectorAll('.filter-chip').forEach(c=>c.classList.remove('active'));
   el.classList.add('active');
   window._currentCat = el.dataset.cat;
+  setMarketplaceNavActive('categories');
+  marketplaceNavLockUntil = Date.now() + 800;
   applyFilters();
 };
 window.clearSearch = function(){

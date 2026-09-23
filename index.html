@@ -5071,6 +5071,52 @@ select.form-input option{background:var(--bg2)}
 }
 </style>
 
+<style id="aet-profil-pro">
+.mp-shell{padding:0 0 90px;max-width:720px;margin:0 auto}
+.mp-head{display:flex;align-items:center;gap:14px;padding:22px 18px;
+  background:linear-gradient(135deg,#2563eb,#1d4ed8 60%,#1e40af);
+  border-radius:0 0 26px 26px;box-shadow:0 12px 30px rgba(37,99,235,.24)}
+.mp-avatar{width:62px;height:62px;border-radius:20px;flex-shrink:0;overflow:hidden;
+  background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;
+  color:#fff;font-size:24px;font-weight:900;border:2px solid rgba(255,255,255,.35)}
+.mp-avatar img{width:100%;height:100%;object-fit:cover}
+.mp-id{min-width:0;flex:1}
+.mp-name{font-size:18px;font-weight:900;color:#fff;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis}
+.mp-mail{font-size:12px;color:rgba(255,255,255,.82);margin-top:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mp-chip{display:inline-block;margin-top:8px;padding:4px 11px;border-radius:999px;
+  font-size:10.5px;font-weight:800}
+.mp-chip-life{background:#7c3aed;color:#fff}
+.mp-chip-pro{background:#fbbf24;color:#78350f}
+.mp-chip-free{background:rgba(255,255,255,.22);color:#fff}
+.mp-group{margin:18px 14px 0}
+.mp-title{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--muted);margin:0 6px 8px}
+.mp-item{display:flex;align-items:center;gap:13px;background:var(--card);
+  border:1px solid var(--border);border-radius:16px;padding:14px 15px;margin-bottom:9px;
+  cursor:pointer;transition:transform .12s,box-shadow .12s}
+.mp-item:active{transform:scale(.985)}
+.mp-item:hover{box-shadow:0 6px 18px rgba(15,23,42,.07)}
+.mp-ic{width:40px;height:40px;border-radius:13px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:16px}
+.mp-txt{flex:1;min-width:0}
+.mp-txt strong{display:block;font-size:14px;font-weight:700;color:var(--text)}
+.mp-txt span{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+.mp-chev{color:#cbd5e1;font-size:13px}
+.mp-out strong{color:#ef4444}
+.mp-toggle{width:40px;height:23px;border-radius:99px;background:#cbd5e1;
+  position:relative;flex-shrink:0;transition:background .2s}
+.mp-toggle::after{content:"";position:absolute;top:3px;left:3px;width:17px;height:17px;
+  border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.mp-toggle.on{background:#10b981}
+.mp-toggle.on::after{transform:translateX(17px)}
+.mp-foot{text-align:center;font-size:10.5px;color:var(--dim);margin-top:26px}
+@media(min-width:768px){
+  .mp-head{border-radius:22px;margin:16px 14px 0}
+  .mp-group{margin-left:14px;margin-right:14px}
+}
+</style>
 </head>
 <body>
 
@@ -15627,18 +15673,87 @@ body.aet-subpage-active #bottomNav,body.aet-subpage-active #appSidebar,body.aet-
   }
   function openPanel(title, html){ var p=ensurePanel(); p.innerHTML='<div class="aet-mobile-panel-head"><button class="aet-mobile-back" onclick="closeAetMobilePanel()"><i class="fas fa-arrow-left"></i></button><div class="aet-mobile-panel-title">'+esc(title)+'</div></div><div class="aet-mobile-panel-body">'+html+'</div>'; p.classList.add('open'); syncSubpageState(); }
   window.closeAetMobilePanel=function(){ var p=document.getElementById('aetMobilePanel'); if(p) p.classList.remove('open'); syncSubpageState(); };
-  function renderProfileHome(){ var tab=document.getElementById('tab-profil'); if(!tab) return; tab.style.padding='0'; tab.innerHTML=''
-    +'<div class="mobile-prof-shell">'
-    +'<div class="mobile-prof-menu">'
-    +'<div class="mobile-prof-item" onclick="openProfileHub()"><div class="mobile-prof-ic"><i class="fas fa-user"></i></div><div class="mobile-prof-lab">Mon profil</div><i class="fas fa-chevron-right mobile-prof-chev"></i></div>'
-    +'<div class="mobile-prof-item" onclick="openSettings()"><div class="mobile-prof-ic"><i class="fas fa-gear"></i></div><div class="mobile-prof-lab">Mes paramètres</div><i class="fas fa-chevron-right mobile-prof-chev"></i></div>'
-    +'<div class="mobile-prof-item" onclick="toggleMobileBiometric()"><div class="mobile-prof-ic"><i class="fas fa-fingerprint"></i></div><div class="mobile-prof-lab">Accès biométrique</div><i class="fas fa-chevron-right mobile-prof-chev"></i></div>'
-    +'<div class="mobile-prof-item" onclick="openHelp()"><div class="mobile-prof-ic"><i class="fas fa-headset"></i></div><div class="mobile-prof-lab">Aide & Support</div><i class="fas fa-chevron-right mobile-prof-chev"></i></div>'
-    +'<div class="mobile-prof-item" onclick="openAbout()"><div class="mobile-prof-ic"><i class="fas fa-circle-info"></i></div><div class="mobile-prof-lab">À propos</div><i class="fas fa-chevron-right mobile-prof-chev"></i></div>'
-    +'<div class="mobile-prof-item" onclick="location.href=\'aet-diagnostic.html\'"><div class="mobile-prof-ic"><i class="fas fa-stethoscope"></i></div><div class="mobile-prof-lab">Diagnostic (technique)</div><i class="fas fa-chevron-right mobile-prof-chev"></i></div>'
-    +'<div class="mobile-prof-item logout" onclick="doLogout()"><div class="mobile-prof-ic"><i class="fas fa-right-from-bracket"></i></div><div class="mobile-prof-lab">Se déconnecter</div></div>'
-    +'</div></div>';
+  function premiumChip(){
+    var st = window.__AET_PREMIUM__ || {};
+    if(st.lifetime) return '<span class="mp-chip mp-chip-life">👑 Premium à vie</span>';
+    if(st.isPremium){
+      var d = st.expiresAt ? new Date(st.expiresAt).toLocaleDateString('fr-FR') : '';
+      return '<span class="mp-chip mp-chip-pro">👑 Premium'+(d?' · '+esc(d):'')+'</span>';
+    }
+    return '<span class="mp-chip mp-chip-free">Compte gratuit</span>';
   }
+
+  function bioOn(){
+    return !!(window.userSettings && window.userSettings.fingerprint);
+  }
+
+  function mpItem(icon, color, label, sub, action, extra){
+    return '<div class="mp-item" onclick="'+action+'">'
+      + '<div class="mp-ic" style="background:'+color+'18;color:'+color+'"><i class="fas '+icon+'"></i></div>'
+      + '<div class="mp-txt"><strong>'+esc(label)+'</strong>'
+      + (sub?'<span>'+esc(sub)+'</span>':'')+'</div>'
+      + (extra || '<i class="fas fa-chevron-right mp-chev"></i>')
+      + '</div>';
+  }
+
+  function renderProfileHome(){
+    var tab = document.getElementById('tab-profil');
+    if(!tab) return;
+
+    var isAdmin = window.__AET_IS_ADMIN__ === true;
+    var bio = bioOn();
+
+    tab.style.padding = '0';
+    tab.innerHTML = ''
+      + '<div class="mp-shell">'
+
+      + '<div class="mp-head">'
+      +   '<div class="mp-avatar">'+avatarMarkup()+'</div>'
+      +   '<div class="mp-id">'
+      +     '<div class="mp-name">'+esc(getName())+'</div>'
+      +     '<div class="mp-mail">'+esc((window.currentUser&&currentUser.email)||getPhone())+'</div>'
+      +     premiumChip()
+      +   '</div>'
+      + '</div>'
+
+      + '<div class="mp-group"><div class="mp-title">Mon compte</div>'
+      +   mpItem('fa-user','#2563eb','Mon profil','Nom, téléphone et photo','openProfileHub()')
+      +   mpItem('fa-gear','#64748b','Paramètres','Langue, devise et affichage','openSettings()')
+      + '</div>'
+
+      + '<div class="mp-group"><div class="mp-title">Sécurité</div>'
+      +   mpItem('fa-fingerprint', bio?'#10b981':'#94a3b8', 'Accès biométrique',
+             bio?'Activé sur cet appareil':'Désactivé','toggleMobileBiometric()',
+             '<span class="mp-toggle'+(bio?' on':'')+'"></span>')
+      + '</div>'
+
+      + '<div class="mp-group"><div class="mp-title">Abonnement</div>'
+      +   mpItem('fa-crown','#f59e0b','Commerce Premium','Boutique, stock et caisse','openPremiumModal()')
+      + '</div>'
+
+      + '<div class="mp-group"><div class="mp-title">Assistance</div>'
+      +   mpItem('fa-headset','#06b6d4','Aide & Support','Questions fréquentes et contact','openHelp()')
+      +   mpItem('fa-circle-info','#8b5cf6','À propos','Version et informations','openAbout()')
+      + '</div>'
+
+      + (isAdmin
+          ? '<div class="mp-group"><div class="mp-title">Technique</div>'
+            + mpItem('fa-stethoscope','#ef4444','Diagnostic','Réservé à l\'administrateur',
+                     'location.href=\'aet-diagnostic.html\'')
+            + '</div>'
+          : '')
+
+      + '<div class="mp-group">'
+      +   '<div class="mp-item mp-out" onclick="doLogout()">'
+      +     '<div class="mp-ic" style="background:#ef444418;color:#ef4444"><i class="fas fa-right-from-bracket"></i></div>'
+      +     '<div class="mp-txt"><strong>Se déconnecter</strong></div>'
+      +   '</div>'
+      + '</div>'
+
+      + '<div class="mp-foot">AET Technology © 2026</div>'
+      + '</div>';
+  }
+
   window.openProfileHub=function(){ openPanel('Mon profil',''
     +'<div class="aet-mobile-link" onclick="openProfileInfos()"><div><strong>Mes informations</strong><span>Modifier le nom, le téléphone, la photo et l’historique</span></div><i class="fas fa-chevron-right"></i></div>'
     +'<div class="aet-mobile-link" onclick="openPremiumModal()"><div><strong>Mes favoris</strong><span>Accès rapide aux fonctions premium et aux raccourcis utiles</span></div><i class="fas fa-chevron-right"></i></div>'

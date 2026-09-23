@@ -134,8 +134,47 @@ service cloud.firestore {
 
     // ── Chat support/vendeur ──
     // Le chat client reste accessible même sans compte Firebase.
+    function chatBelongsToClient(data) {
+      return isSignedIn()
+        && data.get('clientId', '') == 'uid_' + request.auth.uid;
+    }
+
+    function chatTenantId(data) {
+      return data.get('tenantId', '_');
+    }
+
+    function chatBelongsToSeller(data) {
+      return isSignedIn()
+        && (
+          chatTenantId(data) == request.auth.uid
+          || (
+            exists(/databases/$(database)/documents/tenants/$(chatTenantId(data))/roleBindings/$(request.auth.uid))
+            && get(/databases/$(database)/documents/tenants/$(chatTenantId(data))/roleBindings/$(request.auth.uid)).data.active == true
+          )
+        );
+    }
+
     match /chats_flat/{id} {
-      allow read, write: if true;
+      allow read: if isAdmin()
+        || chatBelongsToClient(resource.data)
+        || chatBelongsToSeller(resource.data);
+
+      allow list: if isAdmin()
+        || (isSignedIn() && resource.data.tenantId == request.auth.uid);
+
+      allow create: if isAdmin()
+        || chatBelongsToClient(request.resource.data)
+        || chatBelongsToSeller(request.resource.data);
+
+      allow update: if (
+          isAdmin()
+          || chatBelongsToClient(resource.data)
+          || chatBelongsToSeller(resource.data)
+        )
+        && request.resource.data.get('clientId', '') == resource.data.get('clientId', '')
+        && request.resource.data.get('tenantId', '') == resource.data.get('tenantId', '');
+
+      allow delete: if isAdmin();
     }
 
     // ── Liaisons employés : seul le propriétaire peut gérer ses employés ──

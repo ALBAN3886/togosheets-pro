@@ -336,6 +336,7 @@ function enterAppAsVerifiedUser(user) {
   if (window.checkPinAtStart) window.checkPinAtStart();
   const bn = document.getElementById('bottomNav');
   if (bn) bn.style.display = '';
+  if (bn) bn.style.display = '';
   const name = user.displayName || user.email.split('@')[0];
   $('#userName').textContent = name;
   const _uat = document.getElementById('userAvatarText'); if(_uat) _uat.textContent = name.charAt(0).toUpperCase();
@@ -4943,7 +4944,7 @@ select.form-input option{background:var(--bg2)}
 
 @media(max-width:768px){
   /* Bottom-nav remplacé par le menu latéral — désactivé définitivement */
-  .bottom-nav{display:none !important}
+  .bottom-nav{display:block}
 }
 
 /* ── MAIN MENU DRAWER (legacy, conservé pour compatibilité JS, masqué) ── */
@@ -5115,6 +5116,46 @@ select.form-input option{background:var(--bg2)}
 @media(min-width:768px){
   .mp-head{border-radius:22px;margin:16px 14px 0}
   .mp-group{margin-left:14px;margin-right:14px}
+}
+</style>
+<style id="aet-bnav-pro">
+.bottom-nav{
+  position:fixed;left:0;right:0;bottom:0;z-index:900;
+  background:rgba(255,255,255,.97);
+  border-top:1px solid var(--border);
+  box-shadow:0 -6px 24px rgba(15,23,42,.10);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.bottom-nav-grid{
+  display:grid;grid-template-columns:repeat(5,1fr);
+  max-width:520px;margin:0 auto;
+}
+.bnav-btn{
+  position:relative;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:3px;min-height:56px;border:0;background:none;
+  color:var(--muted);font-family:inherit;font-size:9.5px;font-weight:750;
+  cursor:pointer;transition:color .18s,transform .12s;
+}
+.bnav-btn:active{transform:scale(.92)}
+.bnav-btn.active{color:var(--primary)}
+.bnav-btn.active::before{
+  content:"";position:absolute;top:0;width:22px;height:3px;
+  border-radius:0 0 99px 99px;background:var(--primary);
+}
+.bnav-fab{
+  position:absolute;left:50%;top:-20px;transform:translateX(-50%);
+  width:52px;height:52px;border-radius:50%;border:3px solid #fff;
+  background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;
+  font-size:19px;cursor:pointer;z-index:2;
+  box-shadow:0 8px 20px rgba(37,99,235,.42);
+}
+body{padding-bottom:calc(62px + env(safe-area-inset-bottom))}
+#tab-commerce{padding-bottom:20px}
+body.aet-subpage-active .bottom-nav{display:none !important}
+@media(min-width:900px){
+  .bottom-nav{display:none !important}
+  body{padding-bottom:0}
 }
 </style>
 </head>
@@ -6454,23 +6495,24 @@ select.form-input option{background:var(--bg2)}
 <!-- ════ BOTTOM NAV MOBILE ════ -->
 <div class="bnav-overlay" id="bnavOverlay" onclick="closeBnavDrawer()"></div>
 
-<nav class="bottom-nav" id="bottomNav" style="display:none">
+<nav class="bottom-nav" id="bottomNav">
   <div class="bottom-nav-grid">
     <button class="bnav-btn active" id="bnav-dashboard" onclick="bnavSwitch('dashboard')">
-      <i class="fas fa-house"></i><span data-i18n="nav_dashboard">Accueil</span>
+      <i class="fas fa-house"></i><span>Accueil</span>
     </button>
-    <button class="bnav-btn" id="bnav-historique" onclick="bnavSwitch('historique')">
-      <i class="fas fa-receipt"></i><span data-i18n="nav_historique">Transactions</span>
+    <button class="bnav-btn" id="bnav-depenses" onclick="bnavSwitch('depenses')">
+      <i class="fas fa-wallet"></i><span>Finances</span>
     </button>
-    <button class="bnav-btn bnav-fab-spacer" tabindex="-1" aria-hidden="true"></button>
-    <button class="bnav-btn" id="bnav-epargne" onclick="bnavSwitch('epargne')">
-      <i class="fas fa-bullseye"></i><span data-i18n="nav_objectifs">Objectifs</span>
+    <div class="bnav-fab-spacer"></div>
+    <button class="bnav-btn" id="bnav-commerce" onclick="bnavSwitch('commerce')">
+      <i class="fas fa-store"></i><span>Commerce</span>
+      <span id="bnavOrdersDot" style="display:none;position:absolute;top:6px;right:calc(50% - 16px);width:8px;height:8px;border-radius:50%;background:#ef4444"></span>
     </button>
-    <button class="bnav-btn" id="bnav-more" onclick="openBnavDrawer()">
-      <i class="fas fa-bars"></i><span data-i18n="nav_menu">Menu</span>
+    <button class="bnav-btn" id="bnav-profil" onclick="bnavSwitchExt('profil')">
+      <i class="fas fa-circle-user"></i><span>Compte</span>
     </button>
   </div>
-  <button class="bnav-fab" id="bnavFab" onclick="openTxModal()">
+  <button class="bnav-fab" onclick="openTxModal('out')" aria-label="Nouvelle operation">
     <i class="fas fa-plus"></i>
   </button>
 </nav>

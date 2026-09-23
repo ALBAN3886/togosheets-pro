@@ -1827,12 +1827,12 @@ window.submitOrder = async () => {
   // 1. la commande dans public_orders ;
   // 2. sa carte permanente dans la discussion vendeur.
   try {
-    const orderRef = doc(collection(db, 'public_orders'));
+    const orderRef = doc(collection(custDb, 'public_orders'));
     const sellerChatRef = chatDocRef('vendeur');
     const now = Date.now();
     const eventId = `order_${orderId}_created`;
 
-    await runTransaction(db, async transaction => {
+    await runTransaction(custDb, async transaction => {
       // Toutes les lectures doivent avoir lieu avant les écritures.
       const chatSnapshot = await transaction.get(sellerChatRef);
       const chatData = chatSnapshot.exists() ? (chatSnapshot.data() || {}) : {};
@@ -1971,7 +1971,7 @@ function chatDocRef(type) {
   const tid = tenantId || 'default';
   const cid = getClientId();
   const docId = tid + '__' + cid + '_' + type;
-  return doc(db, 'chats_flat', docId);
+  return doc(custDb, 'chats_flat', docId);
 }
 
 

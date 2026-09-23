@@ -1,0 +1,7 @@
+*.bak
+*.log
+functions/node_modules/
+node_modules/
+.firebaserc
+fix_*.py
+validation-key.txt

@@ -1,0 +1,42 @@
+name: Incrementer le cache du service worker
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'boutique.html'
+      - 'employe.html'
+      - 'public.html'
+      - 'assets/**'
+
+permissions:
+  contents: write
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Incrementer la version
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          p = Path("sw.js")
+          s = p.read_text(encoding="utf-8")
+          m = re.search(r"aet-monbudget-v(\d+)-final", s)
+          if m:
+              n = int(m.group(1)) + 1
+              p.write_text(s.replace(m.group(0), f"aet-monbudget-v{n}-final", 1), encoding="utf-8")
+              print(f"Cache -> v{n}")
+          PY
+
+      - name: Publier
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add sw.js
+          git diff --staged --quiet || git commit -m "Incremente le cache [skip ci]"
+          git push

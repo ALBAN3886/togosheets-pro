@@ -5,6 +5,8 @@ import {
   query, where, onSnapshot, orderBy, serverTimestamp, limit, getDocs, arrayUnion, arrayRemove,
   runTransaction, Timestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getMessaging, getToken, onMessage, isSupported as messagingIsSupported }
+  from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging.js';
 
 /**
  * Extension non destructive pour AET MonBudget.
@@ -22,6 +24,9 @@ import {
   const auth = window.__AET_AUTH__ || getAuth(app);
   const db   = window.__AET_DB__ || getFirestore(app);
 
+  // ⚠️ À remplacer par ta clé VAPID : Firebase Console → ⚙️ Paramètres du projet
+  // → Cloud Messaging → "Certificats Web Push" → Générer une paire de clés.
+  const VAPID_KEY = 'REMPLACE_PAR_TA_CLE_VAPID';
 
   const state = {
     uid: null,
@@ -815,7 +820,7 @@ import {
   async function watchAdminCollections() {
     if (!state.isAdmin) return;
     observe(query(collection(db, 'premiumRequests'), orderBy('createdAt', 'desc'), limit(25)), 'premiumRequests');
-    observe(query(collection(db, 'users'), limit(500)), 'users');
+    observe(query(collection(db, 'users'), limit(50)), 'users');
   }
 
   onAuthStateChanged(auth, async (user) => {
@@ -953,15 +958,57 @@ import {
     notify(`Dernière sauvegarde locale du ${new Date(parsed.savedAt).toLocaleString('fr-FR')}`, 'info');
   };
 
-  // Notifications push désactivées : l'envoi nécessite une Cloud Function,
-  // donc le plan Firebase Blaze. Les alertes de commande restent assurées
-  // par le badge, le toast et la carte permanente dans la discussion.
   window.aetxRequestPushPermission = async function() {
-    notify('Notifications push indisponibles sur la formule actuelle', 'info');
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+      return notify('Notifications non supportées sur cet appareil', 'warning');
+    }
+    if (VAPID_KEY === 'REMPLACE_PAR_TA_CLE_VAPID') {
+      return notify('Clé VAPID non configurée — voir le commentaire en haut de aet-enhancements.js', 'warning');
+    }
+    try {
+      const supported = await messagingIsSupported();
+      if (!supported) return notify('Notifications push non supportées par ce navigateur', 'warning');
+
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        return notify('Notifications refusées', 'warning');
+      }
+
+      const reg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+      const messaging = getMessaging(app);
+      const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg });
+
+      if (token && state.uid) {
+        await updateDoc(doc(db, 'users', state.uid), { fcmTokens: arrayUnion(token) }).catch(async () => {
+          await setDoc(doc(db, 'users', state.uid), { fcmTokens: [token] }, { merge: true });
+        });
+      }
+
+      // Affichage des notifications reçues alors que l'app est ouverte au premier plan
+      onMessage(messaging, (payload) => {
+        const title = payload?.notification?.title || 'AET MonBudget';
+        const body  = payload?.notification?.body  || '';
+        notify(`${title} — ${body}`, 'info');
+      });
+
+      notify("Appareil enregistré ✓ — les rappels auto. s'activeront dès le passage au plan Blaze", 'success');
+    } catch (e) {
+      console.error('aetxRequestPushPermission', e);
+      notify('Erreur activation notifications : ' + e.message, 'error');
+    }
   };
 
+  // Désactivation : retire le jeton de cet appareil pour ne plus recevoir de push ici.
   window.aetxDisablePushNotifications = async function() {
-    notify('Notifications push non activees', 'info');
+    try {
+      const messaging = getMessaging(app);
+      const reg = await navigator.serviceWorker.getRegistration('/firebase-messaging-sw.js');
+      if (reg && state.uid) {
+        const token = await getToken(messaging, { vapidKey: VAPID_KEY, serviceWorkerRegistration: reg }).catch(() => null);
+        if (token) await updateDoc(doc(db, 'users', state.uid), { fcmTokens: arrayRemove(token) }).catch(() => {});
+      }
+      notify('Notifications désactivées sur cet appareil', 'info');
+    } catch (e) { console.error(e); }
   };
 
   window.aetxSetTheme = function(mode) {

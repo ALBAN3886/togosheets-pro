@@ -4170,6 +4170,8 @@ function renderAdminSubscriptions() {
     `<button onclick="adminRevokeSub('${escHtml(u.userId)}')" style="padding:8px 12px;border:1px solid #fecaca;border-radius:8px;background:#fff;color:#b91c1c;font-weight:700;font-size:12px;cursor:pointer">Révoquer</button>`
   )).join('') : '<div class="empty-state"><p style="font-size:13px;color:var(--muted)">Aucun abonnement actif.</p></div>';
 
+  renderAdminAccounts();
+
   expiredEl.innerHTML = expired.length ? expired.map(({u, st}) => row(u, st,
     `<button onclick="adminSetSub('${escHtml(u.userId)}',30)" style="padding:8px 12px;border:0;border-radius:8px;background:#059669;color:#fff;font-weight:700;font-size:12px;cursor:pointer">Réactiver 30 j</button>
      <button onclick="adminSetSub('${escHtml(u.userId)}',0)" style="padding:8px 12px;border:0;border-radius:8px;background:#7c3aed;color:#fff;font-weight:700;font-size:12px;cursor:pointer">À vie</button>`
@@ -4243,6 +4245,137 @@ window.adminRejectSub = async function(requestId) {
     toast('Demande rejetée', 'info');
   } catch (e) {
     toast('Rejet impossible', 'error');
+  }
+};
+
+function renderAdminAccounts() {
+  const el = document.getElementById('adAccountsList');
+  if (!el) return;
+
+  if (!adminAllUsers.length) {
+    el.innerHTML = '<div class="empty-state"><p style="font-size:13px;color:var(--muted)">Aucun compte.</p></div>';
+    return;
+  }
+
+  const me = (window.currentUser && window.currentUser.uid) || '';
+
+  el.innerHTML = adminAllUsers.map(u => {
+    const uid = u.userId || u.id || '';
+    const isMe = uid === me;
+    const nbTx = adminAllTx.filter(t => t.userId === uid).length;
+
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px;border:1px solid var(--border);border-radius:12px;margin-bottom:10px">
+        <div style="min-width:0">
+          <div style="font-weight:700;font-size:13px">${escHtml(u.displayName || 'Sans nom')}</div>
+          <div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;word-break:break-all">${escHtml(u.email || '')}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:3px">${nbTx} opération${nbTx > 1 ? 's' : ''}</div>
+        </div>
+        ${isMe
+          ? '<span style="font-size:11px;color:var(--muted);font-weight:700">Votre compte</span>'
+          : `<button onclick="adminDeleteAccount('${escHtml(uid)}')" style="padding:8px 14px;border:1px solid #fecaca;border-radius:8px;background:#fff;color:#b91c1c;font-weight:700;font-size:12px;cursor:pointer;flex-shrink:0"><i class="fas fa-trash"></i> Supprimer</button>`}
+      </div>`;
+  }).join('');
+}
+
+// Collections contenant un champ userId
+const ADMIN_USER_COLLECTIONS = [
+  'transactions', 'budgets', 'notes', 'sessions',
+  'premiumRequests', 'profileHistory', 'goals',
+  'debts', 'recurringBills', 'loginJournal'
+];
+
+// Collections dont l'identifiant du document est l'uid
+const ADMIN_UID_DOCS = [
+  'users', 'profiles', 'salary_config',
+  'commerce_data', 'commerce_pro_data', 'public_shops'
+];
+
+window.adminDeleteAccount = async function(uid) {
+  if (!uid) return;
+
+  const user = adminAllUsers.find(u => (u.userId || u.id) === uid);
+  const label = user ? (user.email || user.displayName || uid) : uid;
+
+  if (!confirm('Supprimer définitivement le compte suivant ?\n\n' + label +
+      '\n\nToutes ses données seront effacées : opérations, budgets, notes, commerce et boutique publique.')) {
+    return;
+  }
+
+  const typed = prompt('Cette action est irréversible.\nTapez SUPPRIMER pour confirmer :');
+  if (typed !== 'SUPPRIMER') {
+    toast('Suppression annulée', 'info');
+    return;
+  }
+
+  loader(true);
+
+  try {
+    const backup = { uid, label, deletedAt: new Date().toISOString(), data: {} };
+
+    // Sauvegarde des documents identifiés par l'uid
+    for (const name of ADMIN_UID_DOCS) {
+      try {
+        const snap = await getDoc(doc(db, name, uid));
+        if (snap.exists()) backup.data[name] = snap.data();
+      } catch (e) {
+        console.warn('[BACKUP]', name, e);
+      }
+    }
+
+    // Sauvegarde des collections filtrées par userId
+    const toDelete = [];
+
+    for (const name of ADMIN_USER_COLLECTIONS) {
+      try {
+        const snap = await getDocs(query(collection(db, name), where('userId', '==', uid)));
+        if (!snap.empty) {
+          backup.data[name] = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+          snap.docs.forEach(d => toDelete.push({ name, id: d.id }));
+        }
+      } catch (e) {
+        console.warn('[BACKUP]', name, e);
+      }
+    }
+
+    // Téléchargement de la sauvegarde avant tout effacement
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'backup-' + uid + '-' + Date.now() + '.json';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+
+    // Suppression des sous-documents
+    let removed = 0;
+    for (const item of toDelete) {
+      try {
+        await deleteDoc(doc(db, item.name, item.id));
+        removed++;
+      } catch (e) {
+        console.warn('[DELETE]', item.name, item.id, e);
+      }
+    }
+
+    // Suppression des documents principaux
+    for (const name of ADMIN_UID_DOCS) {
+      try {
+        await deleteDoc(doc(db, name, uid));
+        removed++;
+      } catch (e) {
+        console.warn('[DELETE]', name, e);
+      }
+    }
+
+    toast('Compte supprimé — ' + removed + ' document(s) effacé(s)', 'success');
+  } catch (e) {
+    console.error('[DELETE ACCOUNT]', e);
+    toast(e.message || 'Suppression impossible', 'error');
+  } finally {
+    loader(false);
   }
 };
 
@@ -6751,11 +6884,23 @@ window.switchTab = function(tab) {
         <div id="adSubsActive" style="padding:12px 16px"></div>
       </div>
 
-      <div class="panel" style="padding:0">
+      <div class="panel" style="padding:0;margin-bottom:20px">
         <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:800;font-size:14px;display:flex;align-items:center;gap:8px">
           <i class="fas fa-ban" style="color:#ef4444"></i> Abonnements expirés
         </div>
         <div id="adSubsExpired" style="padding:12px 16px"></div>
+      </div>
+
+      <div class="panel" style="padding:0">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:800;font-size:14px;display:flex;align-items:center;gap:8px">
+          <i class="fas fa-user-slash" style="color:#ef4444"></i> Nettoyage des comptes
+        </div>
+        <div style="padding:12px 16px 4px;font-size:12px;color:var(--muted);line-height:1.6">
+          La suppression efface définitivement le profil, les opérations, les budgets,
+          les notes et les données Commerce, y compris la boutique publique.
+          Une sauvegarde JSON est téléchargée avant l'effacement.
+        </div>
+        <div id="adAccountsList" style="padding:12px 16px"></div>
       </div>
     </div>
 

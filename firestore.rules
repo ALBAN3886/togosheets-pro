@@ -9,14 +9,11 @@ rules_version = '2';
 // un schéma "tenants/{id}/..." qui n'est utilisé par AUCUNE page active :
 // ne pas le déployer tel quel, il laisserait tout le reste sans protection.
 //
-// ⚠️ IMPORTANT sur employe.html : le système d'employés (tenants/{id}/
-// roleBindings) n'est PAS alimenté aujourd'hui — personne n'y écrit.
-// tenantId vient d'un simple paramètre d'URL (?tenant=...), donc on ne
-// peut pas encore distinguer un vrai employé d'un inconnu qui devine
-// l'UID du propriétaire. En attendant une vraie gestion d'employés,
-// ces règles limitent l'accès à commerce_data au PROPRIÉTAIRE
-// uniquement (auth.uid == tenantId). Voir la note en bas de fichier
-// pour activer un accès employé réel plus tard.
+// ⚠️ employe.html : les employés sont enregistrés dans
+// tenants/{tenantId}/roleBindings/{employeeUid} avec active: true,
+// créés depuis index.html (cmCreateAndGenerateEmployeeLink).
+// L'accès à commerce_data, public_orders et chats_flat vérifie donc
+// l'existence de ce document ET que le propriétaire est Premium actif.
 // ═══════════════════════════════════════════════════════════════
 
 service cloud.firestore {

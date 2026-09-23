@@ -4173,16 +4173,16 @@ function renderAdminSubscriptions() {
     </div>`;
 
   activeEl.innerHTML = actives.length ? actives.map(({u, st}) => row(u, st,
-    (st.lifetime ? '' : `<button onclick="adminSetSub('${escHtml(u.userId)}',30)" style="padding:8px 12px;border:0;border-radius:8px;background:#059669;color:#fff;font-weight:700;font-size:12px;cursor:pointer">+30 j</button>
-    <button onclick="adminSetSub('${escHtml(u.userId)}',0)" style="padding:8px 12px;border:0;border-radius:8px;background:#7c3aed;color:#fff;font-weight:700;font-size:12px;cursor:pointer">Passer à vie</button>`) +
-    `<button onclick="adminRevokeSub('${escHtml(u.userId)}')" style="padding:8px 12px;border:1px solid #fecaca;border-radius:8px;background:#fff;color:#b91c1c;font-weight:700;font-size:12px;cursor:pointer">Révoquer</button>`
+    (st.lifetime ? '' : `<button onclick="adminSetSub('${escHtml(u.userId || u.id)}',30)" style="padding:8px 12px;border:0;border-radius:8px;background:#059669;color:#fff;font-weight:700;font-size:12px;cursor:pointer">+30 j</button>
+    <button onclick="adminSetSub('${escHtml(u.userId || u.id)}',0)" style="padding:8px 12px;border:0;border-radius:8px;background:#7c3aed;color:#fff;font-weight:700;font-size:12px;cursor:pointer">Passer à vie</button>`) +
+    `<button onclick="adminRevokeSub('${escHtml(u.userId || u.id)}')" style="padding:8px 12px;border:1px solid #fecaca;border-radius:8px;background:#fff;color:#b91c1c;font-weight:700;font-size:12px;cursor:pointer">Révoquer</button>`
   )).join('') : '<div class="empty-state"><p style="font-size:13px;color:var(--muted)">Aucun abonnement actif.</p></div>';
 
   renderAdminAccounts();
 
   expiredEl.innerHTML = expired.length ? expired.map(({u, st}) => row(u, st,
-    `<button onclick="adminSetSub('${escHtml(u.userId)}',30)" style="padding:8px 12px;border:0;border-radius:8px;background:#059669;color:#fff;font-weight:700;font-size:12px;cursor:pointer">Réactiver 30 j</button>
-     <button onclick="adminSetSub('${escHtml(u.userId)}',0)" style="padding:8px 12px;border:0;border-radius:8px;background:#7c3aed;color:#fff;font-weight:700;font-size:12px;cursor:pointer">À vie</button>`
+    `<button onclick="adminSetSub('${escHtml(u.userId || u.id)}',30)" style="padding:8px 12px;border:0;border-radius:8px;background:#059669;color:#fff;font-weight:700;font-size:12px;cursor:pointer">Réactiver 30 j</button>
+     <button onclick="adminSetSub('${escHtml(u.userId || u.id)}',0)" style="padding:8px 12px;border:0;border-radius:8px;background:#7c3aed;color:#fff;font-weight:700;font-size:12px;cursor:pointer">À vie</button>`
   )).join('') : '<div class="empty-state"><p style="font-size:13px;color:var(--muted)">Aucun abonnement expiré.</p></div>';
 }
 

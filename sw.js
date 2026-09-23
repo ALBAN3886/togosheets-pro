@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aet-monbudget-v22-final'; // AET-PATCH-20260921 : envoi automatique EmailJS + notifications robustes
+const CACHE_NAME = 'aet-monbudget-v23-final'; // AET-PATCH-20260921 : envoi automatique EmailJS + notifications robustes
 const CORE_ASSETS = [
   './',
   './index.html',

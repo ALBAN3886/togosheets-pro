@@ -250,7 +250,7 @@ function updatePremiumUI() {
   try {
     if (typeof renderCommerceHero === 'function') renderCommerceHero();
     if (typeof renderBrandStudio === 'function') renderBrandStudio();
-    if (typeof renderPremiumUpsell === 'function') renderPremiumUpsell();
+    if (typeof window.renderPremiumUpsell === 'function') window.renderPremiumUpsell();
   } catch(e) {}
 }
 window.updatePremiumUI = updatePremiumUI;
@@ -3727,13 +3727,21 @@ window.requestAdminPinUnlock = async function() {
     return;
   }
 
-  const pinKey = adminPinStorageKey(user.uid);
+  // Le PIN est stocké dans Firestore : il suit le compte sur tous
+  // les appareils et navigateurs.
   let savedPin = null;
 
   try {
-    savedPin = JSON.parse(localStorage.getItem(pinKey) || 'null');
-  } catch (_) {
-    localStorage.removeItem(pinKey);
+    const snap = await getDoc(doc(db, 'users', user.uid));
+    const data = snap.exists() ? (snap.data() || {}) : {};
+
+    if (data.adminPinSalt && data.adminPinHash) {
+      savedPin = { salt: data.adminPinSalt, hash: data.adminPinHash };
+    }
+  } catch (e) {
+    console.warn('[ADMIN PIN READ]', e);
+    toast('Impossible de lire le PIN enregistré.', 'error');
+    return;
   }
 
   // Première utilisation sur cet appareil : création du PIN.
@@ -3762,16 +3770,15 @@ window.requestAdminPinUnlock = async function() {
       const salt = adminRandomHex(16);
       const hash = await adminHashPin(newPin, salt);
 
-      localStorage.setItem(pinKey, JSON.stringify({
-        version: 1,
-        salt,
-        hash,
-        iterations: ADMIN_PIN_ITERATIONS,
-        createdAt: Date.now()
-      }));
+      await setDoc(doc(db, 'users', user.uid), {
+        adminPinSalt: salt,
+        adminPinHash: hash,
+        adminPinIterations: ADMIN_PIN_ITERATIONS,
+        adminPinCreatedAt: Date.now()
+      }, { merge: true });
 
       savedPin = { salt, hash };
-      toast('PIN administrateur configuré sur cet appareil.', 'success');
+      toast('PIN administrateur enregistré sur votre compte.', 'success');
     } catch (error) {
       console.error('[ADMIN PIN CREATE]', error);
       toast(error.message || 'Impossible de créer le PIN.', 'error');
@@ -15586,6 +15593,8 @@ window.cmShowGenLinkQR = function() {
 
       + '</div></div>';
   }
+
+  window.renderPremiumUpsell = renderPremiumUpsell;
 
   renderOfficialHero();
   renderCommerceHero();

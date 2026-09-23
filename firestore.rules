@@ -159,8 +159,15 @@ service cloud.firestore {
         || chatBelongsToClient(resource.data)
         || chatBelongsToSeller(resource.data);
 
+      // Le propriétaire, ses employés actifs et l'administrateur
+      // peuvent lister les conversations de la boutique concernée.
       allow list: if isAdmin()
-        || (isSignedIn() && resource.data.tenantId == request.auth.uid);
+        || (isSignedIn() && resource.data.tenantId == request.auth.uid)
+        || (
+          isSignedIn()
+          && exists(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/roleBindings/$(request.auth.uid))
+          && get(/databases/$(database)/documents/tenants/$(resource.data.tenantId)/roleBindings/$(request.auth.uid)).data.active == true
+        );
 
       allow create: if isAdmin()
         || chatBelongsToClient(request.resource.data)

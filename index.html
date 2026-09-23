@@ -3948,6 +3948,10 @@ function renderAdminUsers() {
   document.getElementById('adStatSess').textContent   = totalSess;
   document.getElementById('adStatConn24').textContent = conn24h;
 
+  if (document.getElementById('adPane-subs')?.style.display === 'block') {
+    renderAdminSubscriptions();
+  }
+
   if (!adminAllUsers.length) {
     el.innerHTML = '<div class="empty-state"><i class="fas fa-users"></i><p>Aucun utilisateur</p></div>';
     return;
@@ -4069,10 +4073,189 @@ function renderAdminUserDetail(uid) {
 }
 
 window.adminSwitchTab = (tab) => {
-  ['users','sessions'].forEach(t => {
-    document.getElementById('adTab-'+t).classList.toggle('active', t===tab);
-    document.getElementById('adPane-'+t).style.display = t===tab?'block':'none';
+  ['users','sessions','subs'].forEach(t => {
+    const btn = document.getElementById('adTab-'+t);
+    const pane = document.getElementById('adPane-'+t);
+    if (btn) btn.classList.toggle('active', t===tab);
+    if (pane) pane.style.display = t===tab?'block':'none';
   });
+
+  if (tab === 'subs') loadAdminSubscriptions();
+};
+
+// ══ GESTION DES ABONNEMENTS (panneau admin) ══
+let unsubAdminSubs = null;
+let adminSubRequests = [];
+
+function subStateOf(u) {
+  const lifetime = u.isPremium === true &&
+    (u.subscriptionPlan === 'lifetime' || u.premiumLifetime === true);
+  const exp = u.premiumExpiresAt?.toDate ? u.premiumExpiresAt.toDate() : null;
+  const active = lifetime || (u.isPremium === true && exp && exp.getTime() > Date.now());
+
+  return {
+    lifetime,
+    active,
+    expired: u.isPremium === true && !active,
+    label: lifetime ? 'À vie'
+      : active ? ('Jusqu\'au ' + exp.toLocaleDateString('fr-FR'))
+      : 'Expiré'
+  };
+}
+
+function loadAdminSubscriptions() {
+  if (unsubAdminSubs) return;
+
+  const q = query(collection(db, 'premiumRequests'), orderBy('createdAt', 'desc'), limit(100));
+
+  unsubAdminSubs = onSnapshot(q, snap => {
+    adminSubRequests = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderAdminSubscriptions();
+  }, err => {
+    console.warn('[ADMIN SUBS]', err);
+    const el = document.getElementById('adSubsPending');
+    if (el) el.innerHTML = '<div class="empty-state"><p>Erreur de chargement.</p></div>';
+  });
+}
+
+function renderAdminSubscriptions() {
+  const pendingEl = document.getElementById('adSubsPending');
+  const activeEl = document.getElementById('adSubsActive');
+  const expiredEl = document.getElementById('adSubsExpired');
+  if (!pendingEl || !activeEl || !expiredEl) return;
+
+  const pending = adminSubRequests.filter(r => (r.status || 'pending') === 'pending');
+
+  document.getElementById('adSubsPendingCount').textContent =
+    pending.length ? '(' + pending.length + ')' : '';
+
+  pendingEl.innerHTML = pending.length ? pending.map(r => `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px;border:1px solid var(--border);border-radius:12px;margin-bottom:10px">
+      <div style="min-width:0">
+        <div style="font-weight:700;font-size:13px">${escHtml(r.displayName || 'Sans nom')}</div>
+        <div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">${escHtml(r.email || '')}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px">${fmt(r.amount || 0)}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button onclick="adminApproveSub('${escHtml(r.id)}','${escHtml(r.userId)}',30)" style="padding:8px 12px;border:0;border-radius:8px;background:#059669;color:#fff;font-weight:700;font-size:12px;cursor:pointer">Valider 30 j</button>
+        <button onclick="adminApproveSub('${escHtml(r.id)}','${escHtml(r.userId)}',0)" style="padding:8px 12px;border:0;border-radius:8px;background:#7c3aed;color:#fff;font-weight:700;font-size:12px;cursor:pointer">À vie</button>
+        <button onclick="adminRejectSub('${escHtml(r.id)}')" style="padding:8px 12px;border:1px solid #fecaca;border-radius:8px;background:#fff;color:#b91c1c;font-weight:700;font-size:12px;cursor:pointer">Rejeter</button>
+      </div>
+    </div>`).join('')
+    : '<div class="empty-state"><p style="font-size:13px;color:var(--muted)">Aucune demande en attente.</p></div>';
+
+  const subs = adminAllUsers.map(u => ({ u, st: subStateOf(u) }));
+  const actives = subs.filter(x => x.st.active);
+  const expired = subs.filter(x => x.st.expired);
+
+  document.getElementById('adSubsActiveCount').textContent =
+    actives.length ? '(' + actives.length + ')' : '';
+
+  const row = (u, st, buttons) => `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:12px;border:1px solid var(--border);border-radius:12px;margin-bottom:10px">
+      <div style="min-width:0">
+        <div style="font-weight:700;font-size:13px">${escHtml(u.displayName || 'Sans nom')}</div>
+        <div style="font-size:11px;color:var(--muted);font-family:'DM Mono',monospace">${escHtml(u.email || '')}</div>
+        <div style="font-size:11px;color:${st.active ? '#059669' : '#b91c1c'};margin-top:3px;font-weight:700">${escHtml(st.label)}</div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${buttons}</div>
+    </div>`;
+
+  activeEl.innerHTML = actives.length ? actives.map(({u, st}) => row(u, st,
+    (st.lifetime ? '' : `<button onclick="adminSetSub('${escHtml(u.userId)}',30)" style="padding:8px 12px;border:0;border-radius:8px;background:#059669;color:#fff;font-weight:700;font-size:12px;cursor:pointer">+30 j</button>
+    <button onclick="adminSetSub('${escHtml(u.userId)}',0)" style="padding:8px 12px;border:0;border-radius:8px;background:#7c3aed;color:#fff;font-weight:700;font-size:12px;cursor:pointer">Passer à vie</button>`) +
+    `<button onclick="adminRevokeSub('${escHtml(u.userId)}')" style="padding:8px 12px;border:1px solid #fecaca;border-radius:8px;background:#fff;color:#b91c1c;font-weight:700;font-size:12px;cursor:pointer">Révoquer</button>`
+  )).join('') : '<div class="empty-state"><p style="font-size:13px;color:var(--muted)">Aucun abonnement actif.</p></div>';
+
+  expiredEl.innerHTML = expired.length ? expired.map(({u, st}) => row(u, st,
+    `<button onclick="adminSetSub('${escHtml(u.userId)}',30)" style="padding:8px 12px;border:0;border-radius:8px;background:#059669;color:#fff;font-weight:700;font-size:12px;cursor:pointer">Réactiver 30 j</button>
+     <button onclick="adminSetSub('${escHtml(u.userId)}',0)" style="padding:8px 12px;border:0;border-radius:8px;background:#7c3aed;color:#fff;font-weight:700;font-size:12px;cursor:pointer">À vie</button>`
+  )).join('') : '<div class="empty-state"><p style="font-size:13px;color:var(--muted)">Aucun abonnement expiré.</p></div>';
+}
+
+// days = 0 → abonnement à vie
+window.adminSetSub = async function(userId, days) {
+  if (!userId) return;
+  if (days === 0 && !confirm('Accorder un abonnement À VIE ?')) return;
+
+  try {
+    const ref = doc(db, 'users', userId);
+
+    if (days === 0) {
+      await setDoc(ref, {
+        isPremium: true,
+        premiumLifetime: true,
+        subscriptionPlan: 'lifetime',
+        premiumExpiresAt: null,
+        premiumValidatedAt: serverTimestamp()
+      }, { merge: true });
+
+      toast('Abonnement à vie accordé', 'success');
+      return;
+    }
+
+    await runTransaction(db, async tx => {
+      const snap = await tx.get(ref);
+      const data = snap.exists() ? (snap.data() || {}) : {};
+      const cur = data.premiumExpiresAt?.toMillis ? data.premiumExpiresAt.toMillis() : 0;
+      const start = Math.max(Date.now(), cur);
+
+      tx.set(ref, {
+        isPremium: true,
+        premiumLifetime: false,
+        subscriptionPlan: 'premium',
+        premiumExpiresAt: Timestamp.fromMillis(start + days * 86400000),
+        premiumValidatedAt: serverTimestamp()
+      }, { merge: true });
+    });
+
+    toast(days + ' jours ajoutés', 'success');
+  } catch (e) {
+    console.error('[ADMIN SUB]', e);
+    toast(e.message || 'Opération impossible', 'error');
+  }
+};
+
+window.adminApproveSub = async function(requestId, userId, days) {
+  try {
+    await adminSetSub(userId, days);
+    await updateDoc(doc(db, 'premiumRequests', requestId), {
+      status: 'approved',
+      plan: days === 0 ? 'lifetime' : 'premium',
+      approvedAt: serverTimestamp()
+    });
+  } catch (e) {
+    console.error('[APPROVE SUB]', e);
+    toast('Validation impossible', 'error');
+  }
+};
+
+window.adminRejectSub = async function(requestId) {
+  if (!confirm('Rejeter cette demande ?')) return;
+  try {
+    await updateDoc(doc(db, 'premiumRequests', requestId), {
+      status: 'rejected',
+      rejectedAt: serverTimestamp()
+    });
+    toast('Demande rejetée', 'info');
+  } catch (e) {
+    toast('Rejet impossible', 'error');
+  }
+};
+
+window.adminRevokeSub = async function(userId) {
+  if (!confirm('Révoquer cet abonnement ?')) return;
+  try {
+    await setDoc(doc(db, 'users', userId), {
+      isPremium: false,
+      premiumLifetime: false,
+      subscriptionPlan: 'free',
+      premiumExpiresAt: null
+    }, { merge: true });
+    toast('Abonnement révoqué', 'info');
+  } catch (e) {
+    toast('Révocation impossible', 'error');
+  }
 };
 
 // Vérification au chargement
@@ -6528,6 +6711,7 @@ window.switchTab = function(tab) {
     <div style="display:flex;gap:6px;margin-bottom:20px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:5px;width:fit-content">
       <button id="adTab-users" class="sub-tab active" onclick="adminSwitchTab('users')"><i class="fas fa-users"></i> Utilisateurs</button>
       <button id="adTab-sessions" class="sub-tab" onclick="adminSwitchTab('sessions')"><i class="fas fa-clock-rotate-left"></i> Connexions récentes</button>
+      <button id="adTab-subs" class="sub-tab" onclick="adminSwitchTab('subs')"><i class="fas fa-crown"></i> Abonnements</button>
     </div>
 
     <!-- Pane : Users -->
@@ -6543,6 +6727,32 @@ window.switchTab = function(tab) {
       <div class="panel" style="padding:0">
         <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:800;font-size:14px;display:flex;align-items:center;gap:8px"><i class="fas fa-clock-rotate-left" style="color:var(--warning)"></i> Historique des connexions <span style="font-size:12px;color:var(--muted);font-weight:400">(50 dernières)</span></div>
         <div id="adminSessionList"></div>
+      </div>
+    </div>
+
+    <!-- Pane : Abonnements -->
+    <div id="adPane-subs" style="display:none">
+      <div class="panel" style="padding:0;margin-bottom:20px">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:800;font-size:14px;display:flex;align-items:center;gap:8px">
+          <i class="fas fa-hourglass-half" style="color:#f59e0b"></i> Demandes en attente
+          <span id="adSubsPendingCount" style="font-size:12px;color:var(--muted);font-weight:400"></span>
+        </div>
+        <div id="adSubsPending" style="padding:12px 16px"></div>
+      </div>
+
+      <div class="panel" style="padding:0;margin-bottom:20px">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:800;font-size:14px;display:flex;align-items:center;gap:8px">
+          <i class="fas fa-circle-check" style="color:#10b981"></i> Abonnements actifs
+          <span id="adSubsActiveCount" style="font-size:12px;color:var(--muted);font-weight:400"></span>
+        </div>
+        <div id="adSubsActive" style="padding:12px 16px"></div>
+      </div>
+
+      <div class="panel" style="padding:0">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-weight:800;font-size:14px;display:flex;align-items:center;gap:8px">
+          <i class="fas fa-ban" style="color:#ef4444"></i> Abonnements expirés
+        </div>
+        <div id="adSubsExpired" style="padding:12px 16px"></div>
       </div>
     </div>
 

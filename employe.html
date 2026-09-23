@@ -1928,6 +1928,11 @@ function renderChat() {
     </div>
   `);
   loadChatThreads();
+
+  // Au premier affichage sur mobile, seule la liste est visible.
+  if (window.matchMedia('(max-width: 768px)').matches) {
+    document.getElementById('chatConversation')?.classList.add('hidden-mobile');
+  }
 }
 
 function loadChatThreads() {
@@ -2094,6 +2099,17 @@ window.openThread = function(threadId) {
     </div>
   `;
 
+  // Sur mobile : masquer la liste et afficher la conversation
+  if (window.matchMedia('(max-width: 768px)').matches) {
+    document.querySelector('.chat-threads')?.classList.add('hidden-mobile');
+    convoEl.classList.remove('hidden-mobile');
+
+    const back = document.getElementById('backToList');
+    if (back) back.style.display = '';
+
+    convoEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
   // Marquer comme lu (côté employé)
   const ref = doc(db, 'chats_flat', threadId);
   updateDoc(ref, { unreadEmployee: false }).catch(() => {});
@@ -2158,6 +2174,12 @@ window.openThread = function(threadId) {
 
 window.closeThread = function() {
   activeThreadId = null;
+
+  // Sur mobile : revenir à la liste des conversations
+  if (window.matchMedia('(max-width: 768px)').matches) {
+    document.querySelector('.chat-threads')?.classList.remove('hidden-mobile');
+    document.getElementById('chatConversation')?.classList.add('hidden-mobile');
+  }
   if (activeThreadUnsub) { activeThreadUnsub(); activeThreadUnsub = null; }
   const convoEl = document.getElementById('chatConversation');
   if (convoEl) {

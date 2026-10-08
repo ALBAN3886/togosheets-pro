@@ -1,13 +1,27 @@
 {
   "name": "TogoSheets",
   "short_name": "TogoSheets",
-  "start_url": "/",
+  "start_url": "/togosheets-pro/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#2563eb",
   "description": "TogoSheets — Gestion financière et commerciale au Togo, by AET Technology.",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
-  ]
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "id": "/togosheets-pro/",
+  "scope": "/togosheets-pro/",
+  "orientation": "portrait",
+  "lang": "fr"
 }

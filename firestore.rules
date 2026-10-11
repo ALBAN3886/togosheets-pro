@@ -49,8 +49,7 @@ service cloud.firestore {
         );
     }
 
-    // ── users/{uid} : profil, statut premium, flag isAdmin ──
-// ── customers/{uid} : profil client ──
+    // ── customers/{uid} : profil client ──
     match /customers/{uid} {
       allow create, read, update: if isSignedIn() && request.auth.uid == uid;
       allow delete: if false;
@@ -68,7 +67,10 @@ service cloud.firestore {
       allow create: if isSelf(uid)
                     && request.resource.data.get('isAdmin', false) == false
                     && request.resource.data.get('role', 'user') != 'admin'
-                    && request.resource.data.get('isPremium', false) == false;
+                    && request.resource.data.get('isPremium', false) == false
+                    && request.resource.data.get('premiumLifetime', false) == false
+                    && request.resource.data.get('subscriptionPlan', 'free') in ['free', '']
+                    && request.resource.data.get('premiumExpiresAt', null) == null;
 
       // L'utilisateur peut modifier son profil, mais jamais ses droits,
       // son rôle administrateur ou son abonnement Premium.

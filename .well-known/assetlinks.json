@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.alban3886.togosheets",
+      "sha256_cert_fingerprints": [
+        "15:7E:C3:E5:79:CE:E4:06:B2:A3:D9:23:ED:64:F8:D5:05:AE:A7:F6:6F:B4:E5:CD:B2:3B:E8:B9:CD:34:16:9E"
+      ]
+    }
+  }
+]

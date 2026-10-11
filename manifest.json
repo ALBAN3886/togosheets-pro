@@ -1,7 +1,7 @@
 {
   "name": "TogoSheets",
   "short_name": "TogoSheets",
-  "start_url": "/togosheets-pro/",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#2563eb",
@@ -20,8 +20,8 @@
       "purpose": "any"
     }
   ],
-  "id": "/togosheets-pro/",
-  "scope": "/togosheets-pro/",
+  "id": "/",
+  "scope": "/",
   "orientation": "portrait",
   "lang": "fr"
 }

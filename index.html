@@ -16200,6 +16200,18 @@ body.aet-auth-open #officialPremiumNote{display:none!important}
   body:not(.aet-auth-open) .header{margin-left:var(--sb-w)!important;width:calc(100% - var(--sb-w))!important}
   body:not(.aet-auth-open) .container{margin-left:calc(var(--sb-w) + max(0px,(100vw - var(--sb-w) - 1420px)/2))!important;margin-right:auto!important;width:auto!important;max-width:min(1420px,calc(100vw - var(--sb-w)))!important}
 }
+/* aet-tabs-hors-container : onglets places hors de .container */
+@media(min-width:1024px){
+  body:not(.aet-auth-open) #tab-conseils,body:not(.aet-auth-open) #tab-profil,
+  body:not(.aet-auth-open) #tab-objectifs,body:not(.aet-auth-open) #tab-tontines,
+  body:not(.aet-auth-open) #tab-commerce{
+    margin-left:calc(var(--sb-w) + max(0px,(100vw - var(--sb-w) - 1420px)/2))!important;
+    margin-right:auto!important;
+    max-width:min(1420px,calc(100vw - var(--sb-w)))!important;
+    box-sizing:border-box!important;
+    padding-left:24px!important;padding-right:24px!important
+  }
+}
 /* Animations modernes et discretes */
 @keyframes aetFadeIn{from{opacity:0}to{opacity:1}}
 .container>*{animation:aetFadeIn .35s ease both}

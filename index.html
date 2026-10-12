@@ -16195,6 +16195,17 @@ body.aet-subpage-active #bottomNav,body.aet-subpage-active #appSidebar,body.aet-
 body.aet-auth-open #appSidebar,body.aet-auth-open #sidebarOverlay,body.aet-auth-open #bottomNav,
 body.aet-auth-open .bnav-fab,body.aet-auth-open .bnav-fab-spacer,body.aet-auth-open #scrollTopBtn,
 body.aet-auth-open #officialPremiumNote{display:none!important}
+/* PC : la page commence a droite du menu (plus de chevauchement) */
+@media(min-width:1024px){
+  body:not(.aet-auth-open) .header{margin-left:var(--sb-w)!important;width:calc(100% - var(--sb-w))!important}
+  body:not(.aet-auth-open) .container{margin-left:calc(var(--sb-w) + max(0px,(100vw - var(--sb-w) - 1420px)/2))!important;margin-right:auto!important;width:auto!important;max-width:min(1420px,calc(100vw - var(--sb-w)))!important}
+}
+/* Animations modernes et discretes */
+@keyframes aetFadeIn{from{opacity:0}to{opacity:1}}
+.container>*{animation:aetFadeIn .35s ease both}
+.sidebar-link{transition:background .18s ease,color .18s ease,padding-left .18s ease}
+@media(min-width:1024px){.sidebar-link:hover{padding-left:20px}}
+@media(prefers-reduced-motion:reduce){.container>*{animation:none!important}.sidebar-link{transition:none!important}}
 </style>
 <script>
 (function(){

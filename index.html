@@ -16147,6 +16147,33 @@ body.aet-subpage-active #bottomNav,body.aet-subpage-active #appSidebar,body.aet-
 })();
 </script>
 
+<style id="aet-fix-desktop-auth">
+/* PC : le menu lateral reste visible en permanence (sauf ecran de connexion) */
+@media(min-width:1024px){
+  body:not(.aet-auth-open) #appSidebar{transform:none!important;visibility:visible!important;pointer-events:auto!important}
+  body.aet-auth-open .header,body.aet-auth-open .container{margin-left:auto!important;margin-right:auto!important;width:100%!important}
+}
+/* Ecran de connexion : on masque la navigation et le bandeau Premium */
+body.aet-auth-open #appSidebar,body.aet-auth-open #sidebarOverlay,body.aet-auth-open #bottomNav,
+body.aet-auth-open .bnav-fab,body.aet-auth-open .bnav-fab-spacer,body.aet-auth-open #scrollTopBtn,
+body.aet-auth-open #officialPremiumNote{display:none!important}
+</style>
+<script>
+(function(){
+  function sync(){
+    var a=document.getElementById('authScreen');
+    var open=!!a&&getComputedStyle(a).display!=='none';
+    document.body.classList.toggle('aet-auth-open',open);
+  }
+  function init(){
+    var a=document.getElementById('authScreen');
+    if(!a)return;
+    sync();
+    new MutationObserver(sync).observe(a,{attributes:true,attributeFilter:['style','class']});
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
 </body>
 
 </html>

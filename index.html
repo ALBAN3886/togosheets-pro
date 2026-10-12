@@ -16212,6 +16212,19 @@ body.aet-auth-open #officialPremiumNote{display:none!important}
     padding-left:24px!important;padding-right:24px!important
   }
 }
+/* aet-premium-modal-pc : fenetre Premium moderne sur PC */
+@media(min-width:769px){
+  #premiumModal{align-items:center!important;justify-content:center!important;padding:24px!important;background:rgba(15,23,42,.55)!important;backdrop-filter:blur(6px)!important;-webkit-backdrop-filter:blur(6px)!important}
+  #premiumModal .aet-modal{width:100%!important;max-width:440px!important;height:auto!important;min-height:0!important;max-height:calc(100vh - 48px)!important;overflow:auto!important;margin:0!important;padding:0!important;border-radius:22px!important;background:var(--card,#fff)!important;box-shadow:0 30px 70px rgba(15,23,42,.35)!important;animation:aetPmIn .28s cubic-bezier(.2,.8,.2,1) both}
+  #premiumModal .aet-modal-header{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:12px!important;padding:18px 20px!important;margin:0!important;background:linear-gradient(135deg,#1e3a8a,#2563eb 60%,#7c3aed)!important;border-radius:22px 22px 0 0!important;position:sticky!important;top:0!important;z-index:2!important}
+  #premiumModal .aet-modal-header h3{margin:0!important;flex:1;min-width:0;display:flex!important;align-items:center;gap:8px;font-size:17px!important;font-weight:800!important;color:#fff!important}
+  #premiumModal .aet-modal-close{width:36px!important;height:36px!important;flex-shrink:0;border:none!important;border-radius:12px!important;background:rgba(255,255,255,.18)!important;color:#fff!important;display:inline-flex!important;align-items:center;justify-content:center;cursor:pointer;transition:background .15s,transform .15s}
+  #premiumModal .aet-modal-close:hover{background:rgba(255,255,255,.3)!important;transform:rotate(90deg)}
+  #premiumModal .aet-modal-body{padding:20px!important}
+  #premiumModal .aet-mobile-back,#premiumModal .aet-modal-back{display:none!important}
+}
+@keyframes aetPmIn{from{opacity:0;transform:translateY(12px) scale(.96)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){#premiumModal .aet-modal{animation:none!important}}
 /* Animations modernes et discretes */
 @keyframes aetFadeIn{from{opacity:0}to{opacity:1}}
 .container>*{animation:aetFadeIn .35s ease both}

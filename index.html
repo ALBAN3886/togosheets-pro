@@ -189,8 +189,10 @@ async function ensurePremiumFields(uid) {
 // Écoute en temps réel le statut premium et met à jour l'UI + window.isPremiumUser
 function watchPremiumStatus(uid) {
   if (unsubPremium) { unsubPremium(); unsubPremium = null; }
+  window.__AET_PREMIUM_READY__ = false;
+  window.__AET_TRIAL_WRITING__ = false;
   unsubPremium = onSnapshot(doc(db, 'users', uid), snap => {
-    const data = snap.data() || {};
+    const data = snap.data({ serverTimestamps: 'estimate' }) || {};
     const expiresAt = data.premiumExpiresAt?.toDate
       ? data.premiumExpiresAt.toDate()
       : null;
@@ -201,11 +203,24 @@ function watchPremiumStatus(uid) {
       data.isPremium === true &&
       (data.subscriptionPlan === 'lifetime' || data.premiumLifetime === true);
 
-    const isPremium = isLifetime || (
+    const isPaid = isLifetime || (
       data.isPremium === true &&
       expiresAt instanceof Date &&
       expiresAt.getTime() > Date.now()
     );
+
+    // Essai gratuit de 7 jours (date posee une seule fois, heure serveur)
+    const trialStart = data.trialStartedAt?.toDate ? data.trialStartedAt.toDate() : null;
+    const trialEndsAt = trialStart ? new Date(trialStart.getTime() + 7 * 86400000) : null;
+    const isTrial = !isPaid && trialEndsAt instanceof Date && trialEndsAt.getTime() > Date.now();
+    const isPremium = isPaid || isTrial;
+
+    if (!isPaid && !trialStart && snap.exists() && !window.__AET_TRIAL_WRITING__) {
+      window.__AET_TRIAL_WRITING__ = true;
+      setDoc(doc(db, 'users', uid), { trialStartedAt: serverTimestamp() }, { merge: true })
+        .catch(e => { console.warn('trialStartedAt', e); window.__aetPremiumReady(); });
+      return;
+    }
 
     premiumStatus = {
       isPremium,
@@ -213,9 +228,17 @@ function watchPremiumStatus(uid) {
       plan: isPremium ? (data.subscriptionPlan || 'premium') : 'free',
       expiresAt: isLifetime ? null : expiresAt
     };
+    premiumStatus.trial = isTrial;
+    premiumStatus.trialEndsAt = isTrial ? trialEndsAt : null;
     window.isPremiumUser = isPremium;
     updatePremiumUI();
-  }, err => console.warn('watchPremiumStatus', err));
+    if (isTrial) {
+      const ml = document.getElementById('premiumMenuLabel');
+      const left = Math.max(1, Math.ceil((trialEndsAt.getTime() - Date.now()) / 86400000));
+      if (ml) ml.textContent = 'Essai gratuit : ' + left + ' j restant' + (left > 1 ? 's' : '');
+    }
+    window.__aetPremiumReady();
+  }, err => { console.warn('watchPremiumStatus', err); window.__aetPremiumReady(); });
 }
 
 // Met à jour les éléments d'interface liés au statut premium (badge, libellés, etc.)
@@ -269,9 +292,24 @@ window.closePremiumModal = function() {
 
 // Commerce est réservé aux abonnés Premium actifs.
 // Les administrateurs conservent un accès de supervision.
+window.__aetPremiumReady = function() {
+  window.__AET_PREMIUM_READY__ = true;
+  if (window.__AET_PENDING_COMMERCE__) {
+    window.__AET_PENDING_COMMERCE__ = false;
+    if (typeof window.switchTab === 'function') window.switchTab('commerce');
+  }
+};
+
 window.requirePremiumForCommerce = function() {
   if (window.__AET_IS_ADMIN__ === true || window.isPremiumUser === true) {
     return true;
+  }
+
+  // Statut pas encore recu de Firebase (ex : nouveau telephone) : on attend.
+  if (window.__AET_PREMIUM_READY__ !== true) {
+    window.__AET_PENDING_COMMERCE__ = true;
+    toast('Vérification de votre abonnement…');
+    return false;
   }
 
   // Sécurité d'affichage : si un script a déjà ouvert l'onglet, on le referme.

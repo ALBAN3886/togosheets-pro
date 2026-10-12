@@ -36,8 +36,15 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/users/$(tenantId)).data;
     }
 
-    function isPremiumTenant(tenantId) {
+    // Essai gratuit de 7 jours a partir de trialStartedAt (heure serveur).
+    function isTrialTenant(tenantId) {
       return exists(/databases/$(database)/documents/users/$(tenantId))
+        && tenantDoc(tenantId).get('trialStartedAt', null) is timestamp
+        && tenantDoc(tenantId).get('trialStartedAt', null) + duration.value(7, 'd') > request.time;
+    }
+
+    function isPremiumTenant(tenantId) {
+      return isTrialTenant(tenantId) || exists(/databases/$(database)/documents/users/$(tenantId))
         && tenantDoc(tenantId).get('isPremium', false) == true
         && (
           tenantDoc(tenantId).get('premiumLifetime', false) == true
@@ -70,7 +77,9 @@ service cloud.firestore {
                     && request.resource.data.get('isPremium', false) == false
                     && request.resource.data.get('premiumLifetime', false) == false
                     && request.resource.data.get('subscriptionPlan', 'free') in ['free', '']
-                    && request.resource.data.get('premiumExpiresAt', null) == null;
+                    && request.resource.data.get('premiumExpiresAt', null) == null
+                    && (!('trialStartedAt' in request.resource.data)
+                        || request.resource.data.trialStartedAt == request.time);
 
       // L'utilisateur peut modifier son profil, mais jamais ses droits,
       // son rôle administrateur ou son abonnement Premium.
@@ -88,6 +97,12 @@ service cloud.firestore {
                          == resource.data.get('premiumExpiresAt', null)
                       && request.resource.data.get('premiumLifetime', false)
                          == resource.data.get('premiumLifetime', false)
+                      && (
+                        request.resource.data.get('trialStartedAt', null)
+                          == resource.data.get('trialStartedAt', null)
+                        || (!('trialStartedAt' in resource.data)
+                            && request.resource.data.trialStartedAt == request.time)
+                      )
                     )
                     || isAdmin();
 

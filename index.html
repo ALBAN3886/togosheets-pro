@@ -15776,6 +15776,27 @@ body.aet-subpage-active #bottomNav,body.aet-subpage-active #appSidebar,body.aet-
       + '</div>';
   }
 
+  function aetUpdTag(){
+    try{ return window.__AET_UPDATE_TAG__ || (window.AndroidUpdate && AndroidUpdate.getAvailableUpdate()) || ''; }catch(e){ return ''; }
+  }
+  function aetUpdVer(){
+    try{ return (window.AndroidUpdate && AndroidUpdate.getVersion()) || ''; }catch(e){ return ''; }
+  }
+  window.aetCheckUpdate = function(){
+    if(window.AndroidUpdate && typeof AndroidUpdate.check==='function') AndroidUpdate.check();
+  };
+  function aetUpdDot(){
+    var b=document.getElementById('bnav-profil');
+    if(b){ b.classList.add('aet-upd-host'); b.classList.toggle('aet-upd-on', !!aetUpdTag()); }
+  }
+  window.onAetUpdateAvailable = function(tag){
+    window.__AET_UPDATE_TAG__ = tag;
+    aetUpdDot();
+    var t=document.getElementById('tab-profil');
+    if(t && t.offsetParent!==null && t.querySelector('.mp-shell')) renderProfileHome();
+  };
+  setTimeout(aetUpdDot, 3000);
+
   function renderProfileHome(){
     var tab = document.getElementById('tab-profil');
     if(!tab) return;
@@ -15813,6 +15834,13 @@ body.aet-subpage-active #bottomNav,body.aet-subpage-active #appSidebar,body.aet-
 
       + '<div class="mp-group"><div class="mp-title">Assistance</div>'
       +   mpItem('fa-headset','#06b6d4','Aide & Support','Questions fréquentes et contact','openHelp()')
+      +   (window.AndroidUpdate
+            ? mpItem('fa-rotate','#2563eb','Mises à jour',
+                aetUpdTag() ? ('Nouvelle version '+aetUpdTag()+' disponible')
+                            : ('Version installée : '+(aetUpdVer()||'—')+' · Vérifier'),
+                'aetCheckUpdate()',
+                aetUpdTag() ? '<span class="aet-upd-badge">Nouveau</span>' : '')
+            : '')
       +   mpItem('fa-circle-info','#8b5cf6','À propos','Version et informations','openAbout()')
       + '</div>'
 
@@ -16225,6 +16253,10 @@ body.aet-auth-open #officialPremiumNote{display:none!important}
 }
 @keyframes aetPmIn{from{opacity:0;transform:translateY(12px) scale(.96)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){#premiumModal .aet-modal{animation:none!important}}
+/* aet-update-menu : pastille mise a jour */
+.aet-upd-badge{margin-left:auto;font-size:10px;font-weight:800;background:#ef4444;color:#fff;padding:3px 8px;border-radius:999px}
+.aet-upd-host{position:relative}
+.aet-upd-host.aet-upd-on::after{content:'';position:absolute;top:6px;right:calc(50% - 16px);width:9px;height:9px;border-radius:50%;background:#ef4444;box-shadow:0 0 0 2px #fff}
 /* Animations modernes et discretes */
 @keyframes aetFadeIn{from{opacity:0}to{opacity:1}}
 .container>*{animation:aetFadeIn .35s ease both}

@@ -260,8 +260,10 @@ function updatePremiumUI() {
       if (premiumStatus.lifetime) {
         statusEl.innerHTML = `<i class="fas fa-crown" style="color:#f59e0b"></i> Premium <strong>à vie</strong> — accès illimité`;
       } else {
-        const dateStr = premiumStatus.expiresAt ? fmtDate(premiumStatus.expiresAt) : '—';
-        statusEl.innerHTML = `<i class="fas fa-crown" style="color:#f59e0b"></i> Premium actif jusqu'au <strong>${dateStr}</strong>`;
+        const _aetEndAt = premiumStatus.expiresAt || (premiumStatus.trial ? premiumStatus.trialEndsAt : null);
+        const dateStr = _aetEndAt ? fmtDate(_aetEndAt) : '—';
+        const _aetLbl = premiumStatus.trial ? "Essai gratuit actif jusqu'au" : "Premium actif jusqu'au";
+        statusEl.innerHTML = `<i class="fas fa-crown" style="color:#f59e0b"></i> ${_aetLbl} <strong>${dateStr}</strong>`;
       }
     } else {
       statusEl.innerHTML = `<i class="fas fa-circle-info"></i> Vous utilisez la version gratuite`;

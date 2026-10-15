@@ -15788,8 +15788,16 @@ body.aet-subpage-active #bottomNav,body.aet-subpage-active #appSidebar,body.aet-
     if(window.AndroidUpdate && typeof AndroidUpdate.check==='function') AndroidUpdate.check();
   };
   function aetUpdDot(){
+    var on=!!aetUpdTag();
     var b=document.getElementById('bnav-profil');
-    if(b){ b.classList.add('aet-upd-host'); b.classList.toggle('aet-upd-on', !!aetUpdTag()); }
+    if(b){ b.classList.add('aet-upd-host'); b.classList.toggle('aet-upd-on', on); }
+    [['.sb-toggle-btn','aet-dot-burger'],['#sb-compte-toggle','aet-dot-side'],['#sb-profil','aet-dot-side']].forEach(function(p){
+      document.querySelectorAll(p[0]).forEach(function(el){
+        var d=el.querySelector(':scope > .aet-upd-dot');
+        if(!d){ d=document.createElement('span'); d.className='aet-upd-dot '+p[1]; el.appendChild(d); if(getComputedStyle(el).position==='static') el.style.position='relative'; }
+        d.style.display=on?'block':'none';
+      });
+    });
   }
   window.onAetUpdateAvailable = function(tag){
     window.__AET_UPDATE_TAG__ = tag;
@@ -16259,6 +16267,9 @@ body.aet-auth-open #officialPremiumNote{display:none!important}
 .aet-upd-badge{margin-left:auto;font-size:10px;font-weight:800;background:#ef4444;color:#fff;padding:3px 8px;border-radius:999px}
 .aet-upd-host{position:relative}
 .aet-upd-host.aet-upd-on::after{content:'';position:absolute;top:6px;right:calc(50% - 16px);width:9px;height:9px;border-radius:50%;background:#ef4444;box-shadow:0 0 0 2px #fff}
+.aet-upd-dot{position:absolute;width:9px;height:9px;border-radius:50%;background:#ef4444;box-shadow:0 0 0 2px #fff;pointer-events:none;display:none;z-index:2}
+.aet-upd-dot.aet-dot-burger{top:2px;right:2px}
+.aet-upd-dot.aet-dot-side{top:50%;right:34px;transform:translateY(-50%)}
 /* Animations modernes et discretes */
 @keyframes aetFadeIn{from{opacity:0}to{opacity:1}}
 .container>*{animation:aetFadeIn .35s ease both}

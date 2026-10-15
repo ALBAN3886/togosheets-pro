@@ -735,7 +735,7 @@ button:focus,button:focus-visible,a:focus,a:focus-visible{outline:none;box-shado
     <div class="menu-section">
       <div class="menu-item" onclick="window.open('tel:+22899812072')"><i class="fas fa-phone ico green"></i><span class="label">+228 99 81 20 72</span></div>
     </div>
-    <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:16px">Propulsé par <strong>AET Technology</strong> • alban3886.github.io</p>
+    <p style="text-align:center;font-size:11px;color:var(--muted);margin-top:16px">Propulsé par <strong>AET Technology</strong> • budget.aet-alban.online</p>
   </div>
 </div>
 
@@ -951,6 +951,49 @@ window.switchTab = (tab, btn) => {
   btn.classList.add('active');
   openPage(tab);
 };
+// aet-back-nav : le bouton retour ferme les tiroirs / revient a l'accueil
+(function(){
+  let popping=false, opening=false, skipPop=false;
+  const _od=window.openDrawer, _cd=window.closeDrawer, _cad=window.closeAllDrawers, _op=window.openPage;
+  const st=()=>history.state||{};
+  const anyOpen=()=>!!document.querySelector('.drawer.open:not(#loginDrawer)');
+  function afterClose(){
+    if(popping || opening) return;
+    setTimeout(()=>{
+      if(st().aetDrawer && !anyOpen()){ skipPop=true; history.back(); }
+    },0);
+  }
+  window.openDrawer=id=>{
+    opening=true; try{ _od(id); } finally{ opening=false; }
+    if(id==='loginDrawer') return;
+    const ns=Object.assign({}, st(), {aetDrawer:id});
+    if(st().aetDrawer) history.replaceState(ns,''); else history.pushState(ns,'');
+  };
+  window.closeDrawer=id=>{ _cd(id); afterClose(); };
+  window.closeAllDrawers=()=>{ _cad(); afterClose(); };
+  window.openPage=tab=>{
+    _op(tab);
+    if(popping) return;
+    if(tab==='home'){
+      if(st().aetPage && !st().aetDrawer){ skipPop=true; history.back(); }
+      return;
+    }
+    const ns={aetPage:tab};
+    if(st().aetPage) history.replaceState(ns,''); else history.pushState(ns,'');
+  };
+  window.addEventListener('popstate', e=>{
+    if(skipPop){ skipPop=false; return; }
+    const s=e.state||{};
+    popping=true;
+    try{
+      if(!s.aetDrawer && anyOpen()) _cad();
+      const want=s.aetPage||'home';
+      const cur=document.querySelector('.page.active');
+      if(cur && cur.id!=='page-'+want && document.getElementById('page-'+want)) _op(want);
+    } finally{ popping=false; }
+  });
+})();
+
 window.setActiveNav = id => {
   document.querySelectorAll('.bottom-nav button').forEach(b => b.classList.remove('active'));
   document.getElementById(id).classList.add('active');

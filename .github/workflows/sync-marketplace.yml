@@ -30,7 +30,7 @@ jobs:
 
       - name: Copier les fichiers partagés
         run: |
-          sed 's|href="index.html"|href="https://alban3886.github.io/togosheets-pro/"|g' \
+          sed 's|href="index.html"|href="https://budget.aet-alban.online/"|g' \
             public.html > marketplace/index.html
           cp boutique.html employe.html manifest-employe.json sw-employe.js \
              icon-192.png icon-512.png marketplace/

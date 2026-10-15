@@ -2724,7 +2724,12 @@ onAuthStateChanged(auth, async user => {
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw-employe.js').catch(e => console.warn('SW employé register failed:', e));
+    navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(r => {
+      const w = r.active || r.waiting || r.installing;
+      if (w && /sw-employe\.js/.test(w.scriptURL) && !/employe\.html$/.test(r.scope)) r.unregister();
+    })).catch(() => {}).finally(() => {
+      navigator.serviceWorker.register('sw-employe.js', { scope: './employe.html' }).catch(e => console.warn('SW employé register failed:', e));
+    });
   });
 }
 </script>

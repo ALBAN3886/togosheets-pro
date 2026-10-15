@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
 <title>AET MonBudget — Gestion Financière Personnelle</title>
 <meta name="description" content="Application de gestion financière personnelle — Alban Eloh Technology"/>
-<link rel="canonical" href="https://alban3886.github.io/togosheets-pro/"/>
+<link rel="canonical" href="https://budget.aet-alban.online/"/>
 <!-- EmailJS : envoi d'email directement depuis le navigateur, sans serveur -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <meta name="theme-color" content="#2563eb"/>
@@ -1099,7 +1099,7 @@ window.doForgotPwd = async () => {
   loader(true);
   try {
     await sendPasswordResetEmail(auth, email, {
-      url: 'https://alban3886.github.io/togosheets-pro/reset-password.html',
+      url: 'https://budget.aet-alban.online/reset-password.html',
       handleCodeInApp: true,
     });
     closeModal('forgotPwdModal');

@@ -2397,7 +2397,7 @@ window.doForgot = async () => {
   setMsg('msgForgot', ''); setBusy('btnForgot', true);
   try {
     await sendPasswordResetEmail(auth, email, {
-      url: 'https://alban3886.github.io/togosheets-pro/reset-password.html?back=' + encodeURIComponent(location.origin + location.pathname + location.search),
+      url: 'https://budget.aet-alban.online/reset-password.html?back=' + encodeURIComponent(location.origin + location.pathname + location.search),
       handleCodeInApp: true
     });
   } catch (e) {

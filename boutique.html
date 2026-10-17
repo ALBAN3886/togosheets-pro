@@ -2714,5 +2714,125 @@ body.keyboard-open .drawer{max-height:calc(var(--vvh) - 2px) !important}
 })();
 </script>
 
+<style id="aet-lumiere-boutique">
+.lm-ambient{
+  position:absolute; width:140vmax; height:140vmax; left:-45vmax; top:-70vmax; border-radius:50%;
+  background:radial-gradient(closest-side,rgba(var(--lm-glow,255,214,10),.20),rgba(var(--lm-glow,255,214,10),.05) 55%,transparent 75%);
+  animation:lmFlickerOn 1.6s steps(1,end) both, lmGlow 6s ease-in-out 1.6s infinite;
+}
+
+.lm-lamp{position:absolute; left:6vw; bottom:0; width:min(34vw,420px); height:92%; display:none}
+.lm-lamp svg{width:100%; height:100%; overflow:visible}
+.lm-cone{transform-origin:50% 0; animation:lmFlickerOn 1.6s steps(1,end) both, lmGlow 6s ease-in-out 1.6s infinite}
+.lm-bulb{animation:lmBulb 1.6s steps(1,end) both}
+.lm-cord{transform-origin:50% 0; animation:lmSway 5s ease-in-out infinite}
+
+@keyframes lmCardIn{from{opacity:0; transform:translateY(22px) scale(.985)} to{opacity:1; transform:none}}
+@keyframes lmBreath{0%,100%{opacity:.55} 50%{opacity:1}}
+@keyframes lmPulse{0%,100%{box-shadow:0 10px 30px rgba(var(--lm-glow),.28),0 0 0 1px rgba(255,255,255,.25) inset}
+                   50%{box-shadow:0 10px 42px rgba(var(--lm-glow),.50),0 0 0 1px rgba(255,255,255,.25) inset}}
+@keyframes lmShine{0%,55%{left:-60%} 80%,100%{left:130%}}
+@keyframes lmGlow{0%,100%{opacity:1} 50%{opacity:.78}}
+@keyframes lmFlickerOn{0%{opacity:0} 8%{opacity:.9} 14%{opacity:.15} 22%{opacity:1} 30%{opacity:.35} 38%{opacity:1} 100%{opacity:1}}
+@keyframes lmBulb{0%{fill:#3a3320} 8%{fill:#fff3a8} 14%{fill:#4a4022} 22%{fill:#fff3a8} 30%{fill:#5a4c26} 38%,100%{fill:#fff3a8}}
+@keyframes lmSway{0%,100%{transform:rotate(-2.5deg)} 50%{transform:rotate(2.5deg)}}
+@keyframes lmFly{
+  0%{opacity:0; transform:translate(0,0) scale(.6)}
+  15%{opacity:1}
+  50%{opacity:.85; transform:translate(var(--x,14px),var(--y,-40px)) scale(1)}
+  85%{opacity:1}
+  100%{opacity:0; transform:translate(calc(var(--x,14px)*-.6),calc(var(--y,-40px)*1.8)) scale(.6)}
+}
+.lm-fly{
+  position:absolute; width:6px; height:6px; border-radius:50%;
+  background:radial-gradient(circle,#fff6b0 0,#ffd60a 45%,rgba(255,214,10,0) 70%);
+  box-shadow:0 0 12px 4px rgba(255,214,10,.55);
+  opacity:0; animation:lmFly var(--d,12s) ease-in-out var(--dl,0s) infinite;
+}
+
+#loginDrawer.lmb.gate-mode{--lm-glow:255,214,10;isolation:isolate;overflow:hidden;color:#fff;background:radial-gradient(900px 520px at 20% 100%,rgba(255,214,10,.10),transparent 60%),radial-gradient(700px 500px at 85% 0%,rgba(30,60,120,.22),transparent 60%),linear-gradient(160deg,#0b1020,#04060c) !important}
+.lmb-bg{position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+#loginDrawer.lmb.gate-mode .drawer-body{position:relative;z-index:2;flex:0 1 auto !important;min-height:0;justify-content:flex-start !important;width:calc(100% - 32px) !important;max-width:420px !important;margin:0 auto 16px !important;background:rgba(255,255,255,.07) !important;border:1px solid rgba(255,255,255,.16);border-radius:22px;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);box-shadow:0 20px 50px rgba(0,0,0,.45);padding:22px 18px !important;animation:lmCardIn .7s ease-out both}
+#loginDrawer.lmb.gate-mode .gate-only>div:first-child{background:linear-gradient(135deg,#ffe14a,#ffc800) !important;animation:lmPulse 3.5s ease-in-out infinite}
+#loginDrawer.lmb.gate-mode .gate-only>div:first-child i{color:#111 !important}
+#loginDrawer.lmb.gate-mode h2{color:#fff !important}
+#loginDrawer.lmb.gate-mode p:not([id]){color:rgba(255,255,255,.68) !important}
+#loginDrawer.lmb.gate-mode #errLogin,#loginDrawer.lmb.gate-mode #errRegister{color:#ff8a80 !important}
+#loginDrawer.lmb.gate-mode a{color:#ffe14a !important}
+#loginDrawer.lmb.gate-mode .form-row label{color:rgba(255,255,255,.68) !important}
+#loginDrawer.lmb.gate-mode .form-row input{background:rgba(255,255,255,.06) !important;border:1px solid rgba(255,255,255,.18) !important;color:#fff !important}
+#loginDrawer.lmb.gate-mode .form-row input::placeholder{color:rgba(255,255,255,.38)}
+#loginDrawer.lmb.gate-mode .form-row input:focus{border-color:#ffe14a !important;box-shadow:0 0 0 3px rgba(255,214,10,.25)}
+#loginDrawer.lmb.gate-mode .btn-primary{background:linear-gradient(135deg,#ffe14a,#ffc800) !important;color:#111 !important;font-weight:700}
+#loginDrawer.lmb.gate-mode .google-signin-btn{background:rgba(255,255,255,.08) !important;border:1px solid rgba(255,255,255,.18) !important;color:#fff !important}
+#loginDrawer.lmb.gate-mode .auth-sep{color:rgba(255,255,255,.55) !important}
+#loginDrawer.lmb.gate-mode .auth-sep::before,#loginDrawer.lmb.gate-mode .auth-sep::after{background:rgba(255,255,255,.18) !important}
+#loginDrawer.lmb.gate-mode #authTabs{background:rgba(255,255,255,.06) !important;border:1px solid rgba(255,255,255,.12)}
+#loginDrawer.lmb.gate-mode #authTabs button{background:transparent !important;color:rgba(255,255,255,.7) !important;border:none !important;box-shadow:none !important}
+#loginDrawer.lmb.gate-mode #authTabs button.lm-active{background:linear-gradient(135deg,#ffe14a,#ffc800) !important;color:#111 !important;font-weight:700}
+#loginDrawer.lmb.gate-mode .lm-lamp{display:block}
+@media (max-width:899px){#loginDrawer.lmb.gate-mode{justify-content:flex-start !important;padding-top:214px !important}#loginDrawer.lmb.gate-mode .lm-lamp{left:24px;top:6px;bottom:auto;height:200px;width:111px}}
+@media (min-width:900px){#loginDrawer.lmb.gate-mode .lm-lamp{left:auto;right:calc(50% + 40px);top:50%;bottom:auto;height:min(80vh,720px);width:calc(min(80vh,720px)*.553);transform:translateY(-50%)}#loginDrawer.lmb.gate-mode .drawer-body{margin-left:calc(50% + 20px) !important;margin-right:auto !important}#loginDrawer.lmb.gate-mode .lm-ambient{left:auto;right:calc(50% - 60vmax);top:auto;bottom:-70vmax}}
+@media (prefers-reduced-motion:reduce){#loginDrawer.lmb.gate-mode *,.lm-ambient,.lm-cone,.lm-bulb,.lm-cord,.lm-fly{animation:none !important}.lm-fly{opacity:.7}}
+</style>
+<script id="aet-lumiere-boutique-js">
+(function(){'use strict';
+var LAMP = '' +
+    '<svg viewBox="0 0 420 760" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">' +
+      '<defs>' +
+        '<linearGradient id="lmCone" x1="0" y1="0" x2="0" y2="1">' +
+          '<stop offset="0" stop-color="#ffd60a" stop-opacity=".55"/>' +
+          '<stop offset=".6" stop-color="#ffd60a" stop-opacity=".12"/>' +
+          '<stop offset="1" stop-color="#ffd60a" stop-opacity="0"/>' +
+        '</linearGradient>' +
+        '<linearGradient id="lmLeaf" x1="0" y1="0" x2="1" y2="1">' +
+          '<stop offset="0" stop-color="#3f9b4a"/><stop offset="1" stop-color="#14502a"/>' +
+        '</linearGradient>' +
+      '</defs>' +
+      '<polygon class="lm-cone" points="165,170 345,170 470,760 40,760" fill="url(#lmCone)"/>' +
+      '<ellipse cx="205" cy="742" rx="120" ry="10" fill="#000" opacity=".5"/>' +
+      '<ellipse cx="205" cy="740" rx="70" ry="6" fill="#ffd60a" opacity=".18" class="lm-cone"/>' +
+      '<ellipse cx="205" cy="736" rx="74" ry="9" fill="#11141b"/>' +
+      '<rect x="201" y="190" width="8" height="548" rx="3" fill="#0d1016"/>' +
+      '<path d="M98 190 Q98 128 205 118 Q312 128 312 190 Z" fill="#07090e"/>' +
+      '<ellipse cx="205" cy="190" rx="107" ry="11" fill="#ffe680" class="lm-bulb"/>' +
+      '<ellipse cx="205" cy="187" rx="70" ry="5" fill="#fff8cf" opacity=".9" class="lm-bulb"/>' +
+      '<g class="lm-cord" style="transform-origin:236px 196px">' +
+        '<line x1="236" y1="196" x2="236" y2="262" stroke="#1b2029" stroke-width="3"/>' +
+        '<rect x="230" y="262" width="12" height="26" rx="6" fill="#ffd60a"/>' +
+      '</g>' +
+      '<g transform="translate(-6 560)">' +
+        '<path d="M-10 0 C10 -60 50 -90 105 -86 C80 -50 40 -16 -10 0Z" fill="url(#lmLeaf)"/>' +
+        '<path d="M5 6 C-8 -48 -6 -96 30 -135 C48 -90 40 -36 5 6Z" fill="url(#lmLeaf)" opacity=".92"/>' +
+        '<path d="M14 10 C40 -30 86 -50 132 -34 C106 -4 60 14 14 10Z" fill="url(#lmLeaf)" opacity=".85"/>' +
+        '<path d="M0 8 C-30 -20 -60 -30 -92 -22 C-70 6 -34 16 0 8Z" fill="url(#lmLeaf)" opacity=".8"/>' +
+        '<path d="M-8 168 L72 168 L64 214 Q34 222 4 214 Z" fill="#e9e9e4"/>' +
+        '<path d="M-8 168 L72 168 L70 180 L-6 180 Z" fill="#cfcfc8"/>' +
+      '</g>' +
+    '</svg>';
+
+  function rnd(a, b) { return a + Math.random() * (b - a); }
+
+  function lucioles(n) {
+    var out = '';
+    for (var i = 0; i < n; i++) {
+      out += '<span class="lm-fly" style="left:' + rnd(2, 97).toFixed(1) + '%;top:' + rnd(4, 94).toFixed(1) + '%;' +
+        '--d:' + rnd(9, 18).toFixed(1) + 's;--dl:' + (-rnd(0, 14)).toFixed(1) + 's;' +
+        '--x:' + Math.round(rnd(-30, 30)) + 'px;--y:' + Math.round(rnd(-70, -20)) + 'px;' +
+        'width:' + Math.round(rnd(4, 8)) + 'px;height:' + Math.round(rnd(4, 8)) + 'px"></span>';
+    }
+    return out;
+  }
+
+  
+function sync(){var pl=document.getElementById('paneLogin'),pr=document.getElementById('paneRegister'),tl=document.getElementById('tabLogin'),tr=document.getElementById('tabRegister');
+if(tl)tl.classList.toggle('lm-active',!!pl&&pl.style.display!=='none');if(tr)tr.classList.toggle('lm-active',!!pr&&pr.style.display!=='none');}
+function init(){var d=document.getElementById('loginDrawer');if(!d||d.getAttribute('data-lumiere'))return;d.setAttribute('data-lumiere','1');d.classList.add('lmb');
+var bg=document.createElement('div');bg.className='lmb-bg';bg.setAttribute('aria-hidden','true');
+bg.innerHTML='<div class="lm-ambient"></div><div class="lm-lamp">'+LAMP+'</div>'+lucioles(18);d.insertBefore(bg,d.firstChild);
+sync();var pend=false;if(window.MutationObserver)new MutationObserver(function(){if(pend)return;pend=true;setTimeout(function(){pend=false;sync();},30);}).observe(d,{subtree:true,attributes:true,attributeFilter:['style']});}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
 </body>
 </html>

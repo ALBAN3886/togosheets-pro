@@ -1,0 +1,215 @@
+/* AET MonBudget – écran de connexion « Lumière » (verre sombre + jaune) v2 */
+#authScreen.lumiere{
+  --lm-bg1:#04060c; --lm-bg2:#0b1020;
+  --lm-y1:#ffe14a; --lm-y2:#ffc800; --lm-glow:255,214,10;
+  --lm-line:rgba(255,255,255,.16); --lm-text:#fff; --lm-mute:rgba(255,255,255,.68);
+  position:relative; overflow:hidden; isolation:isolate; color:var(--lm-text);
+  background:
+    radial-gradient(900px 520px at 20% 100%, rgba(var(--lm-glow),.10), transparent 60%),
+    radial-gradient(700px 500px at 85% 0%, rgba(30,60,120,.22), transparent 60%),
+    linear-gradient(160deg,var(--lm-bg2),var(--lm-bg1)) !important;
+}
+#authScreen.lumiere .auth-header,
+#authScreen.lumiere .auth-body{position:relative; z-index:2}
+
+#authScreen.lumiere .auth-logo-wrap{
+  background:linear-gradient(135deg,var(--lm-y1),var(--lm-y2)) !important;
+  box-shadow:0 0 28px rgba(var(--lm-glow),.45) !important;
+}
+#authScreen.lumiere .auth-logo-wrap i{color:#111 !important}
+#authScreen.lumiere .auth-logo-name{color:#fff !important}
+#authScreen.lumiere .auth-logo-name span{color:var(--lm-y1) !important}
+
+#authScreen.lumiere .auth-title{color:#fff !important; letter-spacing:-.02em; line-height:1.05}
+#authScreen.lumiere .auth-title span{color:var(--lm-y1)}
+#authScreen.lumiere .auth-sub{color:var(--lm-mute) !important}
+
+#authScreen.lumiere .auth-box{
+  position:relative;
+  background:linear-gradient(180deg,rgba(255,255,255,.075),rgba(255,255,255,.035)) !important;
+  border:1px solid var(--lm-line) !important;
+  border-radius:28px !important;
+  -webkit-backdrop-filter:blur(18px) saturate(140%); backdrop-filter:blur(18px) saturate(140%);
+  box-shadow:0 24px 60px rgba(0,0,0,.45), 0 0 0 1px rgba(255,255,255,.03) inset, 0 -6px 50px rgba(var(--lm-glow),.10) !important;
+  animation:lmCardIn .7s cubic-bezier(.2,.8,.2,1) both;
+}
+#authScreen.lumiere .auth-box::before{
+  content:""; position:absolute; left:12%; right:12%; top:-1px; height:2px; border-radius:2px;
+  background:linear-gradient(90deg,transparent,rgba(var(--lm-glow),.95),transparent);
+  filter:blur(.4px); box-shadow:0 0 22px 4px rgba(var(--lm-glow),.45);
+  animation:lmBreath 3.6s ease-in-out infinite;
+}
+
+#authScreen.lumiere .form-label{color:var(--lm-mute) !important; font-weight:600}
+#authScreen.lumiere .form-input{
+  background:rgba(255,255,255,.04) !important; color:#fff !important;
+  border:1px solid var(--lm-line) !important; border-radius:18px !important;
+  transition:border-color .2s, box-shadow .2s, background .2s;
+}
+#authScreen.lumiere .form-input::placeholder{color:rgba(255,255,255,.38) !important}
+#authScreen.lumiere .form-input:focus{
+  outline:none; background:rgba(255,255,255,.07) !important;
+  border-color:rgba(var(--lm-glow),.85) !important;
+  box-shadow:0 0 0 3px rgba(var(--lm-glow),.16), 0 0 22px rgba(var(--lm-glow),.18) !important;
+}
+#authScreen.lumiere .form-input:-webkit-autofill{
+  -webkit-text-fill-color:#fff; box-shadow:0 0 0 100px #121829 inset !important;
+}
+#authScreen.lumiere .form-input-icon{color:rgba(255,255,255,.72) !important}
+#authScreen.lumiere .form-input-eye{color:rgba(255,255,255,.8) !important; background:transparent !important}
+#authScreen.lumiere .form-err{color:#ff8a80 !important}
+#authScreen.lumiere .auth-forgot a{color:var(--lm-y1) !important; cursor:pointer}
+
+#authScreen.lumiere .btn-full.btn-grad{
+  position:relative; overflow:hidden; border:0 !important; color:#111 !important; font-weight:800;
+  background:linear-gradient(180deg,var(--lm-y1),var(--lm-y2)) !important; border-radius:18px !important;
+  box-shadow:0 10px 30px rgba(var(--lm-glow),.35), 0 0 0 1px rgba(255,255,255,.25) inset !important;
+  animation:lmPulse 3s ease-in-out infinite;
+  transition:transform .15s, box-shadow .2s;
+}
+#authScreen.lumiere .btn-full.btn-grad:active{transform:scale(.985)}
+#authScreen.lumiere .btn-full.btn-grad::after{
+  content:""; position:absolute; top:0; bottom:0; width:40%; left:-60%;
+  background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);
+  transform:skewX(-20deg); animation:lmShine 4.2s ease-in-out infinite;
+}
+
+#authScreen.lumiere .auth-divider{color:rgba(255,255,255,.55) !important; letter-spacing:.08em; text-transform:uppercase; font-size:11px}
+#authScreen.lumiere .auth-divider::before,
+#authScreen.lumiere .auth-divider::after{background:rgba(255,255,255,.18) !important; border-color:rgba(255,255,255,.18) !important}
+#authScreen.lumiere .auth-social-btn{
+  background:rgba(255,255,255,.04) !important; color:#fff !important;
+  border:1px solid var(--lm-line) !important; border-radius:18px !important;
+  transition:border-color .2s, background .2s, transform .15s;
+}
+#authScreen.lumiere .auth-social-btn:hover{border-color:rgba(var(--lm-glow),.6) !important; background:rgba(255,255,255,.08) !important}
+#authScreen.lumiere .auth-social-btn:active{transform:scale(.98)}
+#authScreen.lumiere .auth-switch{color:var(--lm-mute) !important}
+#authScreen.lumiere .auth-switch a{color:var(--lm-y1) !important; font-weight:700; cursor:pointer}
+
+#authScreen.lumiere .lm-bg{position:absolute; inset:0; z-index:0; pointer-events:none; overflow:hidden}
+
+.lm-ambient{
+  position:absolute; width:140vmax; height:140vmax; left:-45vmax; top:-70vmax; border-radius:50%;
+  background:radial-gradient(closest-side,rgba(var(--lm-glow,255,214,10),.20),rgba(var(--lm-glow,255,214,10),.05) 55%,transparent 75%);
+  animation:lmFlickerOn 1.6s steps(1,end) both, lmGlow 6s ease-in-out 1.6s infinite;
+}
+
+.lm-lamp{position:absolute; left:6vw; bottom:0; width:min(34vw,420px); height:92%; display:none}
+.lm-lamp svg{width:100%; height:100%; overflow:visible}
+.lm-cone{transform-origin:50% 0; animation:lmFlickerOn 1.6s steps(1,end) both, lmGlow 6s ease-in-out 1.6s infinite}
+.lm-bulb{animation:lmBulb 1.6s steps(1,end) both}
+.lm-cord{transform-origin:50% 0; animation:lmSway 5s ease-in-out infinite}
+
+.lm-tag{position:absolute; left:6vw; top:104px; display:none; font-style:italic; color:rgba(255,255,255,.85); letter-spacing:.02em}
+.lm-tag b{display:block; font-style:italic; color:#fff; font-weight:700; font-size:18px; margin-top:2px}
+.lm-tag b em{color:var(--lm-y1)}
+.lm-tag i{display:block; width:36px; height:2px; background:var(--lm-y1); margin-top:10px; border-radius:2px}
+
+@media (min-width:900px){
+  .lm-lamp,.lm-tag{display:block}
+  .lm-lamp{height:min(88%,760px)}
+  .lm-ambient{left:-20vmax; top:auto; bottom:-60vmax}
+}
+@media (min-width:900px) and (max-height:720px){ .lm-tag{display:none} }
+
+/* ===== Colonne unique : header, onglets, bandeau, carte ===== */
+#authScreen.lumiere{display:flex; flex-direction:column; justify-content:center; padding:22px 0 !important}
+#authScreen.lumiere .lm-col{
+  width:calc(100% - 36px) !important; max-width:404px !important;
+  margin-left:auto !important; margin-right:auto !important;
+  padding-left:0 !important; padding-right:0 !important;
+  box-sizing:border-box !important; position:relative; z-index:2;
+}
+#authScreen.lumiere .auth-body.lm-col{flex:0 0 auto !important; padding-top:0 !important; padding-bottom:0 !important}
+#authScreen.lumiere .auth-header.lm-col{padding-top:0 !important; padding-bottom:14px !important; flex-wrap:wrap; justify-content:flex-start}
+@media (min-width:900px){
+  #authScreen.lumiere .lm-col{margin-left:auto !important; margin-right:clamp(24px,8vw,140px) !important}
+}
+#authScreen.lumiere .lm-nested{flex:0 0 100%; width:100% !important; max-width:none !important; margin-left:0 !important; margin-right:0 !important; box-sizing:border-box}
+
+#authScreen.lumiere .lm-tabs{
+  display:grid !important; grid-template-columns:1fr 1fr !important; gap:6px !important;
+  padding:5px !important; margin-top:0 !important; margin-bottom:12px !important;
+  background:rgba(255,255,255,.06) !important; border:1px solid var(--lm-line) !important;
+  border-radius:16px !important; box-shadow:none !important; height:auto !important;
+  -webkit-backdrop-filter:blur(14px); backdrop-filter:blur(14px);
+}
+#authScreen.lumiere .lm-tab{
+  display:flex !important; align-items:center; justify-content:center; gap:8px; white-space:nowrap;
+  height:42px !important; min-height:0 !important; margin:0 !important; padding:0 10px !important;
+  font-size:13.5px !important; font-weight:700; line-height:1; text-align:center;
+  border:0 !important; border-radius:12px !important; box-shadow:none !important;
+  background:transparent !important; background-image:none !important;
+  color:rgba(255,255,255,.72) !important; cursor:pointer;
+  transition:background .2s, color .2s, box-shadow .2s;
+}
+#authScreen.lumiere .lm-tab *{color:inherit !important; font-size:inherit !important}
+#authScreen.lumiere .lm-tab.lm-active{
+  background:linear-gradient(180deg,var(--lm-y1),var(--lm-y2)) !important; color:#111 !important;
+  box-shadow:0 6px 18px rgba(var(--lm-glow),.30) !important;
+}
+
+#authScreen.lumiere .lm-note{
+  display:flex !important; align-items:center; gap:10px; text-align:left;
+  margin-top:0 !important; margin-bottom:14px !important; padding:10px 14px !important;
+  font-size:12px !important; line-height:1.4 !important; font-weight:600 !important;
+  color:rgba(255,255,255,.82) !important;
+  background:rgba(var(--lm-glow),.08) !important; border:1px solid rgba(var(--lm-glow),.28) !important;
+  border-radius:14px !important; box-shadow:none !important;
+}
+#authScreen.lumiere .lm-note i,#authScreen.lumiere .lm-note svg{color:var(--lm-y1) !important; flex:0 0 auto}
+
+@media (min-width:900px){ .lm-tag{top:48px} }
+
+#authScreen.lumiere .auth-box > .auth-title{font-size:34px !important; margin:2px 0 6px}
+#authScreen.lumiere .auth-box > .auth-sub{margin:0 0 20px !important; font-size:13px}
+
+@keyframes lmCardIn{from{opacity:0; transform:translateY(22px) scale(.985)} to{opacity:1; transform:none}}
+@keyframes lmBreath{0%,100%{opacity:.55} 50%{opacity:1}}
+@keyframes lmPulse{0%,100%{box-shadow:0 10px 30px rgba(var(--lm-glow),.28),0 0 0 1px rgba(255,255,255,.25) inset}
+                   50%{box-shadow:0 10px 42px rgba(var(--lm-glow),.50),0 0 0 1px rgba(255,255,255,.25) inset}}
+@keyframes lmShine{0%,55%{left:-60%} 80%,100%{left:130%}}
+@keyframes lmGlow{0%,100%{opacity:1} 50%{opacity:.78}}
+@keyframes lmFlickerOn{0%{opacity:0} 8%{opacity:.9} 14%{opacity:.15} 22%{opacity:1} 30%{opacity:.35} 38%{opacity:1} 100%{opacity:1}}
+@keyframes lmBulb{0%{fill:#3a3320} 8%{fill:#fff3a8} 14%{fill:#4a4022} 22%{fill:#fff3a8} 30%{fill:#5a4c26} 38%,100%{fill:#fff3a8}}
+@keyframes lmSway{0%,100%{transform:rotate(-2.5deg)} 50%{transform:rotate(2.5deg)}}
+@keyframes lmFly{
+  0%{opacity:0; transform:translate(0,0) scale(.6)}
+  15%{opacity:1}
+  50%{opacity:.85; transform:translate(var(--x,14px),var(--y,-40px)) scale(1)}
+  85%{opacity:1}
+  100%{opacity:0; transform:translate(calc(var(--x,14px)*-.6),calc(var(--y,-40px)*1.8)) scale(.6)}
+}
+.lm-fly{
+  position:absolute; width:6px; height:6px; border-radius:50%;
+  background:radial-gradient(circle,#fff6b0 0,#ffd60a 45%,rgba(255,214,10,0) 70%);
+  box-shadow:0 0 12px 4px rgba(255,214,10,.55);
+  opacity:0; animation:lmFly var(--d,12s) ease-in-out var(--dl,0s) infinite;
+}
+@media (prefers-reduced-motion:reduce){
+  #authScreen.lumiere *, .lm-ambient, .lm-cone, .lm-bulb, .lm-cord, .lm-fly{animation:none !important}
+  .lm-fly{opacity:.7}
+}
+
+/* ===== v3 composition : lampe a gauche, carte a droite (maquette) ===== */
+#authScreen.lumiere .auth-box > .auth-title span{display:block}
+@media (min-width:900px){
+  #authScreen.lumiere{--lm-h:min(80vh,720px)}
+  #authScreen.lumiere .lm-col{margin-left:calc(50% + 20px) !important; margin-right:auto !important}
+  #authScreen.lumiere .lm-lamp{left:auto; right:calc(50% + 40px); top:50%; bottom:auto;
+    height:var(--lm-h); width:calc(var(--lm-h) * .553); transform:translateY(-50%)}
+  #authScreen.lumiere .lm-tag{top:calc(50% - var(--lm-h) / 2); left:calc(50% - 40px - var(--lm-h) * .553)}
+  #authScreen.lumiere .lm-tag b{font-size:22px}
+  #authScreen.lumiere .lm-ambient{left:auto; right:calc(50% - 60vmax); top:auto; bottom:-70vmax}
+  #authScreen.lumiere .lm-bg::after{content:""; position:absolute; left:0; right:0; bottom:0;
+    top:calc(50% + var(--lm-h) / 2 - 4px);
+    background:linear-gradient(180deg,rgba(255,214,10,.07),rgba(0,0,0,.35));
+    border-top:1px solid rgba(255,255,255,.06)}
+}
+@media (max-width:899px){
+  #authScreen.lumiere{padding-top:214px !important; justify-content:flex-start}
+  #authScreen.lumiere .lm-lamp{display:block; left:24px; top:6px; bottom:auto; height:200px; width:111px}
+  #authScreen.lumiere .lm-tag{display:block; top:80px; left:150px; font-size:13px}
+  #authScreen.lumiere .lm-tag b{font-size:20px}
+}

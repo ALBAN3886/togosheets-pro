@@ -1098,7 +1098,17 @@ window.doForgotPwd = async () => {
   if (!email) { err.textContent = 'Saisissez votre email'; return; }
   loader(true);
   try {
-    await sendPasswordResetEmail(auth, email, {
+    let viaFb = true;
+    try {
+      const r = await fetch('https://jefxfnxxifyychfrbhxd.supabase.co/functions/v1/smart-action', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      if (r.ok) viaFb = false;
+      else if (r.status === 429) { err.textContent = 'Trop de demandes. Réessayez dans un moment.'; loader(false); return; }
+      else if (r.status === 400) { err.textContent = 'Adresse e-mail invalide.'; loader(false); return; }
+    } catch (_) {}
+    if (viaFb) await sendPasswordResetEmail(auth, email, {
       url: 'https://budget.aet-alban.online/reset-password.html',
       handleCodeInApp: true,
     });

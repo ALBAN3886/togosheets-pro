@@ -2396,8 +2396,19 @@ window.doForgot = async () => {
   if (!email) { setMsg('msgForgot', 'Saisissez votre e-mail.'); return; }
   setMsg('msgForgot', ''); setBusy('btnForgot', true);
   try {
-    await sendPasswordResetEmail(auth, email, {
-      url: 'https://budget.aet-alban.online/reset-password.html?back=' + encodeURIComponent(location.origin + location.pathname + location.search),
+    const back = location.origin + location.pathname + location.search;
+    let viaFb = true;
+    try {
+      const r = await fetch('https://jefxfnxxifyychfrbhxd.supabase.co/functions/v1/smart-action', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, back })
+      });
+      if (r.ok) viaFb = false;
+      else if (r.status === 429) { setMsg('msgForgot', 'Trop de demandes. Réessayez dans un moment.'); setBusy('btnForgot', false, 'Envoyer le lien'); return; }
+      else if (r.status === 400) { setMsg('msgForgot', 'Adresse e-mail invalide.'); setBusy('btnForgot', false, 'Envoyer le lien'); return; }
+    } catch (_) {}
+    if (viaFb) await sendPasswordResetEmail(auth, email, {
+      url: 'https://budget.aet-alban.online/reset-password.html?back=' + encodeURIComponent(back),
       handleCodeInApp: true
     });
   } catch (e) {

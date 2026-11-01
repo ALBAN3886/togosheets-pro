@@ -3,7 +3,7 @@
   'use strict';
   if (window.AETStore3D) return;
 
-  var SW = 0.62, LH = 0.5, DEPTH = 0.55, BASE = 0.12, AX = 2.3;
+  var SW = 0.62, LH = 0.5, DEPTH = 0.55, BASE = 0.2, AX = 2.3;
   var PH = LH * 0.62, PD = DEPTH * 0.7;
   var T = null, OC = null, S = { open: false };
   var LOW = Math.min(screen.width, screen.height) * (window.devicePixelRatio || 1) < 800 ||
@@ -90,7 +90,7 @@
       '.a3b{border:0;border-radius:10px;padding:9px 11px;font:600 14px system-ui,sans-serif;background:#fff;color:#111;' +
       'box-shadow:0 1px 4px #0003;cursor:pointer}' +
       '.a3b.g{background:#16a34a;color:#fff}.a3b.r{background:#dc2626;color:#fff}.a3b.s{padding:6px 9px;font-size:13px}' +
-      '#a3Bar{position:absolute;left:0;right:0;bottom:0;display:flex;gap:6px;overflow-x:auto;padding:8px;' +
+      '#a3Bar{position:absolute;left:0;right:0;bottom:0;display:flex;flex-wrap:wrap;justify-content:center;gap:6px;padding:8px;' +
       'padding-bottom:calc(8px + env(safe-area-inset-bottom));background:linear-gradient(#0000,#0008)}' +
       '#a3Bar .a3b{flex:0 0 auto}#aet3d.view .ed{display:none}' +
       '#a3Sheet{position:absolute;left:0;right:0;bottom:0;max-height:72%;overflow:auto;background:#fff;color:#111;' +
@@ -102,9 +102,12 @@
       '.a3r img,.a3r i{width:40px;height:40px;object-fit:cover;border-radius:8px;background:#eee;flex:0 0 40px}' +
       '.a3r .t{flex:1;min-width:120px}.a3r .t small{display:block;color:#666}' +
       '.a3in{width:100%;box-sizing:border-box;padding:10px;border:1px solid #ccc;border-radius:10px;font-size:15px;margin-bottom:6px}' +
-      '#a3Msg{position:absolute;top:calc(60px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);' +
+      '#a3Msg{position:absolute;top:calc(160px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);' +
       'background:#111e;color:#fff;padding:8px 14px;border-radius:20px;font-size:13px;display:none;max-width:88%;' +
       'text-align:center;pointer-events:none}' +
+      '#a3Nav{position:absolute;left:8px;right:8px;top:calc(58px + env(safe-area-inset-top));display:none}' +
+      '.a3n{display:flex;gap:6px;justify-content:center;align-items:center;margin-bottom:6px;flex-wrap:wrap}' +
+      '.a3n span{background:#fffe;border-radius:10px;padding:6px 10px;font-weight:700;font-size:13px}' +
       '#a3Load{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;' +
       'font-size:16px;color:#333;text-align:center;padding:20px}';
     document.head.appendChild(st);
@@ -117,7 +120,7 @@
       '<div id="a3Load">⏳ Chargement du magasin 3D…</div>' +
       '<div id="a3Top"><button class="a3b" data-a="close">✕</button><span id="a3Title"></span>' +
       '<button class="a3b" id="a3Mode" data-a="mode"></button></div>' +
-      '<div id="a3Msg"></div>' +
+      '<div id="a3Nav"></div><div id="a3Msg"></div>' +
       '<div id="a3Bar"><button class="a3b g ed" data-a="add">➕ Rayon</button>' +
       '<button class="a3b ed" data-a="auto">⚡ Ranger auto</button>' +
       '<button class="a3b ed" data-a="list">☰ Rayons</button>' +
@@ -137,6 +140,7 @@
     draw(c.getContext('2d'), w, h);
     var t = new T.CanvasTexture(c);
     t.colorSpace = T.SRGBColorSpace;
+    if (S.r) t.anisotropy = S.r.capabilities.getMaxAnisotropy();
     return t;
   }
   function lines(g, t, x, y, mw, lh, max) {
@@ -154,15 +158,15 @@
       if (out === false) return;
       g.fillStyle = 'rgba(80,80,80,.65)'; g.fillRect(0, 0, w, h);
       g.fillStyle = '#dc2626'; g.fillRect(0, h * 0.38, w, h * 0.26);
-      g.fillStyle = '#fff'; g.font = 'bold 32px sans-serif';
+      g.fillStyle = '#fff'; g.font = 'bold 64px sans-serif';
       g.textAlign = 'center'; g.textBaseline = 'middle';
       g.fillText('ÉPUISÉ', w / 2, h / 2);
     }
-    var t = tex(256, 160, function (g, w, h) {
+    var t = tex(512, 320, function (g, w, h) {
       g.fillStyle = 'hsl(' + hue(a.cat || a.name) + ',55%,50%)'; g.fillRect(0, 0, w, h);
-      g.fillStyle = '#fff'; g.font = 'bold 26px sans-serif';
+      g.fillStyle = '#fff'; g.font = 'bold 60px sans-serif';
       g.textAlign = 'center'; g.textBaseline = 'top';
-      lines(g, a.name || '?', w / 2, 16, w - 20, 30, 4);
+      lines(g, a.name || '?', w / 2, 30, w - 40, 68, 4);
       deco(g, w, h);
     });
     if (a.imageUrl) {
@@ -184,11 +188,11 @@
   }
   function label(a) {
     var out = stk(a) <= 0, lo = low(a);
-    return tex(256, 62, function (g, w, h) {
+    return tex(512, 150, function (g, w, h) {
       g.fillStyle = out ? '#dc2626' : (lo ? '#fb923c' : '#ffffff'); g.fillRect(0, 0, w, h);
       g.fillStyle = (out || lo) ? '#fff' : '#111'; g.textBaseline = 'middle'; g.textAlign = 'left';
-      g.font = 'bold 28px sans-serif'; g.fillText(money(a.prixV), 10, 20);
-      g.font = '19px sans-serif'; g.fillText(out ? 'Épuisé' : 'Stock : ' + stk(a), 10, 47);
+      g.font = 'bold 64px sans-serif'; g.fillText(money(a.prixV), 16, 46);
+      g.font = 'bold 42px sans-serif'; g.fillText(out ? 'Épuisé' : 'Stock : ' + stk(a), 16, 116);
     });
   }
   function sign(t) {
@@ -206,12 +210,12 @@
   function onResize() {
     if (S.r == null) return;
     var w = S.el.clientWidth, h = S.el.clientHeight;
-    S.r.setSize(w, h); S.cam.aspect = w / h; S.cam.updateProjectionMatrix(); req();
+    S.r.setSize(w, h); S.cam.aspect = w / h; S.cam.updateProjectionMatrix(); req(); if (S.cur) go();
   }
   function init3d() {
     var el = S.el, w = el.clientWidth, h = el.clientHeight;
     var r = new T.WebGLRenderer({ antialias: LOW === false });
-    r.setPixelRatio(Math.min(window.devicePixelRatio || 1, LOW ? 1 : 2));
+    r.setPixelRatio(Math.min(window.devicePixelRatio || 1, LOW ? 1.5 : 2));
     r.setSize(w, h);
     el.insertBefore(r.domElement, el.firstChild);
     var sc = new T.Scene();
@@ -272,16 +276,16 @@
       var g = new T.Group();
       g.position.set(-fx * AX, 0, -row * (L0 + 1.2) - L0 / 2 - 1);
       g.rotation.y = fx * Math.PI / 2;
-      S.grp.add(g);
+      g.userData.aid = a.id; S.grp.add(g);
       S.pos[a.id] = { x: g.position.x, z: g.position.z, fx: fx, h: H, l: L };
       box(L, H, 0.04, metal, 0, H / 2, -DEPTH / 2, g);
       box(0.04, H, DEPTH, metal, -L / 2, H / 2, 0, g);
       box(0.04, H, DEPTH, metal, L / 2, H / 2, 0, g);
       for (var k = 0; k <= lv; k++) box(L, 0.03, DEPTH, wood, 0, BASE + k * LH, 0, g);
       var sw2 = Math.min(L, 2.6);
-      var sg = new T.Mesh(new T.PlaneGeometry(sw2, sw2 * 96 / 512),
-        new T.MeshBasicMaterial({ map: sign(a.name), side: T.DoubleSide }));
-      sg.position.set(0, H + 0.25, 0); g.add(sg);
+      var sgg = new T.PlaneGeometry(sw2, sw2 * 96 / 512), sgm = new T.MeshBasicMaterial({ map: sign(a.name) });
+      var sg = new T.Mesh(sgg, sgm); sg.position.set(0, H + 0.25, 0); g.add(sg);
+      var sb = new T.Mesh(sgg, sgm); sb.position.set(0, H + 0.25, 0); sb.rotation.y = Math.PI; g.add(sb);
       var sl = a.slots || (a.slots = {});
       for (var l = 0; l < lv; l++) for (var c = 0; c < co; c++) {
         var key = l + '_' + c, x = -L / 2 + SW * (c + 0.5), y = BASE + l * LH + 0.015;
@@ -294,9 +298,9 @@
           m.position.set(x, y + PH / 2, DEPTH / 2 - PD / 2 - 0.02);
           m.userData = { k: 'p', ai: ai, key: key, id: p.id };
           g.add(m); S.pick.push(m);
-          var lb = new T.Mesh(new T.PlaneGeometry(SW * 0.7, SW * 0.7 * 62 / 256),
+          var lb = new T.Mesh(new T.PlaneGeometry(SW * 0.85, SW * 0.85 * 150 / 512),
             new T.MeshBasicMaterial({ map: label(p) }));
-          lb.position.set(x, y - 0.075, DEPTH / 2 + 0.006);
+          lb.position.set(x, y - 0.09, DEPTH / 2 + 0.006);
           lb.userData = m.userData; g.add(lb); S.pick.push(lb);
         } else if (S.edit) {
           var e = box(SW * 0.8, 0.04, DEPTH * 0.8, S.emat, x, y + 0.035, 0, g);
@@ -304,28 +308,103 @@
         }
       }
     });
-    req();
+    req(); nav(); focus();
   }
   function home() {
     if (S.cam == null) return;
-    S.cam.position.set(0, 2.4, 3.2); S.ctl.target.set(0, 0.9, -3); S.ctl.update(); req();
+    S.cur = null; nav(); focus(); S.ctl.enabled = true; S.cam.position.set(0, 2.4, 3.2); S.ctl.target.set(0, 0.9, -3); S.ctl.update(); req();
   }
-  function look(id) {
-    var p = S.pos[id];
-    if (p == null || S.cam == null) return;
-    var d = Math.min(2 * AX - 0.3, Math.max(2.2, (p.l / 2 + 0.3) / (0.577 * S.cam.aspect)));
-    S.cam.position.set(p.x + p.fx * d, p.h * 0.6 + 0.5, p.z);
-    S.ctl.target.set(p.x, p.h * 0.5, p.z); S.ctl.update(); req();
+  function ncols() {
+    var pt = S.cam && S.cam.aspect < 0.8;
+    if (S.cur && S.cur.lv >= 0) return pt ? 3 : 6;
+    return pt ? 2 : 4;
+  }
+  function focus() {
+    if (S.grp == null) return;
+    var c = S.cur;
+    S.grp.children.forEach(function (g) {
+      var on = c == null || g.userData.aid === c.id;
+      g.visible = on;
+      if (on) g.children.forEach(function (m) {
+        var u = m.userData;
+        if (u && u.key) m.visible = c == null || c.lv < 0 || Number(String(u.key).split('_')[0]) === c.lv;
+      });
+    });
+    req();
+  }
+  function findA(id) {
+    var A = (plan() || { aisles: [] }).aisles;
+    for (var i = 0; i < A.length; i++) if (A[i].id === id) return i;
+    return -1;
+  }
+  function look(id) { S.cur = { id: id, lv: -1, c0: 0 }; go(); }
+  function go() {
+    var A = (plan() || { aisles: [] }).aisles, c = S.cur, i = c ? findA(c.id) : -1, a = A[i];
+    var p = a ? S.pos[a.id] : null;
+    if (p == null || S.cam == null) { S.cur = null; nav(); if (S.ctl) S.ctl.enabled = true; return; }
+    var lv = a.levels || 4, co = a.cols || 6, nc = Math.min(ncols(), co);
+    if (c.lv >= lv) c.lv = lv - 1;
+    c.c0 = Math.max(0, Math.min(c.c0, co - nc));
+    nav();
+    var cv = S.r.domElement.getBoundingClientRect(), H = cv.height || 1, top = 0, bot = H;
+    var nb = $('a3Nav'), bb = $('a3Bar');
+    if (nb && nb.offsetHeight) top = Math.max(0, nb.getBoundingClientRect().bottom - cv.top + 4);
+    if (bb && bb.offsetHeight) bot = Math.min(H, bb.getBoundingClientRect().top - cv.top - 4);
+    if (bot - top < H * 0.3) { top = 0; bot = H; }
+    var fh = (bot - top) / H, asp = S.cam.aspect, tn = Math.tan(S.cam.fov * Math.PI / 360);
+    var lx = -p.l / 2 + SW * (c.c0 + nc / 2), cy, hc;
+    if (c.lv < 0) { cy = (p.h + 0.5) / 2; hc = p.h + 0.7; }
+    else { cy = BASE + c.lv * LH + 0.17; hc = LH + 0.3; }
+    var V = Math.max(hc / fh, (nc * SW + 0.2) / asp);
+    var d = Math.max(0.8, V / (2 * tn));
+    V = 2 * tn * d;
+    var camY = cy + ((top + bot) / 2 / H - 0.5) * V;
+    var wz = p.z - lx * p.fx;
+    focus(); S.ctl.enabled = false;
+    S.cam.position.set(p.x + p.fx * (d + DEPTH / 2), camY, wz);
+    S.ctl.target.set(p.x, camY, wz); S.ctl.update(); req();
+  }
+  function step(dir) {
+    var A = (plan() || { aisles: [] }).aisles;
+    if (A.length === 0) return;
+    var c = S.cur, i = c ? findA(c.id) : -1;
+    if (i < 0) { S.cur = { id: A[0].id, lv: -1, c0: 0 }; return go(); }
+    var co = A[i].cols || 6, nc = Math.min(ncols(), co), c0;
+    if (dir > 0) {
+      if (c.c0 + nc >= co) { i = (i + 1) % A.length; c0 = 0; } else c0 = c.c0 + nc;
+    } else {
+      if (c.c0 <= 0) { i = (i - 1 + A.length) % A.length; var co2 = A[i].cols || 6; c0 = co2 - Math.min(ncols(), co2); }
+      else c0 = Math.max(0, c.c0 - nc);
+    }
+    S.cur = { id: A[i].id, lv: c.lv, c0: c0 };
+    go();
+  }
+  function nav() {
+    var n = $('a3Nav');
+    if (n == null) return;
+    var A = (plan() || { aisles: [] }).aisles, c = S.cur, a = c ? A[findA(c.id)] : null;
+    if (A.length === 0) { n.style.display = 'none'; return; }
+    n.style.display = 'block';
+    if (a == null) { n.innerHTML = '<div class="a3n"><button class="a3b s g" data-a="nx">▶ Visiter les rayons</button></div>'; return; }
+    var lv = a.levels || 4, co = a.cols || 6, nc = Math.min(ncols(), co);
+    var h = '<div class="a3n"><button class="a3b" data-a="pv">◀</button><span>' + esc(a.name) + ' · places ' +
+      (c.c0 + 1) + '-' + Math.min(co, c.c0 + nc) + '/' + co + '</span><button class="a3b" data-a="nx">▶</button></div><div class="a3n">';
+    for (var l = lv - 1; l >= 0; l--) h += '<button class="a3b s' + (c.lv === l ? ' g' : '') + '" data-a="lv" data-l="' + l + '">É' + (l + 1) + '</button>';
+    h += '<button class="a3b s' + (c.lv < 0 ? ' g' : '') + '" data-a="lv" data-l="-1">Tout</button></div>';
+    n.innerHTML = h;
   }
   function pDown(e) { S.pd = { x: e.clientX, y: e.clientY, t: Date.now() }; }
   function pUp(e) {
     var d = S.pd; S.pd = null;
-    if (d == null || Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y) > 10 || Date.now() - d.t > 600) return;
+    if (d == null) return;
+    var dx = e.clientX - d.x, dy = e.clientY - d.y;
+    if (S.cur && Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) { step(dx < 0 ? 1 : -1); return; }
+    if (Math.abs(dx) + Math.abs(dy) > 10 || Date.now() - d.t > 600) return;
     var rc = S.r.domElement.getBoundingClientRect();
     var v = new T.Vector2((e.clientX - rc.left) / rc.width * 2 - 1, 1 - (e.clientY - rc.top) / rc.height * 2);
     var ray = new T.Raycaster();
     ray.setFromCamera(v, S.cam);
-    var h = ray.intersectObjects(S.pick, false);
+    var h = ray.intersectObjects(S.pick.filter(function (o) { return o.visible && o.parent && o.parent.visible; }), false);
     if (h.length) onPick(h[0].object.userData);
   }
   function tick() { if (S.r == null || sig() === S.sig) return; build(); }
@@ -509,6 +588,8 @@
     if (act === 'close') return close();
     if (act === 'shut') return sheet('');
     if (act === 'mode') { S.edit = S.edit === false; S.mv = null; mode(); sheet(''); build(); return; }
+    if (act === 'nx' || act === 'pv') return step(act === 'nx' ? 1 : -1);
+    if (act === 'lv') { if (S.cur) { S.cur.lv = Number(b.getAttribute('data-l')); go(); } return; }
     if (act === 'add') return addAisle();
     if (act === 'auto') return autoArrange();
     if (act === 'list') return aisleList();
@@ -533,12 +614,26 @@
     }
     if (b.hasAttribute('data-i')) aisleAct(act, Number(b.getAttribute('data-i')));
   }
+  function fit() {
+    var v = window.visualViewport, d = S.el;
+    if (v == null || d == null) return;
+    d.style.right = 'auto'; d.style.bottom = 'auto';
+    var k = v.scale || 1;
+    d.style.left = v.offsetLeft + 'px'; d.style.top = v.offsetTop + 'px';
+    d.style.width = (v.width * k) + 'px'; d.style.height = (v.height * k) + 'px';
+    d.style.transformOrigin = '0 0';
+    d.style.transform = Math.abs(k - 1) < 0.01 ? '' : 'scale(' + (1 / k) + ')';
+    onResize();
+  }
   function onPop() { if (S.open) { S.hist = false; close(); } }
   function openEditor() {
     if (S.open) return;
     var s = shop();
     if (s == null) { alert("Créez d'abord une boutique dans Commerce."); return; }
     css(); S.el = ui(); S.open = true; S.edit = true; mode();
+    fit();
+    var vv = window.visualViewport;
+    if (vv) { vv.addEventListener('resize', fit); vv.addEventListener('scroll', fit); }
     $('a3Title').textContent = '🛒 ' + (s.name || 'Magasin');
     try { history.pushState({ a3: 1 }, ''); S.hist = true; } catch (e) {}
     window.addEventListener('popstate', onPop);
@@ -564,6 +659,10 @@
     clearInterval(S.iv); clearTimeout(S.mt);
     window.removeEventListener('popstate', onPop);
     window.removeEventListener('resize', onResize);
+    if (window.visualViewport) {
+      window.visualViewport.removeEventListener('resize', fit);
+      window.visualViewport.removeEventListener('scroll', fit);
+    }
     if (S.raf) cancelAnimationFrame(S.raf);
     try {
       if (S.r) {

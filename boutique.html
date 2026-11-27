@@ -888,7 +888,8 @@ const imgOf = a => a.imageUrl||a.photoUrl||a.img||a.photo||a.image||a.cover||a.t
 const timeAgo = ms => { const m = Math.floor((Date.now()-ms)/60000); return m < 2 ? 'à l\'instant' : m < 60 ? `il y a ${m} min` : m < 1440 ? `il y a ${Math.floor(m/60)}h` : `il y a ${Math.floor(m/1440)}j`; };
 
 window.showToast = (msg, type='') => {
-  const t = document.getElementById('toast');
+  let t = document.getElementById('toast');
+  if (!t) { t = document.createElement('div'); t.id = 'toast'; t.className = 'toast'; document.body.appendChild(t); }
   t.textContent = msg; t.className = 'toast show' + (type ? ' '+type : '');
   clearTimeout(window.__tt);
   window.__tt = setTimeout(()=>{ t.className='toast'; }, 2800);
@@ -1841,10 +1842,12 @@ window.selectPay = mode => {
 };
 
 
-window.addEventListener('unhandledrejection', ev => alert('REJET : ' + ((ev.reason && (ev.reason.code || '') + ' ' + (ev.reason.message || ev.reason)) || '?')));
-window.addEventListener('error', ev => alert('ERREUR JS : ' + ev.message));
 window.submitOrder = async () => {
-  alert('ETAPE 0 : clic recu');
+  if (window._orderBusy) return;
+  window._orderBusy = true;
+  try { await submitOrderInner(); } finally { window._orderBusy = false; }
+};
+const submitOrderInner = async () => {
   const name  = document.getElementById('ordName')?.value.trim();
   const phone = document.getElementById('ordPhone')?.value.trim();
   const city  = document.getElementById('ordCity')?.value.trim();
@@ -1878,7 +1881,6 @@ window.submitOrder = async () => {
     const now = Date.now();
     const eventId = `order_${orderId}_created`;
 
-    alert('ETAPE 0a : avant transaction');
     await runTransaction(custDb, async transaction => {
       // Toutes les lectures doivent avoir lieu avant les écritures.
       const chatSnapshot = await transaction.get(sellerChatRef);
@@ -1926,10 +1928,8 @@ window.submitOrder = async () => {
       }, { merge: true });
     });
 
-    alert('ETAPE 0b : transaction OK');
     saved = true;
   } catch(e) {
-    alert('ERREUR FIREBASE : ' + (e.code || '') + ' ' + (e.message || e));
     console.error('[ORDER + CHAT FIREBASE]', e);
     showToast('❌ Firebase: ' + (e.code || e.message || 'erreur inconnue'));
   }
@@ -1941,7 +1941,6 @@ window.submitOrder = async () => {
 
   // Paiement en ligne SasPay
   showToast('⏳ Ouverture du paiement…');
-  alert('ETAPE 1 : commande enregistree ' + orderDocId);
   let pay = null;
   try {
     const ret = new URL(location.href);
@@ -1952,12 +1951,11 @@ window.submitOrder = async () => {
         email: (auth.currentUser && auth.currentUser.email) || S.user?.email || ''})
     });
     const j = await r.json().catch(() => ({}));
-    alert('ETAPE 2 : reponse ' + r.status + ' ' + JSON.stringify(j).slice(0,150));
     if (!r.ok || !j.checkout_url) throw new Error(j.error || ('HTTP ' + r.status));
     pay = j;
   } catch(e) {
     console.error('[SASPAY ORDER]', e);
-    alert('Paiement impossible : ' + (e && (e.name + ' - ' + e.message) || e));
+    showToast('❌ Paiement : ' + (e.message || 'erreur'));
     return;
   }
 

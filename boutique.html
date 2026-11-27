@@ -1949,7 +1949,7 @@ window.submitOrder = async () => {
     pay = j;
   } catch(e) {
     console.error('[SASPAY ORDER]', e);
-    showToast('❌ Paiement : ' + (e.message || 'erreur'));
+    alert('Paiement impossible : ' + (e && (e.name + ' - ' + e.message) || e));
     return;
   }
 

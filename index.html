@@ -340,28 +340,41 @@ window.requirePremiumForCommerce = function() {
 // Demande d'activation Premium (solution transitoire en attendant l'intégration CinetPay/PayGate)
 // Enregistre la demande dans Firestore — l'activation se fait manuellement après réception du paiement
 // Mobile Money (Flooz/T-Money), puis automatiquement via la passerelle une fois celle-ci connectée.
+window.AET_SASPAY_FN = "https://jefxfnxxifyychfrbhxd.supabase.co/functions/v1/quick-action";
 window.requestPremiumActivation = async function() {
-  if (!currentUser) { toast('Veuillez vous connecter', 'error'); return; }
-  const btn = document.getElementById('premiumSubscribeBtn');
-  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Envoi...'; }
+  if (!currentUser) { toast("Veuillez vous connecter", "error"); return; }
+  const btn = document.getElementById("premiumSubscribeBtn");
+  const label = "<i class=\"fas fa-crown\"></i> S'abonner — " + window.PREMIUM_PRICE + " FCFA/mois";
+  if (btn) { btn.disabled = true; btn.innerHTML = "<i class=\"fas fa-spinner fa-spin\"></i> Redirection..."; }
   try {
-    await addDoc(collection(db, 'premiumRequests'), {
-      userId: currentUser.uid,
-      email: currentUser.email,
-      displayName: currentUser.displayName || '',
-      amount: window.PREMIUM_PRICE,
-      status: 'pending',
-      createdAt: serverTimestamp(),
-    });
-    toast('Demande envoyée ! Effectuez le paiement de ' + window.PREMIUM_PRICE + ' FCFA via Flooz/T-Money, votre compte sera activé sous peu.', 'success');
-    closePremiumModal();
+    const tok = await currentUser.getIdToken();
+    const r = await fetch(window.AET_SASPAY_FN, { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + tok }, body: JSON.stringify({ action: "create" }) });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.checkout_url || !/^https:\/\//.test(j.checkout_url)) throw new Error(j.error || ("HTTP " + r.status));
+    localStorage.setItem("aetSaspaySid", j.session_id);
+    location.href = j.checkout_url;
   } catch(e) {
-    console.error(e);
-    toast('Erreur lors de la demande, réessayez', 'error');
-  } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-crown"></i> S\'abonner — ' + window.PREMIUM_PRICE + ' FCFA/mois'; }
+    console.error("[SASPAY]", e);
+    toast("Paiement indisponible : " + (e.message || "réessayez"), "error");
+    if (btn) { btn.disabled = false; btn.innerHTML = label; }
   }
 };
+window.aetSaspayCheck = async function() {
+  const sid = localStorage.getItem("aetSaspaySid");
+  if (!sid || !/[?&]saspay=premium/.test(location.search)) return;
+  try { history.replaceState(null, "", location.pathname + location.hash); } catch(_) {}
+  toast("Vérification du paiement...", "info");
+  for (let k = 0; k < 4; k++) {
+    try {
+      const r = await fetch(window.AET_SASPAY_FN, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "verify", session_id: sid }) });
+      const j = await r.json().catch(() => ({}));
+      if (j.ok) { localStorage.removeItem("aetSaspaySid"); toast("Premium activé ! Merci 🎉", "success"); setTimeout(() => location.reload(), 1800); return; }
+    } catch(e) { console.warn("[SASPAY verify]", e); }
+    await new Promise(res => setTimeout(res, 4000));
+  }
+  toast("Paiement non confirmé pour l'instant. Réessayez dans un moment.", "info");
+};
+setTimeout(() => window.aetSaspayCheck(), 1500);
 
 // Helper interne pour activer manuellement un utilisateur premium (à utiliser depuis la console Firebase
 // ou une future Cloud Function après confirmation du paiement) :

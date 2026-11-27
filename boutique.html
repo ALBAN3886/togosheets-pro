@@ -1841,6 +1841,8 @@ window.selectPay = mode => {
 };
 
 
+window.addEventListener('unhandledrejection', ev => alert('REJET : ' + ((ev.reason && (ev.reason.code || '') + ' ' + (ev.reason.message || ev.reason)) || '?')));
+window.addEventListener('error', ev => alert('ERREUR JS : ' + ev.message));
 window.submitOrder = async () => {
   alert('ETAPE 0 : clic recu');
   const name  = document.getElementById('ordName')?.value.trim();
@@ -1876,6 +1878,7 @@ window.submitOrder = async () => {
     const now = Date.now();
     const eventId = `order_${orderId}_created`;
 
+    alert('ETAPE 0a : avant transaction');
     await runTransaction(custDb, async transaction => {
       // Toutes les lectures doivent avoir lieu avant les écritures.
       const chatSnapshot = await transaction.get(sellerChatRef);
@@ -1923,8 +1926,10 @@ window.submitOrder = async () => {
       }, { merge: true });
     });
 
+    alert('ETAPE 0b : transaction OK');
     saved = true;
   } catch(e) {
+    alert('ERREUR FIREBASE : ' + (e.code || '') + ' ' + (e.message || e));
     console.error('[ORDER + CHAT FIREBASE]', e);
     showToast('❌ Firebase: ' + (e.code || e.message || 'erreur inconnue'));
   }

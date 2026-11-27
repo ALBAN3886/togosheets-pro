@@ -1555,7 +1555,7 @@ function processOrderNotifications(orders) {
         title: isDone ? '✅ Commande validée' : '❌ Commande annulée',
         message: isDone
           ? (payPhone
-              ? `Votre commande a été validée — merci d'envoyer ${money(orderTotal)} au ${payPhone} (Flooz/T-Money).`
+              ? `Votre commande ${oid} a été validée (${money(orderTotal)}).`
               : `Votre commande ${oid} a été validée.`)
           : `Votre commande ${oid} a été annulée.`,
         createdAtMs: Date.now(),
@@ -1819,9 +1819,7 @@ window.renderCheckout = () => {
     <div class="form-row">
       <label>Mode de paiement</label>
       <div class="payment-options">
-        <div class="pay-opt active" id="pay_cash" onclick="selectPay('cash')"><i class="fas fa-money-bill-wave"></i>Cash</div>
-        <div class="pay-opt" id="pay_flooz" onclick="selectPay('flooz')"><i class="fas fa-mobile-alt"></i>Flooz</div>
-        <div class="pay-opt" id="pay_wave" onclick="selectPay('wave')"><i class="fas fa-wave-square"></i>Wave</div>
+        <div class="pay-opt active" id="pay_saspay" onclick="selectPay('saspay')"><i class="fas fa-mobile-alt"></i>Payer en ligne (Mobile Money)</div>
       </div>
     </div>
     <div class="cart-summary">
@@ -1829,7 +1827,7 @@ window.renderCheckout = () => {
       <div class="summary-row summary-total"><span>Total</span><span>${esc(money(total))}</span></div>
     </div>
   `;
-  window._selectedPay = 'cash';
+  window._selectedPay = 'saspay';
   document.getElementById('checkoutFoot').innerHTML = `
     <button class="btn-full btn-primary" onclick="submitOrder()"><i class="fas fa-check-circle" style="margin-right:6px"></i>Confirmer la commande</button>
   `;
@@ -1837,7 +1835,7 @@ window.renderCheckout = () => {
 
 window.selectPay = mode => {
   window._selectedPay = mode;
-  ['cash','flooz','wave'].forEach(m => {
+  ['saspay'].forEach(m => {
     document.getElementById('pay_'+m)?.classList.toggle('active', m===mode);
   });
 };
@@ -1860,17 +1858,19 @@ window.submitOrder = async () => {
     chatClientId: getClientId(),
     customer: {name, phone, city: city||'', note: note||''},
     items: S.cart.map(i=>({articleId:String(i.id),name:i.name,qty:i.qty,prixV:i.price,total:i.qty*i.price})),
-    subtotal: total, grandTotal: total, paymentMode: window._selectedPay||'cash',
+    subtotal: total, grandTotal: total, paymentMode: 'saspay',
     status: 'pending', source: 'storefront', createdAtMs: Date.now(),
   };
 
   let saved = false;
+  let orderDocId = '';
 
   // Enregistrement atomique dans Firebase :
   // 1. la commande dans public_orders ;
   // 2. sa carte permanente dans la discussion vendeur.
   try {
     const orderRef = doc(collection(custDb, 'public_orders'));
+    orderDocId = orderRef.id;
     const sellerChatRef = chatDocRef('vendeur');
     const now = Date.now();
     const eventId = `order_${orderId}_created`;
@@ -1933,6 +1933,26 @@ window.submitOrder = async () => {
     return;
   }
 
+  // Paiement en ligne SasPay
+  showToast('⏳ Ouverture du paiement…');
+  let pay = null;
+  try {
+    const ret = new URL(location.href);
+    ret.searchParams.delete('saspay'); ret.hash = '';
+    const r = await fetch(AET_SASPAY_FN, {
+      method: 'POST', headers: {'content-type': 'application/json'},
+      body: JSON.stringify({action: 'order_create', order_doc: orderDocId, return_url: ret.toString(),
+        email: (auth.currentUser && auth.currentUser.email) || S.user?.email || ''})
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.checkout_url) throw new Error(j.error || ('HTTP ' + r.status));
+    pay = j;
+  } catch(e) {
+    console.error('[SASPAY ORDER]', e);
+    showToast('❌ Paiement : ' + (e.message || 'erreur'));
+    return;
+  }
+
   // Sauvegarde locale
   S.orders.unshift(order);
   localStorage.setItem('aet_orders', JSON.stringify(S.orders.slice(0,20)));
@@ -1946,7 +1966,7 @@ window.submitOrder = async () => {
     client_city: city || '-',
     order_items: order.items.map(i=>`${i.name} x${i.qty} = ${money(i.total)}`).join('\n'),
     order_total: total,
-    payment_mode: window._selectedPay || 'cash',
+    payment_mode: 'Paiement en ligne (en attente)',
     order_id: orderId
   });
 
@@ -1955,9 +1975,42 @@ window.submitOrder = async () => {
   await saveCartToFirebase();
   renderCart();
   closeAllDrawers();
-  showToast(`✅ Commande ${orderId} envoyée !`);
   document.getElementById('accOrders').textContent = S.orders.length;
+  localStorage.setItem('aetSaspayOrderSid', pay.session_id);
+  showToast(`✅ Commande ${orderId} enregistrée — paiement…`);
+  location.href = pay.checkout_url;
 };
+
+const AET_SASPAY_FN = 'https://jefxfnxxifyychfrbhxd.supabase.co/functions/v1/quick-action';
+(function aetOrderReturn() {
+  const q = new URLSearchParams(location.search);
+  if (q.get('saspay') !== 'order') return;
+  const sid = localStorage.getItem('aetSaspayOrderSid') || '';
+  const clean = () => {
+    q.delete('saspay');
+    history.replaceState(null, '', location.pathname + (q.toString() ? '?' + q : '') + location.hash);
+  };
+  if (!sid) { clean(); return; }
+  let n = 0;
+  const run = async () => {
+    n++;
+    try {
+      const r = await fetch(AET_SASPAY_FN, {
+        method: 'POST', headers: {'content-type': 'application/json'},
+        body: JSON.stringify({action: 'order_verify', session_id: sid})
+      });
+      const j = await r.json().catch(() => ({}));
+      if (j.ok) {
+        localStorage.removeItem('aetSaspayOrderSid'); clean();
+        showToast('✅ Paiement reçu' + (j.order_id ? ' — commande ' + j.order_id : '') + ' !');
+        return;
+      }
+    } catch(e) { console.error('[SASPAY VERIFY]', e); }
+    if (n < 4) setTimeout(run, 4000);
+    else { clean(); showToast('⏳ Paiement pas encore confirmé. Il sera validé automatiquement.'); }
+  };
+  setTimeout(run, 1500);
+})();
 
 // ── MES COMMANDES ──────────────────────────────────────────────────────────
 window.openOrdersDrawer = () => {

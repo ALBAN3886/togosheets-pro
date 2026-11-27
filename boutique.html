@@ -1842,6 +1842,7 @@ window.selectPay = mode => {
 
 
 window.submitOrder = async () => {
+  alert('ETAPE 0 : clic recu');
   const name  = document.getElementById('ordName')?.value.trim();
   const phone = document.getElementById('ordPhone')?.value.trim();
   const city  = document.getElementById('ordCity')?.value.trim();
@@ -1935,6 +1936,7 @@ window.submitOrder = async () => {
 
   // Paiement en ligne SasPay
   showToast('⏳ Ouverture du paiement…');
+  alert('ETAPE 1 : commande enregistree ' + orderDocId);
   let pay = null;
   try {
     const ret = new URL(location.href);
@@ -1945,6 +1947,7 @@ window.submitOrder = async () => {
         email: (auth.currentUser && auth.currentUser.email) || S.user?.email || ''})
     });
     const j = await r.json().catch(() => ({}));
+    alert('ETAPE 2 : reponse ' + r.status + ' ' + JSON.stringify(j).slice(0,150));
     if (!r.ok || !j.checkout_url) throw new Error(j.error || ('HTTP ' + r.status));
     pay = j;
   } catch(e) {

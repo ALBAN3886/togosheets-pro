@@ -9818,10 +9818,10 @@ function tvMembersHtml(tn) {
   for (let i = 0; i < n; i++) {
     const mb = tvMember(tn, i); if (mb.name) filled++;
     const tag = i < cur ? '<span class="tv-tag tv-ok">✓ Reçu</span>' : i === cur ? '<span class="tv-tag tv-ben">Bénéficiaire</span>' : '<span class="tv-tag tv-next">À venir</span>';
-    const nm = mb.name ? escapeHtml(mb.name) : '<span style="color:#94a3b8;font-weight:500">Place libre</span>';
+    const nm = mb.name ? escapeHtml(mb.name) : (i === me ? 'Vous' : '<span style="color:#94a3b8;font-weight:500">Place libre</span>');
     rows += `<div class="tv-row${i === cur ? ' cur' : ''}">
       <div class="tv-av" style="background:${mb.name ? tvCol(i) : '#cbd5e1'}">${mb.name ? escapeHtml(tvIni(mb.name)) : (i + 1)}</div>
-      <div class="tv-mi"><b>${nm}${i === me ? ' <span style="color:#2563eb;font-size:12px">(vous)</span>' : ''}</b>
+      <div class="tv-mi"><b>${nm}${i === me && mb.name ? ' <span style="color:#2563eb;font-size:12px">(vous)</span>' : ''}</b>
       <span>Tour ${i + 1} · ${tontFmt(tontTurnDate(tn, i))}${mb.phone ? ' · ' + escapeHtml(tvPhone(mb.phone)) : ''}</span></div>${tag}</div>`;
   }
   return `<div class="tv-sec"><h3>Ordre des tours <span style="color:#64748b;font-weight:500;font-size:13px">(${filled}/${n} inscrits)</span></h3>
@@ -9833,7 +9833,8 @@ function tvPayHtml(tn) {
   let cnt = 0, rows = '';
   for (let i = 0; i < n; i++) {
     const mb = tvMember(tn, i), ok = !!(p[i] && p[i].paid); if (ok) cnt++;
-    const nm = mb.name ? escapeHtml(mb.name) : ('Membre ' + (i + 1));
+    const isMe = i === (tn.position || 1) - 1;
+    const nm = (mb.name ? escapeHtml(mb.name) + (isMe ? ' <span style="color:#2563eb;font-size:12px">(vous)</span>' : '') : (isMe ? 'Vous' : '<span style="color:#94a3b8;font-weight:500">Place libre ' + (i + 1) + '</span>'));
     const when = ok && p[i].at ? tvDate(p[i].at) : '';
     const av = ok ? '✓' : (mb.name ? escapeHtml(tvIni(mb.name)) : (i + 1));
     const act = ok
@@ -9890,7 +9891,7 @@ function tvInfoHtml(tn) {
       ${tvKv('Ma position', pos + '/' + n + ' · ' + tontFmt(tontTurnDate(tn, pos - 1)))}
       ${tn.description ? tvKv('Description', escapeHtml(tn.description)) : ''}
     </div>
-    <div style="display:flex;gap:8px"><button class="tv-btn tv-g" style="flex:1;padding:13px" onclick="tvEditTont()">✏️ Modifier la tontine</button><button class="tv-btn tv-r" style="padding:13px" onclick="tvDel()">🗑️</button></div>`;
+    <div style="display:flex;gap:8px"><button class="tv-btn tv-g" style="flex:1;padding:13px" onclick="tvEditTont()">✏️ Modifier la tontine</button><button class="tv-btn tv-r" style="padding:13px;width:56px;flex-shrink:0" onclick="tvDel()">🗑️</button></div>`;
 }
 window.tvSetEdit = (v) => { __tvSet = !!v; tvRender(); };
 window.tvSaveInfo = async () => {

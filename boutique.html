@@ -2039,7 +2039,7 @@ const AET_SASPAY_FN = 'https://jefxfnxxifyychfrbhxd.supabase.co/functions/v1/qui
         localStorage.removeItem('aetSaspayOrderSid'); clean();
         try {
           const lo = (S.orders || []).find(x => x.id === j.order_id);
-          if (lo) { lo.paid = true; if (j.validated) lo.status = 'completed'; localStorage.setItem('aet_orders', JSON.stringify(S.orders.slice(0,20))); }
+          if (lo) { lo.paid = true; lo.paidAt = Date.now(); lo.payRef = j.transaction_id || j.transactionId || sid; if (j.validated) lo.status = 'completed'; localStorage.setItem('aet_orders', JSON.stringify(S.orders.slice(0,20))); }
         } catch(e2) { console.error('[SASPAY LOCAL]', e2); }
         document.getElementById('aetPayLink')?.remove();
         showToast('✅ Paiement reçu' + (j.order_id ? ' — commande ' + j.order_id : '') + (j.validated ? ' — validée' : '') + ' !');
@@ -2076,6 +2076,41 @@ window.aetPayOrder = async (docId) => {
   } finally { window._payBusy = false; }
 };
 
+window.aetShowReceipt = (oid) => {
+  const o = (S.orders || []).find(x => x.id === oid);
+  if (!o) return;
+  const d = new Date(o.paidAt || o.createdAtMs || Date.now()).toLocaleString('fr-FR');
+  const rows = (o.items || []).map(i => '<tr><td style="padding:3px 0">' + esc(i.name) + ' x' + esc(i.qty) + '</td><td style="text-align:right">' + (i.price ? esc(money(Number(i.price) * Number(i.qty || 1))) : '') + '</td></tr>').join('');
+  const html = '<div style="font-family:sans-serif;max-width:360px;margin:auto;color:#0f172a;font-size:14px;line-height:1.6">' +
+    '<h2 style="text-align:center;margin:0 0 4px;font-size:18px">🧾 Reçu</h2>' +
+    '<div style="text-align:center;color:#64748b;font-size:12px;margin-bottom:12px">' + esc(document.title || '') + '</div>' +
+    '<div><b>Commande :</b> ' + esc(o.id) + '</div>' +
+    '<div><b>Date :</b> ' + esc(d) + '</div>' +
+    '<div><b>Paiement :</b> ' + (o.paid ? 'Payé en ligne (SasPay)' : 'Validée par la boutique') + '</div>' +
+    (o.payRef ? '<div style="word-break:break-all"><b>Référence :</b> ' + esc(o.payRef) + '</div>' : '') +
+    '<table style="width:100%;margin-top:10px;border-top:1px dashed #94a3b8;font-size:13px">' + rows + '</table>' +
+    '<div style="border-top:1px dashed #94a3b8;margin-top:8px;padding-top:8px;font-weight:800;display:flex;justify-content:space-between"><span>Total</span><span>' + esc(money(o.grandTotal)) + '</span></div>' +
+    '</div>';
+  let m = document.getElementById('aetReceipt');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'aetReceipt';
+    m.style.cssText = 'position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,.6);display:flex;align-items:center;justify-content:center;padding:16px';
+    document.body.appendChild(m);
+  }
+  m.innerHTML = '<div style="background:#fff;border-radius:14px;padding:16px;width:100%;max-width:400px;max-height:90vh;overflow:auto">' + html +
+    '<button type="button" id="aetRcPrint" style="margin-top:14px;width:100%;background:#f97316;color:#fff;border:0;border-radius:10px;padding:11px;font-weight:700">🖨️ Imprimer / PDF</button>' +
+    '<button type="button" id="aetRcClose" style="margin-top:8px;width:100%;background:none;border:0;color:#64748b;font-weight:600;padding:8px">Fermer</button></div>';
+  document.getElementById('aetRcClose').onclick = () => m.remove();
+  document.getElementById('aetRcPrint').onclick = () => {
+    const w = window.open('', '_blank');
+    if (!w) { showToast('Autorisez les fenêtres pour imprimer'); return; }
+    w.document.write('<!doctype html><html><head><meta charset="utf-8"><title>Reçu ' + esc(o.id) + '</title></head><body>' + html + '</body></html>');
+    w.document.close();
+    setTimeout(() => w.print(), 400);
+  };
+};
+
 window.openOrdersDrawer = () => {
   const body = document.getElementById('ordersBody');
   if (!S.orders.length) {
@@ -2099,6 +2134,7 @@ window.openOrdersDrawer = () => {
           <div class="prog-step ${isRejected?'':(isDone?'done':'active')}"></div>
           <div class="prog-step ${isDone?'done':''}"></div>
         </div>
+        ${(isDone || o.paid) ? `<button type="button" onclick="aetShowReceipt('${esc(o.id)}')" style="margin-top:10px;width:100%;background:#0f172a;color:#fff;border:0;border-radius:10px;padding:10px;font-weight:700">🧾 Voir le reçu</button>` : ''}
         ${(o.docId && !isDone && !isRejected && !o.paid) ? `<button type="button" onclick="aetPayOrder('${esc(o.docId)}')" style="margin-top:10px;width:100%;background:#f97316;color:#fff;border:0;border-radius:10px;padding:10px;font-weight:700">💳 Payer</button>` : ''}
       </div>`;
     }).join('');

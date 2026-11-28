@@ -12188,11 +12188,14 @@ function cmRenderOrders(){
   const pending = orders.filter(o => cmNormOrderStatus(o.status) === 'pending').length;
   const delivered = orders.filter(o => cmNormOrderStatus(o.status) === 'completed').length;
   const cancelled = orders.filter(o => cmNormOrderStatus(o.status) === 'rejected').length;
+  const cmOtherMap = {};
+  orders.forEach(o => { const st = cmNormOrderStatus(o.status); if (st !== 'pending' && st !== 'completed' && st !== 'rejected') cmOtherMap[st] = (cmOtherMap[st] || 0) + 1; });
+  const cmOtherTxt = Object.keys(cmOtherMap).map(k => String(k).replace(/[<>&"']/g, '') + ' × ' + cmOtherMap[k]).join(', ');
 
   stats.innerHTML = `
     <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px;">
       <div style="font-size:12px;color:#6b7280;">Total</div>
-      <strong style="font-size:22px;">${orders.length}</strong>
+      <strong style="font-size:22px;">${orders.length}</strong>${cmOtherTxt ? '<div style="font-size:11px;color:#6b7280;margin-top:4px;">Autres : ' + cmOtherTxt + '</div>' : ''}
     </div>
     <div style="background:#fff;border:1px solid #fde68a;border-radius:12px;padding:14px;">
       <div style="font-size:12px;color:#92400e;">En attente</div>

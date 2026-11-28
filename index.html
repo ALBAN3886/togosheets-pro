@@ -12141,6 +12141,7 @@ function esc(s){
    completed -> delivered, rejected -> cancelled. */
 function cmNormOrderStatus(s){
   const v = String(s || 'pending').toLowerCase();
+  if (v === 'pending_pi_verification') return 'pending';
   if (v === 'confirmed' || v === 'preparing' || v === 'delivered') return 'completed';
   if (v === 'cancelled' || v === 'canceled') return 'rejected';
   return v;
@@ -12346,7 +12347,7 @@ async function cmUpdateOrderStatus(orderId, status){
 
       // Annulation : aucune vente ni modification de stock.
       if (status === 'rejected') {
-        if (currentStatus !== 'pending') {
+        if (currentStatus !== 'pending' && currentStatus !== 'pending_pi_verification') {
           throw new Error('Commande déjà traitée');
         }
 

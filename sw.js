@@ -1,4 +1,4 @@
-const CACHE_NAME = 'aet-monbudget-v75-final'; // Version incrementee automatiquement par .github/workflows/bump-cache.yml
+const CACHE_NAME = 'aet-monbudget-v76-final'; // Version incrementee automatiquement par .github/workflows/bump-cache.yml
 const CORE_ASSETS = [
   './',
   './index.html',

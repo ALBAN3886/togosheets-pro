@@ -9466,10 +9466,11 @@ function renderTontinesList() {
       </div>
       <div class="tont-next">
         <i class="fas fa-calendar-check"></i>
-        ${t('tont_next_draw')} ${tontNextLabel(tn)}
+        ${t('tont_next_draw')} ${tontNextLabel(tn)}${tontPayLine(tn)}
       </div>
       <div class="tont-actions">
         <button style="background:rgba(16,185,129,.12);color:#059669" onclick="openTontMembers('${tn.id}')"><i class="fas fa-users"></i> Membres</button>
+        <button style="background:rgba(245,158,11,.14);color:#b45309" onclick="openTontPay('${tn.id}')"><i class="fas fa-coins"></i> Cotisations</button>
         <button style="background:rgba(37,99,235,.1);color:var(--primary)" onclick="editTontine('${tn.id}')"><i class="fas fa-pencil"></i> ${t('tont_btn_edit')}</button>
         <button style="background:rgba(239,68,68,.08);color:var(--danger)" onclick="deleteTontine('${tn.id}')"><i class="fas fa-trash"></i> ${t('tont_btn_delete')}</button>
       </div>
@@ -9570,6 +9571,147 @@ window.saveTontMembers = async () => {
     toast('Membres enregistrés', 'info');
   } catch (e) { toast(friendlyErr(e), 'error'); }
   loader(false);
+};
+function tontCurIdx(tn) {
+  const n = tn.members || 1;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  for (let i = 0; i < n; i++) { const d = tontTurnDate(tn, i); if (!d) return 0; if (d >= today) return i; }
+  return n - 1;
+}
+function tontPaidCount(tn, k) {
+  const p = (tn.payments && tn.payments['t' + (k + 1)]) || {};
+  return Object.values(p).filter(x => x && x.paid).length;
+}
+function tontPayLine(tn) {
+  return ' · 💰 ' + tontPaidCount(tn, tontCurIdx(tn)) + '/' + (tn.members || 1) + ' ont cotisé';
+}
+function tontWa(phone) {
+  let d = String(phone || '').replace(/\D/g, '');
+  if (d.length === 8) d = '228' + d;
+  return d;
+}
+let __tpId = null, __tpK = 0, __tpPay = {}, __tpInfo = {}, __tpEdit = false;
+function tontPayDest(tn, k) {
+  const list = tn.membersList || [];
+  if (__tpInfo.payTo === 'organizer') return __tpInfo.number || '';
+  return (list[k] && list[k].phone) || '';
+}
+function tontPayMsg(tn, k, who) {
+  const list = tn.membersList || [];
+  const ben = (list[k] && list[k].name) || ('Tour ' + (k + 1));
+  const dest = tontPayDest(tn, k);
+  return 'Bonjour' + (who ? ' ' + who : '') + ',\n' +
+    'Tontine « ' + (tn.name || '') + ' » - Tour ' + (k + 1) + ' (' + tontFmt(tontTurnDate(tn, k)) + ')\n' +
+    'Cotisation : ' + formatMoneyXOF(tn.amount) + '\n' +
+    'Bénéficiaire : ' + ben + '\n' +
+    'Paiement : ' + (__tpInfo.mode || 'Mobile money') + (dest ? ' au ' + dest : '') + '\n' +
+    (__tpInfo.note ? __tpInfo.note + '\n' : '') + 'Merci !';
+}
+function tontPayReadInfo() {
+  const g = id => document.getElementById(id);
+  if (!g('tpMode')) return;
+  __tpInfo = { mode: g('tpMode').value, payTo: g('tpTo').value, number: g('tpNum').value.trim(), note: g('tpNote').value.trim() };
+}
+function tontPayRender() {
+  const tn = userTontines.find(x => x.id === __tpId);
+  const m = document.getElementById('tpModal');
+  if (!tn || !m) return;
+  const n = tn.members || 1, k = __tpK, list = tn.membersList || [];
+  const cur = __tpPay['t' + (k + 1)] || {};
+  const paid = Object.values(cur).filter(x => x && x.paid).length;
+  const amt = tn.amount || 0;
+  const ben = (list[k] && list[k].name) || ('Tour ' + (k + 1));
+  const pct = Math.round(paid * 100 / n);
+  const dest = tontPayDest(tn, k);
+  const inp = 'width:100%;box-sizing:border-box;padding:9px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;color:#0f172a;background:#fff';
+  const nav = 'border:0;background:#e2e8f0;color:#0f172a;border-radius:8px;width:36px;height:34px;font-size:15px';
+  const rows = [...Array(n)].map((_, i) => {
+    const mb = list[i] || {};
+    const nm = mb.name || ('Membre ' + (i + 1));
+    const ok = !!(cur[i] && cur[i].paid);
+    const wa = tontWa(mb.phone);
+    return `<div style="display:flex;align-items:center;gap:6px;padding:9px 0;border-bottom:1px solid #eef2f7">
+      <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13px">${i + 1}. ${escapeHtml(nm)}${i === k ? ' 🎁' : ''}</div>
+      <div style="font-size:11px;color:#64748b">${escapeHtml(mb.phone || 'Pas de téléphone')}${(ok && cur[i].at) ? ' · payé le ' + new Date(cur[i].at).toLocaleDateString('fr-FR') : ''}</div></div>
+      ${(!ok && wa) ? `<a href="https://wa.me/${wa}?text=${encodeURIComponent(tontPayMsg(tn, k, mb.name || ''))}" target="_blank" rel="noopener" style="text-decoration:none;background:#dcfce7;color:#166534;border-radius:8px;padding:7px 9px;font-size:13px;font-weight:700">📲</a>` : ''}
+      <button type="button" onclick="tontPayToggle(${i})" style="border:0;border-radius:8px;padding:7px 9px;font-size:12px;font-weight:700;white-space:nowrap;background:${ok ? '#16a34a' : '#fee2e2'};color:${ok ? '#fff' : '#b91c1c'}">${ok ? '✅ Payé' : '⏳ Non payé'}</button>
+    </div>`;
+  }).join('');
+  const toLabel = __tpInfo.payTo === 'organizer' ? "l'organisateur" : 'le bénéficiaire (' + escapeHtml(ben) + ')';
+  m.innerHTML = `<div style="background:#fff;color:#0f172a;border-radius:16px;padding:16px;width:100%;max-width:440px;max-height:92vh;overflow:auto">
+    <h3 style="margin:0 0 10px;font-size:17px">💰 ${escapeHtml(tn.name || '')}</h3>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:10px">
+      <button type="button" style="${nav}" onclick="tontPayGo(-1)">◀</button>
+      <div style="text-align:center;font-size:12px"><b style="font-size:14px">Tour ${k + 1}/${n}</b><br>${tontFmt(tontTurnDate(tn, k))}<br>🎁 ${escapeHtml(ben)} reçoit ${formatMoneyXOF(amt * n)}</div>
+      <button type="button" style="${nav}" onclick="tontPayGo(1)">▶</button>
+    </div>
+    <div style="margin:10px 0 4px;font-size:12px;font-weight:700">${paid}/${n} ont cotisé · ${formatMoneyXOF(amt * paid)} / ${formatMoneyXOF(amt * n)}</div>
+    <div style="height:8px;background:#e2e8f0;border-radius:6px;overflow:hidden"><div style="height:100%;width:${pct}%;background:#16a34a"></div></div>
+    <div style="margin-top:12px;background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:10px;font-size:12.5px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><b>📌 Comment cotiser</b>
+      <button type="button" onclick="tontPayEdit()" style="border:0;background:#fde68a;color:#92400e;border-radius:8px;padding:5px 9px;font-size:12px;font-weight:700">${__tpEdit ? '✔️ OK' : '✏️ Modifier'}</button></div>
+      <div style="margin-top:6px">Chaque membre envoie <b>${formatMoneyXOF(amt)}</b> par <b>${escapeHtml(__tpInfo.mode || 'Mobile money')}</b> à ${toLabel}${dest ? ' au <b>' + escapeHtml(dest) + '</b>' : ' <i>(numéro non renseigné)</i>'} avant le <b>${tontFmt(tontTurnDate(tn, k))}</b>.</div>
+      ${__tpInfo.note ? `<div style="margin-top:4px">${escapeHtml(__tpInfo.note)}</div>` : ''}
+      ${__tpEdit ? `<div style="margin-top:8px;display:grid;gap:6px">
+        <select id="tpMode" style="${inp}">${['Mobile money', 'Mixx by Yas (TMoney)', 'Flooz (Moov)', 'Espèces', 'Virement bancaire', 'Autre'].map(o => `<option>${o}</option>`).join('')}</select>
+        <select id="tpTo" style="${inp}"><option value="beneficiary">Directement au bénéficiaire du tour</option><option value="organizer">À l'organisateur (numéro ci-dessous)</option></select>
+        <input id="tpNum" style="${inp}" type="tel" placeholder="Numéro de l'organisateur">
+        <textarea id="tpNote" style="${inp}" rows="2" placeholder="Consignes (ex : frais de retrait à votre charge)"></textarea>
+      </div>` : ''}
+    </div>
+    <div style="margin-top:10px">${rows}</div>
+    <a href="https://wa.me/?text=${encodeURIComponent(tontPayMsg(tn, k, ''))}" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;margin-top:12px;background:#16a34a;color:#fff;border-radius:12px;padding:12px;font-weight:700">📲 Partager les instructions (WhatsApp)</a>
+    <button type="button" onclick="tontPaySave(false)" style="width:100%;margin-top:8px;background:#2563eb;color:#fff;border:0;border-radius:12px;padding:12px;font-weight:700">💾 Enregistrer</button>
+    <button type="button" onclick="document.getElementById('tpModal').remove()" style="width:100%;margin-top:6px;background:none;border:0;color:#64748b;font-weight:700;padding:10px">Fermer</button>
+  </div>`;
+  if (__tpEdit) {
+    document.getElementById('tpMode').value = __tpInfo.mode || 'Mobile money';
+    document.getElementById('tpTo').value = __tpInfo.payTo || 'beneficiary';
+    document.getElementById('tpNum').value = __tpInfo.number || '';
+    document.getElementById('tpNote').value = __tpInfo.note || '';
+  }
+}
+window.tontPaySave = async (quiet) => {
+  if (!_auth.currentUser || !__tpId) return;
+  tontPayReadInfo();
+  if (!quiet) loader(true);
+  try {
+    await _upDoc(_doc(_db, 'tontines', __tpId), { payments: __tpPay, payInfo: __tpInfo, updatedAt: _ts() });
+    if (!quiet) toast('Cotisations enregistrées', 'info');
+  } catch (e) { toast(friendlyErr(e), 'error'); }
+  if (!quiet) loader(false);
+};
+window.tontPayToggle = (i) => {
+  tontPayReadInfo();
+  const key = 't' + (__tpK + 1);
+  __tpPay[key] = __tpPay[key] || {};
+  const c = __tpPay[key][i];
+  __tpPay[key][i] = (c && c.paid) ? { paid: false } : { paid: true, at: Date.now() };
+  tontPayRender();
+  tontPaySave(true);
+};
+window.tontPayGo = (d) => {
+  const tn = userTontines.find(x => x.id === __tpId);
+  if (!tn) return;
+  tontPayReadInfo();
+  __tpK = Math.max(0, Math.min((tn.members || 1) - 1, __tpK + d));
+  tontPayRender();
+};
+window.tontPayEdit = () => { tontPayReadInfo(); __tpEdit = !__tpEdit; tontPayRender(); };
+window.openTontPay = (id) => {
+  const tn = userTontines.find(x => x.id === id);
+  if (!tn) return;
+  __tpId = id; __tpK = tontCurIdx(tn); __tpEdit = false;
+  __tpPay = JSON.parse(JSON.stringify(tn.payments || {}));
+  __tpInfo = Object.assign({ mode: 'Mobile money', payTo: 'beneficiary', number: '', note: '' }, tn.payInfo || {});
+  let m = document.getElementById('tpModal');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'tpModal';
+    m.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,.6);display:flex;align-items:center;justify-content:center;padding:12px';
+    document.body.appendChild(m);
+  }
+  tontPayRender();
 };
 window.openTontineModal = () => {
   tontineEditId = null;

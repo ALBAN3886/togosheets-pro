@@ -11753,6 +11753,7 @@ window.cmSelectShop = function(id){
   CM.currentShopId = id;
   cmSave();
   cmRenderAll();
+  setTimeout(function(){ try { if (typeof window.cpRenderDashboard === 'function') window.cpRenderDashboard(); } catch(e){} }, 80);
 };
 
 /* ── Modal Boutique ── */

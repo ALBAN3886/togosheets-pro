@@ -1654,6 +1654,8 @@ body.dark #cpSearchBox, html[data-theme=dark] #cpSearchBox { background: #111827
     cpRenderProduitsReappro(arts, shopSeuil);
   }
 
+  window.cpRenderDashboard = cpRenderDashboard;
+
   function cpRenderChartVentes(mvts) {
     const ctx = document.getElementById('cpChartVentes');
     // On ne redessine que si le canevas est réellement visible à l'écran en ce moment

@@ -1955,11 +1955,12 @@ const submitOrderInner = async () => {
     pay = j;
   } catch(e) {
     console.error('[SASPAY ORDER]', e);
-    showToast('❌ Paiement : ' + (e.message || 'erreur'));
-    return;
+    showToast('⚠️ Paiement non ouvert — réessayez dans « Mes commandes »');
+    pay = null;
   }
 
   // Sauvegarde locale
+  order.docId = orderDocId;
   S.orders.unshift(order);
   localStorage.setItem('aet_orders', JSON.stringify(S.orders.slice(0,20)));
   if (S.user) { S.user.name=name; S.user.phone=phone; localStorage.setItem('aet_user',JSON.stringify(S.user)); }
@@ -1982,10 +1983,13 @@ const submitOrderInner = async () => {
   renderCart();
   closeAllDrawers();
   document.getElementById('accOrders').textContent = S.orders.length;
-  localStorage.setItem('aetSaspayOrderSid', pay.session_id);
-  showToast(`✅ Commande ${orderId} enregistrée — paiement…`);
-  aetShowPayLink(pay.checkout_url);
-  try { window.location.assign(pay.checkout_url); } catch(e) { console.error('[SASPAY NAV]', e); }
+  if (pay) {
+    localStorage.setItem('aetSaspayOrderSid', pay.session_id);
+    showToast(`✅ Commande ${orderId} enregistrée`);
+    aetShowPayLink(pay.checkout_url);
+  } else {
+    showToast(`✅ Commande ${orderId} enregistrée — payez-la dans « Mes commandes »`);
+  }
 };
 
 function aetShowPayLink(url) {
@@ -1998,13 +2002,18 @@ function aetShowPayLink(url) {
   }
   b.innerHTML = '';
   const p = document.createElement('div');
-  p.textContent = "Si la page de paiement ne s'ouvre pas :";
+  p.textContent = 'Commande enregistrée. Appuyez pour payer :';
   p.style.marginBottom = '10px';
   const a = document.createElement('a');
   a.href = url;
   a.textContent = '💳 Ouvrir la page de paiement';
   a.style.cssText = 'display:block;background:#f97316;color:#fff;padding:12px;border-radius:10px;font-weight:700;text-decoration:none';
-  b.append(p, a);
+  const x = document.createElement('button');
+  x.type = 'button';
+  x.textContent = 'Plus tard';
+  x.style.cssText = 'margin-top:8px;background:none;border:0;color:#64748b;font-weight:600';
+  x.onclick = () => b.remove();
+  b.append(p, a, x);
 }
 
 const AET_SASPAY_FN = 'https://jefxfnxxifyychfrbhxd.supabase.co/functions/v1/quick-action';
@@ -2028,7 +2037,12 @@ const AET_SASPAY_FN = 'https://jefxfnxxifyychfrbhxd.supabase.co/functions/v1/qui
       const j = await r.json().catch(() => ({}));
       if (j.ok) {
         localStorage.removeItem('aetSaspayOrderSid'); clean();
-        showToast('✅ Paiement reçu' + (j.order_id ? ' — commande ' + j.order_id : '') + ' !');
+        try {
+          const lo = (S.orders || []).find(x => x.id === j.order_id);
+          if (lo) { lo.paid = true; if (j.validated) lo.status = 'completed'; localStorage.setItem('aet_orders', JSON.stringify(S.orders.slice(0,20))); }
+        } catch(e2) { console.error('[SASPAY LOCAL]', e2); }
+        document.getElementById('aetPayLink')?.remove();
+        showToast('✅ Paiement reçu' + (j.order_id ? ' — commande ' + j.order_id : '') + (j.validated ? ' — validée' : '') + ' !');
         return;
       }
     } catch(e) { console.error('[SASPAY VERIFY]', e); }
@@ -2039,6 +2053,29 @@ const AET_SASPAY_FN = 'https://jefxfnxxifyychfrbhxd.supabase.co/functions/v1/qui
 })();
 
 // ── MES COMMANDES ──────────────────────────────────────────────────────────
+window.aetPayOrder = async (docId) => {
+  if (window._payBusy) return;
+  window._payBusy = true;
+  showToast('⏳ Préparation du paiement…');
+  try {
+    const ret = new URL(location.href);
+    ret.searchParams.delete('saspay'); ret.hash = '';
+    const r = await fetch(AET_SASPAY_FN, {
+      method: 'POST', headers: {'content-type': 'application/json'},
+      body: JSON.stringify({action: 'order_create', order_doc: docId, return_url: ret.toString(),
+        email: (auth.currentUser && auth.currentUser.email) || S.user?.email || ''})
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok || !j.checkout_url) throw new Error(j.error || ('HTTP ' + r.status));
+    localStorage.setItem('aetSaspayOrderSid', j.session_id);
+    closeAllDrawers();
+    aetShowPayLink(j.checkout_url);
+  } catch(e) {
+    console.error('[SASPAY PAY]', e);
+    showToast('❌ Paiement : ' + (e.message || 'erreur') + ' — réessayez');
+  } finally { window._payBusy = false; }
+};
+
 window.openOrdersDrawer = () => {
   const body = document.getElementById('ordersBody');
   if (!S.orders.length) {
@@ -2062,6 +2099,7 @@ window.openOrdersDrawer = () => {
           <div class="prog-step ${isRejected?'':(isDone?'done':'active')}"></div>
           <div class="prog-step ${isDone?'done':''}"></div>
         </div>
+        ${(o.docId && !isDone && !isRejected && !o.paid) ? `<button type="button" onclick="aetPayOrder('${esc(o.docId)}')" style="margin-top:10px;width:100%;background:#f97316;color:#fff;border:0;border-radius:10px;padding:10px;font-weight:700">💳 Payer</button>` : ''}
       </div>`;
     }).join('');
   }

@@ -10307,6 +10307,7 @@ if ('serviceWorker' in navigator) {
 
       <label class="cm-modal-label" data-i18n="cm_shop_address">Adresse (optionnel)</label>
       <input type="text" id="cmShopAddr" class="cm-modal-input" placeholder="Quartier, rue, repère…">
+      <button type="button" onclick="cmOpenReceiptSettings()" style="width:100%;margin:4px 0 10px;padding:11px;border-radius:10px;border:1px dashed #10b981;background:rgba(16,185,129,.08);color:#059669;font-weight:700;cursor:pointer">🧾 Reçu : contact et signature</button>
 
       <label class="cm-modal-label">Numéro de paiement Flooz/T-Money (obligatoire)</label>
       <input type="tel" id="cmShopPayPhone" class="cm-modal-input" placeholder="Ex: 90123456">
@@ -11487,7 +11488,8 @@ async function cmSaveRemote(){
         slogan: (s.branding && s.branding.slogan) || null,
         isPublic: s.isPublic !== false,
         createdAt: s.createdAt ?? null,
-        store3d: s.store3d ?? null
+        store3d: s.store3d ?? null,
+        receipt: s.receipt ?? null
         // PIN et employés volontairement exclus
       }));
       const publicArticles = CM.articles.map(a => ({
@@ -11754,6 +11756,54 @@ window.cmSelectShop = function(id){
   cmSave();
   cmRenderAll();
   setTimeout(function(){ try { if (typeof window.cpRenderDashboard === 'function') window.cpRenderDashboard(); } catch(e){} }, 80);
+};
+
+window.cmOpenReceiptSettings = function(){
+  const say = (m, k) => { try { if (typeof toast === 'function') toast(m, k || 'info'); else alert(m); } catch(e){ alert(m); } };
+  const sid = CM.editingShopId || CM.currentShopId;
+  const sh = (CM.shops || []).find(x => x.id === sid);
+  if (!sh) { say('Enregistrez d’abord la boutique', 'error'); return; }
+  const r = sh.receipt || {};
+  let ov = document.getElementById('cmRcpSet'); if (ov) ov.remove();
+  ov = document.createElement('div'); ov.id = 'cmRcpSet';
+  ov.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(15,23,42,.65);display:flex;align-items:center;justify-content:center;padding:14px';
+  const box = document.createElement('div');
+  box.style.cssText = 'background:#fff;color:#0f172a;border-radius:16px;padding:16px;width:100%;max-width:420px;max-height:92vh;overflow:auto;font-size:14px;font-family:inherit';
+  box.innerHTML = '<h3 style="margin:0 0 4px;font-size:17px">🧾 Reçu de la boutique</h3><div style="font-size:12px;color:#64748b;margin-bottom:6px">Ces informations apparaissent sur les reçus de vos clients. Le logo est la photo de la boutique.</div>';
+  const lab = t => { const l = document.createElement('div'); l.style.cssText = 'font-size:12px;font-weight:700;margin:10px 0 4px'; l.textContent = t; box.appendChild(l); };
+  const field = (label, val, type, ph) => { lab(label); const i = document.createElement('input'); i.type = type || 'text'; i.value = val || ''; i.placeholder = ph || ''; i.style.cssText = 'width:100%;box-sizing:border-box;padding:10px;border:1px solid #cbd5e1;border-radius:10px;font-size:14px;color:#0f172a;background:#fff'; box.appendChild(i); return i; };
+  const fPhone = field('Téléphone', r.phone || sh.payPhone || '', 'tel', '+228 …');
+  const fEmail = field('E-mail', r.email || '', 'email', 'contact@…');
+  const fAddr = field('Adresse', r.addr || sh.addr || sh.address || '', 'text', 'Quartier, ville');
+  const fWeb = field('Site web / réseaux', r.web || '', 'text', 'www.… ou @…');
+  const fSigner = field('Nom du signataire', r.signer || '', 'text', 'Ex : Le gérant');
+  const fFooter = field('Message en bas du reçu', r.footer || 'Merci pour votre achat !', 'text', '');
+  lab('Signature (dessinez au doigt)');
+  const cv = document.createElement('canvas'); cv.width = 600; cv.height = 200;
+  cv.style.cssText = 'width:100%;height:120px;border:1px dashed #94a3b8;border-radius:10px;touch-action:none;background:#fff;display:block';
+  box.appendChild(cv);
+  const ctx = cv.getContext('2d');
+  ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#0f172a';
+  let sig = r.signature || '', drawn = false, down = false;
+  if (sig) { const im = new Image(); im.onload = () => ctx.drawImage(im, 0, 0, cv.width, cv.height); im.src = sig; }
+  const pos = e => { const b = cv.getBoundingClientRect(); return [(e.clientX - b.left) * cv.width / b.width, (e.clientY - b.top) * cv.height / b.height]; };
+  cv.addEventListener('pointerdown', e => { down = true; drawn = true; try { cv.setPointerCapture(e.pointerId); } catch(_){} const [x, y] = pos(e); ctx.beginPath(); ctx.moveTo(x, y); e.preventDefault(); });
+  cv.addEventListener('pointermove', e => { if (!down) return; const [x, y] = pos(e); ctx.lineTo(x, y); ctx.stroke(); e.preventDefault(); });
+  const up = () => { down = false; };
+  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  const btn = (txt, css) => { const b = document.createElement('button'); b.type = 'button'; b.textContent = txt; b.style.cssText = 'width:100%;margin-top:8px;padding:11px;border-radius:10px;font-weight:700;cursor:pointer;' + css; box.appendChild(b); return b; };
+  btn('Effacer la signature', 'background:#f1f5f9;color:#334155;border:0').onclick = () => { ctx.clearRect(0, 0, cv.width, cv.height); sig = ''; drawn = false; };
+  btn('💾 Enregistrer', 'background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:0;margin-top:14px').onclick = () => {
+    sh.receipt = {
+      phone: fPhone.value.trim(), email: fEmail.value.trim(), addr: fAddr.value.trim(),
+      web: fWeb.value.trim(), signer: fSigner.value.trim(), footer: fFooter.value.trim(),
+      signature: drawn ? cv.toDataURL('image/png') : sig, updatedAt: Date.now()
+    };
+    try { cmSave(); } catch(e) { console.error('[RECU]', e); say('Erreur d’enregistrement', 'error'); return; }
+    ov.remove(); say('Reçu enregistré', 'success');
+  };
+  btn('Annuler', 'background:none;color:#64748b;border:0').onclick = () => ov.remove();
+  ov.appendChild(box); document.body.appendChild(ov);
 };
 
 /* ── Modal Boutique ── */

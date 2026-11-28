@@ -1034,6 +1034,8 @@ function applyData(data) {
   const shop = shops.find(s => String(s.id)===String(storeId)) || shops[0];
   ownerPayPhone = shop?.payPhone || '';
   window.__aetShop = shop || null;
+  window.__aetShops = shops;
+  window.__aetArts = arts;
   const shopName = shop?.name || 'ALBAN STORE';
   document.getElementById('shopTitle').textContent = shopName;
   document.getElementById('shopName').textContent = shopName;
@@ -2080,7 +2082,15 @@ window.aetPayOrder = async (docId) => {
 window.aetShowReceipt = (oid) => {
   const o = (S.orders || []).find(x => x.id === oid);
   if (!o) return;
-  const sh = window.__aetShop || {};
+  const shopsAll = window.__aetShops || [];
+  const artsAll = window.__aetArts || [];
+  let sid = String(o.shopId || o.storeId || '');
+  if (!sid || !shopsAll.some(x => String(x.id) === sid)) {
+    const it0 = (o.items || []).find(x => x.articleId);
+    const ar = it0 && artsAll.find(a => String(a.id) === String(it0.articleId));
+    if (ar && ar.shopId) sid = String(ar.shopId);
+  }
+  const sh = (sid && shopsAll.find(x => String(x.id) === sid)) || window.__aetShop || {};
   const rc = sh.receipt || {};
   const toMs = (v) => {
     if (v == null || v === '') return 0;
@@ -2107,8 +2117,8 @@ window.aetShowReceipt = (oid) => {
   const contact = [rc.phone ? '📞 ' + esc(rc.phone) : '', rc.email ? '✉️ ' + esc(rc.email) : '', rc.addr ? '📍 ' + esc(rc.addr) : '', rc.web ? '🌐 ' + esc(rc.web) : ''].filter(Boolean).map(x => '<div>' + x + '</div>').join('');
   const td = 'padding:9px 0;border-bottom:1px solid #eef2f7';
   const rows = (o.items || []).map(it => {
-    const q = Number(it.qty || 1); const pr = Number(it.price || 0);
-    return '<tr><td style="' + td + '">' + esc(it.name) + '</td><td style="' + td + ';text-align:center">' + q + '</td><td style="' + td + ';text-align:right;white-space:nowrap">' + (pr ? esc(money(pr * q)) : '—') + '</td></tr>';
+    const q = Number(it.qty || 1); const lt = Number(it.total || 0) || Number(it.prixV ?? it.price ?? 0) * q;
+    return '<tr><td style="' + td + '">' + esc(it.name) + '</td><td style="' + td + ';text-align:center">' + q + '</td><td style="' + td + ';text-align:right;white-space:nowrap">' + (lt ? esc(money(lt)) : '—') + '</td></tr>';
   }).join('');
   const cli = o.customerName || o.clientName || (o.customer && o.customer.name) || '';
   const bannerHtml = okImg(logo) ? '<img src="' + esc(logo) + '" alt="" style="display:block;width:100%;height:180px;object-fit:cover;background:#e2e8f0" onerror="this.style.display=&quot;none&quot;">' : '';

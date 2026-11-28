@@ -9822,7 +9822,7 @@ function tvMembersHtml(tn) {
     rows += `<div class="tv-row${i === cur ? ' cur' : ''}">
       <div class="tv-av" style="background:${mb.name ? tvCol(i) : '#cbd5e1'}">${mb.name ? escapeHtml(tvIni(mb.name)) : (i + 1)}</div>
       <div class="tv-mi"><b>${nm}${i === me && mb.name ? ' <span style="color:#2563eb;font-size:12px">(vous)</span>' : ''}</b>
-      <span>Tour ${i + 1} · ${tontFmt(tontTurnDate(tn, i))}${mb.phone ? ' · ' + escapeHtml(tvPhone(mb.phone)) : ''}</span></div>${tag}</div>`;
+      <span>Tour ${i + 1} · ${tontFmt(tontTurnDate(tn, i))}${mb.phone ? ' · ' + escapeHtml(tvPhone(mb.phone)) : ''}${tvSigMark(tn, i)}</span></div>${tag}</div>`;
   }
   return `<div class="tv-sec"><h3>Ordre des tours <span style="color:#64748b;font-weight:500;font-size:13px">(${filled}/${n} inscrits)</span></h3>
     <button class="tv-btn tv-g" onclick="openTontMembers('${tn.id}')"><i class="fas fa-pen"></i> Modifier</button></div>
@@ -9855,6 +9855,7 @@ function tvPayHtml(tn) {
 }
 function tvInfoHtml(tn) {
   const n = tn.members || 1, k = tontCurIdx(tn), I = __tpInfo, pos = tn.position || 1;
+  if (__tvCon) return tvConEditHtml(tn);
   if (__tvSet) {
     const modes = ['Mobile money', 'Flooz (Moov)', 'Mixx by Yas (T-Money)', 'Espèces', 'Virement bancaire'];
     if (I.mode && !modes.includes(I.mode)) modes.unshift(I.mode);
@@ -9882,7 +9883,7 @@ function tvInfoHtml(tn) {
       ${I.note ? tvKv('Note', escapeHtml(I.note)) : ''}
     </div>
     <button class="tv-btn tv-w" style="width:100%;padding:13px;margin-bottom:18px;font-size:14px" onclick="tvShareInfo()">📤 Partager les instructions (WhatsApp)</button>
-    <div class="tv-sec"><h3>Détails de la tontine</h3></div>
+    ${tvConSection(tn)}<div class="tv-sec"><h3>Détails de la tontine</h3></div>
     <div class="tv-card">
       ${tvKv('Type', TY[tn.type] || '🤝 Autre')}
       ${tvKv('Fréquence', tvFreq(tn.frequency))}
@@ -9936,6 +9937,132 @@ window.tvRemindAll = () => {
 window.tvShareInfo = () => { const tn = tvTn(); if (!tn) return; window.open('https://wa.me/?text=' + encodeURIComponent(tontPayMsg(tn, tontCurIdx(tn), '')), '_blank'); };
 window.tvEditTont = () => { const id = __tvId; tvClose(); editTontine(id); };
 window.tvDel = () => { const id = __tvId; tvClose(); deleteTontine(id); };
+// ===== CONTRAT TONTINE (diag436) =====
+const TV_FS = 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+var __tvCon = false; window.__tvSigs = window.__tvSigs || {};
+function tvMask(p) { const d = String(p || '').replace(/\D/g, '').slice(-8); return d.length === 8 ? d.slice(0, 2) + ' •• •• ' + d.slice(6) : ''; }
+async function tvHash(id, p) {
+  const d = String(p || '').replace(/\D/g, '').slice(-8); if (!d) return '';
+  const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(id + ':' + d));
+  return [...new Uint8Array(b)].map(x => x.toString(16).padStart(2, '0')).join('').slice(0, 24);
+}
+function tvSigMark(tn, i) { const S = __tvSigs[tn.id] || {}; return S[i] ? ' · <span style="color:#059669;font-weight:600">✍️ Signé</span>' : ''; }
+function tvSigOk(s) { return /^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(String(s || '')); }
+function tvContract(tn) {
+  const n = tn.members || 1, amt = tn.amount || 0, C = tn.contract || {};
+  const I = Object.assign({ mode: 'Mobile money', payTo: 'beneficiary', number: '', note: '' }, tn.payInfo || {});
+  const org = (C.org || '').trim() || 'l’organisateur';
+  const fq = tn.frequency === 'weekly' ? 'chaque semaine' : tn.frequency === 'biweekly' ? 'toutes les deux semaines' : 'chaque mois';
+  const dl = +C.delay || 0, pen = +C.penalty || 0, M = v => formatMoneyXOF(v);
+  const A = [];
+  A.push({ t: 'Article 1 - Objet', b: `Les membres signataires créent la tontine « ${tn.name || ''} », organisée par ${org}. C’est une épargne rotative : à chaque tour, chaque membre verse ${M(amt)} et la cagnotte de ${M(amt * n)} est remise au bénéficiaire du tour.` });
+  A.push({ t: 'Article 2 - Durée', b: `La tontine compte ${n} membres et ${n} tours, ${fq}, du ${tontFmt(tontTurnDate(tn, 0))} au ${tontFmt(tontTurnDate(tn, n - 1))}. L’ordre des tours figure dans la liste des membres de ce contrat.` });
+  A.push({ t: 'Article 3 - Paiement', b: `Chaque cotisation se paie par ${I.mode || 'Mobile money'}, ${I.payTo === 'organizer' ? 'à l’organisateur' + (I.number ? ' au ' + I.number : '') : 'directement au bénéficiaire du tour'}, ${dl > 0 ? 'au plus tard ' + dl + ' jour' + (dl > 1 ? 's' : '') + ' avant la date du tour' : 'au plus tard le jour du tour'}.${I.note ? ' ' + I.note : ''}` });
+  A.push({ t: 'Article 4 - Retard', b: pen > 0 ? `Tout retard de paiement entraîne une pénalité de ${M(pen)}, versée au bénéficiaire du tour concerné.` : `Tout retard de paiement est signalé au groupe. Le membre en retard doit régulariser au plus vite.` });
+  A.push({ t: 'Article 5 - Engagement', b: `Le membre qui a déjà reçu la cagnotte s’engage à continuer de cotiser jusqu’au dernier tour. Aucun membre ne peut recevoir la cagnotte deux fois.` });
+  A.push({ t: 'Article 6 - Départ et remplacement', b: `Un membre ne peut quitter la tontine qu’en proposant un remplaçant accepté par l’organisateur. S’il a déjà reçu la cagnotte, il doit verser toutes les cotisations restantes avant de partir.` });
+  A.push({ t: 'Article 7 - Litiges', b: `En cas de désaccord, les membres cherchent d’abord une solution à l’amiable, avec la médiation de l’organisateur.` });
+  if ((C.extra || '').trim()) A.push({ t: 'Article 8 - Règles particulières', b: C.extra.trim() });
+  A.push({ t: 'Acceptation', b: `En signant, chaque membre reconnaît avoir lu ce contrat et s’engage à le respecter.` });
+  return A;
+}
+window.tvPublish = async (quiet, id) => {
+  id = id || __tvId; const tn = userTontines.find(x => x.id === id); if (!tn || !_auth.currentUser) return false;
+  if (!quiet) loader(true);
+  try {
+    const fs = await import(TV_FS);
+    const n = tn.members || 1, I = Object.assign({ mode: 'Mobile money', payTo: 'beneficiary', number: '', note: '' }, tn.payInfo || {});
+    const list = [], phones = [];
+    for (let i = 0; i < n; i++) {
+      const mb = tvMember(tn, i);
+      list.push({ name: mb.name, ph: tvMask(mb.phone), h: mb.phone ? await tvHash(id, mb.phone) : '' });
+      phones.push(I.payTo === 'organizer' ? '' : String(mb.phone || '').replace(/\D/g, ''));
+    }
+    const paid = {}; Object.keys(tn.payments || {}).forEach(k => { const p = tn.payments[k] || {}; paid[k] = Object.keys(p).filter(i => p[i] && p[i].paid).map(Number); });
+    const S = __tvSigs[id] || {}, signed = {}; Object.keys(S).forEach(i => { signed[i] = S[i].at || ''; });
+    await fs.setDoc(fs.doc(_db, 'public_tontines', id), {
+      ownerId: _auth.currentUser.uid, name: tn.name || '', type: tn.type || 'autre', amount: tn.amount || 0, members: n,
+      frequency: tn.frequency || 'monthly', start: tn.start || '', org: ((tn.contract || {}).org || ''), payInfo: I,
+      list, phones, paid, signed, contract: tvContract(tn), updatedAt: fs.serverTimestamp()
+    });
+    if (!tn.pubAt) { await _upDoc(_doc(_db, 'tontines', id), { pubAt: _ts() }); tn.pubAt = true; }
+    if (!quiet) { loader(false); toast('Lien publié', 'info'); }
+    return true;
+  } catch (e) { if (!quiet) { loader(false); toast(friendlyErr(e), 'error'); } else console.warn('tvPublish', e); return false; }
+};
+async function tvLoadSigs(id, noPub) {
+  if (!_auth.currentUser) return {};
+  try {
+    const fs = await import(TV_FS);
+    const sn = await fs.getDocs(fs.query(fs.collection(_db, 'tontine_signatures'), fs.where('ownerId', '==', _auth.currentUser.uid), fs.where('tontId', '==', id)));
+    const m = {};
+    sn.forEach(d => { const x = d.data(); m[x.idx] = { name: x.name || '', sig: x.sig || '', at: x.at && x.at.toDate ? x.at.toDate().toISOString() : '' }; });
+    __tvSigs[id] = m; tvRender();
+    const tn = userTontines.find(t => t.id === id);
+    if (!noPub && tn && tn.pubAt) tvPublish(true, id);
+    return m;
+  } catch (e) { console.warn('tvLoadSigs', e); return __tvSigs[id] || {}; }
+}
+function tvConSection(tn) {
+  const C = tn.contract || {}, n = tn.members || 1, ns = Object.keys(__tvSigs[tn.id] || {}).length, dl = +C.delay || 0, pen = +C.penalty || 0;
+  return `<div class="tv-sec"><h3>📜 Contrat & signatures</h3><button class="tv-btn tv-g" onclick="tvConEdit(true)">⚙️ Modifier</button></div>
+  <div class="tv-card">${tvKv('Organisateur', escapeHtml(C.org || 'Non renseigné'))}${tvKv('Délai de paiement', dl > 0 ? dl + ' jour(s) avant le tour' : 'Le jour du tour')}${tvKv('Pénalité de retard', pen > 0 ? formatMoneyXOF(pen) : 'Aucune')}${C.extra ? tvKv('Règles en plus', escapeHtml(C.extra)) : ''}${tvKv('Signatures', ns + '/' + n)}${tvKv('Lien public', tn.pubAt ? '<span style="color:#059669">Publié ✓</span>' : 'Non publié')}</div>
+  <div style="display:flex;gap:8px;margin-bottom:18px"><button class="tv-btn tv-g" style="flex:1;padding:13px" onclick="tvPdf()">📄 Contrat PDF</button><button class="tv-btn tv-p" style="flex:1;padding:13px" onclick="tvShareLink()">🔗 Envoyer le lien</button></div>`;
+}
+function tvConEditHtml(tn) {
+  const C = tn.contract || {}, dl = +C.delay || 0, org = C.org || tvMember(tn, (tn.position || 1) - 1).name;
+  return `<div class="tv-sec"><h3>📜 Réglages du contrat</h3></div><div class="tv-card" style="padding:2px 14px 16px">
+  <label class="tv-lb">Nom de l’organisateur</label><input id="tvcOrg" class="tv-in" value="${tvQ(org)}" placeholder="Ex : Koku ELOH">
+  <label class="tv-lb">Délai de paiement</label><select id="tvcDl" class="tv-in">${[0, 1, 2, 3, 5, 7].map(d => `<option value="${d}" ${d === dl ? 'selected' : ''}>${d ? d + ' jour' + (d > 1 ? 's' : '') + ' avant le tour' : 'Le jour du tour'}</option>`).join('')}</select>
+  <label class="tv-lb">Pénalité de retard (XOF, 0 = aucune)</label><input id="tvcPen" class="tv-in" inputmode="numeric" value="${+C.penalty || 0}">
+  <label class="tv-lb">Règles en plus (optionnel)</label><textarea id="tvcEx" class="tv-in" rows="4" placeholder="Ex : réunion le premier samedi du mois">${escapeHtml(C.extra || '')}</textarea></div>
+  <div style="display:flex;gap:8px"><button class="tv-btn tv-g" style="flex:1;padding:13px" onclick="tvConEdit(false)">Annuler</button><button class="tv-btn tv-p" style="flex:1;padding:13px" onclick="tvConSave()">Enregistrer</button></div>`;
+}
+window.tvConEdit = (v) => { __tvCon = !!v; tvRender(); };
+window.tvConSave = async () => {
+  const tn = tvTn(); if (!tn) return; const g = id => document.getElementById(id);
+  const c = { org: g('tvcOrg').value.trim().slice(0, 60), delay: +g('tvcDl').value || 0, penalty: Math.max(0, +String(g('tvcPen').value).replace(/\D/g, '') || 0), extra: g('tvcEx').value.trim().slice(0, 1500) };
+  loader(true);
+  try { await _upDoc(_doc(_db, 'tontines', tn.id), { contract: c, updatedAt: _ts() }); tn.contract = c; __tvCon = false; toast('Contrat enregistré', 'info'); if (tn.pubAt) await tvPublish(true, tn.id); }
+  catch (e) { toast(friendlyErr(e), 'error'); }
+  loader(false); tvRender();
+};
+window.tvShareLink = async () => {
+  const tn = tvTn(); if (!tn) return;
+  if (!(await tvPublish(false, tn.id))) return;
+  const url = 'https://budget.aet-alban.online/tontine.html?id=' + tn.id;
+  const msg = '📜 Tontine « ' + (tn.name || '') + ' »\nLis le contrat et signe-le en ligne ici :\n' + url;
+  const w = window.open('https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+  if (!w) { try { await navigator.clipboard.writeText(url); toast('Lien copié', 'info'); } catch (e) { prompt('Copie ce lien :', url); } }
+  tvRender();
+};
+window.tvPdf = async () => {
+  const tn = tvTn(); if (!tn) return;
+  const w = window.open('', '_blank'); if (!w) { toast('Autorise les fenêtres pop-up', 'error'); return; }
+  w.document.write('<p style="font-family:sans-serif;padding:20px">Chargement du contrat…</p>');
+  const S = await tvLoadSigs(tn.id, true), n = tn.members || 1, E = escapeHtml;
+  let rows = '';
+  for (let i = 0; i < n; i++) {
+    const mb = tvMember(tn, i), s = S[i];
+    rows += `<tr><td>${i + 1}</td><td>${E(mb.name || 'Place libre')}</td><td>${tontFmt(tontTurnDate(tn, i))}</td><td>${s && tvSigOk(s.sig) ? '<img src="' + s.sig + '">' : ''}</td><td>${s && s.at ? new Date(s.at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '—'}</td></tr>`;
+  }
+  const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Contrat - ${E(tn.name || '')}<\/title><style>body{font-family:Arial,sans-serif;color:#0f172a;max-width:760px;margin:0 auto;padding:24px;line-height:1.5}h1{font-size:22px;text-align:center;margin:0}.sub{text-align:center;color:#64748b;font-size:13px;margin:6px 0 20px}h3{font-size:15px;margin:16px 0 4px}p{margin:0;font-size:14px}table{width:100%;border-collapse:collapse;margin-top:10px;font-size:13px}th,td{border:1px solid #cbd5e1;padding:6px;text-align:left;vertical-align:middle}th{background:#f1f5f9}td img{max-height:46px;max-width:140px}.ft{margin-top:24px;font-size:11px;color:#64748b;text-align:center}<\/style><\/head><body>
+  <h1>Contrat de tontine</h1><div class="sub">« ${E(tn.name || '')} » · ${n} membres · ${formatMoneyXOF(tn.amount)} · ${E(tvFreq(tn.frequency))}</div>
+  ${tvContract(tn).map(a => `<h3>${E(a.t)}</h3><p>${E(a.b).replace(/\n/g, '<br>')}</p>`).join('')}
+  <h3>Membres et signatures</h3><table><tr><th>Tour</th><th>Membre</th><th>Date</th><th>Signature</th><th>Signé le</th></tr>${rows}</table>
+  <div class="ft">Signatures électroniques enregistrées via budget.aet-alban.online · Document généré le ${new Date().toLocaleString('fr-FR')}</div><\/body><\/html>`;
+  w.document.open(); w.document.write(html); w.document.close();
+  setTimeout(() => { try { w.print(); } catch (e) {} }, 700);
+};
+(function () {
+  const o = window.openTontView; window.openTontView = function (id, tab) { __tvCon = false; o(id, tab); tvLoadSigs(id); };
+  const g = window.tvGoTab; window.tvGoTab = function (x) { __tvCon = false; g(x); };
+  ['tvMark', 'tvSaveInfo', 'saveTontMembers'].forEach(k => {
+    const f = window[k]; if (!f) return;
+    window[k] = async function () { const r = await f.apply(this, arguments); const tn = tvTn(); if (tn && tn.pubAt) tvPublish(true, tn.id); return r; };
+  });
+})();
+// ===== FIN CONTRAT TONTINE =====
 // ===== FIN TONTINE VUE PRO =====
 
 window.openTontineModal = () => {

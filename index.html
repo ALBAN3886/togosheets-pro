@@ -9466,15 +9466,111 @@ function renderTontinesList() {
       </div>
       <div class="tont-next">
         <i class="fas fa-calendar-check"></i>
-        ${t('tont_next_draw')} ${tn.start ? new Date(tn.start).toLocaleDateString(currentLang==='en'?'en-US':'fr-FR') : '—'}
+        ${t('tont_next_draw')} ${tontNextLabel(tn)}
       </div>
       <div class="tont-actions">
+        <button style="background:rgba(16,185,129,.12);color:#059669" onclick="openTontMembers('${tn.id}')"><i class="fas fa-users"></i> Membres</button>
         <button style="background:rgba(37,99,235,.1);color:var(--primary)" onclick="editTontine('${tn.id}')"><i class="fas fa-pencil"></i> ${t('tont_btn_edit')}</button>
         <button style="background:rgba(239,68,68,.08);color:var(--danger)" onclick="deleteTontine('${tn.id}')"><i class="fas fa-trash"></i> ${t('tont_btn_delete')}</button>
       </div>
     </div>`;
   }).join('');
 }
+function tontTurnDate(tn, i) {
+  if (!tn.start) return null;
+  const d = new Date(tn.start + 'T12:00:00');
+  if (isNaN(d.getTime())) return null;
+  if (tn.frequency === 'weekly') d.setDate(d.getDate() + 7 * i);
+  else if (tn.frequency === 'biweekly') d.setDate(d.getDate() + 14 * i);
+  else d.setMonth(d.getMonth() + i);
+  return d;
+}
+function tontFmt(d) {
+  return d ? d.toLocaleDateString(currentLang === 'en' ? 'en-US' : 'fr-FR', {day: '2-digit', month: 'short', year: 'numeric'}) : '—';
+}
+function tontNextLabel(tn) {
+  const n = tn.members || 1;
+  const list = Array.isArray(tn.membersList) ? tn.membersList : [];
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  for (let i = 0; i < n; i++) {
+    const d = tontTurnDate(tn, i);
+    if (!d) return '—';
+    if (d >= today) {
+      const nm = (list[i] && list[i].name) || ('Tour ' + (i + 1));
+      return tontFmt(d) + ' — ' + escapeHtml(nm) + ((i + 1) === (tn.position || 1) ? ' (vous)' : '');
+    }
+  }
+  return 'Tontine terminée';
+}
+let __tmId = null, __tmList = [];
+function tontMembersRead() {
+  document.querySelectorAll('#tmRows [data-i]').forEach(r => {
+    const i = +r.dataset.i;
+    __tmList[i] = { name: r.querySelector('.tm-n').value.trim(), phone: r.querySelector('.tm-p').value.trim() };
+  });
+}
+function tontMembersRender() {
+  const tn = userTontines.find(x => x.id === __tmId);
+  const box = document.getElementById('tmRows');
+  if (!tn || !box) return;
+  const me = tn.position || 1;
+  const inp = 'width:100%;box-sizing:border-box;padding:9px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;color:#0f172a;background:#fff';
+  const bt = 'border:0;background:#e2e8f0;color:#0f172a;border-radius:8px;width:34px;height:34px;font-size:15px';
+  box.innerHTML = __tmList.map((m, i) => `<div data-i="${i}" style="border:1px solid ${(i + 1) === me ? '#93c5fd;background:#eff6ff' : '#e2e8f0'};border-radius:12px;padding:10px;margin-bottom:8px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <b style="font-size:13px">Tour ${i + 1} · ${tontFmt(tontTurnDate(tn, i))}${(i + 1) === me ? ' · vous' : ''}</b>
+      <span><button type="button" style="${bt}" onclick="tontMembersMove(${i},-1)">↑</button> <button type="button" style="${bt}" onclick="tontMembersMove(${i},1)">↓</button></span>
+    </div>
+    <input class="tm-n" style="${inp};margin-bottom:6px" placeholder="Nom du membre">
+    <input class="tm-p" style="${inp}" type="tel" placeholder="Téléphone (ex: 22890000000)">
+  </div>`).join('');
+  box.querySelectorAll('[data-i]').forEach(r => {
+    const m = __tmList[+r.dataset.i] || {};
+    r.querySelector('.tm-n').value = m.name || '';
+    r.querySelector('.tm-p').value = m.phone || '';
+  });
+}
+window.tontMembersMove = (i, dir) => {
+  tontMembersRead();
+  const j = i + dir;
+  if (j < 0 || j >= __tmList.length) return;
+  [__tmList[i], __tmList[j]] = [__tmList[j], __tmList[i]];
+  tontMembersRender();
+};
+window.openTontMembers = (id) => {
+  const tn = userTontines.find(x => x.id === id);
+  if (!tn) return;
+  __tmId = id;
+  const n = tn.members || 1;
+  const src = Array.isArray(tn.membersList) ? tn.membersList : [];
+  __tmList = [...Array(n)].map((_, i) => ({ name: (src[i] && src[i].name) || '', phone: (src[i] && src[i].phone) || '' }));
+  let m = document.getElementById('tmModal');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'tmModal';
+    m.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,.6);display:flex;align-items:center;justify-content:center;padding:14px';
+    document.body.appendChild(m);
+  }
+  m.innerHTML = `<div style="background:#fff;color:#0f172a;border-radius:16px;padding:16px;width:100%;max-width:420px;max-height:90vh;overflow:auto">
+    <h3 style="margin:0 0 4px;font-size:17px">👥 ${escapeHtml(tn.name || '')}</h3>
+    <p style="margin:0 0 12px;font-size:12px;color:#64748b">Le membre du tour 1 reçoit la cagnotte (${formatMoneyXOF((tn.amount || 0) * n)}) en premier. Changez l'ordre avec ↑ ↓.</p>
+    <div id="tmRows"></div>
+    <button type="button" onclick="saveTontMembers()" style="width:100%;margin-top:6px;background:#059669;color:#fff;border:0;border-radius:12px;padding:12px;font-weight:700">💾 Enregistrer</button>
+    <button type="button" onclick="document.getElementById('tmModal').remove()" style="width:100%;margin-top:6px;background:none;border:0;color:#64748b;font-weight:700;padding:10px">Annuler</button>
+  </div>`;
+  tontMembersRender();
+};
+window.saveTontMembers = async () => {
+  if (!_auth.currentUser || !__tmId) return;
+  tontMembersRead();
+  loader(true);
+  try {
+    await _upDoc(_doc(_db, 'tontines', __tmId), { membersList: __tmList, updatedAt: _ts() });
+    const m = document.getElementById('tmModal'); if (m) m.remove();
+    toast('Membres enregistrés', 'info');
+  } catch (e) { toast(friendlyErr(e), 'error'); }
+  loader(false);
+};
 window.openTontineModal = () => {
   tontineEditId = null;
   document.getElementById('tontineModalTitle').textContent = t('tont_new');

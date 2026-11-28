@@ -272,6 +272,29 @@ service cloud.firestore {
       allow delete: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
+    // Tontines publiques (lien de partage, lecture libre)
+    match /public_tontines/{id} {
+      allow read: if true;
+      allow create: if isSignedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isSignedIn() && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == request.auth.uid;
+      allow delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+    }
+    // Signatures du contrat (sans compte, 1 par place, non modifiables)
+    match /tontine_signatures/{sid} {
+      allow read, delete: if isSignedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if request.resource.data.keys().hasOnly(['tontId','idx','name','sig','at','ownerId','ver'])
+        && request.resource.data.tontId is string
+        && request.resource.data.idx is int
+        && request.resource.data.idx >= 0 && request.resource.data.idx < 100
+        && sid == request.resource.data.tontId + '_' + string(request.resource.data.idx)
+        && request.resource.data.name is string && request.resource.data.name.size() <= 80
+        && request.resource.data.sig is string && request.resource.data.sig.size() < 60000
+        && request.resource.data.at == request.time
+        && exists(/databases/$(database)/documents/public_tontines/$(request.resource.data.tontId))
+        && request.resource.data.ownerId == get(/databases/$(database)/documents/public_tontines/$(request.resource.data.tontId)).data.ownerId;
+      allow update: if false;
+    }
     match /tontines/{id} {
       allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
       allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
